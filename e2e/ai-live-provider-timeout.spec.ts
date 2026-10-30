@@ -21,8 +21,11 @@ function cleanupConversation(marker: string): void {
   const password = process.env.BATCH_PLATFORM_DB_PASSWORD
   if (!username || !password) throw new Error('Local PostgreSQL credentials are required')
   if (!/^e2e-[0-9a-f-]{36}$/.test(marker)) throw new Error('Unsafe AI fixture marker')
-  const sql = `BEGIN; SELECT set_config('app.tenant_id', 'ta', true); DELETE FROM batch.console_ai_conversation AS conversation WHERE conversation.tenant_id = 'ta' AND EXISTS (SELECT 1 FROM batch.console_ai_turn AS turn WHERE turn.tenant_id = 'ta' AND turn.conversation_id = conversation.id AND turn.prompt_text LIKE '%${marker}%'); COMMIT;`
-  execFileSync(process.env.PSQL_BIN ?? 'psql', ['-X', '-v', 'ON_ERROR_STOP=1', '-Atqc', sql], {
+  const cleanupConversationSql = `BEGIN; SELECT set_config('app.tenant_id', 'ta', true); DELETE FROM batch.console_ai_conversation AS conversation WHERE conversation.tenant_id = 'ta' AND EXISTS (SELECT 1 FROM batch.console_ai_turn AS turn WHERE turn.tenant_id = 'ta' AND turn.conversation_id = conversation.id AND turn.prompt_text LIKE '%${marker}%'); COMMIT;`
+  execFileSync(
+    process.env.PSQL_BIN ?? 'psql',
+    ['-X', '-v', 'ON_ERROR_STOP=1', '-Atqc', cleanupConversationSql],
+    {
     env: {
       ...process.env,
       PGHOST: host,
@@ -31,7 +34,8 @@ function cleanupConversation(marker: string): void {
       PGUSER: username,
       PGPASSWORD: password,
     },
-  })
+    },
+  )
 }
 
 test('backend model timeout is shown as a failed turn without discarding the prompt', async ({

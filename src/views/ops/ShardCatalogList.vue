@@ -73,7 +73,7 @@
         </el-table-column>
         <el-table-column v-if="canManage" :label="t('common.actions')" width="140" fixed="right">
           <template #default="{ row }">
-            <RowActions :actions="rowActions(row)" />
+            <RowActions :actions="rowActions(row as ShardCatalogRow)" />
           </template>
         </el-table-column>
       </ProTable>

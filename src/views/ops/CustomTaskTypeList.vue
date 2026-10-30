@@ -40,7 +40,7 @@
           min-width="200"
         >
           <template #default="{ row }">
-            <el-link type="primary" @click="openDetail(row)">{{ row.taskTypeCode }}</el-link>
+            <el-link type="primary" @click="openDetail(row as CustomTaskType)">{{ row.taskTypeCode }}</el-link>
           </template>
         </el-table-column>
         <el-table-column

@@ -63,14 +63,16 @@
       return
     }
     // 撤销与重做快捷键：Ctrl+Z / Ctrl+Y
-    if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === 'z') {
+    const isUndoShortcut = (ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === 'z'
+    if (isUndoShortcut) {
       ev.preventDefault()
       store.undo()
       await nextTick()
       handle.fitToViewport()
       return
     }
-    if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === 'y') {
+    const isRedoShortcut = (ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === 'y'
+    if (isRedoShortcut) {
       ev.preventDefault()
       store.redo()
       await nextTick()

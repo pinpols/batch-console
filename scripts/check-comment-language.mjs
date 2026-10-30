@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { execFileSync } from 'node:child_process'
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { extname, resolve } from 'node:path'
 import ts from 'typescript'
 
@@ -22,7 +22,13 @@ function repositoryFiles() {
   const filesIndex = process.argv.indexOf('--files')
   if (filesIndex >= 0) {
     return process.argv.slice(filesIndex + 1).filter((file) => {
-      if (generatedFiles.has(file) || !supportedExtensions.has(extname(file))) return false
+      if (
+        !existsSync(resolve(root, file)) ||
+        generatedFiles.has(file) ||
+        !supportedExtensions.has(extname(file))
+      ) {
+        return false
+      }
       return (
         file.startsWith('src/') ||
         file.startsWith('e2e/') ||
@@ -41,7 +47,13 @@ function repositoryFiles() {
     .split('\0')
     .filter(Boolean)
     .filter((file) => {
-      if (generatedFiles.has(file) || !supportedExtensions.has(extname(file))) return false
+      if (
+        !existsSync(resolve(root, file)) ||
+        generatedFiles.has(file) ||
+        !supportedExtensions.has(extname(file))
+      ) {
+        return false
+      }
       return (
         file.startsWith('src/') ||
         file.startsWith('e2e/') ||

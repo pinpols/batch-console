@@ -45,15 +45,3 @@ test.describe('workflow designer (Workflow 编排)', () => {
     await expectPageTitle(page, /Workflow/)
   })
 })
-
-test.describe('pipeline definitions (Pipeline 定义)', () => {
-  test.beforeEach(async ({ page }) => {
-    await enterDemoApp(page)
-  })
-
-  test('Pipeline 定义列表可打开并展示表格', async ({ page }) => {
-    await page.goto('/jobs/pipelines')
-    await expectPageTitle(page, '流水线定义')
-    await expect(page.getByRole('button', { name: '刷新' })).toBeVisible()
-  })
-})

@@ -1,8 +1,12 @@
 import { withMermaid } from 'vitepress-plugin-mermaid'
+import { rewritePublicationAnchor } from '../../../../scripts/lib/docs-publication.mjs'
 import { fileURLToPath, URL } from 'node:url'
 
 /** 前端仓库托管的单站文档；构建时只读汇入配对后端 docs/。 */
 export default withMermaid({
+  // 亮色采用中性主题；暗色由 Mermaid 插件随站点主题切换。
+  mermaid: { theme: 'neutral' },
+
   srcDir: './content',
   base: '/docs/',
 
@@ -104,7 +108,11 @@ export default withMermaid({
         const hrefIdx = token.attrIndex('href')
         if (hrefIdx >= 0) {
           const old = token.attrs[hrefIdx][1]
-          const next = rewriteHref(old)
+          const publicationHref =
+            token.attrGet('class') === 'header-anchor'
+              ? old
+              : rewritePublicationAnchor(env.relativePath || '', old)
+          const next = rewriteHref(publicationHref)
           if (next !== old) token.attrs[hrefIdx][1] = next
         }
         return orig(tokens, idx, opts, env, self)
@@ -278,7 +286,9 @@ export default withMermaid({
         'vue/server-renderer': fileURLToPath(
           new URL('../../../../node_modules/vue/server-renderer', import.meta.url),
         ),
-        'vue-router': fileURLToPath(new URL('../../../../node_modules/vue-router', import.meta.url)),
+        'vue-router': fileURLToPath(
+          new URL('../../../../node_modules/vue-router', import.meta.url),
+        ),
       },
       dedupe: ['vue', 'vue-router'],
     },
@@ -425,7 +435,11 @@ export default withMermaid({
           md: { render: (source: string, renderEnv?: { relativePath?: string }) => string },
         ) {
           const path = env.relativePath || ''
-          if (/^(backend\/(?:analysis|archive|audit|backlog|compliance|plans|qa|review|sdk|spike|stats|test-data|testing|verifications)|frontend\/(?:archive|reports|redesign|verifications))\//.test(path)) {
+          if (
+            /^(backend\/(?:analysis|archive|audit|backlog|compliance|plans|qa|review|sdk|spike|stats|test-data|testing|verifications)|frontend\/(?:archive|reports|redesign|verifications))\//.test(
+              path,
+            )
+          ) {
             return ''
           }
           // 带日期的后端设计稿保留页面与标题可搜索，不再把历史正文重复装入浏览器索引。
@@ -444,9 +458,12 @@ export default withMermaid({
               .join('\n')
             return md.render(headings, env)
           }
-          // ADR 数量多且正文较长，搜索只保留标题层级；页面正文仍完整构建和访问。
-          // 决策编号、主题和章节可搜索，同时避免把整套历史决策装入浏览器索引。
-          if (path.startsWith('backend/architecture/adr/')) {
+          // ADR和工程规约搜索保留标题层级；页面正文仍完整构建和访问。
+          // 产品指南、系统设计、API及运维入口继续保留全文索引。
+          if (
+            path.startsWith('backend/architecture/adr/') ||
+            path.startsWith('backend/standards/')
+          ) {
             const headings = mdSource
               .split('\n')
               .filter((line) => /^#{1,3}\s+/.test(line))

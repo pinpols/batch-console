@@ -61,6 +61,7 @@ export type StatusTagCategory =
   | 'deliveryStatus'
   | 'apiKey'
   | 'executionMode'
+  | 'jobType'
 
 /**
  * 每个分类的解析配置。
@@ -112,7 +113,7 @@ export const STATUS_TAG_CATEGORIES: Record<StatusTagCategory, CategoryConfig> = 
   },
   apiKey: { color: {}, local: apiKeyStatusMeta },
   executionMode: { color: executionModeColor, metaKeys: ['executionMode'] },
-  // 作业类型(IMPORT/EXPORT/PROCESS/WORKFLOW/GENERAL/ATOMIC…):label 走 /meta/enums
+  // 作业类型(IMPORT/EXPORT/PROCESS/GENERAL/ATOMIC…):label 走 /meta/enums
   // 或 i18n enum.jobType.*,统一 info 色。此前漏注册 → 作业详情页头 StatusTag 必崩。
   jobType: { color: {}, metaKeys: ['jobType'] },
   // /meta/enums 未提供,label 由前端维护

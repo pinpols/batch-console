@@ -21,17 +21,6 @@ vi.mock('@/composables/useJobCodeOptions', async () => {
     }),
   }
 })
-vi.mock('@/composables/usePipelineCodeOptions', async () => {
-  const { ref } = await import('vue')
-  return {
-    usePipelineCodeOptions: () => ({
-      loading: ref(false),
-      options: ref<string[]>([]),
-      load: vi.fn().mockResolvedValue([]),
-      clear: vi.fn(),
-    }),
-  }
-})
 
 // tenant store 依赖 localStorage,jsdom 提供 window.localStorage 但模块顶层 ref 调用
 // 在测试环境下可能在 setup 之前求值,直接 mock 一个最小实现
@@ -104,16 +93,17 @@ function factory(visible = true) {
 
 describe('QuickPalette', () => {
   beforeEach(() => {
+    vi.resetAllMocks()
     setActivePinia(createPinia())
   })
 
-  it('visible 时渲染 input + 5 类型行', async () => {
+  it('visible 时渲染 input + 4 个可新建节点类型', async () => {
     const { wrapper } = factory(true)
     await nextTick()
     expect(wrapper.find('.quick-palette__mask').exists()).toBe(true)
     expect(wrapper.find('.quick-palette__input').exists()).toBe(true)
     const items = wrapper.findAll('.quick-palette__item')
-    expect(items.length).toBe(5) // START / END / JOB / GATEWAY / FILE_STEP
+    expect(items.length).toBe(4) // START / END / JOB / GATEWAY
   })
 
   it('搜索 "job" → 仅保留 JOB 类型行', async () => {

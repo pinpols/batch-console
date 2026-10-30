@@ -149,7 +149,8 @@ function readBoolean(row: RawRow, ...keys: string[]): boolean {
     const value = row[key]
     if (typeof value === 'boolean') return value
     if (typeof value === 'string') {
-      const text = value.trim().toLowerCase()
+      const trimmedValue = value.trim()
+      const text = trimmedValue.toLowerCase()
       if (['true', '1', 'yes', 'y', 'enabled', 'on'].includes(text)) return true
       if (['false', '0', 'no', 'n', 'disabled', 'off'].includes(text)) return false
     }
@@ -282,8 +283,10 @@ export const governanceApi = {
   listQueues: async (
     tenantId: string,
     filters?: { queueCode?: string; queueType?: string; enabled?: boolean },
-  ) =>
-    (await listGovernanceRows('/api/console/queues', tenantId, filters ?? {})).map(normalizeQueue),
+  ) => {
+    const rows = await listGovernanceRows('/api/console/queues', tenantId, filters ?? {})
+    return rows.map(normalizeQueue)
+  },
 
   /** 显式设置目标 enabled 状态，不读取或反转服务端当前值。 */
   toggleQueue: (id: number, tenantId: string, enabled: boolean) =>
@@ -298,10 +301,10 @@ export const governanceApi = {
   listBatchWindows: async (
     tenantId: string,
     filters?: { windowCode?: string; enabled?: boolean },
-  ) =>
-    (await listGovernanceRows('/api/console/batch-windows', tenantId, filters ?? {})).map(
-      normalizeBatchWindow,
-    ),
+  ) => {
+    const rows = await listGovernanceRows('/api/console/batch-windows', tenantId, filters ?? {})
+    return rows.map(normalizeBatchWindow)
+  },
 
   /** 显式设置目标 enabled 状态，不读取或反转服务端当前值。 */
   toggleBatchWindow: (id: number, tenantId: string, enabled: boolean) =>
@@ -313,10 +316,10 @@ export const governanceApi = {
   updateBatchWindow: (id: number, body: GovernanceBatchWindowSavePayload) =>
     put<RawRow>(`/api/console/batch-windows/${id}`, body).then(normalizeBatchWindow),
 
-  listCalendars: async (tenantId: string, filters?: { calendarCode?: string; enabled?: boolean }) =>
-    (await listGovernanceRows('/api/console/calendars', tenantId, filters ?? {})).map(
-      normalizeCalendar,
-    ),
+  listCalendars: async (tenantId: string, filters?: { calendarCode?: string; enabled?: boolean }) => {
+    const rows = await listGovernanceRows('/api/console/calendars', tenantId, filters ?? {})
+    return rows.map(normalizeCalendar)
+  },
 
   /** 显式设置目标 enabled 状态，不读取或反转服务端当前值。 */
   toggleCalendar: (id: number, tenantId: string, enabled: boolean) =>
@@ -329,11 +332,14 @@ export const governanceApi = {
     put<RawRow>(`/api/console/calendars/${id}`, body).then(normalizeCalendar),
 
   listCalendarHolidays: async (id: number, tenantId: string) =>
-    (
-      await get<RawRow[] | { items?: RawRow[] }>(`/api/console/calendars/${id}/holidays`, {
-        tenantId,
-      }).then((data) => (Array.isArray(data) ? data : (data.items ?? [])))
-    ).map(normalizeHoliday),
+    {
+      const response = await get<RawRow[] | { items?: RawRow[] }>(
+        `/api/console/calendars/${id}/holidays`,
+        { tenantId },
+      )
+      const rows = Array.isArray(response) ? response : (response.items ?? [])
+      return rows.map(normalizeHoliday)
+    },
 
   createCalendarHoliday: (calendarId: number, body: GovernanceCalendarHolidaySavePayload) =>
     post<void>(`/api/console/calendars/${calendarId}/holidays`, {
@@ -360,10 +366,10 @@ export const governanceApi = {
   listQuotaPolicies: async (
     tenantId: string,
     filters?: { policyCode?: string; enabled?: boolean },
-  ) =>
-    (await listGovernanceRows('/api/console/quota-policies', tenantId, filters ?? {})).map(
-      normalizeQuotaPolicy,
-    ),
+  ) => {
+    const rows = await listGovernanceRows('/api/console/quota-policies', tenantId, filters ?? {})
+    return rows.map(normalizeQuotaPolicy)
+  },
 
   /** 显式设置目标 enabled 状态，不读取或反转服务端当前值。 */
   toggleQuotaPolicy: (id: number, tenantId: string, enabled: boolean) =>
@@ -378,10 +384,10 @@ export const governanceApi = {
   listAlertRoutings: async (
     tenantId: string,
     filters?: { routeCode?: string; team?: string; severity?: string; enabled?: boolean },
-  ) =>
-    (await listGovernanceRows('/api/console/alert-routings', tenantId, filters ?? {})).map(
-      normalizeAlertRouting,
-    ),
+  ) => {
+    const rows = await listGovernanceRows('/api/console/alert-routings', tenantId, filters ?? {})
+    return rows.map(normalizeAlertRouting)
+  },
 
   listAlertRoutingsPage: async (
     tenantId: string,

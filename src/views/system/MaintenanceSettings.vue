@@ -149,9 +149,12 @@
     affectedServicesText: '',
   })
 
-  const isScheduled = computed(
-    () => !!form.startsAt && new Date(form.startsAt).getTime() > currentTime.value,
-  )
+  const isScheduled = computed(() => {
+    if (!form.startsAt) return false
+    const startsAtDate = new Date(form.startsAt)
+    const startsAtTime = startsAtDate.getTime()
+    return startsAtTime > currentTime.value
+  })
   const statusLabel = computed(() =>
     !form.enabled
       ? t('maintenanceSettings.disabled')
@@ -165,20 +168,27 @@
     !form.enabled || isScheduled.value ? 'info' : form.readOnly ? 'warning' : 'danger',
   )
 
+  function toIsoTimestamp(value: string): string {
+    const date = new Date(value)
+    const isoText = date.toISOString()
+    return isoText
+  }
+
   function applyState(next: MaintenanceStatus) {
     state.value = next
     form.enabled = next.enabled
     form.readOnly = next.readOnly
     form.message = next.message ?? ''
-    form.etaAt = next.etaAt ? new Date(next.etaAt).toISOString() : ''
-    form.startsAt = next.startsAt ? new Date(next.startsAt).toISOString() : ''
+    form.etaAt = next.etaAt ? toIsoTimestamp(next.etaAt) : ''
+    form.startsAt = next.startsAt ? toIsoTimestamp(next.startsAt) : ''
     form.affectedServicesText = next.affectedServices.join('\n')
   }
 
   async function load() {
     loading.value = true
     try {
-      applyState(await getAdminMaintenanceState())
+      const maintenanceState = await getAdminMaintenanceState()
+      applyState(maintenanceState)
     } catch {
       ElMessage.error(t('maintenanceSettings.loadFailed'))
     } finally {
@@ -187,9 +197,11 @@
   }
 
   function affectedServices() {
-    return [
-      ...new Set(form.affectedServicesText.split(/[\n,;]+/).map((value) => value.trim())),
-    ].filter(Boolean)
+    const trimmedServices = form.affectedServicesText
+      .split(/[\n,;]+/)
+      .map((value) => value.trim())
+    const uniqueServices = [...new Set(trimmedServices)]
+    return uniqueServices.filter(Boolean)
   }
 
   async function save() {
@@ -208,7 +220,7 @@
       (form.enabled !== state.value.enabled ||
         (form.enabled && state.value.readOnly !== form.readOnly) ||
         form.startsAt !==
-          (state.value.startsAt ? new Date(state.value.startsAt).toISOString() : ''))
+          (state.value.startsAt ? toIsoTimestamp(state.value.startsAt) : ''))
     if (changesMode) {
       try {
         await confirmDanger({
@@ -239,8 +251,8 @@
         enabled: form.enabled,
         readOnly: form.readOnly,
         message: form.message.trim() || undefined,
-        etaAt: form.etaAt ? new Date(form.etaAt).toISOString() : undefined,
-        startsAt: form.enabled && form.startsAt ? new Date(form.startsAt).toISOString() : undefined,
+        etaAt: form.etaAt ? toIsoTimestamp(form.etaAt) : undefined,
+        startsAt: form.enabled && form.startsAt ? toIsoTimestamp(form.startsAt) : undefined,
         affectedServices: services,
       })
       applyState(updated)

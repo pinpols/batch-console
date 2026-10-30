@@ -26,11 +26,10 @@ function queryDatabase(tenantId: string, from: string, to: string): UsageRow[] {
   if (host !== '127.0.0.1' && host !== 'localhost') {
     throw new Error('Usage reconciliation only connects to a loopback PostgreSQL host')
   }
-  if (
-    !/^[a-z0-9-]{1,64}$/.test(tenantId) ||
+  const usageReconciliationQueryIsInvalid = !/^[a-z0-9-]{1,64}$/.test(tenantId) ||
     !/^\d{4}-\d{2}-\d{2}$/.test(from) ||
     !/^\d{4}-\d{2}-\d{2}$/.test(to)
-  ) {
+  if (usageReconciliationQueryIsInvalid) {
     throw new Error('Invalid usage reconciliation query parameters')
   }
   const username = process.env.BATCH_PLATFORM_DB_USERNAME

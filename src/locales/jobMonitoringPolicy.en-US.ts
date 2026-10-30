@@ -10,12 +10,12 @@ const jobMonitoringPolicy: Messages['jobMonitoringPolicy'] = {
   monitoringCategory: 'Monitoring category',
   allMonitoringCategories: 'All categories',
   categoryScheduled: 'Scheduled',
-  categoryDependency: 'Dependency-driven',
+  categoryDependency: 'Eligibility-driven',
   categoryRuntimeOnly: 'Runtime only',
   cronSchedule: 'Cron schedule',
   fixedRateSchedule: 'Fixed interval',
   manualSchedule: 'Manual',
-  manualScheduleHintShort: 'Runtime monitoring only',
+  manualScheduleHintShort: 'Start and completion rules not configured',
   enabledOnly: 'Enabled only',
   disabledOnly: 'Disabled only',
   enabled: 'Enabled',
@@ -24,6 +24,9 @@ const jobMonitoringPolicy: Messages['jobMonitoringPolicy'] = {
   startGrace: 'Started too late',
   completionDeadline: 'Completed too late',
   scheduledDeadlines: 'Start and completion deadlines',
+  completionMode: 'Completion deadline mode',
+  completionClockMode: 'Absolute completion time',
+  completionWindowMode: 'Relative completion window',
   thresholdSeconds: 'Threshold (seconds)',
   deadlineTime: 'Completion deadline',
   deadlineTimePlaceholder: 'Empty disables',
@@ -35,13 +38,13 @@ const jobMonitoringPolicy: Messages['jobMonitoringPolicy'] = {
   softRuntimeHint:
     'Alert when runtime exceeds this duration, measured from execution start. Disabled by default; set to 0 to disable.',
   startGraceHint:
-    'Standalone Cron jobs use the planned fire time. Dependent jobs use the later of the planned fire and upstream-ready times. New jobs default to 5 minutes; set to 0 to disable.',
+    'Measure from actual eligibility: the planned time for Cron, upstream readiness for dependencies, and node activation plus captured dependencies for Workflow children. Standalone manual runs without eligibility evidence are not classified as late. Set to 0 to disable.',
   completionDeadlineHint:
-    'Cron jobs without an upstream dependency only: alert if the instance is unfinished at the local deadline on its scheduled day. Leave empty to disable. Timezone: {timezone}',
+    'Use the scheduled day for standalone Cron jobs and the business date for Workflow children. Leave empty to disable. Timezone: {timezone}',
   dependencyCompletionHint:
-    'Dependent jobs are measured from eligibility; for Cron jobs, use the later of the planned fire and upstream-ready times. Set to 0 to disable.',
+    'Measure dependent jobs and Workflow children from their actual eligibility. A standalone manual run needs eligibility evidence. Set to 0 to disable.',
   manualScheduleHint:
-    'Standalone fixed-rate and manual/API/external jobs support runtime alerts only. Jobs with an upstream dependency also support start and completion deadlines.',
+    'Policies can be configured in advance. Start and completion alerts require actual schedule or eligibility evidence. Standalone manual runs never infer lateness from creation time.',
   alertOnlyHint:
     'These thresholds emit alerts only; they do not pause, cancel, or change job state.',
   secondsValue: '{seconds} sec',

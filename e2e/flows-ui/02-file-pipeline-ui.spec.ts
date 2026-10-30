@@ -36,7 +36,7 @@ test.describe('UI Flow 02: file arrival → pipeline visibility', () => {
       await expect(page.locator('.el-drawer:visible, .el-dialog:visible').first()).toBeVisible({ timeout: 5000 })
       // 关闭
       await page.keyboard.press('Escape')
-      await page.waitForTimeout(300)
+      await expect(page.locator('.el-drawer:visible, .el-dialog:visible')).toHaveCount(0)
     }
   })
 })

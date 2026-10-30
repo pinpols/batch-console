@@ -38,7 +38,9 @@ function shouldIgnoreByDefault(entry: NetworkErrorEntry): boolean {
   if (entry.status === 409 && /\/auth\/stream\/ticket\b/.test(entry.url)) return true
   // 页面主体功能可用但当前账号没有实时流 ticket 权限时,前端会降级到手动刷新。
   // 该权限矩阵由专门 RBAC/SSE 用例覆盖,零错误巡检不应被增强型实时订阅噪声淹没。
-  if ((entry.status === 401 || entry.status === 403) && /\/auth\/stream\/ticket\b/.test(entry.url))
+  const isStreamTicketPermissionRejection =
+    (entry.status === 401 || entry.status === 403) && /\/auth\/stream\/ticket\b/.test(entry.url)
+  if (isStreamTicketPermissionRejection)
     return true
   return IGNORED_DEFAULT_URL_HINTS.some((r) => r.test(entry.url))
 }

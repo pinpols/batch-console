@@ -19,7 +19,7 @@
 # 步骤定义:
 #   0  前置条件检查(node / BE / playwright / 端口 / 磁盘)
 #   1  依赖刷新(package-lock 变才 npm ci)
-#   2  类型检查 typecheck（vue-tsc --noEmit）
+#   2  类型检查 typecheck（TS/Vue 应用源码与 Vite 配置）
 #   3  代码检查 lint:check（eslint）
 #   4  国际化检查 check:i18n（zh / en 1:1）
 #   5  契约检查 gen:api:check（后端 OpenAPI 漂移）

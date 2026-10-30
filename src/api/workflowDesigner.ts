@@ -12,6 +12,10 @@
 
 import { get, put, del } from '@/api/client'
 import type { WorkflowDefinitionDetailResponse } from '@/types/console-api'
+import type { components } from '@/types/api.generated'
+
+export type WorkflowDefinitionVersionSummary =
+  components['schemas']['WorkflowDefinitionVersionSummaryResponse']
 
 /** PUT /full 请求体:与 BE `WorkflowDefinitionFullUpdateRequest` 对齐(nested:definition 包 nodes/edges) */
 export interface WorkflowDefinitionFullUpdateRequest {
@@ -21,12 +25,17 @@ export interface WorkflowDefinitionFullUpdateRequest {
     workflowName: string
     workflowType: string
     enabled: boolean
+    scheduleType?: string
+    scheduleExpr?: string | null
+    timezone?: string | null
+    triggerMode?: string
+    calendarCode?: string | null
+    dependsOnJobCode?: string | null
     nodes: Array<{
       nodeCode: string
       nodeName: string
       nodeType: string
       relatedJobCode?: string
-      relatedPipelineCode?: string
       nodeParams?: string
       nodeOrder?: number
       retryMaxCount?: number
@@ -75,6 +84,12 @@ export const workflowDesignerApi = {
   ): Promise<WorkflowDefinitionDetailResponse> =>
     get<WorkflowDefinitionDetailResponse>(
       `/api/console/workflow-definitions/${id}/versions/${version}`,
+      { tenantId },
+    ),
+
+  listVersions: (id: number, tenantId: string): Promise<WorkflowDefinitionVersionSummary[]> =>
+    get<WorkflowDefinitionVersionSummary[]>(
+      `/api/console/workflow-definitions/${id}/versions`,
       { tenantId },
     ),
 

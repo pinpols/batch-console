@@ -56,7 +56,9 @@ function nodesEqual(
     if (k === 'nodeCode' || k === 'nodeName' || k === 'nodeType') continue
     const av = (a as Record<string, unknown>)[k]
     const bv = (b as Record<string, unknown>)[k]
-    if (JSON.stringify(av ?? null) !== JSON.stringify(bv ?? null)) return false
+    const leftValueJson = JSON.stringify(av ?? null)
+    const rightValueJson = JSON.stringify(bv ?? null)
+    if (leftValueJson !== rightValueJson) return false
   }
   return true
 }
@@ -97,8 +99,10 @@ export function diffDefinitions(
     }
   }
 
-  const fromEdgeMap = new Map(fromEdges.map((e) => [edgeKey(e), e]))
-  const toEdgeMap = new Map(toEdges.map((e) => [edgeKey(e), e]))
+  const fromEdgeEntries = fromEdges.map((edge) => [edgeKey(edge), edge] as const)
+  const fromEdgeMap = new Map(fromEdgeEntries)
+  const toEdgeEntries = toEdges.map((edge) => [edgeKey(edge), edge] as const)
+  const toEdgeMap = new Map(toEdgeEntries)
   const allEdgeKeys = new Set([...fromEdgeMap.keys(), ...toEdgeMap.keys()])
 
   const edges: EdgeDiffEntry[] = []

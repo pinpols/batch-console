@@ -1,5 +1,7 @@
 # Phase 3 — 真实用户行为端到端闭环
 
+> **历史归档**：本文是 2026-05 QA campaign 的历史记录，端点、角色、环境、数量、PASS/SKIP 和待办均只反映执行当时的状态。当前测试与验收见[测试指南](../../../testing/README.md)和[CI 手册](../../../runbook/ci.md)。
+
 > 生成: 2026-05-18
 > 范围: 一个登录态用户跨页 CRUD 闭环 + network watchdog 全程兜底
 > spec: [e2e/user-journey.spec.ts](../../../../e2e/user-journey.spec.ts)

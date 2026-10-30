@@ -1,22 +1,15 @@
-# 09 — 自助服务
+# 自助服务请求样本
 
-## 测的接口
-- POST `/api/console/self-service/jobs/rerun-request`
-- POST `/api/console/self-service/jobs/compensation-request`
-- POST `/api/console/tenants/quota/request`
+本页是保留输入与当前测试入口的目录说明。执行范围与准备/清理规则见[本目录总览](../README.md)和[执行说明](../EXEC-MATRIX.md)。
 
-## 前置依赖
-需要 03-job-instance-states 里至少:
-- 1 × SUCCEED(测 rerun-request)
-- 1 × FAILED(测 compensation-request)
+## 保留资产
 
-## payload 样本(待补)
-- `rerun-request.json` — 指定 jobCode + bizDate
-- `compensation-request.json` — 指定 instanceId + 补偿原因
-- `quota-request.json` — 配额申请
+- [`payloads/rerun-request.json`](./payloads/rerun-request.json)
+- [`payloads/compensation-request.json`](./payloads/compensation-request.json)
+- [`payloads/quota-request.json`](./payloads/quota-request.json)
 
-## FE 触发路径
-**自助服务** `/self-service`(普通租户用户也能进)
+## 当前入口与适用性
 
-## 用户
-建议用 OPERATOR 角色测,看权限网关是否正确放行。
+现行消费方见 [`src/api/selfServiceJobs.ts`](../../src/api/selfServiceJobs.ts)、[`src/api/tenantSelfService.ts`](../../src/api/tenantSelfService.ts)；场景见 [`self-service.spec.ts`](../../e2e/self-service.spec.ts)与 [`self-service-forms.spec.ts`](../../e2e/self-service-forms.spec.ts)。
+
+请求目标、权限、是否需要审批以及成功后的业务状态，以当前后端契约和具体测试断言为准；不从样本中的固定作业或实例推断环境已准备。

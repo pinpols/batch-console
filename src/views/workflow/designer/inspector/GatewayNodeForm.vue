@@ -18,7 +18,8 @@
 
   function readAttrs(node: DesignerNode): GatewayAttrs {
     const attrs = (node.attrs ?? {}) as Record<string, unknown>
-    const mode = String(attrs.joinMode ?? '').toUpperCase()
+    const rawMode = String(attrs.joinMode ?? '')
+    const mode = rawMode.toUpperCase()
     const threshold = Number(attrs.joinThreshold)
     return {
       joinMode: ['ALL', 'ANY', 'N_OF'].includes(mode) ? (mode as JoinMode) : undefined,
@@ -46,6 +47,12 @@
     }
     return errors
   })
+
+  function localizedFieldError(field: string, params?: { count: number }): string | undefined {
+    const messageKey = fieldErrors.value.get(field)
+    if (!messageKey) return undefined
+    return params ? t(messageKey, params) : t(messageKey)
+  }
 
   watch(
     () => [props.node.id, props.node.nodeName, JSON.stringify(props.node.attrs ?? {})],
@@ -118,7 +125,7 @@
     <template v-if="isJoin">
       <el-form-item
         :label="t('workflowDesignerMvp.field.joinMode')"
-        :error="fieldErrors.get('joinMode') ? t(fieldErrors.get('joinMode')!) : undefined"
+        :error="localizedFieldError('joinMode')"
         required
       >
         <el-radio-group
@@ -137,11 +144,7 @@
       <el-form-item
         v-if="local.joinMode === 'N_OF'"
         :label="t('workflowDesignerMvp.field.joinThreshold')"
-        :error="
-          fieldErrors.get('joinThreshold')
-            ? t(fieldErrors.get('joinThreshold')!, { count: incomingCount })
-            : undefined
-        "
+        :error="localizedFieldError('joinThreshold', { count: incomingCount })"
         required
       >
         <el-input-number

@@ -3,6 +3,7 @@ import { fetchAllPageItems } from '@/api/adapters'
 import { launchBatchDayCatchUp } from '@/api/batchDays'
 import { instanceApi } from '@/api/instance'
 import { queryJobInstances, type InstanceQueryParams } from '@/api/queries/instances'
+import { workflowApi } from '@/api/workflow'
 import { i18n } from '@/locales'
 import { todayBusinessDate } from '@/utils/datetime'
 import type { components } from '@/types/api.generated'
@@ -28,11 +29,6 @@ export type InstanceQuery = InstanceQueryParams
 
 export type ExecutionMode = NonNullable<JobDefinitionCreateRequest['executionMode']>
 export type JobBundlePayload = ConfigSyncBundlePayload
-// 普通触发仅取实例号分支，dry-run 的对象分支由专用调用方消费。
-type TriggeredInstanceNo = Extract<
-  NonNullable<components['schemas']['CommonResponseJobTrigger']['data']>,
-  string
->
 
 async function resolveJobDefinitionId(jobCode: string, tenantId: string) {
   // 传入 jobCode 让后端过滤（后端不支持时忽略该参数，回退到全量）
@@ -115,14 +111,19 @@ export const jobApi = {
     return patch<void>(`/api/console/job-definitions/${id}`, { tenantId, enabled })
   },
 
-  trigger: (jobCode: string, tenantId: string, payload?: object) =>
-    post<TriggeredInstanceNo>('/api/console/jobs/trigger', {
+  trigger: async (workflowDefinitionId: number, tenantId: string, payload?: object) => {
+    if (!Number.isSafeInteger(workflowDefinitionId) || workflowDefinitionId <= 0) {
+      throw new Error('Job has no managed Workflow')
+    }
+    const bizDate = todayBusinessDate()
+    const serializedPayload = payload ? JSON.stringify(payload) : '{}'
+    return workflowApi.trigger(workflowDefinitionId, {
       tenantId,
-      jobCode,
-      bizDate: todayBusinessDate(),
+      bizDate,
       triggerType: 'MANUAL',
-      payload: payload ? JSON.stringify(payload) : '{}',
-    }),
+      payload: serializedPayload,
+    })
+  },
 
   listInstances: (query: InstanceQuery) => queryJobInstances(query),
 
@@ -168,6 +169,32 @@ export const jobApi = {
     reason?: string
   }) => post<string>('/api/console/jobs/rerun', body),
 
+  /** POST /api/console/jobs/compensations：为精确失败的 Workflow JOB 节点重放提交审批。 */
+  previewFailedWorkflowJobNode: (body: {
+    tenantId: string
+    workflowRunId: number
+    workflowNodeRunId: number
+    reason: string
+  }) => post<components['schemas']['ConsoleWorkflowNodeReplayPreviewResponse']>(
+    '/api/console/jobs/workflow-node/replay-preview', body,
+  ),
+
+  replayFailedWorkflowJobNode: (body: {
+    tenantId: string
+    jobCode: string
+    bizDate: string
+    compensationType: 'WORKFLOW_NODE'
+    targetId: number
+    sourceWorkflowRunId: number
+    sourceWorkflowNodeRunId: number
+    reason: string
+    operationKey: string
+    previewToken: string
+    resultPolicy: string
+    configVersionPolicy: string
+    configVersion?: number
+  }) => post<string>('/api/console/jobs/compensations', body),
+
   /** PATCH /api/console/job-definitions/batch */
   batchToggle: (body: { tenantId: string; ids: number[]; enabled: boolean }) =>
     patch<unknown>('/api/console/job-definitions/batch', body),
@@ -177,11 +204,11 @@ export const jobApi = {
     post<number>(`/api/console/job-definitions/${id}/clone`, { tenantId, newJobCode }),
 
   createBundle: (body: JobBundleCreateRequest) =>
-    post<Record<string, unknown>>('/api/console/jobs/bundle/create', body),
+    post<components['schemas']['JobBundleResultResponse']>('/api/console/jobs/bundle/create', body),
 
   exportBundle: (tenantId: string, jobCode: string) =>
     get<Record<string, unknown>>('/api/console/jobs/bundle/export', { tenantId, jobCode }),
 
   importBundle: (body: JobBundleImportRequest) =>
-    post<Record<string, unknown>>('/api/console/jobs/bundle/import', body),
+    post<components['schemas']['JobBundleResultResponse']>('/api/console/jobs/bundle/import', body),
 }

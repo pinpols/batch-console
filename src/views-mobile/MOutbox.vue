@@ -38,13 +38,15 @@
           </div>
         </div>
         <div
-          v-if="row.retryStatus === 'FAILED' || row.retryStatus === 'GIVE_UP'"
+          v-if="
+            canMutateConfig && (row.retryStatus === 'FAILED' || row.retryStatus === 'EXHAUSTED')
+          "
           class="m-card__actions"
         >
           <button
             class="m-btn m-btn--primary"
             data-track="outbox.republish"
-            :disabled="busyId === row.id"
+            :disabled="busyId !== null || !positiveLongId(row.outboxEventId)"
             @click="doRepublish(row)"
           >
             {{ t('mobile.outbox.republish') }}
@@ -56,7 +58,7 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, ref } from 'vue'
+  import { computed, ref, watch } from 'vue'
   import { useTenantReload } from '@/composables/useTenantReload'
   import { useI18n } from 'vue-i18n'
   import { RefreshCw as Refresh } from '@lucide/vue'
@@ -70,9 +72,12 @@
   import { queryOutboxRetries } from '@/api/observabilityQueries'
   import { republishOutbox } from '@/api/ops'
   import type { ConsoleOutboxRetryLogResponse } from '@/types/console-api'
+  import { usePermission } from '@/composables/usePermission'
+  import { positiveLongId } from '@/utils/positiveLongId'
 
   const { t, te } = useI18n({ useScope: 'global' })
   const tenant = useTenantStore()
+  const { canMutateConfig } = usePermission()
   const { data: metaEnums } = useConsoleMetaEnumsQuery()
   function resolveEnumLabel(group: string, value?: string | null): string {
     if (!value) return '—'
@@ -84,6 +89,18 @@
   const loading = ref(false)
   const rows = ref<ConsoleOutboxRetryLogResponse[]>([])
   const busyId = ref<number | null>(null)
+  let requestSequence = 0
+  let tenantRevision = 0
+  watch(
+    () => tenant.tenantId,
+    () => {
+      tenantRevision += 1
+      requestSequence += 1
+      rows.value = []
+      loading.value = false
+    },
+    { flush: 'sync' },
+  )
   const filter = ref<'all' | 'failed' | 'giveup' | 'pending' | 'published'>('failed')
 
   const filterOptions = computed(() => [
@@ -97,37 +114,54 @@
   const filtered = computed(() => {
     if (filter.value === 'all') return rows.value
     if (filter.value === 'failed') return rows.value.filter((r) => r.retryStatus === 'FAILED')
-    if (filter.value === 'giveup') return rows.value.filter((r) => r.retryStatus === 'GIVE_UP')
-    if (filter.value === 'pending') return rows.value.filter((r) => r.retryStatus === 'PENDING')
-    if (filter.value === 'published') return rows.value.filter((r) => r.retryStatus === 'PUBLISHED')
+    if (filter.value === 'giveup') return rows.value.filter((r) => r.retryStatus === 'EXHAUSTED')
+    if (filter.value === 'pending') return rows.value.filter((r) => r.retryStatus === 'WAITING')
+    if (filter.value === 'published') return rows.value.filter((r) => r.retryStatus === 'SUCCESS')
     return rows.value
   })
 
   function statusChipClass(s?: string) {
-    if (s === 'FAILED' || s === 'GIVE_UP') return 'm-chip--danger'
-    if (s === 'PUBLISHED') return 'm-chip--success'
-    if (s === 'PENDING') return 'm-chip--warning'
+    if (s === 'FAILED' || s === 'EXHAUSTED') return 'm-chip--danger'
+    if (s === 'SUCCESS') return 'm-chip--success'
+    if (s === 'WAITING') return 'm-chip--warning'
     return 'm-chip--info'
   }
 
   async function load() {
+    const tenantId = tenant.tenantId
+    if (!tenantId) return
+    const sequence = ++requestSequence
     loading.value = true
     try {
-      rows.value = await queryOutboxRetries(tenant.tenantId)
+      const result = await queryOutboxRetries(tenantId)
+      if (sequence === requestSequence && tenant.tenantId === tenantId) rows.value = result
     } catch {
-      rows.value = []
-      ElMessage.error(t('mobile.common.loadFail'))
+      if (sequence === requestSequence && tenant.tenantId === tenantId) {
+        rows.value = []
+        ElMessage.error(t('mobile.common.loadFail'))
+      }
     } finally {
-      loading.value = false
+      if (sequence === requestSequence) loading.value = false
     }
   }
 
-  // 重投 = 构造性,直接执行 + toast
   async function doRepublish(row: ConsoleOutboxRetryLogResponse) {
+    const tenantId = tenant.tenantId
+    const revision = tenantRevision
+    if (
+      !tenantId ||
+      row.tenantId !== tenantId ||
+      !canMutateConfig.value ||
+      busyId.value !== null ||
+      !positiveLongId(row.outboxEventId)
+    )
+      return
     busyId.value = row.id
     try {
-      await republishOutbox(tenant.tenantId, [row.id])
-      ElMessage.success(t('mobile.outbox.republishDoneToast'))
+      const result = await republishOutbox(tenantId, [row.outboxEventId])
+      if (revision !== tenantRevision) return
+      if (result.resetCount === 1) ElMessage.success(t('mobile.outbox.republishDoneToast'))
+      else ElMessage.warning(t('mobile.outbox.republishNotReset'))
       await load()
     } finally {
       busyId.value = null

@@ -150,12 +150,11 @@
   const opResultOptions = computed(() => pickMetaEnumGroup(metaEnums.value, 'operationResult'))
 
   function decodeHtmlEntities(value: string): string {
-    return value
-      .replace(/&quot;|&#34;/g, '"')
-      .replace(/&#39;|&apos;/g, "'")
-      .replace(/&lt;/g, '<')
-      .replace(/&gt;/g, '>')
-      .replace(/&amp;/g, '&')
+    const decodedQuotes = value.replace(/&quot;|&#34;/g, '"')
+    const decodedApostrophes = decodedQuotes.replace(/&#39;|&apos;/g, "'")
+    const decodedLessThan = decodedApostrophes.replace(/&lt;/g, '<')
+    const decodedGreaterThan = decodedLessThan.replace(/&gt;/g, '>')
+    return decodedGreaterThan.replace(/&amp;/g, '&')
   }
 
   function formatDetailSummary(value?: string | null): string {

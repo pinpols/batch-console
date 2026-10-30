@@ -58,7 +58,7 @@ function normalizeDelivery(row: NotificationDeliveryWire) {
 //  - 所有端点的 tenantId 均为 query 参数（不在 body 内）
 //  - 通知渠道以 channelCode(string) 为路径标识
 //  - 订阅规则以 ruleId(int64) 为路径标识
-//  - 请求/响应体后端为 Map<String, Object>，此处保留 unknown
+//  - 响应字段以生成契约为准；动态 JSON 载荷保留 unknown
 
 // ── 通知渠道 ──
 

@@ -221,7 +221,8 @@
       for (const r of rows) {
         const day = String(r.day ?? '')
         if (!day) continue
-        const status = String(r.status ?? '').toUpperCase()
+        const statusText = String(r.status ?? '')
+        const status = statusText.toUpperCase()
         const count = asNum(r.count)
         total += count
         const item = byDay.get(day) ?? { day, success: 0, failed: 0 }
@@ -255,12 +256,18 @@
   }
 
   function fmtDuration(seconds: number): string {
-    const s = Math.max(0, Math.round(seconds))
+    const roundedSeconds = Math.round(seconds)
+    const s = Math.max(0, roundedSeconds)
     if (s < 60) return `${s}s`
     const m = Math.floor(s / 60)
     if (m < 60) return `${m}m ${s % 60}s`
     const h = Math.floor(m / 60)
     return `${h}h ${m % 60}m`
+  }
+
+  function trendAxisScale(maxValue: number): number {
+    const roundedToFive = Math.ceil(maxValue / 5) * 5
+    return Math.max(1, roundedToFive)
   }
 
   // KPI 行:总执行/成功率/平均耗时/SLA 达标率(缺数据显示 —,不编造)
@@ -310,7 +317,7 @@
       return byDay.get(key) ?? { day: key, success: 0, failed: 0 }
     })
     const max = days.reduce((m, row) => Math.max(m, row.success + row.failed), 0)
-    const scale = Math.max(1, Math.ceil(max / 5) * 5)
+    const scale = trendAxisScale(max)
     return days.map((r) => {
       const sum = r.success + r.failed
       return {
@@ -325,8 +332,9 @@
     })
   })
   const trendYAxisTicks = computed(() => {
-    const max = Math.max(...trendDays.value.map((day) => day.success + day.failed), 0)
-    const scale = Math.max(1, Math.ceil(max / 5) * 5)
+    const dailyTotals = trendDays.value.map((day) => day.success + day.failed)
+    const max = Math.max(...dailyTotals, 0)
+    const scale = trendAxisScale(max)
     return [scale, Math.round(scale / 2), 0]
   })
 
@@ -410,7 +418,8 @@
   ])
 
   const filteredReports = computed(() => {
-    const k = keyword.value.trim().toLowerCase()
+    const trimmedKeyword = keyword.value.trim()
+    const k = trimmedKeyword.toLowerCase()
     if (!k) return reports.value
     return reports.value.filter((r) => {
       const hay = `${r.label} ${r.desc} ${r.file} ${r.badge ?? ''}`.toLowerCase()

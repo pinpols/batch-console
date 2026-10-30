@@ -8,12 +8,29 @@
 >
 > 配对后端约定见 [`../file-batch-system/AGENTS.md`](../file-batch-system/AGENTS.md)。
 
+多阶段、跨仓/跨模块、跨轮次或高风险任务，按配对后端 Skill 指南维护原始目标、范围、验收、决定、进度与下一步，并在关键里程碑对照当前 diff/证据做只读纠偏；不得因上下文变长自行改目标或扩展文件/操作范围。
+
+改造方案、架构/系统评审、治理审查、整改计划和验收结论必须主动记录到对应权威文档，不等用户逐次提醒；前端文档类型按 `docs/README.md` 与 `docs/engineering/agent-skills-guide.md` 导航，双仓通用归档规则见配对后端 `docs/standards/document-governance.md`。优先更新已有方案、工程规范、审计/报告或台账；短小日常修改不新建文档。评估和评审记录发现与建议，不自动授权实施。
+
+编辑前检查当前分支、暂存/未暂存/未跟踪文件和差异，保留已有改动，不做无关清理或覆盖。
+
+## 文档查找与更新
+
+- 本仓“去哪找、写到哪里”先查 `docs/README.md`；系统与跨仓改动的同步范围查 [配对后端文档路由](../file-batch-system/docs/standards/document-routing-guide.md)。本仓目录继续遵循前端索引，不复制后端文件夹布局。
+- 长期 UI/架构/接口/操作说明维护原文，阶段方案在原文件更新范围和状态，执行日志追加批次，每轮审计/验收另存日期记录。系统行为或契约变化必须同步实际受影响资产，不能只追加修复报告。
+- 使用 `frontend-docs-release-governance` 维护前端资料；后端系统/数据库/API 资产留在后端权威位置，前端引用并同步生成类型与调用方，避免双份规范漂移。
+
 ## Skills
 
-按任务加载 `.agents/skills/` 下的工作流。先按任务层级选择总控，再加载专项技能，避免每次重新发明审查清单：
+**每项任务开始前，必须先查阅 [`Agent Skill 使用指南`](docs/engineering/agent-skills-guide.md)，按任务选择一个最匹配的总控和必要的专项 Skill。请求命中某个 Skill 的适用范围时，必须读取并遵循对应完整 `SKILL.md`，不能只凭技能名称或本索引执行；用户明确点名的 Skill 必须使用。不要机械加载全部 Skill；没有匹配 Skill 时遵循本文件和权威项目文档，不强行套用无关流程。Skill 提供工作方法，不扩大用户对写入、部署或 Git/外部状态变更的授权。**
+
+技能目录如下，具体选择和组合见指南：
 
 - **双仓周期治理**：`cross-repo-governance-review`，用于月度/季度治理、全量深扫、规范防退化、代码腐化、发布前复核和事故后复盘，固定覆盖前后端 20 个领域。
-- **前端综合审查**：`frontend-quality-review`，用于 UI、交互、代码可读性、可访问性和浏览器安全的跨领域审查。
+- **前端Bug与综合质量审查**：`frontend-quality-review`，负责代码Bug/变更和跨领域结论，分别记录功能缺陷、可用性/可访问性、规范偏差及建议。
+- **UI、交互与视觉专项**：`frontend-ui-ia-review`，维护页面任务、布局美观、组件一致性及常见交互问题的检查方法；纯UI任务直接使用，不另建入口。
+- **前端工程与规约治理**：`frontend-engineering-governance`，负责架构、可读性/规约和门禁/供应链；Bug和UI证据按需复用既有专项。
+- **开发与运维入口**：本地前端构建/容器联调使用 `frontend-deploy-runtime`、`frontend-testing-ci`；共享开发环境操作参考配对后端 `developer-workflow`，平台运行态分析使用后端严格只读的 `operations-analysis`。
 
 **前端专项：**
 
@@ -74,6 +91,7 @@
 - 移动页面不重复编写自动化测试；业务逻辑由共享模块和桌面测试覆盖。若移动端引入独立业务逻辑或出现移动端专属回归，应为该逻辑/缺陷补针对性测试。
 - Playwright 的运行范围和环境以 [`docs/runbook/ci.md`](docs/runbook/ci.md) 与 `playwright.config.cjs` 为准；不要把 mock/fixture 验证描述成真实后端验收。
 - 写测试前阅读 [`docs/testing/README.md`](docs/testing/README.md)，复用既有 helper 和测试约定。
+- 行为变更优先先写能表达用户可观察验收条件的测试，并在可行时确认目标测试先因该行为失败，再实现；按风险选最小有效层级，状态/异步/契约优先组件或真实浏览器路径。文档、格式和纯机械变更不强制测试先行。测试执行范围按用户请求和对应 Skill 决定。
 - 测试输入与配置优先复用权威来源和共享 fixture；契约断言保留独立预期值，避免实现与期望同源而漏检漂移。Vitest、Playwright 和 storage-state 脚本中的持久化键、平台服务地址及 localStorage 桩由 `check:test-fixture-sources` 守护。详见 [`docs/testing/README.md` §9.1](docs/testing/README.md#91-测试数据与配置来源)。
 
 ## 目录速查

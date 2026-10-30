@@ -34,6 +34,7 @@ export function useMaintenancePolling(
   async function poll() {
     try {
       const s = await getMaintenanceStatus()
+      if (stopped) return
       app.setMaintenance({
         ...s,
         adminBypass: s.active && auth.hasPermission('ROLE_ADMIN'),
@@ -42,11 +43,20 @@ export function useMaintenancePolling(
         isStale: false,
       })
     } catch (error) {
+      if (stopped) return
       const last = app.maintenance.lastSyncedAt
       const staleAfterMs = Math.max(normalIntervalMs * 2, 60_000)
+      const syncError = error instanceof Error ? error.message : String(error)
+      let isStale = !last
+      if (last) {
+        const observedAtMs = Date.now()
+        const lastSyncedAtMs = Date.parse(last)
+        const elapsedSinceSyncMs = observedAtMs - lastSyncedAtMs
+        isStale = elapsedSinceSyncMs > staleAfterMs
+      }
       app.setMaintenance({
-        syncError: error instanceof Error ? error.message : String(error),
-        isStale: !last || Date.now() - Date.parse(last) > staleAfterMs,
+        syncError,
+        isStale,
       })
     } finally {
       schedule()

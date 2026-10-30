@@ -46,7 +46,9 @@ for (const name of files) {
 
 if (violations.length) {
   console.error(`❌ 不通过 | code=${gateCode} | gate=${gateName} | exit_code=1`)
-  console.error('文档 JS chunk 超过通用预算(raw 850KB/gzip 220KB)或搜索索引预算(raw 4.5MB/gzip 1.21MB)')
+  console.error(
+    '文档 JS chunk 超过通用预算(raw 850KB/gzip 220KB)或搜索索引预算(raw 4.5MB/gzip 1.23MB)',
+  )
   violations.forEach((item) => console.error(`  - ${item}`))
   process.exit(1)
 }

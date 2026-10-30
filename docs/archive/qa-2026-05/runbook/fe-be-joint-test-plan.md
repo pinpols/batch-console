@@ -283,7 +283,7 @@ npx playwright test \
 ```
 
 ### 5.4 失败优先级
-- BE 字段名/类型 drift → 写 `be-fix-backlog.md`
+- BE 字段名/类型 drift → 当时写入 `be-fix-backlog-2026-05-16.md`；当前缺陷应按配对后端待办入口登记。
 - FE 选择器/文案过时 → 直接修 spec
 - seed 数据本身错(如外键不存在)→ 修 seed
 
@@ -858,7 +858,7 @@ bash tools/integration/webhook-real.sh
 - `docs/runbook/fe-be-joint-test-report-cplus.md` —— C+ 档总结
 - `docs/runbook/fe-be-joint-test-report-pro.md` —— Pro 档总结(可选)
 - `docs/runbook/qa-bplus-phase-reports/` / `qa-cplus-phase-reports/` / `qa-pro-phase-reports/`
-- `docs/runbook/be-fix-backlog.md` —— 真跑出来的新 BE bug 追加
+- `docs/archive/qa-2026-05/be-fix-backlog-2026-05-16.md` —— 本轮归档的历史清单；新 BE bug 应登记到配对后端当前待办。
 - `e2e/.visual-baseline/` —— 视觉回归基线截图
 - `tools/load-test-results/` —— k6 性能压测报告 + Grafana 仪表板
 

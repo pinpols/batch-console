@@ -86,4 +86,30 @@ describe('notification response adapters', () => {
       },
     ])
   })
+
+  it('preserves masked JSON and maps delivery diagnostics from the wire response', async () => {
+    mockedGet.mockResolvedValue([
+      {
+        id: 3,
+        tenant_id: 'ta',
+        channel_code: 'mail',
+        event_type: 'JOB_FAILED',
+        delivery_status: 'FAILED',
+        attempt: 2,
+        error_message: 'connection unavailable',
+        payload_json: { token: '****', message: 'example' },
+        error_args: { password: '****' },
+      },
+    ] as never)
+
+    await expect(listNotificationDeliveryLogs('ta')).resolves.toMatchObject([
+      {
+        channelCode: 'mail',
+        attempt: 2,
+        errorMessage: 'connection unavailable',
+        payloadJson: { token: '****', message: 'example' },
+        errorArgs: { password: '****' },
+      },
+    ])
+  })
 })

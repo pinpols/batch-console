@@ -94,7 +94,6 @@ describe('permission navigation filtering', () => {
 
     expect(definitions?.children.map((item) => item.path)).toEqual([
       '/jobs/definitions',
-      '/jobs/pipelines',
       '/workflow/definitions',
       '/workflow/designer',
       '/config/tenant-package',
@@ -126,7 +125,7 @@ describe('permission navigation filtering', () => {
     const visiblePaths = navigationGroups.flatMap((group) =>
       group.children.filter((item) => !item.hidden).map((item) => item.path),
     )
-    expect(visiblePaths).toHaveLength(29)
+    expect(visiblePaths).toHaveLength(28)
     expect(visiblePaths).toContain('/system/maintenance')
     expect(new Set(visiblePaths).size).toBe(visiblePaths.length)
 

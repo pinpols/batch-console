@@ -1,40 +1,14 @@
-# 03 — JobInstance 状态机
+# 实例状态场景资料
 
-## 测的接口
-- POST `/api/console/instances/{id}/cancel`
-- POST `/api/console/instances/{id}/terminate`
-- POST `/api/console/instances/partitions/{partitionId}/cancel`
-- POST `/api/console/instances/partitions/{partitionId}/retry`
-- POST `/api/console/jobs/rerun`
-- POST `/api/console/jobs/trigger`
-- POST `/api/console/self-service/jobs/rerun-request`
-- POST `/api/console/self-service/jobs/compensation-request`
+本页是保留输入与当前测试入口的目录说明。执行范围与准备/清理规则见[本目录总览](../README.md)和[执行说明](../EXEC-MATRIX.md)。
 
-## 需要的状态(每租户至少一份)
-- 1 × **RUNNING** instance(测 cancel / terminate)
-- 1 × **SUCCEEDED** instance(测 rerun-request / compensation-request)
-- 1 × **FAILED** instance + 1 × FAILED partition(测 partition retry)
-- 1 × **BLOCKED** instance(测人工解锁)
+## 保留资产
 
-## 怎么造
+- [历史实例 SQL](../archive/03-job-instance-states/seed-job-instances.sql)。
+- [历史触发与等待脚本](../archive/03-job-instance-states/trigger-and-wait.sh)。
 
-### 方式 A:trigger 真跑(推荐 — 接近真实)
-```bash
-# 用 admin 登录 + X-Tenant-Id: ta,触发某 jobCode
-./trigger-job.sh ta jobCode_a1
-# 等几秒看 instance 列表
-```
-脚本待写在 `trigger-and-wait.sh`。
+## 当前入口与适用性
 
-### 方式 B:BE SQL 种子(快但需找 BE 同事)
-```sql
--- TBD: 让 BE 出 seed-job-instances.sql
-INSERT INTO job_instance (...) VALUES (RUNNING_sample), (SUCCEED_sample), (FAILED_sample);
-INSERT INTO partition_instance (...) VALUES (FAILED_partition);
-```
+当前场景见 [`monitor-ops.spec.ts`](../../e2e/monitor-ops.spec.ts)、[`job-ops.spec.ts`](../../e2e/job-ops.spec.ts)和共享测试 helper。操作目标必须具有当前接口要求的租户、实例标识与状态；状态和调度语义以后端实现及生成类型为准。
 
-## FE 触发路径
-- `/monitor/job-instances` — 列表行操作
-- `/monitor/job-instances/:id` — 详情页按钮
-- `/monitor/job-instances/:id/partitions` — 分片操作
-- `/self-service` — 自助申请补/重跑
+本目录不再提供直接写数据库或固定等待后视为执行成功的当前步骤。历史 SQL 的字段、约束、作业引用和状态需要在目标后端重新核对。

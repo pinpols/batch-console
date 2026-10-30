@@ -51,9 +51,8 @@ export function useOpsSummary() {
   const outboxHealthOption = ref<Record<string, unknown>>({})
   // 扩展(extra): gauge / 单值
   // 初始 emptyOption('加载中…'),避免 loadCharts 还没跑完时 VChart 拿到 {} 渲染空白卡
-  const slaGaugeOption = ref<Record<string, unknown>>(
-    emptyOption(t('common.loading'), { axes: false }),
-  )
+  const initialSlaGaugeOption = emptyOption(t('common.loading'), { axes: false })
+  const slaGaugeOption = ref<Record<string, unknown>>(initialSlaGaugeOption)
 
   // 用品牌主题(echarts.ts 里 registerTheme 注册),不再用 echarts 内置 'dark'。
   // 跟 tokens.css 的 --color-primary / 网格灰阶 / SectionCard 暗底配色都对得上。
@@ -168,22 +167,22 @@ export function useOpsSummary() {
         running + failed + slaBreach === 0
           ? emptyOption(t('common.noData'))
           : buildHorizontalStackedStatusOption([
-                {
-                  name: t('opsSummary.legendRunning'),
-                  value: running,
-                  color: OPS_CHART_COLORS.primary,
-                },
-                {
-                  name: t('opsSummary.legendFailed'),
-                  value: failed,
-                  color: OPS_CHART_COLORS.danger,
-                },
-                {
-                  name: t('opsSummary.legendSlaViolation'),
-                  value: slaBreach,
-                  color: OPS_CHART_COLORS.orange,
-                },
-              ])
+              {
+                name: t('opsSummary.legendRunning'),
+                value: running,
+                color: OPS_CHART_COLORS.primary,
+              },
+              {
+                name: t('opsSummary.legendFailed'),
+                value: failed,
+                color: OPS_CHART_COLORS.danger,
+              },
+              {
+                name: t('opsSummary.legendSlaViolation'),
+                value: slaBreach,
+                color: OPS_CHART_COLORS.orange,
+              },
+            ])
 
       const online = Number(s?.onlineWorkers ?? 0)
       const draining = Number(s?.drainingWorkers ?? 0)
@@ -192,22 +191,22 @@ export function useOpsSummary() {
         online + draining + offline === 0
           ? emptyOption(t('common.noData'))
           : buildStatusColumnOption([
-                {
-                  name: t('opsSummary.legendOnline'),
-                  value: online,
-                  color: OPS_CHART_COLORS.success,
-                },
-                {
-                  name: t('opsSummary.legendDraining'),
-                  value: draining,
-                  color: OPS_CHART_COLORS.warning,
-                },
-                {
-                  name: t('opsSummary.legendOffline'),
-                  value: offline,
-                  color: OPS_CHART_COLORS.neutral,
-                },
-              ])
+              {
+                name: t('opsSummary.legendOnline'),
+                value: online,
+                color: OPS_CHART_COLORS.success,
+              },
+              {
+                name: t('opsSummary.legendDraining'),
+                value: draining,
+                color: OPS_CHART_COLORS.warning,
+              },
+              {
+                name: t('opsSummary.legendOffline'),
+                value: offline,
+                color: OPS_CHART_COLORS.neutral,
+              },
+            ])
 
       const openAlerts = Number(s?.openAlerts ?? 0)
       const critical = Number(s?.criticalAlerts ?? 0)
@@ -216,17 +215,17 @@ export function useOpsSummary() {
         openAlerts === 0
           ? emptyOption(t('opsSummary.noActiveAlerts'))
           : buildStatusBarOption([
-                {
-                  name: t('opsSummary.legendCritical'),
-                  value: critical,
-                  color: OPS_CHART_COLORS.danger,
-                },
-                {
-                  name: t('opsSummary.legendOtherOpen'),
-                  value: otherOpen,
-                  color: OPS_CHART_COLORS.warning,
-                },
-              ])
+              {
+                name: t('opsSummary.legendCritical'),
+                value: critical,
+                color: OPS_CHART_COLORS.danger,
+              },
+              {
+                name: t('opsSummary.legendOtherOpen'),
+                value: otherOpen,
+                color: OPS_CHART_COLORS.warning,
+              },
+            ])
 
       const retry = Number(s?.outboxRetryBacklog ?? 0)
       const delivFail = Number(s?.outboxDeliveryFailures ?? 0)
@@ -249,13 +248,13 @@ export function useOpsSummary() {
               innerRadius: '40%',
             })
 
-      // SLA 仪表盘:onTime / (onTime + violation),百分比
+      // SLA 仪表盘:按时数 / 有 SLA 的正式终态数,百分比
       const onTimeTotal = bundle.sla.series.onTime.reduce((a, b) => a + b, 0)
-      const violationTotal = bundle.sla.series.violation.reduce((a, b) => a + b, 0)
-      if (onTimeTotal + violationTotal === 0) {
+      const totalWithSla = bundle.sla.totalWithSla
+      if (totalWithSla === 0) {
         slaGaugeOption.value = emptyOption(t('opsExtraPanel.noSlaSamples'), { axes: false })
       } else {
-        const slaPct = Math.round((onTimeTotal / (onTimeTotal + violationTotal)) * 1000) / 10
+        const slaPct = Math.round((onTimeTotal / totalWithSla) * 1000) / 10
         slaGaugeOption.value = buildGaugeOption({
           value: slaPct,
           max: 100,

@@ -147,12 +147,11 @@
     if (raw == null) return ''
     const s = String(raw)
     if (!s) return ''
-    const decoded = s
-      .replace(/&quot;/g, '"')
-      .replace(/&#39;/g, "'")
-      .replace(/&lt;/g, '<')
-      .replace(/&gt;/g, '>')
-      .replace(/&amp;/g, '&')
+    const decodedQuotes = s.replace(/&quot;/g, '"')
+    const decodedApostrophes = decodedQuotes.replace(/&#39;/g, "'")
+    const decodedLessThan = decodedApostrophes.replace(/&lt;/g, '<')
+    const decodedGreaterThan = decodedLessThan.replace(/&gt;/g, '>')
+    const decoded = decodedGreaterThan.replace(/&amp;/g, '&')
     return decoded
   }
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
@@ -214,7 +213,7 @@
         traceId: filters.traceId.trim() || undefined,
         operationType: filters.operationType.trim() || undefined,
         operatorId: filters.operatorId.trim() || undefined,
-        fileId: filters.fileId.trim() || undefined,
+        fileId: filters.fileId.trim() ? Number(filters.fileId) : undefined,
         operationResult: filters.operationResult.trim() || undefined,
         startTime: filters.startTime || undefined,
         endTime: filters.endTime || undefined,

@@ -78,7 +78,11 @@ function assertCollected() {
   const res = spawnSync(
     'bash',
     ['-c', 'source scripts/lib/gate-result.sh; gate_assert_collected'],
-    { stdio: 'inherit', shell: false, env: { ...process.env, BATCH_GATE_FAILURE_FILE: failureFile } },
+    {
+      stdio: 'inherit',
+      shell: false,
+      env: { ...process.env, BATCH_GATE_FAILURE_FILE: failureFile },
+    },
   )
   rmSync(gateTempDir, { recursive: true, force: true })
   if (runnerErrors > 0 || res.status !== 0) process.exit(1)
@@ -125,10 +129,12 @@ const docsChanged = hasAny(files, [
   (f) => /^docs\//.test(f),
   (f) => /^tools\/docs-bridge\/frontend\//.test(f),
   (f) => /^scripts\/docs-(prepare|build|serve|lib)\./.test(f),
+  (f) => /^scripts\/(lib\/docs-publication|tests\/docs-publication\.test)\.mjs$/.test(f),
 ])
 const docsBuildChanged = hasAny(files, [
   (f) => /^tools\/docs-bridge\/frontend\//.test(f),
   (f) => /^scripts\/docs-(prepare|build|serve|lib)\./.test(f),
+  (f) => /^scripts\/(lib\/docs-publication|tests\/docs-publication\.test)\.mjs$/.test(f),
 ])
 const architectureChanged = hasAny(files, [
   (f) => /^src\/.+\.(vue|ts|tsx)$/.test(f),
@@ -213,7 +219,12 @@ if (architectureChanged) {
 }
 
 if (testFixtureSourceChanged) {
-  runNpm('FE_TEST_FIXTURE_SOURCES', 'testing', '测试 fixture 事实来源', 'check:test-fixture-sources')
+  runNpm(
+    'FE_TEST_FIXTURE_SOURCES',
+    'testing',
+    '测试 fixture 事实来源',
+    'check:test-fixture-sources',
+  )
 }
 
 if (environmentChanged) {

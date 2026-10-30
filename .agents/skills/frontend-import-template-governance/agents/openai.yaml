@@ -1,0 +1,4 @@
+interface:
+  display_name: "前端导入与模板治理"
+  short_description: "核对租户配置包、Excel模板、导入导出流程及后端schema一致性"
+  default_prompt: "使用 $frontend-import-template-governance 核查指定导入或模板任务，追踪后端schema与真实数据来源。"

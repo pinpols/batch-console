@@ -99,6 +99,7 @@ test.describe('error-state: alert routing reserved write contract', () => {
     })
     await expect(page.getByText('预留配置，当前不生效')).toBeVisible()
     await expect(page.getByRole('button', { name: '新增路由' })).toHaveCount(0)
+    // 负观察窗口：确认预留界面在此期间未发起写请求。
     await page.waitForTimeout(300)
     expect(writeAttempted, 'reserved alert routing UI must not issue POST').toBe(false)
     await page.unroute('**/api/console/alert-routings')
@@ -138,7 +139,7 @@ test.describe('error-state: GET 列表 — 401 跳登录、5xx toast', () => {
     await enterDemoApp(page)
     await injectError(page, '**/api/console/queues**', '401', { method: 'GET' })
     await page.goto('/governance/queues')
-    await page.waitForTimeout(2500)
+    await expect(page.locator('.el-message--error, .el-message--warning').first()).toBeVisible()
     // 401 应该被 interceptor 走 refresh,失败则 toast(不强求跳登录);只要不崩
     expect(page.url()).not.toContain('errr')
     await clearInjection(page, '**/api/console/queues**')

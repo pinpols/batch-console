@@ -4,19 +4,20 @@
    *
    * 路由:`/workflow/designer/:id/diff/:fromVersion/:toVersion`
    *
-   * 数据来源:BE 已提供版本快照端点 `GET /{id}/versions/{version}`(V167,返回与 getFull
-   * 同款 WorkflowDefinitionDetailResponse)。按路由 fromVersion/toVersion 拉两个真实快照对比。
-   * 两个版本快照都成功时才计算差异；任一侧不可用则显示不可比较和重试，
+   * 先读取后端持久版本目录，再按用户选择读取两个历史快照。两个快照都成功时才计算差异；任一侧不可用则显示不可比较和重试，
    * 避免将缺失快照误报为“全部新增”。
    *
    * 视觉:左右两个 readonly 小画布(纯 DOM 描述,无 X6 — 避免编辑事件污染 readonly 流),
    * 顶部 summary(增 / 删 / 改 计数),底部按 nodeCode 行列出每个 diff 项。
    */
-  import { computed, onMounted, ref } from 'vue'
+  import { computed, ref, watch } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
   import { useTenantStore } from '@/stores/tenant'
-  import { workflowDesignerApi } from '@/api/workflowDesigner'
+  import {
+    workflowDesignerApi,
+    type WorkflowDefinitionVersionSummary,
+  } from '@/api/workflowDesigner'
   import { logRoute } from '@/utils/logger'
   import {
     diffDefinitions,
@@ -32,14 +33,19 @@
   const tenant = useTenantStore()
 
   const idRaw = route.params.id as string
-  const fromVersion = route.params.fromVersion as string
-  const toVersion = route.params.toVersion as string
+  const fromVersion = computed(() => route.params.fromVersion as string)
+  const toVersion = computed(() => route.params.toVersion as string)
   const workflowId = Number(idRaw)
 
   const loading = ref(false)
+  type ListedWorkflowDefinitionVersion = WorkflowDefinitionVersionSummary & { version: number }
+  const versionRows = ref<ListedWorkflowDefinitionVersion[]>([])
+  const selectedFromVersion = ref<number | null>(null)
+  const selectedToVersion = ref<number | null>(null)
   const fromDefinition = ref<WorkflowDefinitionJson>({ nodes: [], edges: [] })
   const toDefinition = ref<WorkflowDefinitionJson>({ nodes: [], edges: [] })
   const loadError = ref('')
+  let requestSequence = 0
 
   const diff = computed<DefinitionDiff>(() =>
     diffDefinitions(fromDefinition.value, toDefinition.value),
@@ -65,35 +71,93 @@
     }
   }
 
+  function versionLabel(row: (typeof versionRows.value)[number]): string {
+    const version = typeof row.version === 'number' ? `v${row.version}` : '—'
+    const currentLabel = row.current ? ` · ${t('workflowDesignerPolish.versionCurrent')}` : ''
+    const savedByLabel = row.savedBy ? ` · ${row.savedBy}` : ''
+    const savedAtLabel = row.savedAt ? ` · ${row.savedAt}` : ''
+    return `${version}${currentLabel}${savedByLabel}${savedAtLabel}`
+  }
+
   async function loadComparison() {
+    const sequence = ++requestSequence
+    const tenantId = tenant.tenantId
     if (Number.isNaN(workflowId)) {
       loadError.value = t('workflowDesignerPolish.diffInvalidId')
       return
     }
+    if (!tenantId.trim()) {
+      loadError.value = t('workflowDesignerPolish.diffTenantRequired')
+      loading.value = false
+      return
+    }
     loading.value = true
     loadError.value = ''
+    fromDefinition.value = { nodes: [], edges: [] }
+    toDefinition.value = { nodes: [], edges: [] }
     try {
-      const fromV = Number(fromVersion)
-      const toV = Number(toVersion)
-      if (!Number.isFinite(fromV) || !Number.isFinite(toV)) {
+      const versions = await workflowDesignerApi.listVersions(workflowId, tenantId)
+      if (sequence !== requestSequence || tenant.tenantId !== tenantId) return
+      versionRows.value = (versions ?? []).filter(
+        (row): row is ListedWorkflowDefinitionVersion =>
+          typeof row.version === 'number' && Number.isInteger(row.version),
+      )
+      const availableVersions = versionRows.value.map((row) => row.version as number)
+      if (availableVersions.length < 2) {
+        loadError.value = t('workflowDesignerPolish.diffInsufficientVersions')
+        return
+      }
+      const routeFrom = Number(fromVersion.value)
+      const routeTo = Number(toVersion.value)
+      const currentVersion =
+        versionRows.value.find((row) => row.current)?.version ?? availableVersions[0]
+      selectedToVersion.value = availableVersions.includes(selectedToVersion.value ?? routeTo)
+        ? (selectedToVersion.value ?? routeTo)
+        : currentVersion
+      const fallbackFrom = availableVersions.find((version) => version !== selectedToVersion.value)
+      selectedFromVersion.value = availableVersions.includes(selectedFromVersion.value ?? routeFrom)
+        ? (selectedFromVersion.value ?? routeFrom)
+        : (fallbackFrom ?? null)
+      const fromV = selectedFromVersion.value
+      const toV = selectedToVersion.value
+      if (fromV == null || toV == null || fromV === toV) {
         loadError.value = t('workflowDesignerPolish.diffInvalidVersion')
         return
       }
       const [fromDetail, toDetail] = await Promise.all([
-        workflowDesignerApi.getVersion(workflowId, fromV, tenant.tenantId),
-        workflowDesignerApi.getVersion(workflowId, toV, tenant.tenantId),
+        workflowDesignerApi.getVersion(workflowId, fromV, tenantId),
+        workflowDesignerApi.getVersion(workflowId, toV, tenantId),
       ])
+      if (sequence !== requestSequence || tenant.tenantId !== tenantId) return
       fromDefinition.value = detailToDefinitionJson(fromDetail as never)
       toDefinition.value = detailToDefinitionJson(toDetail as never)
     } catch (err) {
+      if (sequence !== requestSequence || tenant.tenantId !== tenantId) return
       logRoute('[designer-diff] version comparison unavailable', { err: String(err) })
       loadError.value = t('workflowDesignerPolish.diffUnavailableDescription')
     } finally {
-      loading.value = false
+      if (sequence === requestSequence) loading.value = false
     }
   }
 
-  onMounted(loadComparison)
+  watch(
+    () => tenant.tenantId,
+    () => {
+      versionRows.value = []
+      selectedFromVersion.value = null
+      selectedToVersion.value = null
+      void loadComparison()
+    },
+    { immediate: true },
+  )
+
+  async function applyVersionComparison() {
+    if (selectedFromVersion.value == null || selectedToVersion.value == null) return
+    await router.replace({
+      path: `/workflow/designer/${workflowId}/diff/${selectedFromVersion.value}/${selectedToVersion.value}`,
+    })
+    await loadComparison()
+  }
 
   function back() {
     void router.push({ path: `/workflow/designer/${workflowId}` })
@@ -109,7 +173,42 @@
     <div class="diff-page__header">
       <el-button @click="back">{{ t('workflowDesignerPolish.diffBack') }}</el-button>
       <span class="diff-page__title">{{ t('workflowDesignerPolish.diffViewerTitle') }}</span>
-      <span class="diff-page__versions">v{{ fromVersion }} → v{{ toVersion }}</span>
+      <el-select
+        v-model="selectedFromVersion"
+        :disabled="loading || versionRows.length < 2"
+        :placeholder="t('workflowDesignerPolish.diffFromPlaceholder')"
+        class="diff-page__version-select"
+      >
+        <el-option
+          v-for="row in versionRows"
+          :key="row.version"
+          :label="versionLabel(row)"
+          :value="row.version"
+          :disabled="row.version === selectedToVersion"
+        />
+      </el-select>
+      <span aria-hidden="true">→</span>
+      <el-select
+        v-model="selectedToVersion"
+        :disabled="loading || versionRows.length < 2"
+        :placeholder="t('workflowDesignerPolish.diffToPlaceholder')"
+        class="diff-page__version-select"
+      >
+        <el-option
+          v-for="row in versionRows"
+          :key="row.version"
+          :label="versionLabel(row)"
+          :value="row.version"
+          :disabled="row.version === selectedFromVersion"
+        />
+      </el-select>
+      <el-button
+        type="primary"
+        :disabled="loading || selectedFromVersion == null || selectedToVersion == null"
+        @click="applyVersionComparison"
+      >
+        {{ t('workflowDesignerPolish.diffCompare') }}
+      </el-button>
     </div>
 
     <el-result
@@ -144,7 +243,8 @@
       <div class="diff-page__canvases">
         <div class="diff-canvas" :aria-label="t('workflowDesignerPolish.diffSideFrom')">
           <div class="diff-canvas__title">
-            {{ t('workflowDesignerPolish.diffSideFrom') }} (v{{ fromVersion }})
+            {{ t('workflowDesignerPolish.diffSideFrom') }}
+            (v{{ selectedFromVersion ?? fromVersion }})
           </div>
           <div class="diff-canvas__nodes">
             <div
@@ -163,7 +263,7 @@
         </div>
         <div class="diff-canvas" :aria-label="t('workflowDesignerPolish.diffSideTo')">
           <div class="diff-canvas__title">
-            {{ t('workflowDesignerPolish.diffSideTo') }} (v{{ toVersion }})
+            {{ t('workflowDesignerPolish.diffSideTo') }} (v{{ selectedToVersion ?? toVersion }})
           </div>
           <div class="diff-canvas__nodes">
             <div
@@ -221,6 +321,7 @@
   }
   .diff-page__header {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: 16px;
     padding: 8px 0;
@@ -233,6 +334,10 @@
   .diff-page__versions {
     font-family: monospace;
     color: var(--color-text-secondary, #606266);
+  }
+
+  .diff-page__version-select {
+    width: min(260px, 28vw);
   }
   .diff-page__notice {
     font-size: 12px;

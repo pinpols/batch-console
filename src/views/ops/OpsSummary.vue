@@ -13,6 +13,7 @@
       </template>
     </PageHeader>
 
+    <TenantDailyProgress />
     <OnboardingCenter />
 
     <div v-if="summary" class="ops-tabs-card">
@@ -45,7 +46,7 @@
 
         <OpsTrendPanel
           v-if="opsTab === 'trend'"
-          :active="true"
+          active
           v-model:range-key="rangeKey"
           :charts-loading="chartsLoading"
           :chart-theme="chartTheme"
@@ -63,10 +64,10 @@
           :chart-theme="chartTheme"
           :trigger-type-top-n-option="triggerTypeTopNOption"
           :worker-load-top-n-option="workerLoadTopNOption"
-          :job-status-pie-option="jobStatusOption"
-          :worker-status-pie-option="workerStatusOption"
-          :alert-severity-pie-option="alertSeverityOption"
-          :outbox-health-pie-option="outboxHealthOption"
+          :job-status-option="jobStatusOption"
+          :worker-status-option="workerStatusOption"
+          :alert-severity-option="alertSeverityOption"
+          :outbox-health-option="outboxHealthOption"
           @refresh-charts="loadCharts"
         />
       </div>
@@ -104,6 +105,7 @@
   import PrintButton from '@/components/common/PrintButton.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
+  import TenantDailyProgress from './components/TenantDailyProgress.vue'
   import OnboardingCenter from '@/components/onboarding/OnboardingCenter.vue'
   import OpsMetricGrid from './components/OpsMetricGrid.vue'
   import { useOpsSummary } from './composables/useOpsSummary'

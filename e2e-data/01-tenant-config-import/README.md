@@ -1,28 +1,15 @@
-# 01 — 租户配置整包导入
+# 租户配置包输入
 
-## 测的接口
-- POST `/api/console/config/tenant-package/excel/upload` —— 整包导入向导
-- POST `/api/console/config/tenant-init` —— 初始化新租户
-- POST `/api/console/config/tenant-copy` —— 跨租户复制
+本页是保留输入与当前测试入口的目录说明。执行范围与准备/清理规则见[本目录总览](../README.md)和[执行说明](../EXEC-MATRIX.md)。
 
-## 文件
-- `ta-tenant-config-package-test.xlsx` → 给 ta 用
-- `tb-tenant-config-package-test.xlsx` → 给 tb 用
-- `tc-tenant-config-package-test.xlsx` → 给 tc 用
+## 保留资产
 
-**来源**:原文件维护在 `file-batch-system/docs/test-data/test-full-coverage-import-suite/`。
-本目录是**实文件副本**(纳入 batch-console git),如 BE 仓库修改 Excel,需手动同步:
-```bash
-SRC=../file-batch-system/docs/test-data/test-full-coverage-import-suite
-cp $SRC/{ta,tb,tc}-tenant-config-package-test.xlsx \
-   batch-console/e2e-data/01-tenant-config-import/
-```
+- [`ta-tenant-config-package-test.xlsx`](./ta-tenant-config-package-test.xlsx)
+- [`tb-tenant-config-package-test.xlsx`](./tb-tenant-config-package-test.xlsx)
+- [`tc-tenant-config-package-test.xlsx`](./tc-tenant-config-package-test.xlsx)
 
-## FE 触发路径
-**配置管理 → 配置批量导入** (`/config/tenant-package`)
+## 当前入口与适用性
 
-## 验证点
-- 上传 → 预览 → 确认 三步流程
-- 各 sheet(JobDef/Queue/Calendar/FileTpl 等)逐项 ✓ / ✗ 显示
-- 部分失败时仍能继续(事务边界正确)
-- 导入后到对应列表页能看到数据
+这些是仓库保留的配置包文件，不是自动同步的后端模板。权威来源见[配对后端测试数据](../../../file-batch-system/test-data/README.md)及模板 Schema；接口消费见 [`src/api/tenantPackageExcel.ts`](../../src/api/tenantPackageExcel.ts)。[`upload-full-chain.spec.ts`](../../e2e/upload-full-chain.spec.ts)保留了后端样本候选与本目录回退；实际选择以运行时找到的文件为准；mock 与真实后端模式的证据范围不同。
+
+更新样本时先确认当前 sheet、必填列、枚举与前后端导入契约；文件能被 Excel 打开不能证明可成功导入。

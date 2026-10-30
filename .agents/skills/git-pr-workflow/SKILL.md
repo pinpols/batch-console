@@ -25,6 +25,22 @@ description: 用户要求创建前端分支、提交或审查 Pull Request、连
 4. 推送或创建 stacked PR 前，重新查询前置 PR 的远端 `headRefOid`。若 OID 已变化，先将新分支同步到新的 head，再审查提交列表和完整 diff；不得继续基于旧 head 推送，造成前置修复遗漏或重复提交。
 5. 同步前置 head 时保留语义：检查双方提交与文件差异，按实际拓扑选择 merge 或受控 rebase。已推送分支需要改写历史时，不擅自强推；只有确认远端归属、无他人后续提交且用户授权后，才使用 `--force-with-lease`。
 
+## 功能、缺陷与 Issue 交付
+
+- 功能实现、Bug 修复和 Issue 整改均由本流程管理分支、验证、PR 与交付；具体前端实现和验收由对应领域 Skill 负责，本 Skill 不替代 API、状态、UI 或测试设计。
+- 开始前将需求/Issue 转成可验证的行为和验收条件，核对已有分支/PR 是否覆盖相同问题，避免重复实现。PR 描述说明修复范围、关联 Issue 和实际验证证据。
+- 用户要求修复 Issue 不代表授权关闭 Issue；关闭属于单独的外部状态变更。
+
+## 多 PR 依赖与冲突预防
+
+同一项目存在多个并行或连续 PR 时，创建下一分支或推送前先盘点相关交付链：
+
+1. 记录相关开放 PR、分支和 worktree 的 base/head SHA、状态、变更路径；只纳入同一任务或存在明确文件/契约依赖的 PR。
+2. 检查共享路径和契约，包括 API/OpenAPI/生成类型、配置事实源、路由权限、共用状态模型、测试 fixture、CI workflow 和文档；标明独立、前置依赖、文件冲突或语义/契约冲突。
+3. 按依赖关系确定 base 和合并顺序。重叠职责或共享契约需要先拆分责任或串行实现；Git 无文本冲突不代表语义兼容。
+4. 每次 push/更新 PR 前重查前置 head、目标分支和最终 PR diff。前置 head、base 或冲突处理变化后，重新检查完整差异并运行受影响门禁。
+5. 合并前确认前置 PR 已合入或仍是有效 stacked base；合并后复核后续 PR 的 base、差异和 required checks。迁移/生成契约若涉及配对后端，按后端 Skill 核验两仓合入顺序。
+
 ## Stacked PR 收口
 
 1. 前置 PR 合入目标分支后，fetch 最新目标分支，核对前置 PR 的 `state=MERGED`、merge commit 和目标分支包含关系，再将后续 PR 的 base 改回目标分支。
@@ -46,3 +62,9 @@ description: 用户要求创建前端分支、提交或审查 Pull Request、连
 1. 只有用户明确要求合并，且 required checks、review 和分支保护均满足时才合并。合并操作返回后仍需核实 `state=MERGED` 及目标分支包含关系。
 2. 清理前确认远端分支仍指向已记录的 `headRefOid`，检查所有 worktree，并确保没有未交付提交。只清理用户授权且已核实合并的分支。
 3. stacked PR 按前置顺序逐张收口。前置合并后先调整后续 PR base 和 diff，再决定是否合并或清理；不得因前置已合并而连带删除后续分支。
+
+## 本仓交付入口约束
+
+- `.husky/pre-commit` 聚合暂存 lint 与按需预检；`.husky/pre-push` 仅阻止直接推 main。Hook 不自动创建 PR，也不把一次 push 扩展为发布、合并或删除分支的授权。
+- `scripts/local/sync-main.sh` / `sync-from-main.sh` 的旧常驻功能/部署分支模型已退役，历史原件在 `scripts/archive/`；当前按已核实的短期分支与 PR base 同步，不运行旧批量同步脚本。
+- `scripts/prepare.mjs` 是 Husky 安装入口，联合版本准备由 `scripts/prepare-platform-release.mjs` 支撑；安装 hook 或准备版本不构成交付授权。脚本职责与操作边界见 `docs/engineering/script-skill-routing.md`。

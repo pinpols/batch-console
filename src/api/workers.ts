@@ -1,6 +1,9 @@
 import { get, post } from '@/api/client'
 import { fetchAllPageItems } from '@/api/adapters'
-import type { ConsoleWorkerRegistryResponse } from '@/types/console-api'
+import type {
+  ConsoleWorkerClaimedTaskResponse,
+  ConsoleWorkerRegistryResponse,
+} from '@/types/console-api'
 
 /** OpenAPI 为 PageResponse，聚合为列表供 Worker 页展示 */
 export function queryWorkers(tenantId: string) {
@@ -42,4 +45,12 @@ export function warmupWorker(workerCode: string, tenantId: string) {
   return post<unknown>(`/api/console/workers/${encodeURIComponent(workerCode)}/warmup`, undefined, {
     params: { tenantId },
   })
+}
+
+/** GET /api/console/workers/{workerCode}/claimed-tasks */
+export function listWorkerClaimedTasks(workerCode: string, tenantId: string) {
+  return get<ConsoleWorkerClaimedTaskResponse[]>(
+    `/api/console/workers/${encodeURIComponent(workerCode)}/claimed-tasks`,
+    { tenantId },
+  )
 }

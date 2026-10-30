@@ -76,12 +76,17 @@
   //   - 同层级或 tab 切换 = 默认 fade
   const route = useRoute()
   const pageTransition = ref<'page-fade' | 'page-push' | 'page-pop'>('page-fade')
+  const routeDepth = (path: string) => {
+    const pathSegments = path.split('/')
+    const nonEmptyPathSegments = pathSegments.filter(Boolean)
+    return nonEmptyPathSegments.length
+  }
   watch(
     () => route.path,
     (to, from) => {
       if (!from) return
-      const toDepth = to.split('/').filter(Boolean).length
-      const fromDepth = from.split('/').filter(Boolean).length
+      const toDepth = routeDepth(to)
+      const fromDepth = routeDepth(from)
       if (toDepth > fromDepth) pageTransition.value = 'page-push'
       else if (toDepth < fromDepth) pageTransition.value = 'page-pop'
       else pageTransition.value = 'page-fade'
@@ -112,7 +117,8 @@
 
   // 移动端也支持 ⌘K / Ctrl+K(主要给挂键盘的平板用)
   function onGlobalKeydown(e: KeyboardEvent) {
-    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+    const isCommandPaletteShortcut = (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k'
+    if (isCommandPaletteShortcut) {
       const target = e.target as HTMLElement | null
       if (target?.isContentEditable) return
       e.preventDefault()

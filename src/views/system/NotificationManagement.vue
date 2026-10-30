@@ -17,6 +17,14 @@
       </template>
     </PageHeader>
 
+    <el-alert
+      v-if="activeTab === 'rules' || activeTab === 'webhooks'"
+      :title="t('notificationCommon.slaAlertHint')"
+      type="info"
+      show-icon
+      :closable="false"
+    />
+
     <div>
       <el-tabs v-model="activeTab" class="pill-tabs">
         <el-tab-pane :label="t('notificationManagement.tabChannels')" name="channels">
@@ -30,6 +38,9 @@
         </el-tab-pane>
         <el-tab-pane :label="t('notificationManagement.tabDeliveryLogs')" name="deliveryLogs">
           <NotificationDeliveryLogsTab />
+        </el-tab-pane>
+        <el-tab-pane :label="t('notificationManagement.tabTerminalDeliveries')" name="terminalDeliveries">
+          <NotificationTerminalDeliveriesTab />
         </el-tab-pane>
       </el-tabs>
     </div>
@@ -46,9 +57,10 @@
   import NotificationRulesTab from './components/NotificationRulesTab.vue'
   import NotificationWebhooksTab from './components/NotificationWebhooksTab.vue'
   import NotificationDeliveryLogsTab from './components/NotificationDeliveryLogsTab.vue'
+  import NotificationTerminalDeliveriesTab from './components/NotificationTerminalDeliveriesTab.vue'
 
   const { t } = useI18n({ useScope: 'global' })
-  type NotificationTab = 'channels' | 'rules' | 'webhooks' | 'deliveryLogs'
+  type NotificationTab = 'channels' | 'rules' | 'webhooks' | 'deliveryLogs' | 'terminalDeliveries'
   type CreateTabExpose = {
     openChannelCreate?: () => void
     openRuleCreate?: () => void

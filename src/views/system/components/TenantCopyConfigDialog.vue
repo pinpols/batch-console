@@ -5,7 +5,7 @@
     :title="t('tenantCopyConfigDialog.title')"
     direction="rtl"
     size="860px"
-    @update:model-value="(v) => emit('update:modelValue', v)"
+    @update:model-value="(v: boolean) => emit('update:modelValue', v)"
   >
     <el-alert type="info" :closable="false" show-icon class="mb-12">
       <template #title>{{ t('tenantCopyConfigDialog.infoAlert') }}</template>
@@ -246,16 +246,6 @@
             width="130"
             show-overflow-tooltip
           />
-          <el-table-column
-            prop="pipelineJobCodes"
-            :label="t('tenantCopyConfigDialog.colPipelines')"
-            min-width="180"
-            show-overflow-tooltip
-          >
-            <template #default="{ row }">
-              {{ (row.pipelineJobCodes ?? []).join(', ') || '—' }}
-            </template>
-          </el-table-column>
         </el-table>
       </el-tab-pane>
     </el-tabs>
@@ -263,24 +253,34 @@
       <el-button @click="emit('update:modelValue', false)">
         {{ t('tenantConfigShared.cancel') }}
       </el-button>
-      <el-button plain :loading="previewing === 'copy'" :disabled="busy" @click="runCopyPreview">
+      <el-button
+        plain
+        :loading="previewing === 'copy'"
+        :disabled="busy || !canWriteSystem"
+        @click="runCopyPreview"
+      >
         {{ t('tenantCopyConfigDialog.btnCopyPreview') }}
       </el-button>
       <el-button
         plain
         :loading="previewing === 'overlay'"
-        :disabled="busy"
+        :disabled="busy || !canWriteSystem"
         @click="runOverlayPreview"
       >
         {{ t('tenantCopyConfigDialog.btnOverlayPreview') }}
       </el-button>
-      <el-button plain :loading="previewing === 'matrix'" :disabled="busy" @click="runMatrix">
+      <el-button
+        plain
+        :loading="previewing === 'matrix'"
+        :disabled="busy || !canWriteSystem"
+        @click="runMatrix"
+      >
         {{ t('tenantCopyConfigDialog.btnMatrix') }}
       </el-button>
       <el-button
         plain
         :loading="saving && lastDryRun"
-        :disabled="busy && !(saving && lastDryRun)"
+        :disabled="busy || !canWriteSystem"
         @click="submit(true)"
       >
         {{ t('tenantConfigShared.dryRunPreviewDiff') }}
@@ -288,7 +288,7 @@
       <el-button
         type="danger"
         :loading="saving && !lastDryRun"
-        :disabled="busy && !(saving && !lastDryRun)"
+        :disabled="busy || !canWriteSystem"
         @click="submit(false)"
       >
         {{ t('tenantCopyConfigDialog.btnRunFormal') }}
@@ -298,7 +298,7 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, reactive, ref, watch } from 'vue'
+  import { computed, onScopeDispose, reactive, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
   import type { FormRules, TagProps } from 'element-plus'
@@ -311,9 +311,12 @@
     type TenantConfigDiffPreviewResponse,
     type TenantConfigMatrixResponse,
   } from '@/api/ops'
+  import { assessBatchInitOutcome } from '@/utils/batchInitOutcome'
   import type { Tenant } from '@/api/tenants'
   import { ALL_CONFIG_TYPES, isReservedTenant, isTemplateTenant } from './tenantConfigTypes'
   import { useFormValidate, rules } from '@/composables/useFormValidate'
+  import { usePermission } from '@/composables/usePermission'
+  import { useAuthStore } from '@/stores/auth'
 
   const { t } = useI18n({ useScope: 'global' })
 
@@ -328,6 +331,13 @@
   }>()
 
   const saving = ref(false)
+  const auth = useAuthStore()
+  const { canManageSystem, canWriteSystem } = usePermission()
+  const actor = computed(() => String(auth.userInfo?.userId ?? auth.userInfo?.username ?? ''))
+  let revision = 0
+  let writeRevision = 0
+  let previewAttempt = 0
+  let disposed = false
   const previewing = ref<'' | 'copy' | 'overlay' | 'matrix'>('')
   const lastDryRun = ref(true)
   const activeResultTab = ref<'diff' | 'matrix'>('diff')
@@ -348,10 +358,12 @@
     sourceTenantId: [rules.required(t('tenantCopyConfigDialog.ruleSource'), 'change')],
     targetTenantIds: [
       {
-        validator: (_r, v: unknown[], cb) =>
-          Array.isArray(v) && v.length > 0
-            ? cb()
-            : cb(new Error(t('tenantCopyConfigDialog.ruleTargets'))),
+        validator: (_r, v: unknown[], cb) => {
+          if (Array.isArray(v) && v.length > 0) return cb()
+          const errorMessage = t('tenantCopyConfigDialog.ruleTargets')
+          const validationError = new Error(errorMessage)
+          return cb(validationError)
+        },
         trigger: 'change',
       },
     ],
@@ -365,9 +377,12 @@
   )
   const busy = computed(() => saving.value || previewing.value !== '')
   const hasPreviewData = computed(() => Boolean(diffPreview.value || matrixPreview.value))
-  const normalizedJobCodes = computed(() =>
-    form.jobCodes.map((x) => x.trim()).filter((x, idx, arr) => x && arr.indexOf(x) === idx),
-  )
+  const normalizedJobCodes = computed(() => {
+    const trimmedJobCodes = form.jobCodes.map((jobCode) => jobCode.trim())
+    return trimmedJobCodes.filter(
+      (jobCode, index, candidates) => jobCode && candidates.indexOf(jobCode) === index,
+    )
+  })
   const diffMetrics = computed(() => {
     const s = diffPreview.value?.summary
     return [
@@ -396,6 +411,7 @@
   watch(
     () => props.modelValue,
     (open) => {
+      invalidatePreview()
       if (!open) return
       form.sourceTenantId = ''
       form.targetTenantIds = []
@@ -410,57 +426,116 @@
       diffPreview.value = null
       matrixPreview.value = null
     },
+    { immediate: true, flush: 'sync' },
   )
+  function invalidatePreview() {
+    revision += 1
+    previewAttempt += 1
+    previewing.value = ''
+    diffPreview.value = null
+    matrixPreview.value = null
+  }
+  watch(form, invalidatePreview, { flush: 'sync' })
+  watch(
+    () => form.sourceTenantId,
+    (sourceTenantId) => {
+      if (form.targetTenantIds.includes(sourceTenantId)) {
+        form.targetTenantIds = form.targetTenantIds.filter(
+          (tenantId) => tenantId !== sourceTenantId,
+        )
+      }
+    },
+    { flush: 'sync' },
+  )
+  watch([actor, canManageSystem], invalidatePreview, { flush: 'sync' })
+  watch(
+    canWriteSystem,
+    () => {
+      writeRevision += 1
+      invalidatePreview()
+    },
+    { flush: 'sync' },
+  )
+  onScopeDispose(() => {
+    disposed = true
+    invalidatePreview()
+  })
+
+  function canPreview() {
+    // 服务端维护策略按HTTP方法冻结POST，业务只读的预览同样受此边界约束。
+    return !disposed && props.modelValue && canWriteSystem.value && !!actor.value
+  }
+
+  function currentPreview(inputRevision: number, attempt: number) {
+    return canPreview() && revision === inputRevision && previewAttempt === attempt
+  }
 
   function previewPayload() {
     return {
       sourceTenantId: form.sourceTenantId,
-      targetTenantIds: form.targetTenantIds,
-      configTypes: form.configTypes.length ? form.configTypes : undefined,
-      jobCodes: normalizedJobCodes.value.length ? normalizedJobCodes.value : undefined,
+      targetTenantIds: [...form.targetTenantIds],
+      configTypes: form.configTypes.length ? [...form.configTypes] : undefined,
+      jobCodes: normalizedJobCodes.value.length ? [...normalizedJobCodes.value] : undefined,
       includeUnchanged: form.includeUnchanged,
       includeDeleteCandidates: form.includeDeleteCandidates,
     }
   }
 
   async function runCopyPreview() {
-    if (!(await validateCopyForm())) return
+    if (busy.value || !canPreview()) return
+    const inputRevision = revision
+    const attempt = ++previewAttempt
     previewing.value = 'copy'
     try {
-      diffPreview.value = await previewTenantConfigCopy(previewPayload())
+      if (!(await validateCopyForm()) || !currentPreview(inputRevision, attempt)) return
+      const payload = previewPayload()
+      const response = await previewTenantConfigCopy(payload)
+      if (!currentPreview(inputRevision, attempt)) return
+      diffPreview.value = response
       activeResultTab.value = 'diff'
     } finally {
-      previewing.value = ''
+      if (previewAttempt === attempt) previewing.value = ''
     }
   }
 
   async function runOverlayPreview() {
-    if (!(await validateCopyForm())) return
+    if (busy.value || !canPreview()) return
+    const inputRevision = revision
+    const attempt = ++previewAttempt
     previewing.value = 'overlay'
     try {
-      diffPreview.value = await previewTenantConfigOverlay(previewPayload())
+      if (!(await validateCopyForm()) || !currentPreview(inputRevision, attempt)) return
+      const payload = previewPayload()
+      const response = await previewTenantConfigOverlay(payload)
+      if (!currentPreview(inputRevision, attempt)) return
+      diffPreview.value = response
       activeResultTab.value = 'diff'
     } finally {
-      previewing.value = ''
+      if (previewAttempt === attempt) previewing.value = ''
     }
   }
 
   async function runMatrix() {
-    if (!(await validateCopyForm())) return
-    if (!normalizedJobCodes.value.length) {
-      ElMessage.warning(t('tenantCopyConfigDialog.jobCodesRequiredForMatrix'))
-      return
-    }
+    if (busy.value || !canPreview()) return
+    const inputRevision = revision
+    const attempt = ++previewAttempt
     previewing.value = 'matrix'
     try {
-      matrixPreview.value = await compareTenantJobConfigMatrix({
+      if (!(await validateCopyForm()) || !currentPreview(inputRevision, attempt)) return
+      if (!normalizedJobCodes.value.length) {
+        ElMessage.warning(t('tenantCopyConfigDialog.jobCodesRequiredForMatrix'))
+        return
+      }
+      const response = await compareTenantJobConfigMatrix({
         baselineTenantId: form.sourceTenantId,
         tenantIds: [form.sourceTenantId, ...form.targetTenantIds],
-        jobCodes: normalizedJobCodes.value,
+        jobCodes: [...normalizedJobCodes.value],
       })
+      if (!currentPreview(inputRevision, attempt)) return
+      matrixPreview.value = response
       activeResultTab.value = 'matrix'
     } finally {
-      previewing.value = ''
+      if (previewAttempt === attempt) previewing.value = ''
     }
   }
 
@@ -472,20 +547,41 @@
   }
 
   async function submit(dryRun: boolean) {
-    if (!(await validateCopyForm())) return
+    if (busy.value || !canPreview() || !canWriteSystem.value) return
+    const inputRevision = revision
+    const permissionRevision = writeRevision
+    const isCurrent = () =>
+      canPreview() &&
+      canWriteSystem.value &&
+      revision === inputRevision &&
+      writeRevision === permissionRevision
     saving.value = true
     lastDryRun.value = dryRun
     try {
+      if (!(await validateCopyForm()) || !isCurrent()) return
+      if (form.targetTenantIds.includes(form.sourceTenantId)) {
+        ElMessage.warning(t('tenantCopyConfigDialog.sourceTargetOverlap'))
+        return
+      }
       const res = await copyTenantConfig({
         sourceTenantId: form.sourceTenantId,
-        targetTenantIds: form.targetTenantIds,
-        configTypes: form.configTypes.length ? form.configTypes : undefined,
-        jobCodes: normalizedJobCodes.value.length ? normalizedJobCodes.value : undefined,
+        targetTenantIds: [...form.targetTenantIds],
+        configTypes: form.configTypes.length ? [...form.configTypes] : undefined,
+        jobCodes: normalizedJobCodes.value.length ? [...normalizedJobCodes.value] : undefined,
         mode: form.mode,
         dryRun,
       })
+      if (!isCurrent()) return
       emit('result', res)
       if (!dryRun) {
+        const outcome = res ? assessBatchInitOutcome(res) : null
+        if (!outcome?.fullySuccessful) {
+          const failedTenants = outcome?.failedTenantIds.length
+            ? outcome.failedTenantIds.join(', ')
+            : form.targetTenantIds.join(', ')
+          ElMessage.warning(t('tenantCopyConfigDialog.toastFailed', { tenants: failedTenants }))
+          return
+        }
         ElMessage.success(t('tenantCopyConfigDialog.toastDone'))
         emit('update:modelValue', false)
       }

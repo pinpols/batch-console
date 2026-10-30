@@ -25,15 +25,12 @@ test.describe('@workflow-designer-dependencies dependency overview', () => {
     for (const [index, jobCode] of downstreamCodes.entries()) {
       await createJob(page, stamp + index + 2, jobCode, currentJobCode, index !== 15)
     }
-    const pipelineCode = `e2e-wfd-pipeline-${stamp}`
-    await createPipeline(page, stamp, pipelineCode)
     expect(downstreamCodes).toHaveLength(16)
 
     const workflowId = await createWorkflow(page, stamp, {
       predecessorCode,
       currentJobCode,
       currentNodeCode,
-      pipelineCode,
     })
     await page.goto(`/workflow/designer/${workflowId}`)
     const canvas = page.locator('.dag-canvas__graph')
@@ -64,7 +61,7 @@ test.describe('@workflow-designer-dependencies dependency overview', () => {
 
     const flowEdgeCount = await canvas.locator('.x6-edge').count()
     await selectNode(page, `file_${stamp}`)
-    await expect(inspector).toContainText('关联 Pipeline')
+    await expect(inspector).toContainText('关联作业')
     await expect(inspector.locator('input[readonly]').nth(1)).toHaveValue(`file_${stamp}`)
     await selectNode(page, `fork_${stamp}`)
     await expect(inspector.locator('input[readonly]').nth(1)).toHaveValue(`fork_${stamp}`)
@@ -77,7 +74,6 @@ async function selectNode(page: import('@playwright/test').Page, nodeCode: strin
   await search.fill(nodeCode)
   await page.getByRole('option', { name: new RegExp(nodeCode) }).click()
 }
-
 async function createJob(
   page: import('@playwright/test').Page,
   requestId: number,
@@ -114,10 +110,9 @@ async function createWorkflow(
     predecessorCode: string
     currentJobCode: string
     currentNodeCode: string
-    pipelineCode: string
   },
 ) {
-  const { predecessorCode, currentJobCode, currentNodeCode, pipelineCode } = input
+  const { predecessorCode, currentJobCode, currentNodeCode } = input
   const response = await page.request.post('/api/console/workflow-definitions', {
     headers: {
       'Content-Type': 'application/json',
@@ -156,9 +151,9 @@ async function createWorkflow(
         },
         {
           nodeCode: `file_${stamp}`,
-          nodeName: '文件处理步骤',
-          nodeType: 'FILE_STEP',
-          relatedPipelineCode: pipelineCode,
+          nodeName: '额外作业步骤',
+          nodeType: 'JOB',
+          relatedJobCode: currentJobCode,
           enabled: true,
         },
         { nodeCode: `end_${stamp}`, nodeName: '结束', nodeType: 'END', enabled: true },
@@ -186,42 +181,4 @@ async function createWorkflow(
   const id = Number(payload.data?.id ?? payload.id)
   expect(Number.isFinite(id), '创建依赖工作流响应缺少 id').toBe(true)
   return id
-}
-
-async function createPipeline(
-  page: import('@playwright/test').Page,
-  requestId: number,
-  pipelineCode: string,
-) {
-  const response = await page.request.post('/api/console/pipeline-definitions', {
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Tenant-Id': tenantId,
-      'Idempotency-Key': `e2e-wfd-pipeline-${requestId}-${pipelineCode}`,
-      ...(await csrfHeaders(page.request)),
-    },
-    data: {
-      tenantId,
-      jobCode: pipelineCode,
-      pipelineName: `Workflow designer ${pipelineCode}`,
-      pipelineType: 'IMPORT',
-      enabled: true,
-      steps: [
-        'RECEIVE',
-        'PREPROCESS',
-        'PARSE',
-        'VALIDATE',
-        'LOAD',
-        'FEEDBACK',
-      ].map((stageCode, index) => ({
-        stepCode: stageCode,
-        stepName: stageCode,
-        stageCode,
-        stepOrder: index,
-        implCode: `IMPORT_${stageCode}`,
-      })),
-    },
-  })
-  const payload = (await response.json()) as { data?: { id?: number }; id?: number }
-  expect(response.ok(), JSON.stringify(payload)).toBe(true)
 }

@@ -22,7 +22,8 @@ import { userErrorMessage } from '@/utils/userErrorMessage'
  */
 function translateBizMessage(raw: string | undefined): string | undefined {
   if (!raw) return raw
-  const trimmed = String(raw).trim()
+  const rawText = String(raw)
+  const trimmed = rawText.trim()
   // 只识别 "error.xxx[.yyy...]" 这种点分 key,普通中英文 message 原样直出
   if (!/^error\.[a-z][a-z0-9_]*(?:\.[a-zA-Z0-9_]+)+$/.test(trimmed)) return raw
   const { t, te } = i18n.global
@@ -31,10 +32,8 @@ function translateBizMessage(raw: string | undefined): string | undefined {
 
 function trackDegradationHeader(value: unknown) {
   if (typeof value !== 'string' || !value.trim()) return
-  const sources = value
-    .split(',')
-    .map((source) => source.trim())
-    .filter((source) => /^[a-z0-9._-]{1,64}$/i.test(source))
+  const headerSources = value.split(',').map((source) => source.trim())
+  const sources = headerSources.filter((source) => /^[a-z0-9._-]{1,64}$/i.test(source))
   if (!sources.length) return
   void import('@/stores/app').then(({ useAppStore }) => {
     const app = useAppStore()
@@ -209,24 +208,28 @@ function normalizeForIdempotency(value: unknown): unknown {
     return Array.from(value.entries()).sort(([a], [b]) => a.localeCompare(b))
   }
   if (typeof FormData !== 'undefined' && value instanceof FormData) {
-    return Array.from(value.entries())
-      .map(([key, entry]) => [key, normalizeFormDataValue(entry)] as const)
-      .sort(([a], [b]) => a.localeCompare(b))
+    const formEntries = Array.from(value.entries())
+    const normalizedEntries = formEntries.map(([key, entry]) => [
+      key,
+      normalizeFormDataValue(entry),
+    ] as const)
+    return normalizedEntries.sort(([a], [b]) => a.localeCompare(b))
   }
   if (isRecord(value)) {
-    return Object.keys(value)
-      .sort()
-      .reduce<Record<string, unknown>>((acc, key) => {
-        acc[key] = normalizeForIdempotency(value[key])
-        return acc
-      }, {})
+    const sortedKeys = Object.keys(value).sort()
+    return sortedKeys.reduce<Record<string, unknown>>((acc, key) => {
+      const normalizedProperty = normalizeForIdempotency(value[key])
+      acc[key] = normalizedProperty
+      return acc
+    }, {})
   }
   return String(value)
 }
 
 function stableStringifyForIdempotency(value: unknown): string {
   try {
-    return JSON.stringify(normalizeForIdempotency(value))
+    const normalizedValue = normalizeForIdempotency(value)
+    return JSON.stringify(normalizedValue)
   } catch {
     return String(value)
   }
@@ -304,7 +307,11 @@ function extractHttpErrorMessage(error: unknown): string {
     // Spring Boot 3 默认 404 message（映射不到 controller 时落到静态资源处理器）
     // 例：`No static resource api/console/triggers for request '/api/console/triggers'.`
     // 这类信息对用户不友好，统一改成“接口不存在/版本不匹配”。
-    if (status === 404 && typeof d.message === 'string' && /No static resource/i.test(d.message)) {
+    const isSpringStaticResourceNotFound =
+      status === 404 &&
+      typeof d.message === 'string' &&
+      /No static resource/i.test(d.message)
+    if (isSpringStaticResourceNotFound) {
       return i18n.global.t('apiError.endpointVersionMismatch')
     }
   }
@@ -323,8 +330,12 @@ function readResponseHeader(headers: unknown, name: string): string | undefined 
     typeof getter === 'function'
       ? getter.call(headers, name)
       : (headers as Record<string, unknown>)[name.toLowerCase()]
-  if (value == null || String(value).trim() === '') return undefined
-  return String(value)
+  if (value == null) return undefined
+  const presenceText = String(value)
+  const trimmedPresenceText = presenceText.trim()
+  if (trimmedPresenceText === '') return undefined
+  const headerText = String(value)
+  return headerText
 }
 
 function extractErrorCorrelation(error: unknown): ErrorCorrelation {
@@ -402,22 +413,25 @@ export function applyApiInterceptors(client: AxiosInstance): void {
     const loggable = config as LoggedConfig
     const method = (config.method ?? 'get').toLowerCase()
     const pinia = getActivePinia()
-    if (MUTATING.has(method) && !isMaintenanceWriteAllowed(config.url) && pinia) {
+    const isMutatingMethod = MUTATING.has(method)
+    const maintenanceGuardApplies =
+      isMutatingMethod && !isMaintenanceWriteAllowed(config.url)
+    if (maintenanceGuardApplies && pinia) {
       const app = useAppStore(pinia)
       if (app.writesFrozen) {
         loggable._silent = true
         ElMessage.warning(i18n.global.t('maintenance.writeBlocked'))
-        return Promise.reject(
-          Object.assign(new Error(i18n.global.t('maintenance.writeBlocked')), {
-            config,
-            code: 'ERR_MAINTENANCE_WRITE_FROZEN',
-            maintenance: true,
-            silenced: true,
-          }),
-        )
+        const errorMessage = i18n.global.t('maintenance.writeBlocked')
+        const maintenanceError = Object.assign(new Error(errorMessage), {
+          config,
+          code: 'ERR_MAINTENANCE_WRITE_FROZEN',
+          maintenance: true,
+          silenced: true,
+        })
+        return Promise.reject(maintenanceError)
       }
     }
-    if (MUTATING.has(method) && !config.headers['Idempotency-Key']) {
+    if (isMutatingMethod && !config.headers['Idempotency-Key']) {
       const signature = resolveMutationSignature(config, method, tenantId)
       config.headers['Idempotency-Key'] = getAutoIdempotencyKey(signature)
       loggable._autoIdempotencySignature = signature
@@ -482,13 +496,13 @@ export function applyApiInterceptors(client: AxiosInstance): void {
       }
 
       const body = response.data as CommonResponse | unknown
-      if (
-        body &&
+      const hasCommonResponseEnvelopeShape =
+        body !== null &&
         typeof body === 'object' &&
         'code' in body &&
         'data' in body &&
         'message' in body
-      ) {
+      if (hasCommonResponseEnvelopeShape) {
         const envelope = body as CommonResponse<unknown>
         setLastApiMeta(envelope.meta ?? null)
         if (!isSuccessCode(envelope.code as string | number)) {
@@ -496,31 +510,33 @@ export function applyApiInterceptors(client: AxiosInstance): void {
           // 不走通用红错 toast,避免各页都弹大红错。
           if (String(envelope.code) === 'RATE_LIMITED') {
             ElMessage.warning(i18n.global.t('apiError.rateLimited'))
-            return Promise.reject(
-              Object.assign(new Error(i18n.global.t('apiError.rateLimited')), {
-                rateLimited: true,
-                traceId: envelope.meta?.traceId,
-                requestId: envelope.meta?.requestId,
-              }),
-            )
+            const rateLimitMessage = i18n.global.t('apiError.rateLimited')
+            const rateLimitError = Object.assign(new Error(rateLimitMessage), {
+              rateLimited: true,
+              traceId: envelope.meta?.traceId,
+              requestId: envelope.meta?.requestId,
+            })
+            return Promise.reject(rateLimitError)
           }
           const msg =
             translateBizMessage(envelope.message) ||
             envelope.message ||
             i18n.global.t('apiError.requestFailed')
           const tid = envelope.meta?.traceId || envelope.meta?.requestId
+          const title = i18n.global.t('apiError.requestFailed')
+          const traceId = tid ? String(tid) : undefined
+          const suggestion = suggestionForBizKey(envelope.message)
           showErrorToast({
-            title: i18n.global.t('apiError.requestFailed'),
+            title,
             message: msg,
-            traceId: tid ? String(tid) : undefined,
-            suggestion: suggestionForBizKey(envelope.message),
+            traceId,
+            suggestion,
           })
-          return Promise.reject(
-            Object.assign(new Error(msg), {
-              traceId: envelope.meta?.traceId,
-              requestId: envelope.meta?.requestId,
-            }),
-          )
+          const requestError = Object.assign(new Error(msg), {
+            traceId: envelope.meta?.traceId,
+            requestId: envelope.meta?.requestId,
+          })
+          return Promise.reject(requestError)
         }
         response.data = envelope.data
       }
@@ -534,41 +550,30 @@ export function applyApiInterceptors(client: AxiosInstance): void {
       const raw = error.response?.data
 
       // L2/L3 协同的"幂等重放"识别:
-      //   FE 在 2s 复用窗口里给同签名重发请求时复用了同一个 Idempotency-Key,
-      //   BE 幂等拦截器看到重复 key → 409。这本质是 FE 自己防抖的副作用,
-      //   不是用户该被打扰的错误,这里:
-      //     - 不写 error 级别日志,改 info(留痕但不污染告警)
-      //     - 不弹 toast(主防线 useAsyncAction.loading 已让用户根本点不到,
-      //       走到这层一定是漏了 :loading 或非按钮触发的二次写)
-      //     - 仍 reject,把 idempotentReplay 标记挂到 error 上,业务方有需要可识别
-      //   触发条件二选一即可:
-      //     (a) FE 本次自动注入了 key(_autoIdempotencySignature 非空),即用户在
-      //         FE 的复用窗口内重复点击 — 这是 FE 自己造的重发,理应静默;
-      //     (b) BE envelope.code === 'IDEMPOTENT_REPLAY'(BE 协议未来若加此明示码),
-      //         即便 FE 没自动注入 key(例如调用方手写 header),BE 已确认这是重放
-      //         也按静默处理 — 比纯依赖 (a) 更稳。
-      //   双信号互补:任一命中即静默,都不命中(真冲突)走正常错误路径。
-      const replayEnvelopeCode =
-        raw && typeof raw === 'object' && 'code' in raw
-          ? String((raw as { code?: unknown }).code ?? '')
-          : ''
-      const idempotentReplay =
-        status === 409 &&
-        (!!cfg?._autoIdempotencySignature || replayEnvelopeCode === 'IDEMPOTENT_REPLAY')
+      //   只有服务端明确返回 idempotentReplay=true 才能确认这是幂等重放。
+      //   自动注入过 Idempotency-Key 只说明请求可幂等，不代表 STATE_CONFLICT
+      //   是重放；它也可能是业务状态冲突，必须走正常错误提示。
+      //   明确重放只记 info、不弹 toast，仍 reject 并标记，供调用方按需识别。
+      //   未提供明确标记的冲突进入错误提示，不能把业务失败静默掉。
+      const idempotentReplayFlag =
+        raw && typeof raw === 'object' && 'idempotentReplay' in raw
+          ? (raw as { idempotentReplay?: unknown }).idempotentReplay
+          : false
+      const idempotentReplay = status === 409 && idempotentReplayFlag === true
       if (idempotentReplay) {
-        logApi(
-          `${(cfg!.method ?? 'get').toUpperCase()} ${cfg!.url ?? ''} → 409 idempotent replay (silenced)`,
-          'info',
-          {
-            kind: 'api-idempotent-replay',
-            method: (cfg!.method ?? 'get').toUpperCase(),
-            url: cfg!.url ?? '',
-            status,
-          },
-        )
-        return Promise.reject(
-          Object.assign(error as object, { idempotentReplay: true, silenced: true }),
-        )
+        const method = (cfg?.method ?? 'get').toUpperCase()
+        const url = cfg?.url ?? ''
+        logApi(`${method} ${url} → 409 idempotent replay (silenced)`, 'info', {
+          kind: 'api-idempotent-replay',
+          method,
+          url,
+          status,
+        })
+        const idempotentReplayError = Object.assign(error as object, {
+          idempotentReplay: true,
+          silenced: true,
+        })
+        return Promise.reject(idempotentReplayError)
       }
 
       {
@@ -577,12 +582,14 @@ export function applyApiInterceptors(client: AxiosInstance): void {
         const url = cfg?.url ?? ''
         const correlation = extractErrorCorrelation(error)
         const axErr = error as AxiosError & { code?: string }
-        logApi(`${method} ${url} → ${status ?? 'ERR'}`, 'error', {
+        const logMessage = `${method} ${url} → ${status ?? 'ERR'}`
+        const errorMessage = extractHttpErrorMessage(error)
+        logApi(logMessage, 'error', {
           kind: 'api',
           method,
           url,
           status,
-          error: extractHttpErrorMessage(error),
+          error: errorMessage,
           ...(duration != null ? { durationMs: duration } : {}),
           ...(correlation.traceId ? { traceId: correlation.traceId } : {}),
           ...(correlation.requestId ? { requestId: correlation.requestId } : {}),
@@ -644,9 +651,11 @@ export function applyApiInterceptors(client: AxiosInstance): void {
               })
             }
           })
-          return Promise.reject(
-            Object.assign(error as object, { maintenance: true, silenced: true }),
-          )
+          const maintenanceError = Object.assign(error as object, {
+            maintenance: true,
+            silenced: true,
+          })
+          return Promise.reject(maintenanceError)
         }
       }
 
@@ -694,13 +703,12 @@ export function applyApiInterceptors(client: AxiosInstance): void {
           // 把开发者级英文(Request failed with status code 400 / tenantId is required)替换成人话,
           // 让页面级错误态(ProTable error slot 等读 err.message)显示"请先选择租户"而非吓人的英文。
           const friendly = i18n.global.t('apiError.selectTenantFirst')
-          return Promise.reject(
-            Object.assign(error as object, {
-              missingTenant: true,
-              silenced: true,
-              message: friendly,
-            }),
-          )
+          const missingTenantError = Object.assign(error as object, {
+            missingTenant: true,
+            silenced: true,
+            message: friendly,
+          })
+          return Promise.reject(missingTenantError)
         }
       }
 
@@ -715,7 +723,8 @@ export function applyApiInterceptors(client: AxiosInstance): void {
           // 不弹通用红错 toast —— 由 Login.vue 捕获此 code 后展示验证码组件引导用户;
           // 仍 reject 把 code 挂到 error 上供登录页识别。
           if (rawCode === 'CAPTCHA_REQUIRED') {
-            return Promise.reject(Object.assign(error as object, { captchaRequired: true }))
+            const captchaRequiredError = Object.assign(error as object, { captchaRequired: true })
+            return Promise.reject(captchaRequiredError)
           }
           const rawMsg =
             raw && typeof raw === 'object' && 'message' in raw
@@ -755,29 +764,39 @@ export function applyApiInterceptors(client: AxiosInstance): void {
           }
           const msg =
             extractHttpErrorMessage(error) || i18n.global.t('apiError.unauthorizedMessage')
+          const title = i18n.global.t('apiError.unauthorizedTitle')
+          const traceId = extractErrorTrace(error)
+          const suggestion = suggestionFromError(error)
           showErrorToast({
-            title: i18n.global.t('apiError.unauthorizedTitle'),
+            title,
             message: msg,
-            traceId: extractErrorTrace(error),
-            suggestion: suggestionFromError(error),
+            traceId,
+            suggestion,
           })
         } else {
           // 已尝试过 refresh 仍 401:权限真不够 / 接口 RBAC 限制,不登出,toast 提示
           const msg =
             extractHttpErrorMessage(error) || i18n.global.t('apiError.unauthorizedMessage')
+          const title = i18n.global.t('apiError.unauthorizedTitle')
+          const traceId = extractErrorTrace(error)
+          const suggestion = suggestionFromError(error)
           showErrorToast({
-            title: i18n.global.t('apiError.unauthorizedTitle'),
+            title,
             message: msg,
-            traceId: extractErrorTrace(error),
-            suggestion: suggestionFromError(error),
+            traceId,
+            suggestion,
           })
         }
       } else if (status === 403) {
+        const title = i18n.global.t('apiError.permissionDeniedTitle')
+        const message = i18n.global.t('apiError.permissionDeniedMessage')
+        const traceId = extractErrorTrace(error)
+        const suggestion = suggestionFromError(error)
         showErrorToast({
-          title: i18n.global.t('apiError.permissionDeniedTitle'),
-          message: i18n.global.t('apiError.permissionDeniedMessage'),
-          traceId: extractErrorTrace(error),
-          suggestion: suggestionFromError(error),
+          title,
+          message,
+          traceId,
+          suggestion,
         })
       } else if (status === 429) {
         // 限流超额:轻提示即可,不弹通用红错 toast 干扰用户。
@@ -785,17 +804,21 @@ export function applyApiInterceptors(client: AxiosInstance): void {
         ElMessage.warning(i18n.global.t('apiError.rateLimited'))
       } else {
         const msg = extractHttpErrorMessage(error)
-        if (import.meta.env.DEV && status != null && status >= 500) {
+        const isDevelopmentServerFailure = import.meta.env.DEV && status != null && status >= 500
+        if (isDevelopmentServerFailure) {
           const cfg = error.config
           const m = (cfg?.method ?? 'get').toUpperCase()
           const path = cfg?.url ? `${cfg.baseURL ?? ''}${cfg.url}` : ''
           console.error('[API]', m, path, status, raw)
         }
         if (status === 400 && /Required request parameter 'jobCode'/i.test(msg)) {
+          const title = i18n.global.t('apiError.missingJobCodeTitle')
+          const message = i18n.global.t('apiError.missingJobCodeMessage')
+          const traceId = extractErrorTrace(error)
           showErrorToast({
-            title: i18n.global.t('apiError.missingJobCodeTitle'),
-            message: i18n.global.t('apiError.missingJobCodeMessage'),
-            traceId: extractErrorTrace(error),
+            title,
+            message,
+            traceId,
             duration: 7500,
           })
         } else if (status === 404) {
@@ -814,24 +837,32 @@ export function applyApiInterceptors(client: AxiosInstance): void {
             body.code.length > 0 &&
             'data' in body
           if (isBizNotFound) {
+            const title = i18n.global.t('apiError.resourceNotFoundTitle')
+            const message = msg || i18n.global.t('apiError.resourceNotFoundMessage')
+            const traceId = extractErrorTrace(error)
             showErrorToast({
-              title: i18n.global.t('apiError.resourceNotFoundTitle'),
-              message: msg || i18n.global.t('apiError.resourceNotFoundMessage'),
-              traceId: extractErrorTrace(error),
+              title,
+              message,
+              traceId,
             })
           } else {
+            const title = i18n.global.t('apiError.endpointNotFoundTitle')
+            const message = i18n.global.t('apiError.endpointNotFoundMessage')
+            const traceId = extractErrorTrace(error)
             showErrorToast({
-              title: i18n.global.t('apiError.endpointNotFoundTitle'),
-              message: i18n.global.t('apiError.endpointNotFoundMessage'),
-              traceId: extractErrorTrace(error),
+              title,
+              message,
+              traceId,
               duration: 7500,
             })
           }
         } else {
+          const title = i18n.global.t('apiError.requestFailed')
+          const traceId = extractErrorTrace(error)
           showErrorToast({
-            title: i18n.global.t('apiError.requestFailed'),
+            title,
             message: msg,
-            traceId: extractErrorTrace(error),
+            traceId,
           })
         }
       }

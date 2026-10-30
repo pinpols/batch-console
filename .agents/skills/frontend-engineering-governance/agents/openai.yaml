@@ -1,0 +1,4 @@
+interface:
+  display_name: "前端工程与规约治理"
+  short_description: "核查前端架构、代码规约、可维护性、依赖供应链与工程治理门禁"
+  default_prompt: "使用 $frontend-engineering-governance 核查指定前端工程范围，区分规约、治理及实际验证证据。"

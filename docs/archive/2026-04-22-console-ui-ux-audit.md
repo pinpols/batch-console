@@ -1,5 +1,7 @@
 # Batch Console UI/UX 统一评估与优化建议（草案）
 
+> **历史归档**：本文记录 2026-04-22 的审查与建议；正文中的现状、待办和已落地结论只对当时基线有效。当前规则见[工程文档](../engineering/README.md)。
+
 更新时间：2026-04-22  
 范围：`batch-console`（Vue3 + Element Plus + ProTable/ListPageQueryBar 等统一构件）
 

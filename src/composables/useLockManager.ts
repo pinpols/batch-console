@@ -12,9 +12,12 @@
  *  - 单测无须 mock 定时器(可外部传 intervalMs=0 关闭轮询)
  */
 
-import { onBeforeUnmount } from 'vue'
+import { onScopeDispose } from 'vue'
 import { workflowDesignerApi, type WorkflowLockInfo } from '@/api/workflowDesigner'
-import { useDesignerStore } from '@/views/workflow/designer/store/useDesignerStore'
+import {
+  useDesignerStore,
+  type DesignerLockState,
+} from '@/views/workflow/designer/store/useDesignerStore'
 import { logRoute } from '@/utils/logger'
 
 export interface UseLockManagerOptions {
@@ -56,24 +59,41 @@ export function useLockManager(opts: UseLockManagerOptions = {}) {
   const intervalMs = opts.intervalMs ?? 30_000
 
   let timer: ReturnType<typeof setInterval> | null = null
-  let currentId: number | null = null
-  let currentTenant: string | null = null
+  interface LockSession {
+    id: number
+    tenantId: string
+    owned: boolean
+    displayed: DesignerLockState
+  }
+  let current: LockSession | null = null
+  let disposed = false
   let beforeUnloadHandler: ((e: BeforeUnloadEvent) => void) | null = null
 
-  function applyMine(info: WorkflowLockInfo) {
+  function isCurrent(session: LockSession): boolean {
+    return !disposed && current === session
+  }
+
+  function applyMine(session: LockSession, info: WorkflowLockInfo) {
     store.setLock({ isMine: true, lockedBy: info.lockedBy, expiresAt: info.expiresAt })
+    session.owned = true
+    session.displayed = store.lock
   }
 
   async function acquire(id: number, tenantId: string): Promise<'editable' | 'readonly'> {
-    currentId = id
-    currentTenant = tenantId
+    if (disposed) return 'readonly'
+    stopTimer()
+    uninstallBeforeUnload()
+    const session: LockSession = { id, tenantId, owned: false, displayed: null }
+    current = session
     try {
       const info = await workflowDesignerApi.acquireLock(id, tenantId)
-      applyMine(info)
+      if (!isCurrent(session)) return 'readonly'
+      applyMine(session, info)
       startTimer()
       installBeforeUnload()
       return 'editable'
     } catch (err) {
+      if (!isCurrent(session)) return 'readonly'
       const conflict = extractLockConflict(err)
       if (conflict) {
         store.setLock({ isMine: false, ...conflict })
@@ -86,18 +106,23 @@ export function useLockManager(opts: UseLockManagerOptions = {}) {
   }
 
   async function renew(): Promise<void> {
-    if (currentId == null || currentTenant == null) return
+    const session = current
+    if (!session || !session.owned || !isCurrent(session)) return
     try {
-      const info = await workflowDesignerApi.renewLock(currentId, currentTenant)
-      applyMine(info)
+      const info = await workflowDesignerApi.renewLock(session.id, session.tenantId)
+      if (!isCurrent(session)) return
+      applyMine(session, info)
     } catch (err) {
+      if (!isCurrent(session)) return
       const conflict = extractLockConflict(err)
       if (conflict) {
+        session.owned = false
         store.setLock({ isMine: false, ...conflict })
+        session.displayed = store.lock
         stopTimer()
         opts.onLost?.('taken')
       } else {
-        // 网络/服务问题:暂保持本地锁状态不切只读,但停止续期(避免风暴)
+        // 保持现有网络异常策略；迟到的旧上下文不能触发新画布的锁丢失通知。
         stopTimer()
         opts.onLost?.('network')
       }
@@ -105,23 +130,18 @@ export function useLockManager(opts: UseLockManagerOptions = {}) {
   }
 
   async function release(): Promise<void> {
+    const session = current
+    current = null
     stopTimer()
     uninstallBeforeUnload()
-    if (currentId == null || currentTenant == null) return
-    const lock = store.lock
-    if (!lock || !lock.isMine) {
-      currentId = null
-      currentTenant = null
-      return
-    }
+    if (!session) return
+    if (session.displayed && store.lock === session.displayed) store.setLock(null)
+    if (!session.owned) return
+    session.owned = false
     try {
-      await workflowDesignerApi.releaseLock(currentId, currentTenant)
+      await workflowDesignerApi.releaseLock(session.id, session.tenantId)
     } catch (err) {
       logRoute('[designer] releaseLock failed (ignored)', { err: String(err) })
-    } finally {
-      store.setLock(null)
-      currentId = null
-      currentTenant = null
     }
   }
 
@@ -143,12 +163,11 @@ export function useLockManager(opts: UseLockManagerOptions = {}) {
   function installBeforeUnload() {
     if (typeof window === 'undefined' || beforeUnloadHandler) return
     beforeUnloadHandler = () => {
-      if (currentId == null || currentTenant == null) return
-      const lock = store.lock
-      if (!lock || !lock.isMine) return
+      const session = current
+      if (!session || !session.owned) return
       // sendBeacon 是 fire-and-forget,刷新/关闭窗口时唯一可靠的释放通道
-      const url = `/api/console/workflow-definitions/${currentId}/lock?tenantId=${encodeURIComponent(
-        currentTenant,
+      const url = `/api/console/workflow-definitions/${session.id}/lock?tenantId=${encodeURIComponent(
+        session.tenantId,
       )}`
       try {
         // 浏览器 fetch keepalive DELETE 兜底 sendBeacon 不支持 DELETE 的限制
@@ -170,7 +189,8 @@ export function useLockManager(opts: UseLockManagerOptions = {}) {
     beforeUnloadHandler = null
   }
 
-  onBeforeUnmount(() => {
+  onScopeDispose(() => {
+    disposed = true
     void release()
   })
 

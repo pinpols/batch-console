@@ -105,7 +105,6 @@ test.describe('@row-actions 行操作覆盖缺口补丁', () => {
     const diffBtn = page.locator('.cr-panel').getByRole('button', { name: /对比|差异/ })
     await expect(diffBtn).toBeVisible()
     await diffBtn.click()
-    await page.waitForTimeout(800)
     // 差异面板出来,可能是 drawer / dialog
     const panel = page.locator('.el-dialog:visible, .el-drawer:visible').first()
     if (await isVisible(panel, 3000)) {

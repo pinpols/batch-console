@@ -1,6 +1,14 @@
 <template>
   <PageContainer>
     <PageHeader />
+    <el-alert
+      v-if="progressUnavailable"
+      class="pipeline-stage-error"
+      type="warning"
+      show-icon
+      :closable="false"
+      :title="t('filePipelineObservability.progressUnavailable')"
+    />
 
     <el-alert
       v-if="fileSummaryUnavailable"
@@ -106,14 +114,20 @@
                   :icon="Eye"
                   :aria-label="t('common.detail')"
                   :aria-pressed="selectedPipeline?.id === row.id"
-                  @click="selectPipeline(row)"
+                  @click="selectPipeline(row as ConsoleFilePipelineResponse)"
                 />
               </template>
             </el-table-column>
           </ProTable>
+          <el-alert
+            v-if="selectedPipelineProgress && !selectedPipelineProgress.stageGraphAvailable"
+            :title="t('filePipelineObservability.stageVersionUnavailable')"
+            type="warning"
+            :closable="false"
+          />
           <SelectedPipelinePanel
             v-if="selectedPipeline"
-            :pipeline="selectedPipeline"
+            :pipeline="selectedPipelineDisplay!"
             :stages="selectedStages"
             :selected-code="selectedStageCode"
             :loading="selectedStepsLoading"
@@ -131,14 +145,6 @@
       </el-tab-pane>
 
       <el-tab-pane :label="t('filePipelineObservability.tabSteps')" name="steps">
-        <el-alert
-          v-if="showProgressColumns && progressUnavailable"
-          class="pipeline-stage-error"
-          type="warning"
-          show-icon
-          :closable="false"
-          :title="t('filePipelineObservability.progressUnavailable')"
-        />
         <ProTable
           :data="stepRows"
           :loading="tableBlocking"
@@ -225,7 +231,7 @@
             align="right"
           >
             <template #default="{ row }">
-              {{ formatProcessed(row) }}
+              {{ formatProcessed(row as ConsoleFilePipelineStepResponse) }}
             </template>
           </el-table-column>
           <el-table-column
@@ -234,7 +240,7 @@
             width="170"
           >
             <template #default="{ row }">
-              {{ formatTotalEta(row) }}
+              {{ formatTotalEta(row as ConsoleFilePipelineStepResponse) }}
             </template>
           </el-table-column>
           <DatetimeColumn
@@ -453,7 +459,7 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, computed, onMounted, watch } from 'vue'
+  import { ref, computed, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { useRoute } from 'vue-router'
   import { Eye } from '@lucide/vue'
@@ -482,16 +488,13 @@
     ConsoleFilePipelineResponse,
     ConsoleFilePipelineStepResponse,
   } from '@/types/console-api'
-  import { queryPipelineProgress } from '@/api/filePipelineQuery'
-  import { usePipelineProgress } from '@/composables/usePipelineProgress'
+  import { getPipelineProgressSnapshot } from '@/api/pipelineProgress'
+  import { useLivePipelineProgress } from '@/composables/useLivePipelineProgress'
   import { processedCountFromSummary } from '@/utils/pipelineStepSummary'
   import { fmtNumber } from '@/utils/number'
-  import { useAutoRefresh } from '@/composables/useAutoRefresh'
-  import { useSseAutoReload } from '@/composables/useSseAutoReload'
   import OpsListToolbar from '@/components/table/OpsListToolbar.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
   import { pipelineStageCodes } from './pipelineStageModel'
-  import { fetchPipelineStages, type PipelineStagesMap } from '@/api/pipelineMeta'
 
   const tenant = useTenantStore()
   const route = useRoute()
@@ -507,17 +510,26 @@
   } = useListFilterFeedback(loading)
   const page = ref(1)
   const pageSize = ref(15)
-  const initialPipelineInstanceId = String(route.query.pipelineInstanceId ?? '').trim()
+  const initialPipelineInstanceValue = route.query.pipelineInstanceId ?? ''
+  const initialPipelineInstanceText = String(initialPipelineInstanceValue)
+  const initialPipelineInstanceId = initialPipelineInstanceText.trim()
   const kwDraft = ref(initialPipelineInstanceId)
   const kwApplied = ref(initialPipelineInstanceId)
 
   // 深链打开时从正式进度响应读取文件摘要，错误与真实空摘要分开展示。
-  const currentFile = ref<{ fileId: number | null; fileName: string | null } | null>(null)
+  const currentFile = ref<{
+    pipelineId: number
+    fileId: number | null
+    fileName: string | null
+  } | null>(null)
   const fileSummaryUnavailable = ref(false)
   let fileSummaryRequestId = 0
+  let fileSummaryPushRevision = 0
 
   async function loadCurrentFile(pipelineInstanceId: string) {
     const requestId = ++fileSummaryRequestId
+    const requestedTenant = tenant.tenantId
+    const revision = fileSummaryPushRevision
     currentFile.value = null
     fileSummaryUnavailable.value = false
     const pid = Number(pipelineInstanceId)
@@ -526,11 +538,29 @@
       return
     }
     try {
-      const resp = await queryPipelineProgress(pid)
-      if (requestId === fileSummaryRequestId)
-        currentFile.value = { fileId: resp.fileId ?? null, fileName: resp.fileName ?? null }
+      const response = await getPipelineProgressSnapshot(String(pid), requestedTenant)
+      const snapshot = response.pipelines.find((p) => p.pipelineInstanceId === pid)
+      if (!snapshot || response.tenantId !== requestedTenant)
+        throw new Error('Pipeline snapshot scope mismatch')
+      if (
+        requestId === fileSummaryRequestId &&
+        requestedTenant === tenant.tenantId &&
+        revision === fileSummaryPushRevision &&
+        (!selectedPipeline.value || selectedPipeline.value.id === pid)
+      )
+        currentFile.value = {
+          pipelineId: pid,
+          fileId: snapshot.fileId ?? null,
+          fileName: snapshot.fileName ?? null,
+        }
     } catch {
-      if (requestId === fileSummaryRequestId) fileSummaryUnavailable.value = true
+      if (
+        requestId === fileSummaryRequestId &&
+        requestedTenant === tenant.tenantId &&
+        revision === fileSummaryPushRevision &&
+        (!selectedPipeline.value || selectedPipeline.value.id === pid)
+      )
+        fileSummaryUnavailable.value = true
     }
   }
 
@@ -546,18 +576,38 @@
   const serverTotal = ref(0)
   const selectedPipeline = ref<ConsoleFilePipelineResponse | null>(null)
   const selectedStageCode = ref<string | null>(null)
-  const stagesMap = ref<PipelineStagesMap>({})
   const selectedSteps = computed(() => selectedPipelineSteps.value)
-  const selectedStages = computed(() =>
-    pipelineStageCodes(
-      selectedPipeline.value?.pipelineType,
-      selectedSteps.value,
-      stagesMap.value,
-    ).map((code, index) => {
-      const step = selectedSteps.value.find((item) => item.stageCode?.toUpperCase() === code)
-      const status = String(step?.stepStatus ?? '')
+  const selectedPipelineProgress = computed(() =>
+    progress.progress.value?.pipelines.find(
+      (p) => p.pipelineInstanceId === selectedPipeline.value?.id,
+    ),
+  )
+  const selectedPipelineDisplay = computed(() =>
+    selectedPipeline.value
+      ? {
+          ...selectedPipeline.value,
+          runStatus: selectedPipelineProgress.value?.runStatus ?? selectedPipeline.value.runStatus,
+          currentStage:
+            selectedPipelineProgress.value?.currentStage ?? selectedPipeline.value.currentStage,
+        }
+      : null,
+  )
+  const selectedStages = computed(() => {
+    const snapshot = selectedPipelineProgress.value
+    const steps = snapshot?.steps ?? selectedSteps.value
+    const code = snapshot?.systemPipelineCode ?? ''
+    const catalog = snapshot?.stageGraphAvailable ? { [code]: snapshot.stageCodes } : {}
+    return pipelineStageCodes(code, steps, catalog).map((code, index) => {
+      const step = steps.find((item) => item.stageCode?.toUpperCase() === code)
+      const terminal =
+        snapshot && ['SUCCESS', 'FAILED', 'CANCELLED', 'TERMINATED'].includes(snapshot.runStatus)
+      const status = String(step?.stepStatus ?? (terminal ? 'NOT_EXECUTED' : ''))
       const normalized = status.toUpperCase()
-      const tone = ['SUCCESS', 'COMPLETED', 'SUCCEEDED'].includes(normalized)
+      const tone: 'success' | 'danger' | 'active' | 'pending' = [
+        'SUCCESS',
+        'COMPLETED',
+        'SUCCEEDED',
+      ].includes(normalized)
         ? 'success'
         : ['FAILED', 'ERROR'].includes(normalized)
           ? 'danger'
@@ -571,18 +621,19 @@
           ? t(`filePipelineObservability.stage${code}`)
           : code,
         status: status
-          ? te(`enum.partitionStatus.${status}`)
-            ? t(`enum.partitionStatus.${status}`)
+          ? te(`workflowProgress.states.${status}`)
+            ? t(`workflowProgress.states.${status}`)
             : status
           : t('filePipelineObservability.stageNoRecord'),
-        error: step?.errorMessage?.trim() || '',
+        error: step?.errorCode || '',
         tone,
       }
-    }),
-  )
+    })
+  })
 
   async function loadSelectedSteps(pipelineInstanceId: number) {
     const requestId = ++selectedStepsRequestId
+    const requestedTenant = tenant.tenantId
     selectedStepsLoading.value = true
     selectedStepLoadError.value = null
     try {
@@ -590,22 +641,20 @@
         '/api/console/queries/file-pipeline-steps',
         { tenantId: tenant.tenantId, pipelineInstanceId },
       )
-      if (requestId === selectedStepsRequestId && selectedPipeline.value?.id === pipelineInstanceId)
+      if (
+        requestId === selectedStepsRequestId &&
+        requestedTenant === tenant.tenantId &&
+        selectedPipeline.value?.id === pipelineInstanceId
+      )
         selectedPipelineSteps.value = steps
     } catch (error) {
-      if (requestId === selectedStepsRequestId) selectedStepLoadError.value = error
+      if (requestId === selectedStepsRequestId && requestedTenant === tenant.tenantId)
+        selectedStepLoadError.value = error
     } finally {
-      if (requestId === selectedStepsRequestId) selectedStepsLoading.value = false
+      if (requestId === selectedStepsRequestId && requestedTenant === tenant.tenantId)
+        selectedStepsLoading.value = false
     }
   }
-
-  onMounted(() => {
-    fetchPipelineStages()
-      .then((stages) => (stagesMap.value = stages || {}))
-      .catch(() => {
-        stagesMap.value = {}
-      })
-  })
 
   function reloadSelectedSteps() {
     const pipelineInstanceId = selectedPipeline.value?.id
@@ -630,12 +679,34 @@
   // 默认展示行级进度；未知总量不推断预计完成时间。
   const showProgressColumns = ref(true)
   // stepId → 最新进度采样(BE pipeline-progress 端点上报)
-  const progress = usePipelineProgress(() => tenant.tenantId)
+  const progressIds = computed(() =>
+    activeTab.value === 'pipelines'
+      ? allPipelines.value.map((p) => p.id)
+      : activeTab.value === 'steps' && showProgressColumns.value
+        ? allSteps.value.map((s) => s.pipelineInstanceId).filter((id): id is number => id != null)
+        : [],
+  )
+  const progress = useLivePipelineProgress(() => tenant.tenantId, progressIds)
   const {
     byStepId: progressByStepId,
     unavailable: progressUnavailable,
     lastSucceededAt: progressLastSucceededAt,
   } = progress
+  watch([progress.progress, () => selectedPipeline.value?.id], ([data, selected]) => {
+    if (!route.query.pipelineInstanceId) return
+    if (selected && currentFile.value?.pipelineId !== selected) currentFile.value = null
+    const id = selected ?? Number(route.query.pipelineInstanceId)
+    const current = data?.pipelines.find((p) => p.pipelineInstanceId === id)
+    if (current) {
+      fileSummaryPushRevision++
+      currentFile.value = {
+        pipelineId: id,
+        fileId: current.fileId ?? null,
+        fileName: current.fileName ?? null,
+      }
+      fileSummaryUnavailable.value = false
+    }
+  })
   const HEARTBEAT_STALL_MS = 90_000
 
   function formatRowsCompact(n: number): string {
@@ -665,41 +736,42 @@
     const totalStr = formatRowsCompact(prog.totalRowsHint)
 
     // 心跳停滞:文本切「无响应」
-    if (prog.lastHeartbeatAt != null && Date.now() - prog.lastHeartbeatAt > HEARTBEAT_STALL_MS) {
+    const heartbeatIsStalled =
+      prog.lastHeartbeatAt != null && Date.now() - prog.lastHeartbeatAt > HEARTBEAT_STALL_MS
+    if (heartbeatIsStalled) {
       return `${totalStr} · ${t('common.etaStalled')}`
     }
     const minutes = progress.estimateMinutes(prog)
     return minutes == null ? totalStr : `${totalStr} · ${t('common.etaPattern', { minutes })}`
   }
 
-  async function loadProgress() {
-    // 只在 steps tab 且需要时拉
-    if (activeTab.value !== 'steps' || !showProgressColumns.value) return false
-    return progress.refresh(
-      allSteps.value.map((s) => s.pipelineInstanceId).filter((id) => id != null),
-    )
+  const live = { status: progress.status, lastRefreshedAt: progress.lastSucceededAt }
+  function currentStep(row: ConsoleFilePipelineStepResponse) {
+    const sample = progressByStepId.value.get(row.id)
+    return sample?.pipelineInstanceId === row.pipelineInstanceId
+      ? {
+          ...row,
+          stepStatus: sample.stepStatus ?? row.stepStatus,
+          runSeq: sample.runSeq ?? row.runSeq,
+          errorCode: sample.errorCode ?? '',
+          errorMessage: sample.errorCode === row.errorCode ? row.errorMessage : '',
+        }
+      : row
   }
-
-  // 30s 轮询(与心跳一致);页面隐藏自动暂停
-  useAutoRefresh(() => {
-    void loadProgress()
-  }, 30_000)
-
-  const progressSseEnabled = computed(
-    () => activeTab.value === 'steps' && showProgressColumns.value,
-  )
-  const live = useSseAutoReload({
-    domain: 'pipeline-progress',
-    reload: loadProgress,
-    scope: () => tenant.tenantId,
-    debounceMs: 1_200,
-    enabled: progressSseEnabled,
-    onFallback: null,
-  })
-
   const total = computed(() => serverTotal.value)
-  const pipelineRows = computed(() => allPipelines.value)
-  const stepRows = computed(() => allSteps.value)
+  const pipelineRows = computed(() =>
+    allPipelines.value.map((row) => {
+      const current = progress.progress.value?.pipelines.find(
+        (p) => p.pipelineInstanceId === row.id,
+      )
+      return {
+        ...row,
+        runStatus: current?.runStatus ?? row.runStatus,
+        currentStage: current?.currentStage ?? row.currentStage,
+      }
+    }),
+  )
+  const stepRows = computed(() => allSteps.value.map(currentStep))
   const dispatchRows = computed(() => allDispatches.value)
   const errorRows = computed(() => allErrors.value)
 
@@ -724,7 +796,16 @@
     void runActive()
   }
 
+  function exactDeepPipelineId() {
+    const text = String(route.query.pipelineInstanceId ?? '').trim()
+    const id = Number(text)
+    return kwApplied.value === text && Number.isSafeInteger(id) && id > 0 ? id : undefined
+  }
+  let pipelinesRequestId = 0
   async function loadPipelines() {
+    const requestId = ++pipelinesRequestId
+    const requestedTenant = tenant.tenantId
+    const valid = () => requestId === pipelinesRequestId && requestedTenant === tenant.tenantId
     loading.value = true
     loadError.value = null
     try {
@@ -733,7 +814,9 @@
         pageNo: page.value,
         pageSize: pageSize.value,
         keyword: kwApplied.value || undefined,
+        pipelineInstanceId: exactDeepPipelineId(),
       })
+      if (!valid()) return
       allPipelines.value = result.items ?? []
       serverTotal.value = result.total ?? 0
       const requestedId = Number(route.query.pipelineInstanceId)
@@ -744,11 +827,11 @@
         allPipelines.value[0] ??
         null
     } catch (error) {
-      loadError.value = error
+      if (valid()) loadError.value = error
     } finally {
-      loading.value = false
+      if (valid()) loading.value = false
     }
-    if (selectedPipeline.value) {
+    if (valid() && selectedPipeline.value) {
       selectedPipelineSteps.value = []
       void loadSelectedSteps(selectedPipeline.value.id)
     }
@@ -767,15 +850,14 @@
         pageNo: page.value,
         pageSize: pageSize.value,
         keyword: kwApplied.value || undefined,
-        pipelineInstanceId: selectedStageCode.value ? selectedPipeline.value?.id : undefined,
+        pipelineInstanceId: selectedStageCode.value
+          ? selectedPipeline.value?.id
+          : exactDeepPipelineId(),
         stageCode: selectedStageCode.value || undefined,
       })
       if (requestId !== stepsRequestId || requestedTenant !== tenant.tenantId) return
       allSteps.value = result.items ?? []
       serverTotal.value = result.total ?? 0
-      if (showProgressColumns.value) {
-        await loadProgress()
-      }
     } catch (error) {
       if (requestId === stepsRequestId && requestedTenant === tenant.tenantId)
         stepLoadError.value = error
@@ -818,7 +900,9 @@
 
   async function reloadTab() {
     page.value = 1
-    const pipelineInstanceId = String(route.query.pipelineInstanceId ?? '').trim()
+    const pipelineInstanceValue = route.query.pipelineInstanceId ?? ''
+    const pipelineInstanceText = String(pipelineInstanceValue)
+    const pipelineInstanceId = pipelineInstanceText.trim()
     await Promise.all([
       runActive(),
       fileSummaryUnavailable.value ? loadCurrentFile(pipelineInstanceId) : Promise.resolve(),
@@ -828,22 +912,26 @@
   function onTabChange() {
     if (activeTab.value !== 'steps') selectedStageCode.value = null
     page.value = 1
-    kwDraft.value = ''
-    kwApplied.value = ''
+    const deepFilter = exactDeepPipelineId() ? String(route.query.pipelineInstanceId).trim() : ''
+    kwDraft.value = deepFilter
+    kwApplied.value = deepFilter
     void runActive()
   }
 
   watch(
     () => route.query.pipelineInstanceId,
     (value) => {
-      const next = String(value ?? '').trim()
+      const pipelineInstanceValue = value ?? ''
+      const pipelineInstanceText = String(pipelineInstanceValue)
+      const next = pipelineInstanceText.trim()
       if (!next) return
       activeTab.value = 'pipelines'
       kwDraft.value = next
       kwApplied.value = next
       page.value = 1
+      const pipelineInstanceId = Number(next)
       selectedPipeline.value =
-        allPipelines.value.find((item) => item.id === Number(next)) ?? selectedPipeline.value
+        allPipelines.value.find((item) => item.id === pipelineInstanceId) ?? selectedPipeline.value
       selectedStageCode.value = null
       if (selectedPipeline.value) {
         selectedPipelineSteps.value = []
@@ -862,6 +950,8 @@
 
   useTenantReload(() => {
     stepsRequestId++
+    pipelinesRequestId++
+    selectedStepsRequestId++
     fileSummaryRequestId++
     fileSummaryUnavailable.value = false
     progress.reset()
@@ -876,7 +966,9 @@
     allDispatches.value = []
     allErrors.value = []
     currentFile.value = null
-    const pipelineInstanceId = String(route.query.pipelineInstanceId ?? '').trim()
+    const pipelineInstanceValue = route.query.pipelineInstanceId ?? ''
+    const pipelineInstanceText = String(pipelineInstanceValue)
+    const pipelineInstanceId = pipelineInstanceText.trim()
     if (pipelineInstanceId) void loadCurrentFile(pipelineInstanceId)
     return runActive()
   })

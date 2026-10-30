@@ -287,9 +287,14 @@
   }
 
   const filtered = computed(() => {
-    const k = kwApplied.value.trim().toLowerCase()
+    const trimmedKeyword = kwApplied.value.trim()
+    const k = trimmedKeyword.toLowerCase()
     return policies.value.filter((p) => {
-      const matchKeyword = !k ? true : `${p.policyCode} ${p.description}`.toLowerCase().includes(k)
+      let matchKeyword = true
+      if (k) {
+        const searchableQuotaText = `${p.policyCode} ${p.description}`.toLowerCase()
+        matchKeyword = searchableQuotaText.includes(k)
+      }
       const matchEnabled =
         enabledApplied.value === undefined ? true : Boolean(p.enabled) === enabledApplied.value
       return matchKeyword && matchEnabled

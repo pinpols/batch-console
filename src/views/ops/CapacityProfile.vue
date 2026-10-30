@@ -138,8 +138,8 @@
             <el-table-column :label="dimensionLabel" min-width="220">
               <template #default="{ row }">
                 <div class="cell-stack">
-                  <div class="cell-main">{{ dimensionValue(row) }}</div>
-                  <div class="cell-sub">{{ secondaryDimensionValue(row) }}</div>
+                  <div class="cell-main">{{ dimensionValue(row as CapacityProfileRow) }}</div>
+                  <div class="cell-sub">{{ secondaryDimensionValue(row as CapacityProfileRow) }}</div>
                 </div>
               </template>
             </el-table-column>
@@ -262,7 +262,11 @@
   // 默认最近 7 天窗口:后端 capacity-profile 端点缺省 from/to 会 500,首屏必须带窗口。
   function defaultWindow(): [string, string] {
     const now = new Date()
-    return [new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString(), now.toISOString()]
+    const windowStartMillis = now.getTime() - 7 * 24 * 60 * 60 * 1000
+    const windowStart = new Date(windowStartMillis)
+    const from = windowStart.toISOString()
+    const to = now.toISOString()
+    return [from, to]
   }
   const range = ref<[string, string] | null>(defaultWindow())
   const query = reactive<{ groupBy: CapacityProfileGroupBy; limit: number }>({
@@ -284,19 +288,25 @@
     ) {
       return emptyOption(t('common.noData'))
     }
+    const pointLabels = points.map((point) => point.label)
+    const xAxisLabelFormatter = (value: string) => value.replace(' - ', '\n')
+    const instanceName = t('capacityProfile.metricInstances')
+    const instanceCounts = points.map((point) => point.instanceCount)
+    const taskName = t('capacityProfile.metricTasks')
+    const taskCounts = points.map((point) => point.taskCount)
     return buildLineOption({
-      x: points.map((point) => point.label),
-      xAxisLabelFormatter: (value) => value.replace(' - ', '\n'),
+      x: pointLabels,
+      xAxisLabelFormatter,
       series: [
         {
-          name: t('capacityProfile.metricInstances'),
-          data: points.map((point) => point.instanceCount),
+          name: instanceName,
+          data: instanceCounts,
           color: OPS_CHART_COLORS.primary,
           area: true,
         },
         {
-          name: t('capacityProfile.metricTasks'),
-          data: points.map((point) => point.taskCount),
+          name: taskName,
+          data: taskCounts,
           color: OPS_CHART_COLORS.teal,
         },
       ],
@@ -384,25 +394,26 @@
     try {
       const [from, to] = range.value ?? defaultWindow()
       const buckets = buildCapacityBuckets([from, to])
-      const [mainReport, bucketResults] = await Promise.all([
+      const mainReportRequest = getCapacityProfile({
+        tenantId: tenant.tenantId,
+        groupBy: query.groupBy,
+        limit: query.limit,
+        from,
+        to,
+      })
+      const bucketReportRequests = buckets.map((bucket) =>
         getCapacityProfile({
           tenantId: tenant.tenantId,
-          groupBy: query.groupBy,
-          limit: query.limit,
-          from,
-          to,
+          groupBy: 'TENANT',
+          limit: 1,
+          from: bucket.from,
+          to: bucket.to,
         }),
-        Promise.allSettled(
-          buckets.map((bucket) =>
-            getCapacityProfile({
-              tenantId: tenant.tenantId,
-              groupBy: 'TENANT',
-              limit: 1,
-              from: bucket.from,
-              to: bucket.to,
-            }),
-          ),
-        ),
+      )
+      const settledBucketReportRequest = Promise.allSettled(bucketReportRequests)
+      const [mainReport, bucketResults] = await Promise.all([
+        mainReportRequest,
+        settledBucketReportRequest,
       ])
       report.value = mainReport
       trendBuckets.value = buckets

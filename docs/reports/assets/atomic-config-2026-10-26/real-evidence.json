@@ -1,0 +1,65 @@
+{
+  "anonymousAuthStatus": 401,
+  "permissions": {
+    "tenantAdmin": {
+      "list": 200,
+      "create": 200
+    },
+    "admin": {
+      "list": 200,
+      "create": 200
+    },
+    "auditor": {
+      "list": 403,
+      "create": 403
+    },
+    "tenantUser": {
+      "list": 403,
+      "create": 403
+    }
+  },
+  "appliedConfig": true,
+  "persistedState": [
+    {
+      "taskType": "sql",
+      "parameters": {
+        "sql": "select 22"
+      }
+    },
+    {
+      "taskType": "sql",
+      "parameters": {
+        "sql": "select 11"
+      }
+    }
+  ],
+  "tenantScopeVerified": true,
+  "cleanup": {
+    "definitions": 0,
+    "nodes": 0,
+    "edges": 0,
+    "versions": 0,
+    "runs": 0,
+    "nodeRuns": 0,
+    "requests": 0,
+    "jobInstances": 0,
+    "terminalEvents": 0,
+    "terminalReceipts": 0,
+    "terminalDedupKeys": 0,
+    "calendars": 0,
+    "batchDays": 0,
+    "dayCursors": 0,
+    "dayAudits": 0,
+    "catchupControls": 0,
+    "catchupEvents": 0,
+    "tenants": 0,
+    "configurationRevisions": 0,
+    "operationAudits": 0,
+    "credentialAccounts": 0,
+    "extraAccounts": 0,
+    "manualDayLogs": 0,
+    "atomicConfigDeleted": 2,
+    "atomicConfigRowsRemaining": 0
+  },
+  "cleanupAllZero": true
+}

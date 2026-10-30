@@ -3,7 +3,7 @@
  * 各 tab 从 store 读数即可。页面隐藏时轮询暂停（由 useAutoRefresh 负责）。
  */
 import { defineStore } from 'pinia'
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { getOpsSummary } from '@/api/ops'
 import { useTenantStore } from '@/stores/tenant'
 
@@ -12,15 +12,31 @@ export const useMobileBadgesStore = defineStore('mobile-badges', () => {
   const openAlerts = ref(0)
   const criticalAlerts = ref(0)
   const failedJobs = ref(0)
-  let fetching = false
+  const tenant = useTenantStore()
+  let requestGeneration = 0
+  let fetchingTenantId: string | null = null
+
+  watch(
+    () => tenant.tenantId,
+    () => {
+      requestGeneration += 1
+      fetchingTenantId = null
+      pendingApprovals.value = 0
+      openAlerts.value = 0
+      criticalAlerts.value = 0
+      failedJobs.value = 0
+    },
+    { flush: 'sync' },
+  )
 
   async function refresh(): Promise<void> {
-    if (fetching) return
-    fetching = true
+    const tenantId = tenant.tenantId
+    if (!tenantId || fetchingTenantId === tenantId) return
+    fetchingTenantId = tenantId
+    const generation = ++requestGeneration
     try {
-      const tenant = useTenantStore()
-      if (!tenant.tenantId) return
-      const s = await getOpsSummary(tenant.tenantId)
+      const s = await getOpsSummary(tenantId)
+      if (generation !== requestGeneration || tenantId !== tenant.tenantId) return
       pendingApprovals.value = s.pendingApprovals ?? 0
       openAlerts.value = s.openAlerts ?? 0
       criticalAlerts.value = s.criticalAlerts ?? 0
@@ -28,7 +44,7 @@ export const useMobileBadgesStore = defineStore('mobile-badges', () => {
     } catch {
       /* 保留上次值 */
     } finally {
-      fetching = false
+      if (generation === requestGeneration) fetchingTenantId = null
     }
   }
 

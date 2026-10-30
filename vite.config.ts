@@ -1,5 +1,5 @@
 import { defineConfig, loadEnv } from 'vite'
-import type { UserConfig } from 'vitest/config'
+import type { ViteUserConfig } from 'vitest/config'
 import vue from '@vitejs/plugin-vue'
 import AutoImport from 'unplugin-auto-import/vite'
 import Components from 'unplugin-vue-components/vite'
@@ -42,7 +42,7 @@ export default defineConfig(({ mode }) => {
         // 核心范围设置，新增高风险逻辑必须补测试，页面模板本身不做低价值行覆盖追逐。
         thresholds: { statements: 45, branches: 40, functions: 35, lines: 45 },
       },
-    } satisfies UserConfig['test'],
+    } satisfies ViteUserConfig['test'],
     plugins: [
       {
         name: 'docs-trailing-slash',
@@ -235,7 +235,7 @@ export default defineConfig(({ mode }) => {
        * tools/docs-bridge 跟 SPA 源代码完全解耦,vite 没必要 watch 它。
        */
       watch: {
-        ignored: ['**/tools/docs-bridge/**', '**/dist/**', '**/playwright-report/**'],
+        ignored: ['**/tools/docs-bridge/**', '**/dist/**', '**/playwright-report/**', '**/output/**'],
       },
       proxy: {
         '/docs': {

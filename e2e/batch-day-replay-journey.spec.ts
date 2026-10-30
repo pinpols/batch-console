@@ -2,6 +2,7 @@ import { AxeBuilder } from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 import { STORAGE_KEYS } from './support/storage'
 import { installE2eLocale } from './support/i18n'
+import { ONBOARDING_GUIDE_VERSION } from '../src/composables/onboardingModel'
 
 test.use({ storageState: { cookies: [], origins: [] }, serviceWorkers: 'block' })
 
@@ -11,11 +12,13 @@ function response(data: unknown) {
 
 test.beforeEach(async ({ page }) => {
   await installE2eLocale(page)
-  await page.addInitScript((keys) => {
+  await page.addInitScript(({ keys, guideVersion }) => {
     localStorage.setItem(keys.session, '1')
     localStorage.setItem(keys.tenantId, 'ta')
-    localStorage.setItem(keys.onboardingDone, '1')
-  }, STORAGE_KEYS)
+    const tourIdentity = encodeURIComponent('journey-admin:ta')
+    const tourCompletionKey = `${keys.onboardingDone}:${guideVersion}:${tourIdentity}`
+    localStorage.setItem(tourCompletionKey, '1')
+  }, { keys: STORAGE_KEYS, guideVersion: ONBOARDING_GUIDE_VERSION })
   await page.route('**/api/console/**', async (route) => {
     const path = new URL(route.request().url()).pathname
     const businessKey = new URL(route.request().url()).searchParams.get('businessKey')
@@ -40,13 +43,17 @@ test.beforeEach(async ({ page }) => {
                 outboxDeliveryFailures: 0,
               }
             : path === '/api/console/queries/job-definitions/codes'
-              ? ['JOB_REPLAY_A', 'JOB_REPLAY_B']
+              ? [
+                  { code: 'JOB_REPLAY_A', name: 'JOB_REPLAY_A' },
+                  { code: 'JOB_REPLAY_B', name: 'JOB_REPLAY_B' },
+                ]
               : path === '/api/console/result-versions'
                 ? [
                     { id: 503, tenantId: 'ta', businessKey, versionNo: 3, status: 'EFFECTIVE' },
                     { id: 502, tenantId: 'ta', businessKey, versionNo: 2, status: 'PENDING' },
                   ]
-                : path === '/api/console/ops/batch-day-replay/sessions'
+                : (path === '/api/console/ops/batch-day-replay/sessions' ||
+                    path === '/api/console/ops/batch-day-replay/operations')
                   ? []
                   : { items: [], total: 0, pageNo: 1, pageSize: 20 }
     await route.fulfill({ status: 200, json: response(data) })
@@ -286,7 +293,9 @@ test('作业定义页以新建作业为主入口并保留熟练用户快速表�
 
   await page.goto('/jobs/definitions')
   await page.getByRole('button', { name: '快速表单' }).click()
-  await expect(page.getByRole('dialog', { name: '新建 · 作业定义' })).toBeVisible()
+  const quickForm = page.getByRole('dialog', { name: '作业定义', exact: true })
+  await expect(quickForm).toBeVisible()
+  await expect(quickForm.getByText('新建 · 作业定义', { exact: true })).toBeVisible()
 })
 
 test('作业向导收敛为六步并在一个可选步骤中呈现关联配置', async ({ page }) => {
@@ -435,17 +444,16 @@ test('新租户可从工作台直接进入配置包导入', async ({ page }) => 
   const renderWarnings: string[] = []
   page.on('console', (message) => {
     const text = message.text()
-    if (
-      message.type() === 'warning' &&
+    const isKnownReplayConsoleWarning = message.type() === 'warning' &&
       (text.includes('Property "Download"') || text.includes('[intlify] Not found'))
-    ) {
+    if (isKnownReplayConsoleWarning) {
       renderWarnings.push(text)
     }
   })
   await page.goto('/ops/summary')
-  await page.getByRole('tab', { name: '扩展面板' }).click()
-  await expect(page.getByText('当前租户暂无运行数据')).toBeVisible()
-  await page.getByRole('button', { name: /导入配置包/ }).click()
+  const onboarding = page.locator('[data-onboarding="onboarding-center"]')
+  await expect(onboarding.getByRole('heading', { name: '完成平台首条可运行链路' })).toBeVisible()
+  await onboarding.getByRole('button', { name: '导入配置包', exact: true }).click()
   await expect(page).toHaveURL(/\/config\/tenant-package/)
   await expect(page.getByRole('heading', { name: '配置批量导入' })).toBeVisible()
   expect(renderWarnings).toEqual([])
@@ -508,8 +516,8 @@ test('批量重试逐项展示成功与失败原因', async ({ page }) => {
     const body = route.request().postDataJSON() as { targetInstanceNo: string }
     if (body.targetInstanceNo === 'INS_RETRY_FAIL') {
       await route.fulfill({
-        status: 500,
-        json: { code: 'EXECUTION_FAILED', message: '实例仍处于不可重试状态' },
+        status: 409,
+        json: { code: 'STATE_CONFLICT', message: '实例仍处于不可重试状态' },
       })
       return
     }

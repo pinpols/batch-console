@@ -6,5 +6,9 @@ export function createIdempotencyKey(): string {
     return crypto.randomUUID()
   }
   fallbackCounter = (fallbackCounter + 1) % 0x7fffffff
-  return `${Date.now()}-${fallbackCounter}-${Math.random().toString(36).slice(2, 12)}`
+  const timestamp = Date.now()
+  const randomValue = Math.random()
+  const randomText = randomValue.toString(36)
+  const randomSuffix = randomText.slice(2, 12)
+  return `${timestamp}-${fallbackCounter}-${randomSuffix}`
 }

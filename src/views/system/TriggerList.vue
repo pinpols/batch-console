@@ -23,25 +23,25 @@
             @reset="onReset"
             @refresh="() => runRefresh(load)"
           >
-            <el-form-item :label="t('triggerList.jobCodeLabel')">
+            <el-form-item :label="t('triggerList.workflowCodeLabel')">
               <el-input
                 class="query-w-220"
                 v-model="kwDraft"
                 clearable
-                :placeholder="t('triggerList.jobCodePlaceholder')"
+                :placeholder="t('triggerList.workflowCodePlaceholder')"
                 @keyup.enter="onSearch"
               />
             </el-form-item>
           </ListPageQueryBar>
         </template>
         <el-table-column
-          prop="jobCode"
-          :label="t('triggerList.colJobCode')"
+          prop="workflowCode"
+          :label="t('triggerList.colWorkflowCode')"
           min-width="180"
           show-overflow-tooltip
         >
           <template #default="{ row }">
-            <CopyableText :text="String(row.jobCode ?? '')" />
+            <CopyableText :text="String(row.workflowCode ?? '')" />
           </template>
         </el-table-column>
         <el-table-column prop="triggerType" :label="t('triggerList.colType')" width="120">
@@ -76,7 +76,7 @@
                 type="primary"
                 :icon="CirclePlay"
                 :disabled="writesFrozen"
-                v-track-click="{ action: 'register trigger', jobCode: row.jobCode }"
+                v-track-click="{ action: 'register trigger', workflowCode: row.workflowCode }"
                 @click="doRegister(row)"
               >
                 {{ t('triggerList.actionRegister') }}
@@ -88,7 +88,7 @@
                 type="danger"
                 :icon="CircleStop"
                 :disabled="writesFrozen"
-                v-track-click="{ action: 'unregister trigger', jobCode: row.jobCode }"
+                v-track-click="{ action: 'unregister trigger', workflowCode: row.workflowCode }"
                 @click="doUnregister(row)"
               >
                 {{ t('triggerList.actionUnregister') }}
@@ -100,7 +100,7 @@
                 type="warning"
                 :icon="Pause"
                 :disabled="writesFrozen"
-                v-track-click="{ action: 'pause trigger', jobCode: row.jobCode }"
+                v-track-click="{ action: 'pause trigger', workflowCode: row.workflowCode }"
                 @click="doPause(row)"
               >
                 {{ t('triggerList.actionPause') }}
@@ -112,7 +112,7 @@
                 type="success"
                 :icon="Play"
                 :disabled="writesFrozen"
-                v-track-click="{ action: 'resume trigger', jobCode: row.jobCode }"
+                v-track-click="{ action: 'resume trigger', workflowCode: row.workflowCode }"
                 @click="doResume(row)"
               >
                 {{ t('triggerList.actionResume') }}
@@ -145,7 +145,8 @@
   // 破坏性动作按行状态门控:未注册只显示"注册";已注册显示"注销";
   // 运行中(NORMAL/REGISTERED)才可"暂停";仅"已暂停"可"恢复"。
   function triggerStatusOf(row: Record<string, unknown>): string {
-    return String(row.triggerStatus ?? row.status ?? '').toUpperCase()
+    const rawStatus = String(row.triggerStatus ?? row.status ?? '')
+    return rawStatus.toUpperCase()
   }
   function canRegister(row: Record<string, unknown>): boolean {
     const s = triggerStatusOf(row)
@@ -156,7 +157,8 @@
     return !!s && s !== 'UNREGISTERED'
   }
   function canPause(row: Record<string, unknown>): boolean {
-    return ['NORMAL', 'REGISTERED'].includes(triggerStatusOf(row))
+    const status = triggerStatusOf(row)
+    return ['NORMAL', 'REGISTERED'].includes(status)
   }
   function canResume(row: Record<string, unknown>): boolean {
     return triggerStatusOf(row) === 'PAUSED'
@@ -195,13 +197,14 @@
   const keyword = ref('')
 
   const filtered = computed(() => {
-    const k = keyword.value.trim().toLowerCase()
+    const trimmedKeyword = keyword.value.trim()
+    const k = trimmedKeyword.toLowerCase()
     if (!k) return allRows.value
-    return allRows.value.filter((r) =>
-      String(r.jobCode ?? '')
-        .toLowerCase()
-        .includes(k),
-    )
+    return allRows.value.filter((row) => {
+      const workflowCodeText = String(row.workflowCode ?? '')
+      const normalizedWorkflowCode = workflowCodeText.toLowerCase()
+      return normalizedWorkflowCode.includes(k)
+    })
   })
 
   const pagedRows = computed(() => toPageResult(filtered.value, page.value, pageSize.value).records)
@@ -236,13 +239,18 @@
   async function doRegister(row: Record<string, unknown>) {
     if (!ensureWriteAvailable()) return
     try {
+      const confirmVerb = t('triggerList.registerConfirmVerb')
+      const workflowCode = String(row.workflowCode)
+      const confirmTarget = t('triggerList.confirmTarget', { code: workflowCode })
+      const confirmConsequence = t('triggerList.registerConfirmConsequence')
+      const confirmButtonText = t('triggerList.registerConfirmButton')
       await confirmDanger({
-        verb: t('triggerList.registerConfirmVerb'),
-        target: t('triggerList.confirmTarget', { code: String(row.jobCode) }),
-        consequence: t('triggerList.registerConfirmConsequence'),
-        confirmButtonText: t('triggerList.registerConfirmButton'),
+        verb: confirmVerb,
+        target: confirmTarget,
+        consequence: confirmConsequence,
+        confirmButtonText,
       })
-      await registerTrigger(String(row.jobCode), tenant.tenantId)
+      await registerTrigger(String(row.workflowCode), tenant.tenantId)
       ElMessage.success(t('triggerList.registerSuccess'))
       await load()
     } catch {
@@ -253,14 +261,19 @@
   async function doUnregister(row: Record<string, unknown>) {
     if (!ensureWriteAvailable()) return
     try {
+      const confirmVerb = t('triggerList.unregisterConfirmVerb')
+      const workflowCode = String(row.workflowCode)
+      const confirmTarget = t('triggerList.confirmTarget', { code: workflowCode })
+      const confirmConsequence = t('triggerList.unregisterConfirmConsequence')
+      const confirmButtonText = t('triggerList.unregisterConfirmButton')
       await confirmDanger({
-        verb: t('triggerList.unregisterConfirmVerb'),
-        target: t('triggerList.confirmTarget', { code: String(row.jobCode) }),
-        consequence: t('triggerList.unregisterConfirmConsequence'),
+        verb: confirmVerb,
+        target: confirmTarget,
+        consequence: confirmConsequence,
         irreversible: true,
-        confirmButtonText: t('triggerList.unregisterConfirmButton'),
+        confirmButtonText,
       })
-      await unregisterTrigger(String(row.jobCode), tenant.tenantId)
+      await unregisterTrigger(String(row.workflowCode), tenant.tenantId)
       ElMessage.success(t('triggerList.unregisterSuccess'))
       await load()
     } catch {
@@ -271,13 +284,18 @@
   async function doPause(row: Record<string, unknown>) {
     if (!ensureWriteAvailable()) return
     try {
+      const confirmVerb = t('triggerList.pauseConfirmVerb')
+      const workflowCode = String(row.workflowCode)
+      const confirmTarget = t('triggerList.confirmTarget', { code: workflowCode })
+      const confirmConsequence = t('triggerList.pauseConfirmConsequence')
+      const confirmButtonText = t('triggerList.pauseConfirmButton')
       await confirmDanger({
-        verb: t('triggerList.pauseConfirmVerb'),
-        target: t('triggerList.confirmTarget', { code: String(row.jobCode) }),
-        consequence: t('triggerList.pauseConfirmConsequence'),
-        confirmButtonText: t('triggerList.pauseConfirmButton'),
+        verb: confirmVerb,
+        target: confirmTarget,
+        consequence: confirmConsequence,
+        confirmButtonText,
       })
-      await pauseTrigger(String(row.jobCode), tenant.tenantId)
+      await pauseTrigger(String(row.workflowCode), tenant.tenantId)
       ElMessage.success(t('triggerList.pauseSuccess'))
       await load()
     } catch {
@@ -288,7 +306,7 @@
   async function doResume(row: Record<string, unknown>) {
     if (!ensureWriteAvailable()) return
     try {
-      await resumeTrigger(String(row.jobCode), tenant.tenantId)
+      await resumeTrigger(String(row.workflowCode), tenant.tenantId)
       ElMessage.success(t('triggerList.resumeSuccess'))
       await load()
     } catch {

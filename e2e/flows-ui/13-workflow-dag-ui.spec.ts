@@ -42,6 +42,7 @@ test.describe('UI Flow 13: workflow DAG UI', () => {
       await page.waitForLoadState('networkidle', { timeout: 8000 }).catch(() => undefined)
       const noErr: string[] = []
       page.on('pageerror', (e) => noErr.push(e.message))
+      // 负观察窗口：收集画布挂载后的延迟 pageerror。
       await page.waitForTimeout(500)
       expect(noErr, `pageerror: ${noErr.join('|')}`).toHaveLength(0)
     }

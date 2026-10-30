@@ -1,0 +1,33 @@
+{
+  "scope": "isolated WDI real Console, Orchestrator, PostgreSQL and Chromium acceptance",
+  "playwright": {
+    "browser": "chromium",
+    "passed": 1,
+    "failed": 0,
+    "retries": 0
+  },
+  "manualDecision": {
+    "action": "RELEASE",
+    "reasonPersisted": true,
+    "operatorPersisted": true
+  },
+  "schedulerConsumption": {
+    "calendarWaitStatus": "OPENED",
+    "openedBatchDayCount": 1,
+    "openedBatchDayStatus": "OPEN",
+    "operationReasonPrefix": "MANUAL_CALENDAR_DEPENDENCY_RELEASE:",
+    "operatedByPersisted": true
+  },
+  "cleanup": {
+    "calendarWaitRowsRemaining": 0,
+    "jobWaitRowsRemaining": 0,
+    "jobDefinitionsRemaining": 0,
+    "dependencyRowsRemaining": 0,
+    "batchDays": 0,
+    "operationAudits": 0,
+    "roleAccountsRemaining": 0,
+    "tenantRowsRemaining": 0,
+    "isolatedDatabaseDropped": true,
+    "exclusivePortsReleased": true
+  }
+}

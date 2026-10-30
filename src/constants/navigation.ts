@@ -257,12 +257,6 @@ const navigationGroupsByKey = {
         icon: Box,
       },
       {
-        title: pageTitle('/jobs/pipelines'),
-        path: '/jobs/pipelines',
-        minRole: 'VIEWER',
-        icon: DataLine,
-      },
-      {
         title: pageTitle('/workflow/definitions'),
         path: '/workflow/definitions',
         minRole: 'VIEWER',

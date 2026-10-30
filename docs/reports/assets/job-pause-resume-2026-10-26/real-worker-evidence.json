@@ -1,0 +1,68 @@
+{
+  "date": "2026-10-26",
+  "branch": "fix/wdi-current",
+  "test": "e2e/worker-workflow-progress-real.spec.ts",
+  "result": "passed",
+  "retries": 0,
+  "authentication": {
+    "anonymousAuthMe": 401,
+    "tenantAdminPause": 403
+  },
+  "jobPauseResume": {
+    "persistenceAssertions": [
+      "RUNNING",
+      "PAUSED",
+      "RUNNING"
+    ],
+    "pushedJobStatusSequence": [
+      "RUNNING",
+      "PAUSED",
+      "RUNNING",
+      "SUCCESS"
+    ],
+    "resumePushObserved": true
+  },
+  "terminal": {
+    "workflow": "SUCCESS",
+    "job": "SUCCESS",
+    "partition": "SUCCESS",
+    "task": "SUCCESS"
+  },
+  "periodicGets": {
+    "jobExecutionProgress": 0,
+    "tenantDailyProgress": 0
+  },
+  "cleanup": {
+    "definitions": 0,
+    "nodes": 0,
+    "edges": 0,
+    "versions": 0,
+    "runs": 0,
+    "nodeRuns": 0,
+    "requests": 0,
+    "jobInstances": 0,
+    "terminalEvents": 0,
+    "terminalReceipts": 0,
+    "terminalDedupKeys": 0,
+    "calendars": 0,
+    "batchDays": 0,
+    "dayCursors": 0,
+    "dayAudits": 0,
+    "catchupControls": 0,
+    "catchupEvents": 0,
+    "tenants": 0,
+    "configurationRevisions": 0,
+    "operationAudits": 0,
+    "credentialAccounts": 0,
+    "jobDefinitions": 0,
+    "instances": 0,
+    "partitions": 0,
+    "tasks": 0,
+    "stepInstances": 0,
+    "executionLogs": 0,
+    "workerReports": 0,
+    "jobEvents": 0,
+    "workerRegistry": 0
+  },
+  "cleanupAllZero": true
+}

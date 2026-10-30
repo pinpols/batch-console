@@ -1,17 +1,12 @@
 /**
- * P6 真实业务流程 — 用 SQL 预先 seed 完整运行时数据,FE 真按用户路径走完整闭环。
+ * 跨页业务流程回归；登录与基础夹具由全局 setup 和 support/app 提供。
  *
- * 前置(已做):
- *   - psql -f e2e-data/03-job-instance-states/seed-job-instances.sql        (28 个实例)
- *   - psql -f e2e-data/04-approvals-pending/seed-pending-approvals.sql      (3 个 PENDING 审批)
- *   - alert_event 直接 INSERT（4 个 OPEN 告警）
- *   - config_release 直接 INSERT（3 个 DRAFT/PENDING/PUBLISHED 发布记录）
- *   - event_outbox_retry 直接 INSERT（3 个 FAILED 重试记录）
- *   - outbox_event 3 row 标 FAILED
- *   - BATCH_CONSOLE_READ_REPLICA_ENABLED=false (主从断了 11 天,读主库)
+ * 审批与配置发布用例通过 support/test-data 创建本轮目标；实例、Outbox 和告警分支
+ * 依赖目标环境中的可见数据，部分分支在无数据或无可用动作时只检查页面与网络错误。
+ * 历史 SQL 只保留在 e2e-data/archive/，不属于本套件当前的自动初始化步骤。
  *
- * 数据策略:测试只点动作 + 验证响应;不强制断言状态变更落库(BE 可能异步)。
- * watchdog 兜底 0 4xx/5xx。
+ * 本文件覆盖交互和请求结果，不统一证明异步动作已持久化或真实业务已闭环；
+ * 真实后端验收范围与证据以 docs/testing/README.md、docs/runbook/ci.md 和本轮报告为准。
  */
 import { expect, test } from './support/app'
 import { enterDemoApp, expectPageTitle, isVisible } from './support/app'
@@ -30,7 +25,7 @@ test.describe('@business-flows D 档 P6 真实业务流程', () => {
     await expectPageTitle(page, '作业运行')
     await page.waitForLoadState('networkidle', { timeout: 8000 }).catch(() => {})
 
-    // 表格有 seed 的 28 条
+    // 目标环境可能已有实例；本用例不保证固定数量。
     // seed 数据未必落在默认列表的「今日」过滤窗口里 → 接受空,只断言骨架/空态已挂载
     await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
     const rows = page.locator('tbody tr.el-table__row')
@@ -177,7 +172,6 @@ test.describe('@business-flows D 档 P6 真实业务流程', () => {
             .click({ force: true })
             .catch(() => {})
           // 第 2 步:optionalReason prompt(带 input,确认钮「提交」)
-          await page.waitForTimeout(400)
           const prompt = page
             .locator('.el-message-box')
             .filter({ has: page.locator('input,textarea') })
@@ -309,7 +303,6 @@ test.describe('@business-flows D 档 P6 真实业务流程', () => {
       const audit = page.getByRole('menuitem', { name: '审计' }).first()
       if (await isVisible(audit, 1500)) {
         await audit.click({ force: true })
-        await page.waitForTimeout(800)
         const panel = page.locator('.el-dialog:visible, .el-drawer:visible').first()
         if (await isVisible(panel, 1500)) await page.keyboard.press('Escape')
       } else {

@@ -185,9 +185,17 @@ export function queryDeadLetters(tenantId: string, filters?: { traceId?: string 
 }
 
 /** POST /api/console/jobs/dead-letters/replay — 重放单条死信 */
-export function replayDeadLetter(tenantId: string, deadLetterId: number, reason?: string) {
+export function replayDeadLetter(
+  tenantId: string,
+  deadLetterId: number,
+  reason?: string,
+  resolution?: Pick<DeadLetterReplayRequest, 'externalActionVerifiedNotExecuted' | 'externalOutcomeEvidenceReference'>,
+  operatorId?: string,
+) {
   const body: DeadLetterReplayRequest = { tenantId, deadLetterId }
   if (reason) body.reason = reason
+  if (operatorId) body.operatorId = operatorId
+  if (resolution) Object.assign(body, resolution)
   return post<string>('/api/console/jobs/dead-letters/replay', body)
 }
 

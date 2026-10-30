@@ -139,7 +139,10 @@ function factory() {
 }
 
 describe('EdgeInspector', () => {
-  beforeEach(() => setActivePinia(createPinia()))
+  beforeEach(() => {
+    vi.resetAllMocks()
+    setActivePinia(createPinia())
+  })
 
   it('明确展示上下游节点和当前触发语义', () => {
     const { wrapper } = factory()

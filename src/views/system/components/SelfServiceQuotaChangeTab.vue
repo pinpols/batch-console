@@ -54,7 +54,7 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, reactive } from 'vue'
+  import { ref, reactive, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
   const { t } = useI18n({ useScope: 'global' })
@@ -62,6 +62,7 @@
   import { getTenantQuota, requestQuotaChange } from '@/api/tenantSelfService'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
+  import { useTenantRequestScope } from '@/composables/useTenantRequestScope'
   import { useFormValidate, rules } from '@/composables/useFormValidate'
 
   const tenant = useTenantStore()
@@ -77,9 +78,15 @@
       rules.required(t('selfServiceQuotaChangeTab.ruleValue')),
       {
         validator: (_r, v: string, cb) => {
-          const n = Number.parseInt(String(v).trim(), 10)
+          const valueText = String(v)
+          const trimmedValue = valueText.trim()
+          const n = Number.parseInt(trimmedValue, 10)
           if (Number.isFinite(n) && n > 0) cb()
-          else cb(new Error(t('selfServiceQuotaChangeTab.ruleValuePositive')))
+          else {
+            const errorMessage = t('selfServiceQuotaChangeTab.ruleValuePositive')
+            const validationError = new Error(errorMessage)
+            cb(validationError)
+          }
         },
         trigger: 'blur',
       },
@@ -94,22 +101,32 @@
       .map((it) => {
         if (!it || typeof it !== 'object') return ''
         const anyIt = it as Record<string, unknown>
-        return String((anyIt.policyCode ?? anyIt.field ?? anyIt.quotaKey ?? '') || '').trim()
+        const rawQuotaKey = anyIt.policyCode ?? anyIt.field ?? anyIt.quotaKey ?? ''
+        const quotaKeyValue = rawQuotaKey || ''
+        const quotaKeyText = String(quotaKeyValue)
+        const quotaKey = quotaKeyText.trim()
+        return quotaKey
       })
       .filter(Boolean)
-    return Array.from(new Set(keys))
+    const uniqueKeys = new Set(keys)
+    return Array.from(uniqueKeys)
   }
 
+  const loadScope = useTenantRequestScope()
+  const submitScope = useTenantRequestScope()
   async function loadQuotaKeys() {
-    if (quotaKeysLoading.value) return
+    const request = loadScope.begin()
+    if (!request.tenantId) return
     quotaKeysLoading.value = true
     try {
-      const q = await getTenantQuota(tenant.tenantId)
+      const q = await getTenantQuota(request.tenantId)
+      if (!loadScope.isCurrent(request)) return
       quotaKeys.value = extractQuotaKeys(q)
     } catch {
+      if (!loadScope.isCurrent(request)) return
       quotaKeys.value = []
     } finally {
-      quotaKeysLoading.value = false
+      if (loadScope.isCurrent(request)) quotaKeysLoading.value = false
     }
   }
 
@@ -121,24 +138,38 @@
   }
 
   async function submitQuotaChange() {
-    if (!(await validateQuotaForm())) return
-    const requestedValue = Number.parseInt(quotaForm.requestedValue.trim(), 10)
+    if (submittingQuota.value || !tenant.tenantId) return
+    const request = submitScope.begin()
+    if (!(await validateQuotaForm()) || !submitScope.isCurrent(request)) return
+    const trimmedRequestedValue = quotaForm.requestedValue.trim()
+    const requestedValue = Number.parseInt(trimmedRequestedValue, 10)
     submittingQuota.value = true
     try {
-      await requestQuotaChange(tenant.tenantId, {
+      await requestQuotaChange(request.tenantId, {
         field: quotaForm.quotaKey,
         requestedValue,
         reason: quotaForm.reason,
       })
+      if (!submitScope.isCurrent(request)) return
       ElMessage.success(t('selfServiceQuotaChangeTab.submittedToast'))
       quotaForm.quotaKey = ''
       quotaForm.requestedValue = ''
       quotaForm.reason = ''
     } finally {
-      submittingQuota.value = false
+      if (submitScope.isCurrent(request)) submittingQuota.value = false
     }
   }
 
+  watch(
+    () => tenant.tenantId,
+    () => {
+      resetQuotaForm()
+      quotaKeys.value = []
+      quotaKeysLoading.value = false
+      submittingQuota.value = false
+    },
+    { flush: 'sync' },
+  )
   useTenantReload(() => {
     quotaKeys.value = []
     void loadQuotaKeys()

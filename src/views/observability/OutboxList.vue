@@ -109,6 +109,7 @@
         <template #toolbar>
           <!-- 实时状态已上移到页级 ob-live 条(照 jr-live/al-live 模式),toolbar 只留批量栏 -->
           <BulkActionBar
+            v-if="canMutateConfig"
             :count="bulk.count.value"
             :running="bulk.running.value"
             @clear="bulk.clear"
@@ -126,7 +127,12 @@
             </template>
           </BulkActionBar>
         </template>
-        <el-table-column type="selection" width="44" :selectable="() => true" />
+        <el-table-column
+          v-if="canMutateConfig"
+          type="selection"
+          width="44"
+          :selectable="isRepublishable"
+        />
         <el-table-column
           prop="eventType"
           :label="t('observability.outboxColEventType')"
@@ -168,7 +174,7 @@
                 link
                 type="primary"
                 :icon="Eye"
-                @click="openDetail('retry', row)"
+                @click="openDetail('retry', row as ConsoleOutboxRetryLogResponse)"
               >
                 {{ t('observability.outboxActionDetail') }}
               </el-button>
@@ -246,7 +252,7 @@
                 link
                 type="primary"
                 :icon="Eye"
-                @click="openDetail('delivery', row)"
+                @click="openDetail('delivery', row as ConsoleOutboxDeliveryLogResponse)"
               >
                 {{ t('observability.outboxActionDetail') }}
               </el-button>
@@ -285,6 +291,9 @@
   import { useSseAutoReload } from '@/composables/useSseAutoReload'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
+  import { useTenantRequestScope } from '@/composables/useTenantRequestScope'
+  import { usePermission } from '@/composables/usePermission'
+  import { useAuthStore } from '@/stores/auth'
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
   import { toPageResult } from '@/api/adapters'
   import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
@@ -308,6 +317,10 @@
   } from '@/types/console-api'
 
   const tenant = useTenantStore()
+  const auth = useAuthStore()
+  const { canMutateConfig } = usePermission()
+  const readScope = useTenantRequestScope()
+  const actionScope = useTenantRequestScope()
   const route = useRoute()
   const router = useRouter()
   const tab = ref<'retry' | 'delivery'>(route.query.tab === 'delivery' ? 'delivery' : 'retry')
@@ -375,13 +388,19 @@
   const retryTableRef = ref<{ clearSelection?: () => void } | null>(null)
   const bulk = useBulkSelection<ConsoleOutboxRetryLogResponse>()
   onMounted(() => bulk.bindTable(retryTableRef.value))
-  // 终态(已发布/已放弃)不可重投;其余(NEW/PENDING/FAILED/RETRYING/EXHAUSTED 等)视为可重投
-  const TERMINAL_RETRY_STATUSES = ['PUBLISHED', 'PUBLISHING', 'SUCCEEDED', 'SUCCESS', 'GIVE_UP']
+  // 这是重试日志状态，实际事件是否仍可重置由服务端判定。
+  function isRepublishable(row: ConsoleOutboxRetryLogResponse) {
+    return row.retryStatus === 'FAILED' || row.retryStatus === 'EXHAUSTED'
+  }
 
   async function onBulkRepublish() {
-    const eligible = bulk.selected.value.filter(
-      (r) => !TERMINAL_RETRY_STATUSES.includes(String(r.retryStatus ?? '')),
-    )
+    if (!canMutateConfig.value || bulk.running.value) return
+    const scope = actionScope.begin()
+    const operator = auth.userInfo?.username
+    const isCurrent = () =>
+      actionScope.isCurrent(scope) && canMutateConfig.value && auth.userInfo?.username === operator
+    if (!isCurrent()) return
+    const eligible = bulk.selected.value.filter(isRepublishable)
     if (!eligible.length) {
       ElMessage.warning(t('observability.outboxBulkRepublishNone'))
       return
@@ -396,10 +415,19 @@
     } catch {
       return
     }
-    await bulk.runBulk(eligible, (r) => republishOutbox(tenant.tenantId, [r.outboxEventId]), {
-      actionLabel: label,
-    })
-    void loadTab()
+    if (!isCurrent()) return
+    await bulk.runBulk(
+      eligible,
+      async (row) => {
+        const currentRow = retriesAll.value.find((item) => item.outboxEventId === row.outboxEventId)
+        if (!isCurrent() || !currentRow || !isRepublishable(currentRow))
+          throw new Error(t('common.cancel'))
+        const result = await republishOutbox(scope.tenantId, [row.outboxEventId])
+        if (result.resetCount !== 1) throw new Error(t('observability.outboxBulkRepublishNone'))
+      },
+      { actionLabel: label, isCurrent },
+    )
+    if (isCurrent()) void loadTab()
   }
 
   const deliveryRows = ref<ConsoleOutboxDeliveryLogResponse[]>([])
@@ -423,7 +451,8 @@
 
   const filteredRetries = computed(() => {
     let r = retriesAll.value
-    const k = retryKwApplied.value.trim().toLowerCase()
+    const trimmedKeyword = retryKwApplied.value.trim()
+    const k = trimmedKeyword.toLowerCase()
     if (k) {
       r = r.filter(
         (row) =>
@@ -437,7 +466,8 @@
 
   const filteredDeliveries = computed(() => {
     let r = deliveriesAll.value
-    const k = deliveryKwApplied.value.trim().toLowerCase()
+    const trimmedKeyword = deliveryKwApplied.value.trim()
+    const k = trimmedKeyword.toLowerCase()
     if (k) {
       r = r.filter(
         (row) =>
@@ -532,26 +562,38 @@
     if (!Array.isArray(rows)) return 0
     return rows.reduce((total, row) => {
       const status = String(row.publishStatus ?? '')
-      return OUTBOX_SUCCESS_STATUSES.includes(status) ? total + Number(row.count ?? 0) : total
+      if (!OUTBOX_SUCCESS_STATUSES.includes(status)) return total
+      const deliveredCount = Number(row.count ?? 0)
+      return total + deliveredCount
     }, 0)
   }
 
   async function loadTab() {
+    const scope = readScope.begin()
+    const targetTab = tab.value
+    const isCurrent = () => readScope.isCurrent(scope) && tab.value === targetTab
+    if (!scope.tenantId) {
+      loading.value = false
+      return
+    }
     loading.value = true
     loadError.value = null
     try {
-      if (tab.value === 'retry') {
+      if (targetTab === 'retry') {
         const filters = { retryStatus: retryStatusApplied.value.trim() || undefined }
         if (retryKwApplied.value) {
-          retriesAll.value = await queryOutboxRetries(tenant.tenantId, filters)
+          const rows = await queryOutboxRetries(scope.tenantId, filters)
+          if (!isCurrent()) return
+          retriesAll.value = rows
           sliceRetry()
         } else {
           const result = await queryOutboxRetriesPage(
-            tenant.tenantId,
+            scope.tenantId,
             retryPage.value,
             retryPageSize.value,
             filters,
           )
+          if (!isCurrent()) return
           retriesAll.value = result.items
           retryRows.value = result.items
           retryTotal.value = result.total
@@ -560,31 +602,66 @@
       } else {
         const filters = { deliveryStatus: deliveryStatusApplied.value.trim() || undefined }
         if (deliveryKwApplied.value) {
-          deliveriesAll.value = await queryOutboxDeliveries(tenant.tenantId, filters)
+          const rows = await queryOutboxDeliveries(scope.tenantId, filters)
+          if (!isCurrent()) return
+          deliveriesAll.value = rows
           sliceDelivery()
         } else {
           const result = await queryOutboxDeliveriesPage(
-            tenant.tenantId,
+            scope.tenantId,
             deliveryPage.value,
             deliveryPageSize.value,
             filters,
           )
+          if (!isCurrent()) return
           deliveriesAll.value = result.items
           deliveryRows.value = result.items
           deliveryTotal.value = result.total
         }
         deliveryLoaded.value = true
       }
-      deliveredTotal.value = parseDeliveredTotal(await getOutboxStats(tenant.tenantId))
-    } finally {
-      loading.value = false
+      const outboxStats = await getOutboxStats(scope.tenantId)
+      if (!isCurrent()) return
+      deliveredTotal.value = parseDeliveredTotal(outboxStats)
       activeLive.value.markRefreshed()
+    } catch (error) {
+      if (isCurrent()) loadError.value = error
+      throw error
+    } finally {
+      if (isCurrent()) loading.value = false
     }
   }
 
+  watch(
+    () => tenant.tenantId,
+    () => {
+      retriesAll.value = []
+      deliveriesAll.value = []
+      retryRows.value = []
+      deliveryRows.value = []
+      retryTotal.value = 0
+      deliveryTotal.value = 0
+      deliveredTotal.value = 0
+      retryLoaded.value = false
+      deliveryLoaded.value = false
+      retryPage.value = 1
+      deliveryPage.value = 1
+      loading.value = false
+      loadError.value = null
+      detailVisible.value = false
+      detailRow.value = null
+      bulk.clear()
+    },
+    { flush: 'sync' },
+  )
+
   useTenantReload(loadTab)
 
-  watch(tab, () => loadTab())
+  watch(tab, () => {
+    void loadTab().catch(() => {
+      /* 查询错误已保留在表格错误态。 */
+    })
+  })
 
   const retryLive = useSseAutoReload({
     domain: 'outbox-retries',

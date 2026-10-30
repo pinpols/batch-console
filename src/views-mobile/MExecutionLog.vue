@@ -55,7 +55,7 @@
           <button
             class="m-btn"
             type="button"
-            @click="copy(decodeHtmlEntities(row.detailSummary), 'detailSummary')"
+            @click="copyDecodedDetailSummary(row.detailSummary)"
           >
             {{ t('common.copy') }}
           </button>
@@ -111,6 +111,11 @@
 
   function fmt(ts?: string | null) {
     return fmtDatetime(ts)
+  }
+
+  function copyDecodedDetailSummary(summary: string) {
+    const decodedSummary = decodeHtmlEntities(summary)
+    return copy(decodedSummary, 'detailSummary')
   }
 
   function resultChipClass(r?: string) {

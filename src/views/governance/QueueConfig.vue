@@ -101,7 +101,7 @@
                   inline-prompt
                   :active-text="t('queueConfig.switchOn')"
                   :inactive-text="t('queueConfig.switchOff')"
-                  @change="toggleQueue(row)"
+                  @change="toggleQueue(row as GovernanceQueueRow)"
                 />
               </template>
             </el-table-column>
@@ -114,7 +114,7 @@
                   size="small"
                   :icon="Edit"
                   :disabled="!row?.queueCode"
-                  @click="openQueueEdit(row)"
+                  @click="openQueueEdit(row as GovernanceQueueRow)"
                 >
                   {{ t('common.edit') }}
                 </el-button>
@@ -185,7 +185,7 @@
                   inline-prompt
                   :active-text="t('queueConfig.switchOn')"
                   :inactive-text="t('queueConfig.switchOff')"
-                  @change="toggleWindow(row)"
+                  @change="toggleWindow(row as GovernanceBatchWindowRow)"
                 />
               </template>
             </el-table-column>
@@ -198,7 +198,7 @@
                   size="small"
                   :icon="Edit"
                   :disabled="!row?.windowCode"
-                  @click="openWindowEdit(row)"
+                  @click="openWindowEdit(row as GovernanceBatchWindowRow)"
                 >
                   {{ t('common.edit') }}
                 </el-button>
@@ -261,7 +261,7 @@
                     plain
                     type="primary"
                     :icon="CalendarDays"
-                    @click="openHolidays(row)"
+                    @click="openHolidays(row as GovernanceCalendarRow)"
                   >
                     {{ t('queueConfig.viewHolidays') }}
                   </el-button>
@@ -277,7 +277,7 @@
                   inline-prompt
                   :active-text="t('queueConfig.switchOn')"
                   :inactive-text="t('queueConfig.switchOff')"
-                  @change="toggleCalendar(row)"
+                  @change="toggleCalendar(row as GovernanceCalendarRow)"
                 />
               </template>
             </el-table-column>
@@ -290,7 +290,7 @@
                   size="small"
                   :icon="Edit"
                   :disabled="!row?.calendarCode"
-                  @click="openCalendarEdit(row)"
+                  @click="openCalendarEdit(row as GovernanceCalendarRow)"
                 >
                   {{ t('common.edit') }}
                 </el-button>
@@ -369,7 +369,7 @@
                 plain
                 size="small"
                 :icon="Edit"
-                @click="openHolidayEdit(row)"
+                @click="openHolidayEdit(row as GovernanceCalendarHolidayRow)"
               >
                 {{ t('common.edit') }}
               </el-button>
@@ -378,7 +378,7 @@
                 plain
                 size="small"
                 :icon="Delete"
-                @click="deleteHoliday(row)"
+                @click="deleteHoliday(row as GovernanceCalendarHolidayRow)"
               >
                 {{ t('common.delete') }}
               </el-button>
@@ -627,6 +627,11 @@
 </template>
 
 <script setup lang="ts">
+  import {
+    filterGovernanceQueues,
+    filterGovernanceWindows,
+    filterGovernanceCalendars,
+  } from './governanceListFilters'
   import { computed, reactive, ref, watch } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
@@ -806,10 +811,6 @@
     return t('queueConfig.keywordQueues')
   })
 
-  function matchEnabled(enabled: boolean) {
-    return enabledApplied.value === undefined ? true : enabled === enabledApplied.value
-  }
-
   function resetListPages() {
     pageQueues.value = 1
     pageWindows.value = 1
@@ -844,33 +845,15 @@
     holidayPage.value = 1
   }
 
-  const filteredQueues = computed(() => {
-    const k = kwApplied.value.trim().toLowerCase()
-    return queues.value.filter(
-      (row) =>
-        matchEnabled(row.enabled) &&
-        (!k || `${row.queueCode} ${row.queueName} ${row.queueType}`.toLowerCase().includes(k)),
-    )
-  })
-
-  const filteredWindows = computed(() => {
-    const k = kwApplied.value.trim().toLowerCase()
-    return windows.value.filter(
-      (row) =>
-        matchEnabled(row.enabled) &&
-        (!k ||
-          `${row.windowCode} ${row.windowName} ${row.crossDayPolicy}`.toLowerCase().includes(k)),
-    )
-  })
-
-  const filteredCalendars = computed(() => {
-    const k = kwApplied.value.trim().toLowerCase()
-    return calendars.value.filter(
-      (row) =>
-        matchEnabled(row.enabled) &&
-        (!k || `${row.calendarCode} ${row.calendarName} ${row.timezone}`.toLowerCase().includes(k)),
-    )
-  })
+  const filteredQueues = computed(() =>
+    filterGovernanceQueues(queues.value, kwApplied.value, enabledApplied.value),
+  )
+  const filteredWindows = computed(() =>
+    filterGovernanceWindows(windows.value, kwApplied.value, enabledApplied.value),
+  )
+  const filteredCalendars = computed(() =>
+    filterGovernanceCalendars(calendars.value, kwApplied.value, enabledApplied.value),
+  )
 
   const pagedQueues = computed(() =>
     toPageResult(filteredQueues.value, pageQueues.value, pageSize.value),
@@ -886,7 +869,9 @@
   )
 
   function clampPage(pageRef: { value: number }, total: number, size: number) {
-    const max = Math.max(1, Math.ceil(total / size) || 1)
+    const roundedPageCount = Math.ceil(total / size)
+    const pageCount = roundedPageCount || 1
+    const max = Math.max(1, pageCount)
     if (pageRef.value > max) pageRef.value = max
   }
 
@@ -979,8 +964,9 @@
 
   function toggleQueue(row: GovernanceQueueRow) {
     const next = !row.enabled
+    const targetLabel = t('queueConfig.queueLabel', { code: row.queueCode })
     return confirmAndToggle(
-      t('queueConfig.queueLabel', { code: row.queueCode }),
+      targetLabel,
       row.id,
       next,
       `queue-${row.id}`,
@@ -991,8 +977,9 @@
 
   function toggleWindow(row: GovernanceBatchWindowRow) {
     const next = !row.enabled
+    const targetLabel = t('queueConfig.windowLabel', { code: row.windowCode })
     return confirmAndToggle(
-      t('queueConfig.windowLabel', { code: row.windowCode }),
+      targetLabel,
       row.id,
       next,
       `window-${row.id}`,
@@ -1003,8 +990,9 @@
 
   function toggleCalendar(row: GovernanceCalendarRow) {
     const next = !row.enabled
+    const targetLabel = t('queueConfig.calendarLabel', { code: row.calendarCode })
     return confirmAndToggle(
-      t('queueConfig.calendarLabel', { code: row.calendarCode }),
+      targetLabel,
       row.id,
       next,
       `calendar-${row.id}`,

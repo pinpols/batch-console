@@ -5,7 +5,7 @@
         <div class="job-header-actions">
           <el-button
             type="primary"
-            :disabled="!canMutateConfig"
+            :disabled="!canWriteSystem"
             @click="router.push('/jobs/definitions/new')"
           >
             {{ t('jobDefinitionList.headerNew') }}
@@ -15,14 +15,12 @@
           </el-button>
           <el-tooltip
             :content="
-              canMutateConfig
-                ? t('jobDefinitionList.headerBundleTip')
-                : t('common.permissionDenied')
+              canWriteSystem ? t('jobDefinitionList.headerBundleTip') : t('common.permissionDenied')
             "
             placement="top"
           >
             <span>
-              <el-button :disabled="!canMutateConfig" @click="openBundleImport">
+              <el-button :disabled="!canWriteSystem" @click="openBundleImport">
                 {{ t('jobDefinitionList.headerBundle') }}
               </el-button>
             </span>
@@ -140,11 +138,6 @@
                 :options="scheduleTypeOptions"
               />
             </el-form-item>
-            <JobDefinitionTaxonomyFilters
-              v-model:trigger-mode="filters.triggerMode"
-              v-model:dependency="filters.dependency"
-              :trigger-mode-options="triggerModeOptions"
-            />
           </ListPageQueryBar>
         </template>
 
@@ -168,9 +161,13 @@
         </template>
 
         <template #default="{ isColVisible }">
+          <!-- 列序照设计 proto-jobs_view:JOB CODE(250) 名称 类型 WORKER GROUP QUEUE 启用 操作 -->
           <el-table-column prop="jobCode" :label="t('jobDefinitionList.colJobCode')" width="210">
             <template #default="{ row }">
-              <router-link class="definition-link" :to="definitionDetailLocation(row)">
+              <router-link
+                class="definition-link"
+                :to="definitionDetailLocation(row as ConsoleJobDefinitionResponse)"
+              >
                 {{ row.jobCode }}
               </router-link>
             </template>
@@ -231,10 +228,9 @@
             width="120"
           >
             <template #default="{ row }">
-              <JobDefinitionTaxonomyCell :value="row.scheduleType" enum-group="scheduleType" />
+              {{ resolveScheduleType(row.scheduleType) }}
             </template>
           </el-table-column>
-          <JobDefinitionTaxonomyColumns :is-col-visible="isColVisible" />
           <el-table-column
             v-if="isColVisible('executionMode')"
             prop="executionMode"
@@ -257,7 +253,7 @@
                 size="small"
                 :disabled="!canMutateConfig"
                 :loading="actingJobCode === row.jobCode"
-                @change="() => toggleRow(row)"
+                @change="() => toggleRow(row as ConsoleJobDefinitionResponse)"
               />
             </template>
           </el-table-column>
@@ -270,7 +266,11 @@
           />
           <el-table-column :label="t('jobDefinitionList.colActions')" width="228" fixed="right">
             <template #default="{ row }">
-              <RowActions :actions="rowActions(row)" :inline-limit="2" nowrap />
+              <RowActions
+                :actions="rowActions(row as ConsoleJobDefinitionResponse)"
+                :inline-limit="2"
+                nowrap
+              />
             </template>
           </el-table-column>
         </template>
@@ -320,6 +320,11 @@
               </div>
             </div>
           </div>
+        </section>
+
+        <section class="jd-section">
+          <div class="jd-section__label">{{ t('jobDefinitionList.systemPipelineTitle') }}</div>
+          <SystemPipelineStages :code="systemPipelineCode" :stages="systemPipelineStages" />
         </section>
 
         <section class="jd-section">
@@ -387,14 +392,26 @@
         label-position="top"
         @submit.prevent
       >
+        <el-alert
+          :title="t('jobDefinitionList.workflowOwnsScheduleHint')"
+          type="info"
+          :closable="false"
+          show-icon
+        >
+          <template #default>
+            <el-button link type="primary" @click="router.push('/workflow/definitions')">
+              {{ t('jobDefinitionList.openWorkflowDefinitions') }}
+            </el-button>
+          </template>
+        </el-alert>
         <JobConfigBasicForm
           :model="editForm"
           :tenant-id="editingTenantId"
           :execution-mode-options="executionModeOptions"
-          :schedule-type-options="scheduleTypeOptions"
           :queue-options="queueOptions"
           :worker-group-options="workerGroupOptionsMeta"
           :can-configure-routing="canManageSystem"
+          :sections="['basic', 'resource', 'retry', 'params']"
         />
       </el-form>
 
@@ -407,6 +424,18 @@
         label-position="top"
         @submit.prevent
       >
+        <el-alert
+          :title="t('jobDefinitionList.workflowOwnsScheduleHint')"
+          type="info"
+          :closable="false"
+          show-icon
+        >
+          <template #default>
+            <el-button link type="primary" @click="router.push('/workflow/definitions')">
+              {{ t('jobDefinitionList.openWorkflowDefinitions') }}
+            </el-button>
+          </template>
+        </el-alert>
         <el-form-item :label="t('jobDefinitionList.fieldJobCode')" prop="jobCode">
           <el-input
             v-model="createForm.jobCode"
@@ -428,36 +457,6 @@
             class="query-w-full"
             enum-key="jobType"
             :placeholder="t('jobDefinitionList.createJobTypePlaceholder')"
-          />
-        </el-form-item>
-        <el-form-item :label="t('jobDefinitionList.fieldScheduleType')" prop="scheduleType">
-          <MetaSelect
-            v-model="createForm.scheduleType"
-            class="query-w-full"
-            enum-key="scheduleType"
-            :options="scheduleTypeOptions"
-            :placeholder="t('jobDefinitionList.scheduleTypePlaceholder')"
-          />
-        </el-form-item>
-        <JobDefinitionTriggerModeField v-model="createForm.triggerMode" />
-        <el-form-item
-          v-if="createForm.scheduleType !== 'MANUAL'"
-          :label="t('jobDefinitionList.fieldScheduleExpr')"
-          prop="scheduleExpr"
-        >
-          <CronExprInput v-model="createForm.scheduleExpr" />
-        </el-form-item>
-        <el-form-item
-          v-if="createForm.scheduleType !== 'MANUAL'"
-          :label="t('jobConfigBasic.fieldDependsOnJobCode')"
-          prop="dependsOnJobCode"
-        >
-          <el-input
-            v-model="createForm.dependsOnJobCode"
-            clearable
-            maxlength="128"
-            show-word-limit
-            :placeholder="t('jobConfigBasic.placeholderDependsOnJobCode')"
           />
         </el-form-item>
         <el-form-item
@@ -579,7 +578,12 @@
       </el-form>
       <template #footer>
         <el-button @click="bundleImportVisible = false">{{ t('common.cancel') }}</el-button>
-        <el-button type="primary" :loading="bundleImportSaving" @click="submitBundleImport">
+        <el-button
+          type="primary"
+          :loading="bundleImportSaving"
+          :disabled="!canWriteSystem"
+          @click="submitBundleImport"
+        >
           {{
             bundleImportDryRun
               ? t('jobDefinitionList.bundleImportValidate')
@@ -592,6 +596,7 @@
 </template>
 
 <script setup lang="ts">
+  import { triggerInputTemplate } from './jobTriggerInputTemplate'
   import { ref, reactive, computed, watch } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import { useDrawerAutoClose } from '@/composables/useDrawerAutoClose'
@@ -603,6 +608,31 @@
   type ExecutionMode = 'FULL' | 'INCREMENTAL' | 'CDC'
   const { t, te } = useI18n({ useScope: 'global' })
 
+  function resolveScheduleType(value?: string | null): string {
+    if (!value) return ''
+    const key = `enum.scheduleType.${value}`
+    return te(key) ? t(key) : value
+  }
+
+  function jobTypePillStyle(value?: string | null): Record<string, string> {
+    const palette: Record<string, string> = {
+      ATOMIC: '#8b5cf6',
+      PROCESS: 'var(--color-primary)',
+      IMPORT: '#0891b2',
+      EXPORT: 'var(--color-warning)',
+      GENERAL: 'var(--color-text-secondary)',
+    }
+    const typeValue = value || 'GENERAL'
+    const typeText = String(typeValue)
+    const normalizedType = typeText.toUpperCase()
+    const color = palette[normalizedType] ?? palette.GENERAL
+    return {
+      color,
+      background: `color-mix(in srgb, ${color} 12%, transparent)`,
+      borderColor: `color-mix(in srgb, ${color} 32%, var(--color-border) 68%)`,
+    }
+  }
+
   // 列设置:jobCode(主链)/操作列始终显示;默认可见列按 redesign 作业定义表格稿对齐。
   const columnDefs = computed(() => [
     { key: 'jobName', label: t('jobDefinitionList.colJobName') },
@@ -611,17 +641,18 @@
     { key: 'workerGroup', label: t('jobDefinitionList.colWorkerGroup') },
     { key: 'queueCode', label: t('jobDefinitionList.colQueue') },
     { key: 'scheduleType', label: t('jobDefinitionList.colScheduleType'), defaultHidden: true },
-    { key: 'triggerMode', label: t('jobDefinitionList.colTriggerMode') },
-    { key: 'dependsOnJobCode', label: t('jobDefinitionList.colDependency') },
     { key: 'executionMode', label: t('jobDefinitionList.colExecutionMode'), defaultHidden: true },
     { key: 'enabled', label: t('jobDefinitionList.colEnabled') },
     { key: 'scheduleExpr', label: t('jobDefinitionList.colScheduleExpr'), defaultHidden: true },
   ])
   import type { FormInstance, FormItemRule, FormRules } from 'element-plus'
-  import { jobApi, type JobBundlePayload, type JobDefinitionListParams } from '@/api/job'
+  import { jobApi, type JobBundlePayload } from '@/api/job'
+  import { assessBatchInitOutcome } from '@/utils/batchInitOutcome'
   import { instanceApi } from '@/api/instance'
   import { fmtDatetime } from '@/utils/datetime'
   import { getMetaEnums, getMetaQueues, type MetaOption } from '@/api/meta'
+  import { fetchPipelineStages } from '@/api/pipelineMeta'
+  import SystemPipelineStages from './components/SystemPipelineStages.vue'
   import { usePermission } from '@/composables/usePermission'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import { useJobDefinitionsPaged } from '@/composables/queries/useJobDefinitionsPaged'
@@ -629,14 +660,12 @@
   import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
+  import { useTenantRequestScope } from '@/composables/useTenantRequestScope'
+  import { useAuthStore } from '@/stores/auth'
   import { showCreateSuccess } from '@/composables/useCreateSuccess'
   import PageContainer from '@/components/common/PageContainer.vue'
   import JsonTextareaInput from '@/components/common/JsonTextareaInput.vue'
   import JobConfigBasicForm from './components/JobConfigBasicForm.vue'
-  import JobDefinitionTaxonomyFilters from './components/JobDefinitionTaxonomyFilters.vue'
-  import JobDefinitionTaxonomyColumns from './components/JobDefinitionTaxonomyColumns.vue'
-  import JobDefinitionTriggerModeField from './components/JobDefinitionTriggerModeField.vue'
-  import JobDefinitionTaxonomyCell from './components/JobDefinitionTaxonomyCell.vue'
   import JsonPreview from '@/components/common/JsonPreview.vue'
   import JobDefinitionDrawer from './components/JobDefinitionDrawer.vue'
   import CronExprInput from '@/components/common/CronExprInput.vue'
@@ -660,21 +689,18 @@
     ConsoleJobDefinitionResponse,
     ConsoleJobInstanceResponse,
   } from '@/types/console-api'
-  import { useJobDefinitionTaxonomyQuery } from './useJobDefinitionTaxonomyQuery'
-  import { jobTypePillStyle } from './jobDefinitionDisplay'
 
   const route = useRoute()
   const router = useRouter()
 
   const tenant = useTenantStore()
-  const { canMutateConfig, canManageSystem } = usePermission()
+  const { canMutateConfig, canManageSystem, canWriteSystem } = usePermission()
   const page = ref(1)
   const pageSize = ref(15)
   const actingJobCode = ref('')
   const exportingJobCode = ref('')
   const queueOptions = ref<MetaOption[]>([])
   const scheduleTypeOptions = ref<MetaOption[]>([])
-  const triggerModeOptions = ref<MetaOption[]>([])
   const filters = reactive({
     tenantId: tenant.tenantId,
     jobCode: typeof route.query.jobCode === 'string' ? route.query.jobCode : '',
@@ -682,9 +708,7 @@
     enabled: undefined as boolean | undefined,
     workerGroup: '',
     queueCode: '',
-    scheduleType: '' as JobDefinitionListParams['scheduleType'] | '',
-    triggerMode: '' as JobDefinitionListParams['triggerMode'] | '',
-    dependency: '',
+    scheduleType: '',
   })
   watch(
     () => route.query.jobCode,
@@ -696,10 +720,11 @@
   )
 
   const filterTenantRef = computed(() => filters.tenantId)
-  // 作业编码、启用、调度、触发模式和依赖状态使用服务端过滤，分页总数与筛选结果一致。
+  // 服务端过滤参数：后端 queryJobDefinitions 仅支持 jobCode / enabled；
+  // 次要过滤（jobName / workerGroup / queueCode / scheduleType）后端未暴露
+  // → 放到"本页前端过滤"。要完整搜索须用 Job Code / 启用状态。
   const serverJobCode = computed(() => filters.jobCode.trim() || undefined)
   const serverEnabled = computed<boolean | undefined>(() => filters.enabled ?? undefined)
-  const taxonomyQuery = useJobDefinitionTaxonomyQuery(filters)
   const {
     data,
     isPending,
@@ -711,7 +736,6 @@
     pageSize,
     jobCode: serverJobCode,
     enabled: serverEnabled,
-    ...taxonomyQuery,
     tenantIdOverride: filterTenantRef,
   })
 
@@ -726,24 +750,32 @@
 
   const pageRows = computed(() => data.value?.records ?? [])
 
-  const workerGroupOptions = computed(() =>
-    Array.from(
-      new Set(pageRows.value.map((row) => row.workerGroup).filter((v): v is string => !!v)),
-    ),
-  )
+  const workerGroupOptions = computed(() => {
+    const workerGroups = pageRows.value.map((row) => row.workerGroup)
+    const availableWorkerGroups = workerGroups.filter((value): value is string => !!value)
+    const uniqueWorkerGroups = new Set(availableWorkerGroups)
+    return Array.from(uniqueWorkerGroups)
+  })
   // JobConfigBasicForm 的 :worker-group-options 期望 MetaOption[] ({value,label})
   const workerGroupOptionsMeta = computed(() =>
     workerGroupOptions.value.map((v) => ({ value: v, label: v })),
   )
 
-  /** 名称、Worker 组和队列目前在已加载页本地筛选；调度、触发和依赖条件由服务端分页过滤。 */
+  /** 只对后端未暴露的次要 filter（jobName / workerGroup / queueCode / scheduleType）做本页过滤。 */
   const filtered = computed(() => {
     return pageRows.value.filter((row) => {
-      if (filters.jobName.trim() && !row.jobName?.includes(filters.jobName.trim())) return false
-      if (filters.workerGroup.trim() && !row.workerGroup?.includes(filters.workerGroup.trim())) {
+      const jobNameFilter = filters.jobName.trim()
+      if (jobNameFilter && !row.jobName?.includes(jobNameFilter)) return false
+      const workerGroupFilter = filters.workerGroup.trim()
+      if (workerGroupFilter && !row.workerGroup?.includes(workerGroupFilter)) {
         return false
       }
-      if (filters.queueCode.trim() && !row.queueCode?.includes(filters.queueCode.trim())) {
+      const queueCodeFilter = filters.queueCode.trim()
+      if (queueCodeFilter && !row.queueCode?.includes(queueCodeFilter)) {
+        return false
+      }
+      const scheduleTypeFilter = filters.scheduleType.trim()
+      if (scheduleTypeFilter && !row.scheduleType?.includes(scheduleTypeFilter)) {
         return false
       }
       return true
@@ -767,8 +799,6 @@
       filters.workerGroup = ''
       filters.queueCode = ''
       filters.scheduleType = ''
-      filters.triggerMode = ''
-      filters.dependency = ''
       page.value = 1
     })
   }
@@ -826,6 +856,7 @@
       },
       {
         key: 'export-bundle',
+        disabled: !canManageSystem.value,
         label: t('jobDefinitionList.actionExportBundle'),
         loading: exportingJobCode.value === row.jobCode,
         onClick: () => exportBundle(row),
@@ -856,8 +887,28 @@
   const bundleImportMode = ref<'SKIP_EXISTING' | 'UPSERT'>('UPSERT')
   const bundleImportDryRun = ref(false)
   const bundleImportSaving = ref(false)
+  const bundleImportScope = useTenantRequestScope()
+  const auth = useAuthStore()
+  let bundleImportRevision = 0
+  // 输入、主体或权限曾经变化即使旧响应失效，关闭后重开的面板属于另一会话。
+  watch(
+    [
+      bundleImportVisible,
+      bundleImportJson,
+      bundleImportTargets,
+      bundleImportMode,
+      bundleImportDryRun,
+      () => auth.userInfo?.userId ?? auth.userInfo?.username,
+      canWriteSystem,
+    ],
+    () => {
+      bundleImportRevision += 1
+    },
+    { deep: true, flush: 'sync' },
+  )
 
   function openBundleImport() {
+    if (!canWriteSystem.value) return
     bundleImportJson.value = ''
     bundleImportTargets.value = [tenant.tenantId]
     bundleImportMode.value = 'UPSERT'
@@ -867,7 +918,7 @@
 
   async function submitBundleImport() {
     // P2-3:防重复提交(快速连点 / 网络抖动)
-    if (bundleImportSaving.value) return
+    if (bundleImportSaving.value || !bundleImportVisible.value || !canWriteSystem.value) return
     // P2:源租户必须非空(启动/切换瞬间 tenant 可能未就绪)
     const sourceTenant = tenant.tenantId?.trim()
     if (!sourceTenant) {
@@ -875,9 +926,9 @@
       return
     }
     // P2:目标租户 trim+去空+去重,再校验非空(原写法只看数组长度,会把 [''] 发给后端)
-    const targets = Array.from(
-      new Set(bundleImportTargets.value.map((x) => x?.trim()).filter(Boolean)),
-    ) as string[]
+    const trimmedTargets = bundleImportTargets.value.map((x) => x?.trim())
+    const nonBlankTargets = trimmedTargets.filter(Boolean)
+    const targets = Array.from(new Set(nonBlankTargets)) as string[]
     if (!targets.length) {
       ElMessage.warning(t('jobDefinitionList.bundleImportNoTargetTenant'))
       return
@@ -896,17 +947,29 @@
       (parsed?.data as Record<string, unknown>)?.bundle ??
       parsed ??
       {}) as JobBundlePayload
+    const scope = bundleImportScope.begin()
+    const revision = bundleImportRevision
+    const dryRun = bundleImportDryRun.value
     bundleImportSaving.value = true
     try {
-      await jobApi.importBundle({
+      const response = await jobApi.importBundle({
         tenantId: sourceTenant,
         targetTenantIds: targets,
         mode: bundleImportMode.value,
-        dryRun: bundleImportDryRun.value,
+        dryRun,
         bundle,
       })
+      if (!bundleImportScope.isCurrent(scope) || revision !== bundleImportRevision) return
+      const outcome = assessBatchInitOutcome(response.result)
+      if (!outcome.fullySuccessful) {
+        const failedTenants = outcome.failedTenantIds.length
+          ? outcome.failedTenantIds.join(', ')
+          : targets.join(', ')
+        ElMessage.error(t('jobDefinitionList.bundleImportFailed', { tenants: failedTenants }))
+        return
+      }
       ElMessage.success(
-        bundleImportDryRun.value
+        dryRun
           ? t('jobDefinitionList.bundleImportDryRunDone', { n: targets.length })
           : t('jobDefinitionList.bundleImportDone', { n: targets.length }),
       )
@@ -918,13 +981,15 @@
   }
 
   async function exportBundle(row: ConsoleJobDefinitionResponse) {
+    if (!canManageSystem.value) return
     exportingJobCode.value = row.jobCode
     try {
       const payload = await jobApi.exportBundle(
         row.tenantId || filters.tenantId || tenant.tenantId,
         row.jobCode,
       )
-      const blob = new Blob([JSON.stringify(payload, null, 2)], {
+      const payloadJson = JSON.stringify(payload, null, 2)
+      const blob = new Blob([payloadJson], {
         type: 'application/json;charset=utf-8',
       })
       const url = URL.createObjectURL(blob)
@@ -945,7 +1010,6 @@
       getMetaQueues(filters.tenantId || tenant.tenantId),
     ])
     scheduleTypeOptions.value = enums.scheduleType ?? []
-    triggerModeOptions.value = enums.triggerMode ?? []
     queueOptions.value = queues
   }
 
@@ -980,20 +1044,6 @@
       await refetch()
     } finally {
       actingJobCode.value = ''
-    }
-  }
-
-  // 按 jobType 预填触发 payload 模板:文件/内容型作业需要的必填字段(英文字段名,非 i18n 文案)。
-  function triggerInputTemplate(jobType: string | undefined): string {
-    switch (jobType) {
-      case 'IMPORT':
-        return '{\n  "templateCode": "",\n  "content": "header1,header2\\nvalue1,value2"\n}'
-      case 'EXPORT':
-        return '{\n  "templateCode": ""\n}'
-      case 'DISPATCH':
-        return '{\n  "fileId": 0\n}'
-      default:
-        return '{}'
     }
   }
 
@@ -1035,11 +1085,10 @@
     }
     actingJobCode.value = row.jobCode
     try {
-      await jobApi.trigger(
-        row.jobCode,
-        filters.tenantId || tenant.tenantId,
-        JSON.parse(payloadText),
-      )
+      const workflowDefinitionId = row.defaultWorkflowDefinitionId ?? 0
+      const requestTenantId = filters.tenantId || tenant.tenantId
+      const triggerPayload = JSON.parse(payloadText)
+      await jobApi.trigger(workflowDefinitionId, requestTenantId, triggerPayload)
       // 替换"已触发"toast → 引导用户去监控页跟踪刚刚触发的实例
       // 体检"病根 2:做完就完事"——触发后最自然的下一步就是看新实例跑得怎样
       showCreateSuccess({
@@ -1071,7 +1120,10 @@
       )
       // 后端 clone @NotBlank 要求 newJobCode;默认在原 code 加 `-copy-<ts>` 后缀
       // 后续 BE 出"重名校验失败回 409"再补 retry 流程。
-      const newJobCode = `${row.jobCode}-copy-${Date.now().toString(36).slice(-6)}`
+      const timestamp = Date.now()
+      const timestampText = timestamp.toString(36)
+      const timestampSuffix = timestampText.slice(-6)
+      const newJobCode = `${row.jobCode}-copy-${timestampSuffix}`
       await jobApi.clone(row.id, row.tenantId || filters.tenantId || tenant.tenantId, newJobCode)
       ElMessage.success(t('jobDefinitionList.cloneSuccess', { code: row.jobCode }))
       await refetch()
@@ -1082,6 +1134,17 @@
 
   // ── Run-centric 详情(设计三态抽屉的查看态)─────
   const detailRow = ref<ConsoleJobDefinitionResponse | null>(null)
+  const pipelineStagesByType = ref<Record<string, string[]>>({})
+  const systemPipelineCode = computed(() => {
+    const type = detailRow.value?.jobType?.toUpperCase() || ''
+    if (type === 'BUNDLE_IMPORT') return 'IMPORT'
+    if (type === 'BUNDLE_EXPORT') return 'EXPORT'
+    if (type === 'BUNDLE_DISPATCH') return 'DISPATCH'
+    return type
+  })
+  const systemPipelineStages = computed(
+    () => pipelineStagesByType.value[systemPipelineCode.value] ?? [],
+  )
   const detailRunsRows = ref<ConsoleJobInstanceResponse[]>([])
   const detailRunsLoading = ref(false)
   const detailRunsLoadedForJobCode = ref('')
@@ -1112,6 +1175,11 @@
     detailRunsLoadedForJobCode.value = ''
     jdMode.value = 'view'
     jdVisible.value = true
+    if (Object.keys(pipelineStagesByType.value).length === 0) {
+      void fetchPipelineStages().then((stages) => {
+        pipelineStagesByType.value = stages
+      })
+    }
     // 三态抽屉里"最近运行"是常驻分区(不再是 lazy tab),打开即拉
     void loadDetailRuns()
   }
@@ -1194,7 +1262,8 @@
   function formatJson(raw: string | undefined | null): string {
     if (!raw) return '—'
     try {
-      return JSON.stringify(JSON.parse(raw), null, 2)
+      const parsedValue = JSON.parse(raw)
+      return JSON.stringify(parsedValue, null, 2)
     } catch {
       return raw
     }
@@ -1355,9 +1424,15 @@
     validator: (_rule, value: unknown, callback) => {
       if (editForm.executionMode !== 'INCREMENTAL') return callback()
       const v = typeof value === 'string' ? value.trim() : ''
-      if (!v) return callback(new Error(t('jobDefinitionList.ruleWatermarkRequired')))
+      if (!v) {
+        const errorMessage = t('jobDefinitionList.ruleWatermarkRequired')
+        const validationError = new Error(errorMessage)
+        return callback(validationError)
+      }
       if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(v)) {
-        return callback(new Error(t('jobDefinitionList.ruleWatermarkPattern')))
+        const errorMessage = t('jobDefinitionList.ruleWatermarkPattern')
+        const validationError = new Error(errorMessage)
+        return callback(validationError)
       }
       return callback()
     },
@@ -1377,12 +1452,13 @@
       JSON.parse(value)
       callback()
     } catch {
-      callback(new Error(t('jobConfigBasic.ruleInvalidJson')))
+      const errorMessage = t('jobConfigBasic.ruleInvalidJson')
+      const validationError = new Error(errorMessage)
+      callback(validationError)
     }
   }
   const editFormRules: FormRules = {
     jobName: [rulesRequired(t('jobDefinitionList.ruleJobNameRequired'))],
-    scheduleType: [rulesRequired(t('jobDefinitionList.ruleScheduleTypeRequired'))],
     executionMode: [
       {
         required: true,
@@ -1401,17 +1477,17 @@
     validator: (_r, v: unknown, cb) => {
       const value = typeof v === 'string' ? v.trim() : ''
       if (!value) return cb()
-      return JOB_CODE_PATTERN.test(value) ? cb() : cb(new Error(t('jobDefinitionList.jobCodeRule')))
+      if (JOB_CODE_PATTERN.test(value)) return cb()
+      const errorMessage = t('jobDefinitionList.jobCodeRule')
+      const validationError = new Error(errorMessage)
+      return cb(validationError)
     },
     trigger: 'blur',
   }
-  editFormRules.dependsOnJobCode = [jobCodePatternRule]
   const createFormRules: FormRules = {
     jobCode: [rulesRequired(t('jobDefinitionList.ruleJobCodeRequired')), jobCodePatternRule],
     jobType: [rulesRequired(t('jobDefinitionList.ruleJobTypeRequired'))],
-    scheduleType: [rulesRequired(t('jobDefinitionList.ruleScheduleTypeRequired'))],
     watermarkField: [watermarkRule],
-    dependsOnJobCode: [jobCodePatternRule],
   }
 
   function rulesRequired(message: string): FormItemRule {
@@ -1482,13 +1558,7 @@
         jobCode: createForm.jobCode.trim(),
         jobName: createForm.jobName.trim() || undefined,
         jobType: createForm.jobType.trim(),
-        scheduleType: createForm.scheduleType.trim(),
-        triggerMode: createForm.triggerMode.trim() || undefined,
-        scheduleExpr: createForm.scheduleExpr.trim() || undefined,
-        dependsOnJobCode:
-          createForm.scheduleType === 'MANUAL'
-            ? ''
-            : createForm.dependsOnJobCode.trim() || undefined,
+        scheduleType: 'MANUAL',
         ...(canManageSystem.value
           ? {
               queueCode: createForm.queueCode.trim() || undefined,
@@ -1542,15 +1612,14 @@
       const request = ++editLinkRequest
       const id = Number(editId)
       const targetTenant = String(queryTenant || tenant.tenantId)
-      if (
-        action !== 'edit' ||
-        !canMutateConfig.value ||
-        !Number.isSafeInteger(id) ||
-        id <= 0 ||
-        !targetTenant ||
-        jdVisible.value
-      )
-        return
+      const editLinkRequestIsEligible =
+        action === 'edit' &&
+        canMutateConfig.value &&
+        Number.isSafeInteger(id) &&
+        id > 0 &&
+        !!targetTenant &&
+        !jdVisible.value
+      if (!editLinkRequestIsEligible) return
       try {
         const row = await jobApi.getDefinition(id, targetTenant)
         if (request !== editLinkRequest || route.query.action !== 'edit') return
@@ -1585,20 +1654,12 @@
         tenantId: editingTenantId.value,
         jobName: editForm.jobName.trim() || undefined,
         bizType: editForm.bizType.trim() || undefined,
-        scheduleType: editForm.scheduleType || undefined,
-        scheduleExpr: editForm.scheduleExpr.trim() || undefined,
-        dependsOnJobCode:
-          editForm.scheduleType === 'MANUAL' ? '' : editForm.dependsOnJobCode.trim() || undefined,
-        timezone: editForm.timezone.trim() || undefined,
-        triggerMode: editForm.triggerMode.trim() || undefined,
         ...(canManageSystem.value
           ? {
               workerGroup: editForm.workerGroup.trim() || undefined,
               queueCode: editForm.queueCode || undefined,
             }
           : {}),
-        calendarCode: editForm.calendarCode.trim() || undefined,
-        windowCode: editForm.windowCode.trim() || undefined,
         dagEnabled: editForm.dagEnabled,
         shardStrategy: editForm.shardStrategy.trim() || undefined,
         executionMode: editForm.executionMode,

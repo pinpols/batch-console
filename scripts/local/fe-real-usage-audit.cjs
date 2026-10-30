@@ -37,7 +37,7 @@ const want = (m) => runAll || args.includes(m)
 
 // 租户依赖、最易暴露问题的页面
 const ROUTES = [
-  '/jobs/pipelines', '/jobs/definitions', '/files/templates', '/files/channels', '/files/list',
+  '/jobs/definitions', '/files/templates', '/files/channels', '/files/list',
   '/files/arrival-groups', '/governance/quota', '/governance/queues', '/observability/alerts',
   '/observability/alert-routings', '/observability/outbox', '/scheduler/batch-days',
   '/ops/custom-task-types', '/ops/worker-fingerprints', '/system/tags', '/system/notifications',

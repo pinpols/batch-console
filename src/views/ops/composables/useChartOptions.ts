@@ -267,7 +267,8 @@ export function buildHorizontalTopNOption(
   color: string,
   valueAxisName = '',
 ) {
-  const rows = [...items].sort((a, b) => b.value - a.value).slice(0, 10)
+  const sortedItems = [...items].sort((a, b) => b.value - a.value)
+  const rows = sortedItems.slice(0, 10)
   const names = rows.map((x) => x.name).reverse()
   const vals = rows.map((x) => x.value).reverse()
   return {

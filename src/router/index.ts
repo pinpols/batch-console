@@ -68,7 +68,6 @@ const MOBILE_DEEPLINK_MAP: { prefix: string; to: string | MobileMapper }[] = [
   // 作业/工作流/流水线定义：移动端无编辑/管理体验，明确提示切桌面版。
   { prefix: '/jobs/definitions', to: '/m/desktop-only' },
   { prefix: '/observability/job-monitoring-policies', to: '/m/desktop-only' },
-  { prefix: '/jobs/pipelines', to: '/m/desktop-only' },
   { prefix: '/workflow/definitions', to: '/m/desktop-only' },
   // 文件中心：列表 + 模板/渠道/到达组等子页统一降级到移动文件页
   { prefix: '/files', to: '/m/files' },
@@ -300,7 +299,7 @@ export const routes: RouteRecordRaw[] = [
           title: '新建作业向导',
           activeMenu: '/jobs/definitions',
           minRole: 'OPERATOR',
-          permissions: ['ROLE_ADMIN', 'ROLE_TENANT_ADMIN'],
+          permissions: ['ROLE_ADMIN'],
         },
       },
       {
@@ -320,16 +319,6 @@ export const routes: RouteRecordRaw[] = [
         meta: {
           title: '工作流定义',
           activeMenu: '/workflow/definitions',
-          minRole: 'VIEWER',
-        },
-      },
-      {
-        path: 'jobs/pipelines',
-        name: 'pipeline-definitions',
-        component: () => import('@/views/job/PipelineDefinitionList.vue'),
-        meta: {
-          title: '流水线定义',
-          activeMenu: '/jobs/pipelines',
           minRole: 'VIEWER',
         },
       },
@@ -1005,13 +994,13 @@ router.beforeEach(async (to, from) => {
 
   // 未登录用户和普通用户在完整维护期进入维护页；管理员保留后端允许的诊断读取与维护设置入口。
   const app = useAppStore()
-  if (
+  const maintenanceRedirectRequiredBeforeAuthCheck =
     app.maintenance.active &&
     !app.maintenance.readOnly &&
     to.name !== 'maintenance' &&
     to.name !== 'login' &&
     (!auth.isLoggedIn || (auth.userInfo && !auth.hasPermission('ROLE_ADMIN')))
-  ) {
+  if (maintenanceRedirectRequiredBeforeAuthCheck) {
     return { name: 'maintenance', query: { redirect: to.fullPath } }
   }
 
@@ -1022,7 +1011,9 @@ router.beforeEach(async (to, from) => {
   // 移动设备访问桌面首页/深链时自动分流到移动端。?desktop=1 可强制留在桌面版。
   // 先处理首页场景，再按 MOBILE_DEEPLINK_MAP 把常见列表/详情降级到对应 /m/* 页，
   // 没有对应移动页的桌面深链回退到 MOBILE_HOME，而不是渲染桌面 20 列页。
-  if (isMobile() && to.query.desktop !== '1' && !to.path.startsWith('/m')) {
+  const shouldResolveMobileRoute =
+    isMobile() && to.query.desktop !== '1' && !to.path.startsWith('/m')
+  if (shouldResolveMobileRoute) {
     if (MOBILE_AUTO_REDIRECT_PATHS.has(to.path)) {
       return { path: MOBILE_HOME }
     }
@@ -1040,7 +1031,9 @@ router.beforeEach(async (to, from) => {
   // Workflow 设计器是桌面专属编排工具(X6 画布拖拽,触摸屏不可用)。手机端兜底:
   // 有 id → 转移动只读 DAG 查看器(看同一个 workflow,体验连贯);新建(无 id)→
   // 提示用桌面 + 回移动首页。?desktop=1 强制留桌面版(同上 mobile 重定向约定)。
-  if (to.name === 'workflow-designer' && isMobile() && to.query.desktop !== '1') {
+  const shouldRedirectMobileWorkflowDesigner =
+    to.name === 'workflow-designer' && isMobile() && to.query.desktop !== '1'
+  if (shouldRedirectMobileWorkflowDesigner) {
     ElMessage.warning(i18n.global.t('workflowDesignerMvp.mobileDesignerGuard'))
     const designerId = Array.isArray(to.params.id) ? to.params.id[0] : to.params.id
     if (designerId) return { name: 'm-workflow-viewer', params: { id: designerId } }
@@ -1063,13 +1056,13 @@ router.beforeEach(async (to, from) => {
     }
   }
 
-  if (
+  const maintenanceRedirectRequiredAfterAuthCheck =
     app.maintenance.active &&
     !app.maintenance.readOnly &&
     !auth.hasPermission('ROLE_ADMIN') &&
     to.name !== 'maintenance' &&
     to.name !== 'login'
-  ) {
+  if (maintenanceRedirectRequiredAfterAuthCheck) {
     return { name: 'maintenance', query: { redirect: to.fullPath } }
   }
 
@@ -1077,11 +1070,10 @@ router.beforeEach(async (to, from) => {
   // 在登录页 BE 已校验过账户必有 tenant 绑定;到这里依旧 0 租户属于异常,放行让
   // 业务页空态自行提示。检测带内存缓存(系统级状态变化频率极低),向导创建后
   // 主动 invalidate。
-  if (
-    auth.hasPermission('ROLE_ADMIN') &&
+  const administratorNeedsInitialTenantSetup = auth.hasPermission('ROLE_ADMIN') &&
     to.path !== '/setup/initial-tenant' &&
     to.name !== 'login'
-  ) {
+  if (administratorNeedsInitialTenantSetup) {
     try {
       const { systemHasTenants } = await import('@/api/setup')
       const hasTenants = await systemHasTenants()
@@ -1108,7 +1100,9 @@ router.beforeEach(async (to, from) => {
   }
 
   const capabilities = to.meta.capabilities as string[] | undefined
-  if (capabilities && !capabilities.some((capability) => auth.hasCapability(capability))) {
+  const hasRouteCapability =
+    capabilities?.some((capability) => auth.hasCapability(capability)) ?? false
+  if (capabilities && !hasRouteCapability) {
     return { path: '/' }
   }
 
@@ -1125,7 +1119,9 @@ router.beforeEach(async (to, from) => {
     to.path === '/system/users' ||
     to.path.startsWith('/m/') ||
     (to.path === '/system/ai-chat' && auth.hasCapability('AI_ASSISTANT_USE'))
-  if (!allowWithoutMenu && !menuCandidates.some((path) => permission.hasBackendMenuAccess(path))) {
+  const menuAccessDenied =
+    !allowWithoutMenu && !menuCandidates.some((path) => permission.hasBackendMenuAccess(path))
+  if (menuAccessDenied) {
     return { path: '/' }
   }
 

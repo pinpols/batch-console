@@ -68,7 +68,11 @@
 
   const errorText = computed(() => {
     if (props.errorText?.trim()) return props.errorText.trim()
-    if (props.error instanceof Error) return userErrorMessage(props.error, t('empty.error'))
+    if (props.error instanceof Error) {
+      const error = props.error
+      const fallbackMessage = t('empty.error')
+      return userErrorMessage(error, fallbackMessage)
+    }
     return t('empty.error')
   })
 

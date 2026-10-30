@@ -25,6 +25,8 @@ export interface BulkRunOptions {
   clearOnDone?: boolean
   /** 自定义汇总文案前缀(如「重试」),默认「操作」 */
   actionLabel?: string
+  /** 操作上下文失效后仍返回结果，但不提示或清除当前页面的选择。 */
+  isCurrent?: () => boolean
 }
 
 interface ProTableExpose {
@@ -76,7 +78,10 @@ export function useBulkSelection<T = Record<string, unknown>>() {
           }
         }
       }
-      await Promise.all(Array.from({ length: Math.min(concurrency, items.length) }, worker))
+      const workerCount = Math.min(concurrency, items.length)
+      const workers = Array.from({ length: workerCount }, worker)
+      await Promise.all(workers)
+      if (opts.isCurrent && !opts.isCurrent()) return result
 
       if (result.fail === 0) {
         ElMessage.success(t('bulk.allSucceeded', { label, n: result.ok }))

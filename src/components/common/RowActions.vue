@@ -20,7 +20,7 @@
 
     <!-- 剩余操作折叠到"更多"dropdown -->
     <el-dropdown v-if="moreActions.length" trigger="click" @command="onCommand">
-      <el-button size="small" plain class="row-actions__more">
+      <el-button size="small" plain class="row-actions__more" @click.stop>
         {{ t('rowActions.more') }}
         <el-icon class="row-actions__caret"><ArrowDown /></el-icon>
       </el-button>

@@ -1,0 +1,21 @@
+### Result
+{
+  "url": "http://127.0.0.1:5181/docs/backend/audit/nested-callsite-inventory-2026-10-21.part-001?proof=publication#%E5%BD%93%E5%89%8D%E8%8C%83%E5%9B%B4%E4%B8%8E%E7%8A%B6%E6%80%81",
+  "heading": "当前范围与状态 ​",
+  "visibleRawScript": false,
+  "visibleRawAnchor": false,
+  "navigation": [
+    {
+      "text": "完整目录",
+      "href": "./nested-callsite-inventory-2026-10-21"
+    },
+    {
+      "text": "下一卷",
+      "href": "./nested-callsite-inventory-2026-10-21.part-002"
+    }
+  ]
+}
+### Ran Playwright code
+```js
+await page.evaluate('() => ({url:location.href,heading:document.getElementById("当前范围与状态")?.textContent,visibleRawScript:document.body.innerText.includes("<script setup>"),visibleRawAnchor:document.body.innerText.includes("<span id="),navigation:[...document.querySelectorAll(".vp-doc a")].slice(0,2).map(a=>({text:a.textContent,href:a.getAttribute("href")}))})');
+```

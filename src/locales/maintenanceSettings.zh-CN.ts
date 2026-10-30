@@ -16,14 +16,15 @@ export default {
   messageLabel: '维护公告',
   messagePlaceholder: '说明维护原因或用户需要了解的信息',
   etaLabel: '预计恢复时间',
-  etaPlaceholder: '可留空；时间按本地时区选择',
+  etaPlaceholder: '可留空；通知窗口默认 2 小时，最长 24 小时',
   startsAtLabel: '计划开始时间',
   startsAtPlaceholder: '留空表示保存后立即开始',
   startsAtHint:
     '计划公告会立即展示倒计时；到达该时间后，后端自动启用所选维护模式。留空则立即生效。',
   affectedServicesLabel: '受影响服务标记',
   affectedServicesPlaceholder: '每行一个服务编码，例如 trigger',
-  affectedServicesHint: '这些编码仅用于公告展示，不会执行服务路由或单服务维护。',
+  affectedServicesHint:
+    '公告标记同时限定计划停机通知范围：识别 console-api、trigger、orchestrator 和 worker-import/export/process/dispatch/atomic，可加 batch- 前缀；留空仅针对 Console。未知标记不静默。需部署完成 Alertmanager 联动；不会启停服务或改变业务路由。',
   affectedServicesTooMany: '受影响服务最多填写 50 项。',
   affectedServiceTooLong: '每个服务编码不能超过 64 个字符。',
   reload: '重新加载',

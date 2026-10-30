@@ -39,7 +39,7 @@ function shuffle<T>(arr: T[]): T[] {
  */
 export function generatePassword(length = 16): string {
   if (length < 4) throw new Error('password length must be >= 4')
-  const all = Object.values(CHARSET).join('')
+  const availableCharacters = Object.values(CHARSET).join('')
   const required = [
     pickOne(CHARSET.upper),
     pickOne(CHARSET.lower),
@@ -47,8 +47,10 @@ export function generatePassword(length = 16): string {
     pickOne(CHARSET.symbol),
   ]
   const rest: string[] = []
-  for (let i = 0; i < length - required.length; i++) rest.push(pickOne(all))
-  return shuffle([...required, ...rest]).join('')
+  for (let i = 0; i < length - required.length; i++) rest.push(pickOne(availableCharacters))
+  const passwordCharacters = [...required, ...rest]
+  const shuffledPasswordCharacters = shuffle(passwordCharacters)
+  return shuffledPasswordCharacters.join('')
 }
 
 /**

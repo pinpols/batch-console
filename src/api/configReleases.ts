@@ -170,8 +170,12 @@ export interface ConfigSyncImportBody {
   mode?: 'SKIP_EXISTING' | 'UPSERT'
   dryRun?: boolean
 }
-export function importConfigSync(body: ConfigSyncImportBody) {
-  return post<unknown>('/api/console/config/sync/import', body)
+export function importConfigSync(body: ConfigSyncImportBody, idempotencyKey?: string) {
+  return post<components['schemas']['ConfigSyncImportResponse']>(
+    '/api/console/config/sync/import',
+    body,
+    idempotencyKey ? { headers: { 'Idempotency-Key': idempotencyKey } } : undefined,
+  )
 }
 
 /** GET /api/console/config/sync/logs */
@@ -181,4 +185,22 @@ export function listConfigSyncLogs(tenantId: string, pageNo: number, pageSize: n
     pageNo,
     pageSize,
   })
+}
+
+/** POST /api/console/config/sync/logs/{logId}/reconcile */
+export function reconcileConfigSyncLog(tenantId: string, logId: number) {
+  return post<components['schemas']['ConfigSyncLogResponse']>(
+    `/api/console/config/sync/logs/${logId}/reconcile`,
+    undefined,
+    { params: { tenantId } },
+  )
+}
+
+/** 按原导入请求查找审计；未找到不等于未执行。 */
+export function getConfigSyncRequestStatus(tenantId: string, idempotencyKey: string) {
+  return get<components['schemas']['ConfigSyncRequestStatusResponse']>(
+    '/api/console/config/sync/requests/status',
+    { tenantId },
+    { headers: { 'Idempotency-Key': idempotencyKey } },
+  )
 }

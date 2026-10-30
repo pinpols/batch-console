@@ -16,6 +16,7 @@ description: 规划、执行或修复前端 lint、typecheck、i18n、Vitest、P
 
 ## 写测试
 
+- 行为变更先明确用户可观察结果和关键失败路径，优先写目标测试并在可行时确认其先失败，再实现；纯逻辑用单测，组件状态/交互用适当的组件或浏览器路径，真实后端契约和关键业务流用 Playwright/真实环境。不要把 mock 结果写成真实联调证据；文档、格式和机械变更不强制测试先行。
 - Vitest 文件与被测文件同目录，命名 `xxx.test.ts`；`describe` 用被测对象短名，`it` 描述行为，不用 `should` 前缀。
 - mock 使用 `vi.mock` + `vi.mocked`，每个用例前 `mockReset()`；不要引入 jest/chai/sinon。
 - Playwright 要使用稳定选择器和业务结果断言，不依赖脆弱延时或截图偶然一致。
@@ -37,6 +38,32 @@ description: 规划、执行或修复前端 lint、typecheck、i18n、Vitest、P
 - 不依赖后端的完整检查使用 `npm run verify:local`。
 - 真实业务验收使用 `bash scripts/local/fe-acceptance.sh`；缺少后端或 preview 时不能宣称全流程通过。
 
+## UI与交互审查的验证
+
+按 `frontend-ui-ia-review` 选择受影响页面/共享组件及正常、加载、空、错、提交/权限状态，覆盖实际相关视口、主题与语言。复用已有视觉/交互套件，不为文档或技能调整启动真实环境；视觉/页面实现修改按现行规范执行相应验证。
+
+截图对比固定构建、角色、数据和视口；不盲目更新视觉基线接受退化。布局截图、axe、手工键盘、浏览器console/network及最终业务结果分别报告；组件存在或点击成功不能代替提交/下载/状态推进成功。条件不可用、样本ID无效或用例跳过不能记为该交互通过。
+
 ## 报告
 
 报告要列出实际运行命令、结果、未运行项和原因。不要在长期文档固化测试数量；涉及真实用户路径时说明是否连到真实后端或仅使用 mock/fixture。
+
+## 脚本选择与真实写入边界
+
+- 以 `scripts/run-playwright.mjs` 和 package.json 的当前别名启动浏览器测试；`scripts/test-unit.sh`、`scripts/test-e2e.sh` 是参数包装。`scripts/report-playwright-release.mjs` 对 `@release-required` 的跳过会失败，必跑场景不能折算为通过。
+- `e2e/config.cjs` 从 `e2e/test-config.json` 解析地址；staging 需显式 URL 与凭据。`global-setup.cjs` 统一准备租户、账号、密码状态、配置包与 storageState；`global-teardown.cjs` 可按 prefix 删除测试数据。两者含真实写入，认证状态文件不得提交，清理 warn/SKIP 不等于业务通过。
+- `scripts/local/fe-acceptance.sh --list` 用于查看真实步骤；`--steps`、`--skip`、`--resume` 的结果只代表所选范围。验收可能刷新依赖、启动 preview 并写测试数据，先确认隔离环境与租户。
+- `smoke:endpoints` 的 `--list` 离线，默认 GET 运行只证明路由/状态分类；`AUTH`、条件 404 和缺资源警告不等于授权/业务已验收。`--writes`、真实使用审计和完整 E2E 有写入副作用，按任务授权选择，不能为文档核查自动执行。
+- 历史 `e2e-data/archive/` 和 `e2e/archive/` 不属于当前验收入口；数据文件完整性、mock/fixture 和真实业务闭环分别记录。脚本及配置角色见 `docs/engineering/script-skill-routing.md`。
+
+## 当前真实验收 SQL 夹具
+
+- `e2e/fixtures/closure-recovery/sql/` 与 `e2e/fixtures/workflow-bulk/sql/` 是当前真实验收支撑 SQL，由各自 `fixture.ts` 和 `*-real.spec.ts` 调用；它们也要进入脚本覆盖清单，不能因放在测试目录而排除，也不能与 `e2e-data/archive/` 的退役 SQL 混为一类。
+- 两套用例均由 `E2E_CLOSURE_RECOVERY_REAL=1` 显式启用，要求 `E2E_SKIP_GLOBAL_SETUP=1`、独占真实验收时段、同版后端与迁移，以及显式 `E2E_CLOSURE_PG_CONTAINER/USER/DATABASE` 和测试凭据。关闭全局准备后由用例负责登录和清理；不能以设置开关代替环境写入或故障注入授权。
+- SQL 通过 `execFileSync` 的 stdin 交给 `psql -X -v ON_ERROR_STOP=1`，变量使用 psql 引用，不拼接 Shell。保留每例 UUID 租户、故障对象名和已保存数字身份；不要替换成共享 `ta/tb` 或全局 prefix 清理。
+- ConfigSync 故障 trigger 只命中本例审计租户，安装和移除都在事务内；必须保留 `finally` 移除及外层清理。通知冷热历史是直接准备的 fixture，渠道/规则停用；不能据此声称生产归档器或真实外部投递已验证。
+- Workflow 批量清理遇到活跃运行或意外 Job 副作用会拒绝删除，清理后按预先保存的定义/运行/请求 ID 独立检查残留为零。受理响应、父记录消失和全局 teardown 警告都不能代替这些闭环证据。
+
+## 运行进度真实验收
+
+涉及真实控制图、Job／Pipeline进度、Worker中断恢复、审批重放或Quartz日统计时，按场景读取[运行进度真实验收方法](references/runtime-progress-acceptance.md)。其中区分控制图、SQL投影与真实Worker证据，保留各入口环境、权限和精确清理边界；普通测试不加载整份参考。

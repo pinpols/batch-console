@@ -12,8 +12,9 @@ const EDGE_TONES: Record<DesignerEdgeType, string> = {
 }
 
 export function edgeTypeOf(edge: DesignerEdge): DesignerEdgeType {
-  const raw = String(edge.attrs?.edgeType ?? 'SUCCESS').toUpperCase() as DesignerEdgeType
-  return KNOWN_EDGE_TYPES.has(raw) ? raw : 'SUCCESS'
+  const rawEdgeType = String(edge.attrs?.edgeType ?? 'SUCCESS')
+  const normalizedEdgeType = rawEdgeType.toUpperCase() as DesignerEdgeType
+  return KNOWN_EDGE_TYPES.has(normalizedEdgeType) ? normalizedEdgeType : 'SUCCESS'
 }
 
 export function isEdgeEnabled(edge: DesignerEdge): boolean {
@@ -21,7 +22,8 @@ export function isEdgeEnabled(edge: DesignerEdge): boolean {
 }
 
 function compactExpression(expression: string, maxLength = 36): string {
-  const compact = expression.replace(/\s+/g, ' ').trim()
+  const whitespaceNormalized = expression.replace(/\s+/g, ' ')
+  const compact = whitespaceNormalized.trim()
   if (compact.length <= maxLength) return compact
   return `${compact.slice(0, maxLength - 1)}…`
 }

@@ -24,7 +24,6 @@ const TENANT_STORAGE_KEY = STORAGE_KEYS.tenantId
 
 // 租户依赖的列表/详情页(空 tenantId 时最易触发空参请求)
 const TENANT_SCOPED_PAGES = [
-  '/jobs/pipelines',
   '/jobs/definitions',
   '/monitor/job-instances',
   '/monitor/job-steps',
@@ -66,6 +65,7 @@ test.describe('@cross-browser admin 未选租户 · 页面不整页崩溃(组件
 
       // 全量导航 → 应用以空 tenantId 重新初始化
       await page.goto(path, { waitUntil: 'domcontentloaded' })
+      // 观察异步路由与数据回调是否产生异常；页面就绪由后续断言核对。
       await page.waitForTimeout(1500)
 
       // 1) 路由级错误边界「组件渲染异常」不应出现

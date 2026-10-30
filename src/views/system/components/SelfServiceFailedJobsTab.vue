@@ -41,7 +41,13 @@
       </el-table-column>
       <el-table-column :label="t('common.actions')" width="120" align="right">
         <template #default="{ row }">
-          <el-button text type="primary" size="small" :icon="RefreshRight" @click="goRerun(row)">
+          <el-button
+            text
+            type="primary"
+            size="small"
+            :icon="RefreshRight"
+            @click="goRerun(row as ConsoleJobInstanceResponse)"
+          >
             {{ t('selfServicePanel.actionGoRerun') }}
           </el-button>
         </template>
@@ -51,7 +57,7 @@
 </template>
 
 <script setup lang="ts">
-  import { ref } from 'vue'
+  import { ref, watch } from 'vue'
   import { useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
   import { RotateCw as RefreshRight } from '@lucide/vue'
@@ -60,6 +66,7 @@
   import { fmtDatetime } from '@/utils/datetime'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
+  import { useTenantRequestScope } from '@/composables/useTenantRequestScope'
   import { queryJobInstances } from '@/api/queries/instances'
   import type { ConsoleJobInstanceResponse } from '@/types/console-api'
 
@@ -71,22 +78,25 @@
   const error = ref(false)
   const rows = ref<ConsoleJobInstanceResponse[]>([])
 
+  const loadScope = useTenantRequestScope()
   async function load() {
-    if (!tenant.tenantId) return
+    const request = loadScope.begin()
+    if (!request.tenantId) return
     loading.value = true
     error.value = false
     try {
       const res = await queryJobInstances({
-        tenantId: tenant.tenantId,
+        tenantId: request.tenantId,
         instanceStatus: 'FAILED',
         page: 1,
         pageSize: 10,
       })
+      if (!loadScope.isCurrent(request)) return
       rows.value = res?.records ?? []
     } catch {
-      error.value = true
+      if (loadScope.isCurrent(request)) error.value = true
     } finally {
-      loading.value = false
+      if (loadScope.isCurrent(request)) loading.value = false
     }
   }
 
@@ -98,5 +108,14 @@
     })
   }
 
+  watch(
+    () => tenant.tenantId,
+    () => {
+      rows.value = []
+      error.value = false
+      loading.value = false
+    },
+    { flush: 'sync' },
+  )
   useTenantReload(load)
 </script>

@@ -141,7 +141,9 @@ test('mobile degradation clears when a real isolated Trigger starts', async ({ p
     const deadline = Date.now() + 90_000
     let started = false
     while (Date.now() < deadline) {
-      if (spawnError || trigger.exitCode !== null || trigger.signalCode !== null) {
+      const triggerExitedBeforeReady =
+        spawnError || trigger.exitCode !== null || trigger.signalCode !== null
+      if (triggerExitedBeforeReady) {
         throw new Error(
           `Isolated Trigger exited before becoming ready: ${spawnError?.message ?? triggerLog}`,
         )

@@ -263,9 +263,12 @@
   const localeToggleTooltip = computed(() =>
     currentLocale.value === 'zh-CN' ? t('layoutHeader.switchToEn') : t('layoutHeader.switchToZh'),
   )
-  const userInitial = computed(() =>
-    (auth.userInfo?.username ?? '?').trim().charAt(0).toUpperCase(),
-  )
+  const userInitial = computed(() => {
+    const username = auth.userInfo?.username ?? '?'
+    const trimmedUsername = username.trim()
+    const firstUsernameCharacter = trimmedUsername.charAt(0)
+    return firstUsernameCharacter.toUpperCase()
+  })
   const userDisplayName = computed(() => auth.userInfo?.username ?? t('nav.notLoggedIn'))
   // 只收敛顶栏可用空间，完整用户名仍通过 title/aria-label 保留并可访问。
   const userDisplayNameCompact = computed(() => truncateDisplayText(userDisplayName.value, 16))

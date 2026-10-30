@@ -1,6 +1,6 @@
 # AI 与使用率统计当前待办
 
-> 复核日期：2026-10-01。本文区分已接入的前端代码、真实本地联测和仍缺失的后端/环境证据；不以 mock 通过代替上线验收。
+> 验收证据快照：2026-10-01；2026-10-25 按 WDI 静态复核依赖与文档状态，未重跑真实环境验收。本文区分已接入的前端代码、真实本地联测和仍缺失的后端/环境证据；不以 mock 通过代替上线验收。
 
 ## 状态口径
 
@@ -16,8 +16,8 @@
 
 权威方案：
 
-- [Console AI 助手前端实施方案](../engineering/ai-assistant-frontend-implementation-plan.md)
-- [Console 使用率统计前端方案](../engineering/console-usage-statistics-plan.md)
+- [Console AI 助手前端实施方案](../engineering/ai-assistant-frontend.md)
+- [Console 使用率统计前端方案](../engineering/console-usage-statistics.md)
 - 配对后端方案：`file-batch-system/docs/plans/ai-assistant-contextual-experience-and-cost-governance-2026-09-29.md`
 - 配对后端方案：`file-batch-system/docs/plans/console-usage-statistics-plan-2026-09-29.md`
 
@@ -45,7 +45,7 @@
 
 ## 维护与服务降级
 
-权威实施方案：[Console 维护与降级前端实施方案](../engineering/maintenance-degradation-implementation-plan.md)。配对后端清单见 `file-batch-system/docs/analysis/todo-master.md` 的 G6；本节只登记前端交付物，不重新定义后端契约。
+权威实施方案：[Console 维护与降级前端实施方案](../engineering/maintenance-degradation.md)。配对后端清单见 `file-batch-system/docs/plans/todo-master.md` 的 G6；本节只登记前端交付物，不重新定义后端契约。
 
 | ID | 交付物 | 状态 | 依赖 |
 |---|---|---|---|
@@ -61,7 +61,7 @@
 
 | 范围 | 状态 | 说明 |
 |---|---|---|
-| Spring AI M3 → GA | 🟡 暂缓 | 等上游发布，当前不做前端适配升级 |
+| Spring AI 依赖升级 | 后端维护 | 早期 M3→GA 等待项已被当前后端 `pom.xml` 的 `spring-ai.version=2.0.1` 取代；后续由后端评估升级，不再以等待 GA 作为前端阻塞 |
 | 外部 AI provider 契约接入 CI | ❌ 不做 | 需要外部 secrets；不在前端仓库伪造 provider 验证 |
 | AI 上线判定/受控试生产 | 🟡 暂缓 | 等后端质量、成本和权限证据 |
 | Phase 3 AI 直接写操作/HITL | 🟡 后置 | 继续链接到现有审批和运维页面，不新增 AI 写入口 |

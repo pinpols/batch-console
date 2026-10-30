@@ -1,0 +1,276 @@
+{
+  "date": "2026-10-26",
+  "scope": "local WDI generated publication and browser navigation; not deployment acceptance",
+  "sources": [
+    {
+      "document": "audit/nested-callsite-inventory-2026-10-21.md",
+      "sourceSha256": "2a41750d394153916c4e5e8f91a06bf6c0b4cb51a01f2a752414c0245ecd5f62",
+      "sourceBytes": 1218778,
+      "headings": 22,
+      "parts": [
+        {
+          "name": "nested-callsite-inventory-2026-10-21.part-001.md",
+          "sourceBytes": 139679,
+          "fromLine": 1,
+          "toLine": 557
+        },
+        {
+          "name": "nested-callsite-inventory-2026-10-21.part-002.md",
+          "sourceBytes": 139299,
+          "fromLine": 558,
+          "toLine": 1037
+        },
+        {
+          "name": "nested-callsite-inventory-2026-10-21.part-003.md",
+          "sourceBytes": 139586,
+          "fromLine": 1038,
+          "toLine": 1416
+        },
+        {
+          "name": "nested-callsite-inventory-2026-10-21.part-004.md",
+          "sourceBytes": 139010,
+          "fromLine": 1417,
+          "toLine": 1861
+        },
+        {
+          "name": "nested-callsite-inventory-2026-10-21.part-005.md",
+          "sourceBytes": 139625,
+          "fromLine": 1862,
+          "toLine": 2285
+        },
+        {
+          "name": "nested-callsite-inventory-2026-10-21.part-006.md",
+          "sourceBytes": 119883,
+          "fromLine": 2286,
+          "toLine": 2667
+        },
+        {
+          "name": "nested-callsite-inventory-2026-10-21.part-007.md",
+          "sourceBytes": 93266,
+          "fromLine": 2668,
+          "toLine": 2863
+        },
+        {
+          "name": "nested-callsite-inventory-2026-10-21.part-008.md",
+          "sourceBytes": 139832,
+          "fromLine": 2864,
+          "toLine": 3266
+        },
+        {
+          "name": "nested-callsite-inventory-2026-10-21.part-009.md",
+          "sourceBytes": 138878,
+          "fromLine": 3267,
+          "toLine": 3605
+        },
+        {
+          "name": "nested-callsite-inventory-2026-10-21.part-010.md",
+          "sourceBytes": 29720,
+          "fromLine": 3606,
+          "toLine": 3695
+        }
+      ],
+      "allOriginalBytesConserved": true,
+      "allOriginalHeadingIdsPreserved": true,
+      "generatedMarkdownMatches": true
+    },
+    {
+      "document": "plans/workflow-daily-integration-execution-log-2026-10-14.md",
+      "sourceSha256": "2020ea6782c03afee0db41e6d180118a53fdfbbafc5fd7d93fae8fd9d8c6de42",
+      "sourceBytes": 1858644,
+      "headings": 748,
+      "parts": [
+        {
+          "name": "workflow-daily-integration-execution-log-2026-10-14.part-001.md",
+          "sourceBytes": 139995,
+          "fromLine": 1,
+          "toLine": 366
+        },
+        {
+          "name": "workflow-daily-integration-execution-log-2026-10-14.part-002.md",
+          "sourceBytes": 139877,
+          "fromLine": 367,
+          "toLine": 834
+        },
+        {
+          "name": "workflow-daily-integration-execution-log-2026-10-14.part-003.md",
+          "sourceBytes": 139777,
+          "fromLine": 835,
+          "toLine": 1327
+        },
+        {
+          "name": "workflow-daily-integration-execution-log-2026-10-14.part-004.md",
+          "sourceBytes": 139046,
+          "fromLine": 1328,
+          "toLine": 1805
+        },
+        {
+          "name": "workflow-daily-integration-execution-log-2026-10-14.part-005.md",
+          "sourceBytes": 139544,
+          "fromLine": 1806,
+          "toLine": 2240
+        },
+        {
+          "name": "workflow-daily-integration-execution-log-2026-10-14.part-006.md",
+          "sourceBytes": 139455,
+          "fromLine": 2241,
+          "toLine": 2668
+        },
+        {
+          "name": "workflow-daily-integration-execution-log-2026-10-14.part-007.md",
+          "sourceBytes": 139333,
+          "fromLine": 2669,
+          "toLine": 3137
+        },
+        {
+          "name": "workflow-daily-integration-execution-log-2026-10-14.part-008.md",
+          "sourceBytes": 139690,
+          "fromLine": 3138,
+          "toLine": 3560
+        },
+        {
+          "name": "workflow-daily-integration-execution-log-2026-10-14.part-009.md",
+          "sourceBytes": 139952,
+          "fromLine": 3561,
+          "toLine": 3947
+        },
+        {
+          "name": "workflow-daily-integration-execution-log-2026-10-14.part-010.md",
+          "sourceBytes": 139938,
+          "fromLine": 3948,
+          "toLine": 4430
+        },
+        {
+          "name": "workflow-daily-integration-execution-log-2026-10-14.part-011.md",
+          "sourceBytes": 139860,
+          "fromLine": 4431,
+          "toLine": 4928
+        },
+        {
+          "name": "workflow-daily-integration-execution-log-2026-10-14.part-012.md",
+          "sourceBytes": 139797,
+          "fromLine": 4929,
+          "toLine": 5383
+        },
+        {
+          "name": "workflow-daily-integration-execution-log-2026-10-14.part-013.md",
+          "sourceBytes": 139926,
+          "fromLine": 5384,
+          "toLine": 5944
+        },
+        {
+          "name": "workflow-daily-integration-execution-log-2026-10-14.part-014.md",
+          "sourceBytes": 42454,
+          "fromLine": 5945,
+          "toLine": 6098
+        }
+      ],
+      "allOriginalBytesConserved": true,
+      "allOriginalHeadingIdsPreserved": true,
+      "generatedMarkdownMatches": true
+    }
+  ],
+  "size": {
+    "search": [
+      {
+        "file": "chunks/@localSearchIndexroot.CrgNQeSB.js",
+        "raw": 4272586,
+        "gzip": 1178969
+      }
+    ],
+    "largestOrdinaryRaw": [
+      {
+        "file": "app.DmaKYAue.js",
+        "raw": 796588,
+        "gzip": 205171
+      },
+      {
+        "file": "chunks/cynefin-OW5HDTMX.D9ykztTf.js",
+        "raw": 690855,
+        "gzip": 155111
+      },
+      {
+        "file": "chunks/vendor-cytoscape.Ix0LnXOy.js",
+        "raw": 443834,
+        "gzip": 142409
+      }
+    ],
+    "largestOrdinaryGzip": [
+      {
+        "file": "app.DmaKYAue.js",
+        "raw": 796588,
+        "gzip": 205171
+      },
+      {
+        "file": "chunks/cynefin-OW5HDTMX.D9ykztTf.js",
+        "raw": 690855,
+        "gzip": 155111
+      },
+      {
+        "file": "chunks/vendor-cytoscape.Ix0LnXOy.js",
+        "raw": 443834,
+        "gzip": 142409
+      }
+    ]
+  },
+  "browser": {
+    "originalFirstAnchor": "part-001; query and hash retained; heading found",
+    "originalLastAnchor": "part-014; heading found",
+    "previous": "014 to 013",
+    "next": "013 to 014",
+    "directory": "014 to original index",
+    "rawScriptOrAnchorVisible": false,
+    "knownConsole": "initial preview /favicon.ico 404; no new JS exception observed",
+    "bodyNavigation": "both corrected original body links clicked; original directory redirects to part-001 and exact persisted heading found"
+  },
+  "buildLog": "wdi-docs-publication-build-final.log",
+  "buildResult": "exit 0; 4 node tests passed; original size budgets passed; existing global dead-link neutralization is not zero-dead-links acceptance",
+  "canonicalChange": "execution log navigation only: 2 invalid links corrected; evidence body unchanged",
+  "previousBuild": {
+    "log": "wdi-docs-publication-build-3.log",
+    "result": "exit 0; 4 node tests passed; size gate passed; existing dead-link neutralization 1772 is not zero-dead-links acceptance",
+    "size": {
+      "search": [
+        {
+          "file": "chunks/@localSearchIndexroot.CHq-nZus.js",
+          "raw": 4268016,
+          "gzip": 1177574
+        }
+      ],
+      "largestOrdinaryRaw": [
+        {
+          "file": "app.dwPNUYx-.js",
+          "raw": 796588,
+          "gzip": 205184
+        },
+        {
+          "file": "chunks/cynefin-OW5HDTMX.DR4hleOS.js",
+          "raw": 690855,
+          "gzip": 155112
+        },
+        {
+          "file": "chunks/vendor-cytoscape.Ix0LnXOy.js",
+          "raw": 443834,
+          "gzip": 142409
+        }
+      ],
+      "largestOrdinaryGzip": [
+        {
+          "file": "app.dwPNUYx-.js",
+          "raw": 796588,
+          "gzip": 205184
+        },
+        {
+          "file": "chunks/cynefin-OW5HDTMX.DR4hleOS.js",
+          "raw": 690855,
+          "gzip": 155112
+        },
+        {
+          "file": "chunks/vendor-cytoscape.Ix0LnXOy.js",
+          "raw": 443834,
+          "gzip": 142409
+        }
+      ]
+    }
+  },
+  "closingVerification": "closing-verification.json"
+}

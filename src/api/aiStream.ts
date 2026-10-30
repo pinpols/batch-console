@@ -43,7 +43,8 @@ function headers(tenantId: string): HeadersInit {
 }
 
 async function responseError(response: Response): Promise<StreamError> {
-  const payload = (await response.json().catch(() => ({}))) as { code?: string }
+  const payloadPromise = response.json().catch(() => ({}))
+  const payload = (await payloadPromise) as { code?: string }
   const error = new Error('AI stream request failed') as StreamError
   error.response = { status: response.status, data: payload }
   return error
@@ -62,7 +63,11 @@ export async function streamAiChat(
     signal,
   })
   if (!response.ok) throw await responseError(response)
-  if (!response.body || !response.headers.get('content-type')?.includes('text/event-stream')) {
+  if (!response.body) {
+    throw new Error('AI stream response is unavailable')
+  }
+  const contentType = response.headers.get('content-type')
+  if (!contentType?.includes('text/event-stream')) {
     throw new Error('AI stream response is unavailable')
   }
 
@@ -101,9 +106,14 @@ export async function streamAiChat(
 }
 
 export async function cancelAiChatStream(requestId: string, tenantId: string): Promise<void> {
-  const response = await fetch(
-    apiUrl(`/api/console/ai/chat/stream/${encodeURIComponent(requestId)}/cancel`),
-    { method: 'POST', credentials: 'include', headers: headers(tenantId) },
-  )
-  if (!response.ok && response.status !== 404) throw await responseError(response)
+  const encodedRequestId = encodeURIComponent(requestId)
+  const endpoint = `/api/console/ai/chat/stream/${encodedRequestId}/cancel`
+  const url = apiUrl(endpoint)
+  const response = await fetch(url, {
+    method: 'POST',
+    credentials: 'include',
+    headers: headers(tenantId),
+  })
+  const hasUnexpectedCancelFailure = !response.ok && response.status !== 404
+  if (hasUnexpectedCancelFailure) throw await responseError(response)
 }

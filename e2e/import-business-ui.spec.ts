@@ -6,9 +6,6 @@
  * biz.risk_score 的本轮唯一 token 行数。
  */
 import { STORAGE_KEYS } from './support/storage'
-import { MOCKSERVER_BASE_URL } from './support/config'
-import { existsSync, readFileSync } from 'node:fs'
-import path from 'node:path'
 import { spawnSync } from 'node:child_process'
 import { type Page } from '@playwright/test'
 import { expect, test } from './support/app'
@@ -19,9 +16,6 @@ const PG_CONTAINER = process.env.PG_CONTAINER || 'batch-postgres-primary'
 const POSTGRES_USER = process.env.POSTGRES_USER || 'batch_user'
 const PLATFORM_DB = process.env.PLATFORM_DB || 'batch_platform'
 const BUSINESS_DB = process.env.BUSINESS_DB || 'batch_business'
-const BACKEND_ROOT =
-  process.env.BFS_BACKEND_ROOT || path.resolve(__dirname, '../../file-batch-system')
-const SIM_BOOTSTRAP_SQL = path.join(BACKEND_ROOT, 'docs/test-data/sim-e2e-bootstrap.sql')
 const TENANT_STORAGE_KEY = STORAGE_KEYS.tenantId
 const TERMINAL_STATUSES = new Set([
   'SUCCESS',
@@ -31,7 +25,6 @@ const TERMINAL_STATUSES = new Set([
   'TERMINATED',
   'REJECTED',
 ])
-const REQUIRED_IMPORT_STAGES = ['RECEIVE', 'PREPROCESS', 'PARSE', 'VALIDATE', 'LOAD']
 
 type ImportScenario = {
   tenantId: string
@@ -87,6 +80,13 @@ const SCENARIOS: ImportScenario[] = [
   },
 ]
 
+const COPIED_TA_IMPORT_SCENARIO: ImportScenario = {
+  ...SCENARIOS[0],
+  tenantId: 'tx',
+  businessCountSql: (token) =>
+    `select count(*) from biz.customer_account where tenant_id='tx' and customer_no like 'C${token}%';`,
+}
+
 function psql(db: string, sql: string): string {
   const result = spawnSync(
     'docker',
@@ -120,60 +120,85 @@ function dockerPgAvailable(): boolean {
   return result.status === 0 && result.stdout.trim() === 'true'
 }
 
-function applyBackendSimBootstrap() {
-  if (!existsSync(SIM_BOOTSTRAP_SQL)) {
-    throw new Error(`backend sim bootstrap SQL not found: ${SIM_BOOTSTRAP_SQL}`)
-  }
-  const result = spawnSync(
-    'docker',
-    [
-      'exec',
-      '-i',
-      PG_CONTAINER,
-      'psql',
-      '-U',
-      POSTGRES_USER,
-      '-d',
-      PLATFORM_DB,
-      '-v',
-      'ON_ERROR_STOP=1',
-      '-v',
-      `mockserver_base_url=${MOCKSERVER_BASE_URL}`,
-    ],
-    { input: readFileSync(SIM_BOOTSTRAP_SQL, 'utf8'), encoding: 'utf8' },
+function assertImportRuntimeSeed(scenario: ImportScenario) {
+  const importDefinitionSql = `select concat(jd.job_type, ':', lower(jd.enabled::text), ':', jd.default_params->>'templateCode')
+         from batch.job_definition jd
+        where jd.tenant_id=${sqlLiteral(scenario.tenantId)}
+          and jd.job_code=${sqlLiteral(scenario.jobCode)}
+        order by jd.version desc limit 1;`
+  const stages = psql(PLATFORM_DB, importDefinitionSql)
+  expect(stages, `${scenario.tenantId}/${scenario.jobCode} enabled IMPORT definition`).toBe(
+    `IMPORT:true:${scenario.templateCode}`,
   )
-  if (result.status !== 0) {
-    throw new Error((result.stderr || result.stdout || 'sim bootstrap failed').trim())
-  }
-}
 
-function assertImportRuntimeSeed() {
-  for (const scenario of SCENARIOS) {
-    const stages = psql(
-      PLATFORM_DB,
-      `select string_agg(ps.stage_code, ',' order by ps.step_order)
-         from batch.pipeline_definition pd
-         join batch.pipeline_step_definition ps on ps.pipeline_definition_id = pd.id
-        where pd.tenant_id=${sqlLiteral(scenario.tenantId)}
-          and pd.job_code=${sqlLiteral(scenario.jobCode)}
-          and pd.pipeline_type='IMPORT'
-          and ps.enabled=true;`,
-    )
-    expect(stages, `${scenario.tenantId}/${scenario.jobCode} import stages`).toBe(
-      REQUIRED_IMPORT_STAGES.join(','),
-    )
-
-    const loadSpec = psql(
-      PLATFORM_DB,
-      `select coalesce(query_param_schema->'jdbcMappedImport'->>'table', '')
+  const importTemplateTableSql = `select coalesce(query_param_schema->'jdbcMappedImport'->>'table', '')
          from batch.file_template_config
         where tenant_id=${sqlLiteral(scenario.tenantId)}
           and template_code=${sqlLiteral(scenario.templateCode)}
         order by version desc
-        limit 1;`,
-    )
-    expect(loadSpec, `${scenario.tenantId}/${scenario.templateCode} jdbcMappedImport`).toBeTruthy()
-  }
+        limit 1;`
+  const loadSpec = psql(PLATFORM_DB, importTemplateTableSql)
+  expect(loadSpec, `${scenario.tenantId}/${scenario.templateCode} jdbcMappedImport`).toBeTruthy()
+}
+
+async function copyImportJobFromUi(page: Page, scenario: ImportScenario) {
+  await enterDemoApp(page)
+  await page.goto('/system/tenants')
+  await expectPageTitle(page, '租户实例')
+  await page.getByRole('button', { name: '复制配置' }).click()
+  const drawer = page.locator('.el-drawer:visible')
+  await expect(drawer.getByText('跨租户复制配置')).toBeVisible()
+
+  const source = drawer.locator('.el-form-item').filter({ hasText: '源租户' }).locator('.el-select')
+  await source.click()
+  const sourceOption = page
+    .locator('.el-select-dropdown:visible [role="option"]')
+    .filter({ hasText: /^ta\s*—/ })
+  await expect(sourceOption).toBeVisible()
+  await sourceOption.click()
+  await expect(drawer.locator('.el-form-item').filter({ hasText: '源租户' })).toContainText('ta —')
+  await page.keyboard.press('Escape')
+
+  const targets = drawer.locator('.el-form-item').filter({ hasText: '目标租户' }).locator('.el-select')
+  await targets.click()
+  await targets.locator('input').fill('tx')
+  await expect(
+    page
+      .locator('.el-select-dropdown:visible [role="option"]')
+      .filter({ hasText: /^tx\s*—\s*E2E fixture tx$/ }),
+  ).toBeVisible()
+  await targets.locator('input').press('ArrowDown')
+  await targets.locator('input').press('Enter')
+  await expect(drawer.locator('.el-form-item').filter({ hasText: '目标租户' })).toContainText(
+    'tx — E2E fixture tx',
+  )
+
+  const jobCodes = drawer.getByPlaceholder(/输入 jobCode/)
+  await jobCodes.fill(scenario.jobCode)
+  await jobCodes.press('Enter')
+  await drawer.locator('.el-radio').filter({ hasText: '覆盖更新已有' }).click()
+
+  const previewResponse = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'POST' &&
+      response.url().includes('/api/console/config/tenant-copy/preview'),
+    { timeout: 30_000 },
+  )
+  await drawer.getByRole('button', { name: '复制预览' }).click()
+  expect((await previewResponse).status(), 'tenant copy preview status').toBe(200)
+  await expect(drawer.getByText('差异预览')).toBeVisible({ timeout: 15_000 })
+  await expect(drawer.getByText(scenario.jobCode).first()).toBeVisible({ timeout: 10_000 })
+
+  const applyResponse = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'POST' &&
+      response.url().endsWith('/api/console/config/tenant-copy'),
+    { timeout: 45_000 },
+  )
+  await drawer.getByRole('button', { name: '正式执行复制' }).click()
+  const response = await applyResponse
+  expect(response.status(), 'tenant copy apply status').toBeLessThan(400)
+  await expect(page.locator('.el-message--success')).toBeVisible({ timeout: 15_000 })
 }
 
 function sqlLiteral(value: string): string {
@@ -258,7 +283,9 @@ async function triggerImportFromUi(
     .fill(JSON.stringify(payload, null, 2))
 
   const triggerResponse = page.waitForResponse(
-    (res) => res.request().method() === 'POST' && res.url().includes('/api/console/jobs/trigger'),
+    (res) =>
+      res.request().method() === 'POST' &&
+      /\/api\/console\/workflow-definitions\/\d+\/trigger(?:\?|$)/.test(res.url()),
     { timeout: 45_000 },
   )
   await box
@@ -284,14 +311,12 @@ async function waitForSuccessfulInstance(triggered: TriggeredInstance) {
   await expect
     .poll(
       () => {
-        const status = psql(
-          PLATFORM_DB,
-          `select instance_status from batch.job_instance
+        const instanceStatusSql = `select instance_status from batch.job_instance
             where instance_no=${sqlLiteral(triggered.instanceNo)}
                or dedup_key=${sqlLiteral(triggered.idempotencyKey)}
             order by id desc
-            limit 1;`,
-        )
+            limit 1;`
+        const status = psql(PLATFORM_DB, instanceStatusSql)
         if (TERMINAL_STATUSES.has(status)) terminalStatus = status
         return terminalStatus !== ''
       },
@@ -300,32 +325,43 @@ async function waitForSuccessfulInstance(triggered: TriggeredInstance) {
     .toBe(true)
 
   if (terminalStatus !== 'SUCCESS') {
-    const taskFailure = psql(
-      PLATFORM_DB,
-      `select concat_ws(' | ', task_status, error_code, error_message)
+    const failedTaskDetailSql = `select concat_ws(' | ', task_status, error_code, error_message)
          from batch.job_task t
          join batch.job_instance i on i.id = t.job_instance_id
         where (i.instance_no=${sqlLiteral(triggered.instanceNo)}
                or i.dedup_key=${sqlLiteral(triggered.idempotencyKey)})
           and t.task_status in ('FAILED','COMPENSATED','REJECTED')
         order by t.id desc
-        limit 1;`,
-    )
+        limit 1;`
+    const taskFailure = psql(PLATFORM_DB, failedTaskDetailSql)
     throw new Error(
       `import instance ${triggered.instanceNo} ended as ${terminalStatus}: ${taskFailure || 'no failed task detail'}`,
     )
   }
 }
 
+async function waitForSystemPipelineSnapshot(triggered: TriggeredInstance, scenario: ImportScenario) {
+  const systemPipelineSnapshotSql = `select (e.value->>'systemPipelineCode') || ':' || (e.value->>'systemPipelineVersion')
+       from batch.job_instance ji
+       join batch.workflow_node_run wnr on wnr.job_instance_id=ji.id
+       join batch.workflow_run wr on wr.id=wnr.workflow_run_id
+       cross join lateral jsonb_each(coalesce(wr.execution_snapshot->'jobDefinitions', '{}'::jsonb)) e
+      where (ji.instance_no=${sqlLiteral(triggered.instanceNo)} or ji.dedup_key=${sqlLiteral(triggered.idempotencyKey)})
+        and e.value->>'jobCode'=${sqlLiteral(scenario.jobCode)}
+      limit 1;`
+  await expect.poll(() => psql(PLATFORM_DB, systemPipelineSnapshotSql), {
+    timeout: 30_000,
+    intervals: [500, 1_000, 2_000],
+  }).toBe('IMPORT:1')
+}
+
 function expectNoFailedTasks(triggered: TriggeredInstance) {
-  const failedTasks = psql(
-    PLATFORM_DB,
-    `select count(*) from batch.job_task t
+  const failedTaskCountSql = `select count(*) from batch.job_task t
        join batch.job_instance i on i.id = t.job_instance_id
       where (i.instance_no=${sqlLiteral(triggered.instanceNo)}
              or i.dedup_key=${sqlLiteral(triggered.idempotencyKey)})
-        and t.task_status in ('FAILED','COMPENSATED','REJECTED');`,
-  )
+        and t.task_status in ('FAILED','COMPENSATED','REJECTED');`
+  const failedTasks = psql(PLATFORM_DB, failedTaskCountSql)
   expect(Number(failedTasks), `failed tasks for ${triggered.instanceNo}`).toBe(0)
 }
 
@@ -334,9 +370,7 @@ function cleanupRunningScenario(run: RunningScenario) {
   const batchNo = `ui-business-${run.token}`
   const instanceNo = run.triggered?.instanceNo ?? ''
   const idempotencyKey = run.triggered?.idempotencyKey ?? ''
-  psql(
-    PLATFORM_DB,
-    `
+  const cleanupImportFixtureSql = `
 CREATE TEMP TABLE e2e_import_instance_ids(id BIGINT PRIMARY KEY);
 CREATE TEMP TABLE e2e_import_task_ids(id BIGINT PRIMARY KEY);
 CREATE TEMP TABLE e2e_import_file_ids(id BIGINT PRIMARY KEY);
@@ -404,30 +438,24 @@ WHERE parent_instance_id IN (SELECT id FROM e2e_import_instance_ids);
 DELETE FROM batch.job_instance WHERE id IN (SELECT id FROM e2e_import_instance_ids);
 DELETE FROM batch.trigger_request WHERE id IN (SELECT id FROM e2e_import_trigger_ids);
 DELETE FROM batch.file_record WHERE id IN (SELECT id FROM e2e_import_file_ids);
-`,
-  )
+`
+  psql(PLATFORM_DB, cleanupImportFixtureSql)
 }
 
 function cleanupBusinessRows(scenario: ImportScenario, token: string, bizDate: string) {
-  if (scenario.tenantId === 'ta') {
-    psql(
-      BUSINESS_DB,
-      `delete from biz.customer_account where tenant_id='ta' and customer_no like 'C${token}%';`,
-    )
+  if (scenario.tenantId === 'ta' || scenario.tenantId === 'tx') {
+    const deleteCustomerFixtureSql = `delete from biz.customer_account where tenant_id=${sqlLiteral(scenario.tenantId)} and customer_no like 'C${token}%';`
+    psql(BUSINESS_DB, deleteCustomerFixtureSql)
     return
   }
   if (scenario.tenantId === 'tb') {
-    psql(
-      BUSINESS_DB,
-      `delete from biz.transaction where tenant_id='tb' and txn_date='${bizDate}' and remark like 'ui-business-${token}-%';`,
-    )
+    const deleteTransactionFixtureSql = `delete from biz.transaction where tenant_id='tb' and txn_date='${bizDate}' and remark like 'ui-business-${token}-%';`
+    psql(BUSINESS_DB, deleteTransactionFixtureSql)
     return
   }
   if (scenario.tenantId === 'tc') {
-    psql(
-      BUSINESS_DB,
-      `delete from biz.risk_score where tenant_id='tc' and score_date='${bizDate}' and entity_id like 'E${token}%';`,
-    )
+    const deleteRiskScoreFixtureSql = `delete from biz.risk_score where tenant_id='tc' and score_date='${bizDate}' and entity_id like 'E${token}%';`
+    psql(BUSINESS_DB, deleteRiskScoreFixtureSql)
   }
 }
 
@@ -436,8 +464,6 @@ test.describe.serial('前台三租户 IMPORT 业务正确性验收', () => {
 
   test.beforeAll(() => {
     test.skip(!dockerPgAvailable(), `Docker PG 容器 ${PG_CONTAINER} 未运行，跳过 DB 产物验收`)
-    applyBackendSimBootstrap()
-    assertImportRuntimeSeed()
   })
 
   for (const scenario of SCENARIOS) {
@@ -447,9 +473,11 @@ test.describe.serial('前台三租户 IMPORT 业务正确性验收', () => {
       const bizDate = new Date().toISOString().slice(0, 10)
       const run: RunningScenario = { scenario, token, bizDate }
       try {
+        assertImportRuntimeSeed(scenario)
         run.triggered = await triggerImportFromUi(page, scenario, token, bizDate)
         if (!run.triggered) return
 
+        await waitForSystemPipelineSnapshot(run.triggered, scenario)
         await waitForSuccessfulInstance(run.triggered)
         expectNoFailedTasks(run.triggered)
 
@@ -460,4 +488,25 @@ test.describe.serial('前台三租户 IMPORT 业务正确性验收', () => {
       }
     })
   }
+
+  test('tx/TA_IMPORT_CUSTOMER 复制配置后通过冻结的系统 Pipeline 执行', async ({ page }) => {
+    clearConsoleRateLimitKeys()
+    const scenario = COPIED_TA_IMPORT_SCENARIO
+    const token = `e2e-copy-${Date.now().toString(36).slice(-8)}`
+    const bizDate = new Date().toISOString().slice(0, 10)
+    const run: RunningScenario = { scenario, token, bizDate }
+    try {
+      await copyImportJobFromUi(page, scenario)
+      assertImportRuntimeSeed(scenario)
+      run.triggered = await triggerImportFromUi(page, scenario, token, bizDate)
+      if (!run.triggered) return
+      await waitForSystemPipelineSnapshot(run.triggered, scenario)
+      await waitForSuccessfulInstance(run.triggered)
+      expectNoFailedTasks(run.triggered)
+      const count = Number(psql(BUSINESS_DB, scenario.businessCountSql(token, bizDate)))
+      expect(count, `${scenario.tenantId}/${scenario.jobCode} business rows`).toBe(3)
+    } finally {
+      cleanupRunningScenario(run)
+    }
+  })
 })

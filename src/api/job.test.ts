@@ -119,12 +119,11 @@ describe('jobApi', () => {
     expect(mg).toHaveBeenCalledWith('/api/console/job-definitions/7', { tenantId: 'ta' })
   })
 
-  it('trigger POST with default bizDate (today YYYY-MM-DD) + MANUAL', async () => {
+  it('launches the managed Workflow with default bizDate (today YYYY-MM-DD) + MANUAL', async () => {
     mp.mockResolvedValue('ok')
-    await jobApi.trigger('JOB_A', 'ta')
-    expect(mp).toHaveBeenCalledWith('/api/console/jobs/trigger', {
+    await jobApi.trigger(42, 'ta')
+    expect(mp).toHaveBeenCalledWith('/api/console/workflow-definitions/42/trigger', {
       tenantId: 'ta',
-      jobCode: 'JOB_A',
       bizDate: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
       triggerType: 'MANUAL',
       payload: '{}',
@@ -136,9 +135,9 @@ describe('jobApi', () => {
     vi.setSystemTime(new Date('2026-09-26T16:30:00Z'))
     try {
       mp.mockResolvedValue('ok')
-      await jobApi.trigger('JOB_A', 'ta')
+      await jobApi.trigger(42, 'ta')
       expect(mp).toHaveBeenCalledWith(
-        '/api/console/jobs/trigger',
+        '/api/console/workflow-definitions/42/trigger',
         expect.objectContaining({ bizDate: '2026-09-27' }),
       )
     } finally {
@@ -148,9 +147,14 @@ describe('jobApi', () => {
 
   it('trigger with payload object → JSON stringified', async () => {
     mp.mockResolvedValue('ok')
-    await jobApi.trigger('JOB_A', 'ta', { foo: 'bar' })
+    await jobApi.trigger(42, 'ta', { foo: 'bar' })
     const call = mp.mock.calls[0][1] as { payload: string }
     expect(call.payload).toBe('{"foo":"bar"}')
+  })
+
+  it('rejects a Job without a managed Workflow instead of using a Job root target', async () => {
+    await expect(jobApi.trigger(0, 'ta')).rejects.toThrow('Job has no managed Workflow')
+    expect(mp).not.toHaveBeenCalled()
   })
 
   it('rerun POST with body passthrough', async () => {
@@ -164,6 +168,42 @@ describe('jobApi', () => {
     }
     await jobApi.rerun(body)
     expect(mp).toHaveBeenCalledWith('/api/console/jobs/rerun', body)
+  })
+
+  it('replays a failed Workflow JOB node with exact source identities', async () => {
+    mp.mockResolvedValue('accepted')
+    const body = {
+      tenantId: 'ta',
+      jobCode: 'JOB_A',
+      bizDate: '2026-05-21',
+      compensationType: 'WORKFLOW_NODE' as const,
+      targetId: 82,
+      sourceWorkflowRunId: 71,
+      sourceWorkflowNodeRunId: 82,
+      reason: 'replay failed node',
+      operationKey: 'a7c9b5fd-7b64-4c03-9e85-df045fcedd83',
+      previewToken: 'one-use-preview-token',
+      resultPolicy: 'CREATE_NEW_VERSION',
+      configVersionPolicy: 'USE_ORIGINAL_CONFIG',
+    }
+
+    await jobApi.replayFailedWorkflowJobNode(body)
+
+    expect(mp).toHaveBeenCalledWith('/api/console/jobs/compensations', body)
+  })
+
+  it('previews a failed Workflow JOB node before approval submission', async () => {
+    const body = {
+      tenantId: 'ta',
+      workflowRunId: 71,
+      workflowNodeRunId: 82,
+      reason: 'replay failed node',
+    }
+    mp.mockResolvedValue({ operationKey: 'operation-key' })
+
+    await jobApi.previewFailedWorkflowJobNode(body)
+
+    expect(mp).toHaveBeenCalledWith('/api/console/jobs/workflow-node/replay-preview', body)
   })
 
   it('toggleEnabled resolves jobCode → id then PATCH', async () => {
@@ -223,7 +263,13 @@ describe('jobApi', () => {
 
   it('importBundle POST', async () => {
     mp.mockResolvedValue({})
-    const body = { tenantId: 'ta', bundle: { jobDefinitions: [] } }
+    const body = {
+      tenantId: 'ta',
+      targetTenantIds: ['ta'],
+      mode: 'UPSERT' as const,
+      dryRun: false,
+      bundle: { jobDefinitions: [] },
+    }
     await jobApi.importBundle(body)
     expect(mp).toHaveBeenCalledWith('/api/console/jobs/bundle/import', body)
   })

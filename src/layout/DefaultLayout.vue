@@ -31,8 +31,12 @@
               <RouterView v-slot="{ Component, route: r }">
                 <ErrorBoundary :route-key="r.fullPath">
                   <Transition name="page-fade" mode="out-in">
-                    <KeepAlive :max="20">
-                      <component :is="Component" :key="r.path" />
+                    <!-- 设计器使用单一图状态和远端编辑锁，离页时必须销毁，不能缓存多个画布实例。 -->
+                    <KeepAlive :max="20" :exclude="['WorkflowDesigner']">
+                      <component
+                        :is="Component"
+                        :key="r.name === 'workflow-designer' ? r.name : r.path"
+                      />
                     </KeepAlive>
                   </Transition>
                 </ErrorBoundary>
@@ -83,7 +87,8 @@
   useMaintenancePolling()
 
   function onGlobalKeydown(e: KeyboardEvent) {
-    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+    const isCommandPaletteShortcut = (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k'
+    if (isCommandPaletteShortcut) {
       const target = e.target as HTMLElement | null
       if (target?.isContentEditable) return
       e.preventDefault()
@@ -115,7 +120,9 @@
       () => route.path,
     ],
     ([profileLoaded, userId, mustChangePassword, tenantId, path]) => {
-      if (!profileLoaded || !userId || mustChangePassword || path !== '/ops/summary') return
+      const shouldSkipOnboardingSchedule =
+        !profileLoaded || !userId || mustChangePassword || path !== '/ops/summary'
+      if (shouldSkipOnboardingSchedule) return
       const identityKey = `${userId}:${tenantId || 'no-tenant'}`
       if (scheduledIdentity === identityKey) return
       scheduledIdentity = identityKey

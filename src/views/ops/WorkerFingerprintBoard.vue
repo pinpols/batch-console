@@ -221,8 +221,9 @@
   function rawPercentOf(count: number): number {
     const total = totalOnline.value
     if (total <= 0) return 0
-    const v = Math.round((count / total) * 100)
-    return Math.max(0, Math.min(100, v))
+    const roundedPercent = Math.round((count / total) * 100)
+    const percentAtMost100 = Math.min(100, roundedPercent)
+    return Math.max(0, percentAtMost100)
   }
 
   function percentOf(count: number): string {

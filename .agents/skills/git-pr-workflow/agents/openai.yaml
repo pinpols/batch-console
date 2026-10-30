@@ -1,0 +1,4 @@
+interface:
+  display_name: "前端 Git 与 PR 交付"
+  short_description: "核验前端分支、PR基线、适用门禁及交付链，不扩展合并或删除授权"
+  default_prompt: "使用 $git-pr-workflow 处理本次明确授权的前端Git或PR任务，核对分支、验证证据及交付范围。"

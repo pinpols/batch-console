@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onScopeDispose } from 'vue'
+import { logError } from '@/utils/logger'
 import { authApi, mapProfileToUserInfo, type ConsoleAuthProfilePayload } from '@/api/auth'
 import { useTenantStore } from '@/stores/tenant'
 import { roleOrder } from '@/constants/role'
@@ -48,6 +49,15 @@ export const useAuthStore = defineStore('auth', () => {
   // 在飞 fetchMe 的目标 tenantId,用于切租户竞态时识别"应丢弃"的旧响应
   let fetchMePromise: Promise<void> | null = null
   let inflightTenantId: string | null = null
+  let profileRequestRevision = 0
+
+  /** 会话切换使旧资料失效，旧请求的 finally 也不能清理新请求的复用记录。 */
+  function invalidateProfileRequests() {
+    ++profileRequestRevision
+    fetchMePromise = null
+    inflightTenantId = null
+  }
+  onScopeDispose(invalidateProfileRequests)
 
   const userInfo = computed(() => userInfoInternal.value)
 
@@ -62,11 +72,10 @@ export const useAuthStore = defineStore('auth', () => {
    */
   const isTenantUser = computed(() => {
     const perms = userInfoInternal.value?.permissions ?? []
-    return (
-      (perms.includes('ROLE_TENANT_USER') || perms.includes('ROLE_TENANT_ADMIN')) &&
-      !perms.includes('ROLE_ADMIN') &&
-      !perms.includes('ROLE_AUDITOR')
-    )
+    const hasTenantRole = perms.includes('ROLE_TENANT_USER') || perms.includes('ROLE_TENANT_ADMIN')
+    if (!hasTenantRole) return false
+    const hasCrossTenantRole = perms.includes('ROLE_ADMIN') || perms.includes('ROLE_AUDITOR')
+    return !hasCrossTenantRole
   })
 
   function hasPermission(permission: string): boolean {
@@ -87,7 +96,10 @@ export const useAuthStore = defineStore('auth', () => {
     // D7 Stage B: token 由后端写入 HttpOnly cookie，浏览器自动维护；前端只标"已登录"flag。
     // 2026-05-16 后端 ConsoleAuthController.login 已落 Set-Cookie(batch_console_token,
     // HttpOnly + SameSite=Lax + 8h Max-Age),dev fallback 已删。
+    invalidateProfileRequests()
     const result = await authApi.login({ username, password, captchaToken })
+    // 登录等待期间也可能启动资料请求，成功切换身份时再次使这些请求失效。
+    invalidateProfileRequests()
     sessionActive.value = true
     userInfoInternal.value = result.userInfo
     profileLoaded.value = false
@@ -102,10 +114,12 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function logout() {
+    invalidateProfileRequests()
     // 后端 /logout 端点会 Set-Cookie max-age=0 清除 token cookie。
     await authApi.logout().catch((e) => {
       if (import.meta.env.DEV) console.warn('[auth] logout request failed:', e)
     })
+    invalidateProfileRequests()
     sessionActive.value = false
     userInfoInternal.value = null
     profileLoaded.value = false
@@ -121,13 +135,14 @@ export const useAuthStore = defineStore('auth', () => {
     if (fetchMePromise && inflightTenantId === requestedTenantId) {
       return fetchMePromise
     }
+    const requestRevision = ++profileRequestRevision
     inflightTenantId = requestedTenantId
     fetchMePromise = (async () => {
       try {
         const profile: ConsoleAuthProfilePayload = await authApi.profile()
         // 落地前再校验一次:如果用户切租户在响应回来前发生,丢弃当前响应,
         // 避免 A 租户的 profile 写到 B 租户上下文里(role / menus / permissions 错配)
-        if (tenant.tenantId === requestedTenantId) {
+        if (requestRevision === profileRequestRevision && tenant.tenantId === requestedTenantId) {
           const nextUserInfo = mapProfileToUserInfo(profile)
           if (
             nextUserInfo.mustChangePassword == null &&
@@ -144,7 +159,7 @@ export const useAuthStore = defineStore('auth', () => {
         // /auth/me 返回的是账号归属 tenant，会把系统管理员的切换结果覆盖回去。
       } finally {
         // 只清自己负责的那次 inflight,避免清掉后来更新的 fetch 状态
-        if (inflightTenantId === requestedTenantId) {
+        if (requestRevision === profileRequestRevision) {
           fetchMePromise = null
           inflightTenantId = null
         }
@@ -157,12 +172,17 @@ export const useAuthStore = defineStore('auth', () => {
   // 任何路径(Header / TenantList / Mobile / 未来 deep-link)切了租户都会触发,
   // 不再依赖每个调用方手动调 fetchMe。watch 默认非 immediate,初始值不触发。
   const tenantStore = useTenantStore()
+  // 失效同步执行以识别租户往返；实际刷新仍在原异步 watch 中，等租户存储更新完成。
+  watch(() => tenantStore.tenantId, invalidateProfileRequests, { flush: 'sync' })
   watch(
     () => tenantStore.tenantId,
     () => {
       if (!sessionActive.value) return
       profileLoaded.value = false
-      void fetchMe()
+      void fetchMe().catch(() => {
+        // HTTP 层已处理请求错误，此处承接后台拒绝并记录失败，不让异常脱离生命周期。
+        logError('auth-profile-refresh-failed', { kind: 'authProfile' })
+      })
     },
   )
 

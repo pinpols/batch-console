@@ -303,7 +303,8 @@
       const err = e as { traceId?: string }
       loginTrace.value = err.traceId ?? lastApiMeta.value?.traceId ?? ''
       serviceUnavailable.value = isConsoleServiceUnavailable(e)
-      if (isCaptchaRequiredError(e) && captchaAvailable()) {
+      const shouldShowCaptcha = isCaptchaRequiredError(e) && captchaAvailable()
+      if (shouldShowCaptcha) {
         // 触发验证码:展示组件,清掉旧 token,换一张新挑战。
         // token 用错/过期再次登录仍会 CAPTCHA_REQUIRED → 回到此态并刷新挑战。
         captchaVisible.value = true

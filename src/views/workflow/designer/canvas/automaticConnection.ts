@@ -22,7 +22,9 @@ export function createUniqueNodeCode(
   related?: string,
 ): string {
   const prefix = related ? `${nodeType.toLowerCase()}_${related}` : nodeType.toLowerCase()
-  const base = `${prefix}_${Date.now().toString(36)}`
+  const timestamp = Date.now()
+  const timestampText = timestamp.toString(36)
+  const base = `${prefix}_${timestampText}`
   const existing = new Set(nodes.map((node) => node.nodeCode))
   let candidate = base
   let suffix = 2

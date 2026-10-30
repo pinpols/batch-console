@@ -130,7 +130,9 @@
   const resolvedErrorText = computed(() => {
     if (props.errorText?.trim()) return props.errorText.trim()
     if (props.error instanceof Error && props.error.message) {
-      return userErrorMessage(props.error, t('empty.error'))
+      const error = props.error
+      const fallbackMessage = t('empty.error')
+      return userErrorMessage(error, fallbackMessage)
     }
     return t('proTable.loadFailed')
   })

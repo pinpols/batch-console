@@ -1,0 +1,4 @@
+interface:
+  display_name: "前端 API 契约治理"
+  short_description: "核对前端API调用、生成类型、Cookie认证权限及配对后端契约漂移"
+  default_prompt: "使用 $frontend-api-contract 处理指定前端接口任务，核对配对后端契约并完成适用验证。"

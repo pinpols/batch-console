@@ -40,7 +40,11 @@ export async function get<T>(
   return data
 }
 
-export async function post<T>(url: string, body?: object, config?: AxiosRequestConfig): Promise<T> {
+export async function post<T>(
+  url: string,
+  body?: object | null,
+  config?: AxiosRequestConfig,
+): Promise<T> {
   const { data } = await apiClient.post<T>(url, body, config)
   return data
 }

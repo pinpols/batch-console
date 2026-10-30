@@ -218,7 +218,7 @@ export const channelTypeColor: Record<NotificationChannelType, StatusTagType> = 
   EMAIL: 'primary',
   WEBHOOK: 'info',
   DINGTALK: 'success',
-  WECHAT: 'success',
+  WECOM: 'success',
   SMS: 'warning',
 }
 

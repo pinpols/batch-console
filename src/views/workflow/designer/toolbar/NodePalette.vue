@@ -2,7 +2,6 @@
   import { useI18n } from 'vue-i18n'
   import type { Component } from 'vue'
   import {
-    FileInput,
     GitFork,
     PanelLeftClose,
     PanelLeftOpen,
@@ -55,12 +54,6 @@
       labelKey: 'workflowDesignerMvp.nodeGateway',
       styleClass: 'palette-item--gateway',
       icon: GitFork,
-    },
-    {
-      type: 'FILE_STEP',
-      labelKey: 'workflowDesignerMvp.nodeFileStep',
-      styleClass: 'palette-item--file',
-      icon: FileInput,
     },
   ]
 

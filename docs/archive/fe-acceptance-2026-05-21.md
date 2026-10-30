@@ -1,5 +1,7 @@
 # FE 验收 backlog(2026-05-21)
 
+> **历史归档**：本文只记录 2026-05-21 的环境与验收 backlog；未勾选项不代表当前缺陷或新增实施授权。当前验收见[测试指南](../testing/README.md)。
+
 ## 工具链 / 环境(不修主代码)
 - [ ] `vite preview` 默认端口 5173 与 dev server 冲突,实际跑到 5174;skill 文档说的 4173 是 vite 默认,但本项目 `vite.config.ts preview.port=5173`。归档:验收脚本应判断动态端口。
 

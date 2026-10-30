@@ -177,9 +177,9 @@
   const loading = ref(false)
   const loadError = ref(false)
   let requestSequence = 0
-  const dateRange = ref<[string, string] | null>(
-    presetDateRange('30d', 'daterange', readBusinessTimezone()),
-  )
+  const businessTimezone = readBusinessTimezone()
+  const initialDateRange = presetDateRange('30d', 'daterange', businessTimezone)
+  const dateRange = ref<[string, string] | null>(initialDateRange)
   const metricCode = ref('')
   const pageCode = ref('')
   const appVersion = ref('')
@@ -189,13 +189,17 @@
 
   const validRange = computed(() => {
     const range = dateRange.value
-    return Boolean(
-      range && !dayjs(range[0]).isAfter(range[1]) && dayjs(range[1]).diff(range[0], 'day') <= 400,
-    )
+    if (!range) return false
+    const startIsNotAfterEnd = !dayjs(range[0]).isAfter(range[1])
+    if (!startIsNotAfterEnd) return false
+    const endIsWithinMaximumRange = dayjs(range[1]).diff(range[0], 'day') <= 400
+    return endIsWithinMaximumRange
   })
-  const versions = computed(() =>
-    [...new Set(rows.value.map((row) => row.appVersion).filter(Boolean))].sort(),
-  )
+  const versions = computed(() => {
+    const nonEmptyVersions = rows.value.map((row) => row.appVersion).filter(Boolean)
+    const uniqueVersions = new Set(nonEmptyVersions)
+    return [...uniqueVersions].sort()
+  })
   const filteredRows = computed(() => {
     const selected = appVersion.value
       ? rows.value.filter((row) => row.appVersion === appVersion.value)

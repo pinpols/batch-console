@@ -9,7 +9,6 @@
     "jsx": "preserve",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
       "vue-i18n": ["./node_modules/vue-i18n/dist/vue-i18n.d.ts"]

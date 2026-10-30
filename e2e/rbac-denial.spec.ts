@@ -6,7 +6,7 @@
  * 注:本 spec 不真的换不同 token 登录(那需要 5 个测试用户预先存在),
  *     而是用拦截器模拟 401 响应,验证 SPA 行为是否合规。
  */
-import { STORAGE_KEYS } from './support/storage'
+import { seedBrowserStorage } from './support/storage'
 import { expect, test } from './support/app'
 import { enterDemoApp, expectPageTitle } from './support/app'
 import { installE2eLocale } from './support/i18n'
@@ -32,16 +32,11 @@ test.describe('RBAC 拒绝行为', () => {
     await enterDemoApp(page)
     await page.goto('/system/triggers')
     // 业务接口返 401 触发 refresh,refresh 也 401:不踢登录(URL 不应跳 /login)
-    // 等几秒让流程跑完
-    await page.waitForTimeout(2000)
-
-    // 仍在原页面(或被 SPA fallback 渲染到 /system/triggers)
-    expect(page.url()).not.toContain('/login')
-
     // 应能看到错误 toast(未授权 / 接口返回了 401 message)
     await expect(page.locator('.el-message, [class*="toast"]').first()).toBeVisible({
       timeout: 8000,
     })
+    expect(page.url()).not.toContain('/login')
   })
 
   test('/auth/me 401 → 清 token + 跳登录(session 真过期)', async ({ page, context }) => {
@@ -85,13 +80,13 @@ test.describe('RBAC 拒绝行为', () => {
     )
 
     // 在 enterDemoApp 之前预置 token + locale,避免 fresh context 没 storage
-    await page.addInitScript(() => {
-      localStorage.setItem('token', 'mock-test-token-not-real-jwt')
-      localStorage.setItem(STORAGE_KEYS.onboardingDone, '1')
-    })
-
-    await page.goto('/ops/summary', { waitUntil: 'domcontentloaded' }).catch(() => {})
-    await page.waitForTimeout(3500)
+    await seedBrowserStorage(page, { session: '1', onboardingDone: '1' })
+    const rejectedProfile = page.waitForResponse((response) =>
+      response.url().includes('/api/console/auth/me') && response.status() === 502,
+    )
+    await page.goto('/ops/summary', { waitUntil: 'domcontentloaded' })
+    const profileResponse = await rejectedProfile
+    await profileResponse.finished()
 
     // 关键回归断言:5xx 不应触发跳登录(只有 401 才跳)
     // 实测如果出现 page.url() 含 /login 就说明守卫旧 bug 复发

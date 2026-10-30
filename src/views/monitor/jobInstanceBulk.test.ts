@@ -14,10 +14,15 @@ describe('canSelectJobInstanceForBulk', () => {
     },
   )
 
-  it.each(['SUCCESS', 'CANCELLED', 'CANCELED', 'TERMINATED'])(
-    'rejects terminal status %s with no bulk action',
-    (status) => {
-      expect(canSelectJobInstanceForBulk(instance(status))).toBe(false)
-    },
-  )
+  it.each([
+    'SUCCESS',
+    'CANCELLED',
+    'CANCELED',
+    'TERMINATED',
+    'PARTIAL_FAILED',
+    'SUCCESS_DRY_RUN',
+    'FAILED_DRY_RUN',
+  ])('rejects terminal status %s with no bulk action', (status) => {
+    expect(canSelectJobInstanceForBulk(instance(status))).toBe(false)
+  })
 })

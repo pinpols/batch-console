@@ -20,6 +20,11 @@ export function getOutboxHealth(tenantId: string) {
   return get<unknown>('/api/console/ops/cluster-diagnostic/outbox', { tenantId })
 }
 
+/** GET /api/console/ops/cluster-diagnostic/terminal-children */
+export function getTerminalChildrenHealth(tenantId: string) {
+  return get<unknown>('/api/console/ops/cluster-diagnostic/terminal-children', { tenantId })
+}
+
 /** GET /api/console/ops/cluster-diagnostic/instances/{id} */
 export function diagnoseJobInstance(instanceId: number, tenantId: string) {
   return get<Record<string, unknown>>(

@@ -62,9 +62,13 @@
           <span class="cu-no">{{ row.requestId }}</span>
         </template>
       </el-table-column>
-      <el-table-column prop="jobCode" :label="t('approvals.catchUpColJobCode')" min-width="140">
+      <el-table-column
+        prop="workflowCode"
+        :label="t('approvals.catchUpColWorkflowCode')"
+        min-width="140"
+      >
         <template #default="{ row }">
-          <span class="cu-mono">{{ row.jobCode }}</span>
+          <span class="cu-mono">{{ row.workflowCode }}</span>
         </template>
       </el-table-column>
       <el-table-column prop="bizDate" :label="t('approvals.catchUpColBizDate')" width="120">
@@ -80,7 +84,13 @@
       <DatetimeColumn prop="createdAt" :label="t('approvals.catchUpColCreatedAt')" width="160" />
       <el-table-column :label="t('approvals.colActions')" width="96" fixed="right" align="center">
         <template #default="{ row }">
-          <el-button size="small" text type="primary" :icon="Eye" @click.stop="openDetail(row)">
+          <el-button
+            size="small"
+            text
+            type="primary"
+            :icon="Eye"
+            @click.stop="openDetail(row as ConsolePendingCatchUpResponse)"
+          >
             {{ t('approvals.actionDetail') }}
           </el-button>
         </template>
@@ -101,8 +111,8 @@
           <StatusTag :value="String(detailRow.requestStatus ?? '')" category="approval" />
         </div>
         <el-descriptions :column="1" border>
-          <el-descriptions-item :label="t('approvals.catchUpColJobCode')">
-            {{ detailRow.jobCode }}
+          <el-descriptions-item :label="t('approvals.catchUpColWorkflowCode')">
+            {{ detailRow.workflowCode }}
           </el-descriptions-item>
           <el-descriptions-item :label="t('approvals.catchUpColBizDate')">
             {{ detailRow.bizDate }}
@@ -130,13 +140,14 @@
 
 <script setup lang="ts">
   import { Eye } from '@lucide/vue'
-  import { computed, ref } from 'vue'
+  import { computed, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
 
   const { t } = useI18n({ useScope: 'global' })
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
+  import { useTenantRequestScope } from '@/composables/useTenantRequestScope'
   import { queryCatchUpApprovalsPage } from '@/api/approvals'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import ProTable from '@/components/table/ProTable.vue'
@@ -149,6 +160,7 @@
   import { fmtDatetime } from '@/utils/datetime'
 
   const tenant = useTenantStore()
+  const listScope = useTenantRequestScope()
   const loading = ref(false)
   const loadError = ref<unknown>(null)
   const {
@@ -171,24 +183,28 @@
   const bizDateApplied = ref('')
   const hasActiveFilters = computed(() => !!(kwApplied.value || bizDateApplied.value))
 
-  // 服务端分页 + 服务端筛选(bizDate 精确 / keyword 跨 requestId·jobCode·traceId 模糊)。
+  // 服务端分页 + 服务端筛选(bizDate 精确 / keyword 跨 requestId·workflowCode·traceId 模糊)。
   // catch-up 列表后端恒为 ACCEPTED 状态,故无 status 维度。
   async function load() {
+    const scope = listScope.begin()
+    if (!scope.tenantId) return
     loading.value = true
     loadError.value = null
     try {
-      const resp = await queryCatchUpApprovalsPage(tenant.tenantId, page.value, pageSize.value, {
+      const resp = await queryCatchUpApprovalsPage(scope.tenantId, page.value, pageSize.value, {
         keyword: kwApplied.value || undefined,
         bizDate: bizDateApplied.value || undefined,
       })
+      if (!listScope.isCurrent(scope)) return
       rows.value = (resp.items ?? []) as ConsolePendingCatchUpResponse[]
       total.value = Number(resp.total ?? rows.value.length)
     } catch (err) {
+      if (!listScope.isCurrent(scope)) return
       loadError.value = err
       rows.value = []
       total.value = 0
     } finally {
-      loading.value = false
+      if (listScope.isCurrent(scope)) loading.value = false
     }
   }
 
@@ -217,10 +233,22 @@
     detailVisible.value = true
   }
 
-  useTenantReload(() => {
-    page.value = 1
-    void load()
-  })
+  watch(
+    () => tenant.tenantId,
+    () => {
+      listScope.begin()
+      rows.value = []
+      total.value = 0
+      page.value = 1
+      loading.value = false
+      loadError.value = null
+      detailRow.value = null
+      detailVisible.value = false
+    },
+    { flush: 'sync' },
+  )
+
+  useTenantReload(load)
 </script>
 
 <style scoped>

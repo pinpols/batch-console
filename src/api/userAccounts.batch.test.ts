@@ -17,7 +17,7 @@ vi.mock('./client', () => ({
 
 describe('bulk account provisioning API', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
+    vi.resetAllMocks()
   })
 
   it('downloads the XLSX template as a blob', async () => {

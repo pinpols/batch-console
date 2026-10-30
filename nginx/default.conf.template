@@ -1,4 +1,4 @@
-# 此文件经 envsubst 渲染:${BACKEND_UPSTREAM} / ${NGINX_PORT} 来自镜像 ENV
+# 此文件经 envsubst 渲染；${BACKEND_UPSTREAM_HOST} 与 ${NGINX_PORT} 由运行环境提供。
 # (nginx:1.19+ 自动支持 /etc/nginx/templates → /etc/nginx/conf.d 的渲染)
 
 upstream backend {
@@ -124,6 +124,19 @@ server {
         try_files $uri =404;
     }
 
+    # ────── 固定名称的PWA资源：校验更新，缺失时保留404 ──────
+    location ^~ /icons/ {
+        include /etc/nginx/snippets/security-headers.conf;
+        add_header Cache-Control "no-cache";
+        try_files $uri =404;
+    }
+
+    location = /manifest.webmanifest {
+        include /etc/nginx/snippets/security-headers.conf;
+        add_header Cache-Control "no-cache";
+        try_files $uri =404;
+    }
+
     # ────── HTML / index 不缓存(SPA 入口必须新鲜) ──────
     location = /index.html {
         include /etc/nginx/snippets/security-headers.conf;
@@ -145,8 +158,7 @@ server {
         add_header Cache-Control "no-cache";
     }
 
-    # 错误页:都回 SPA 入口让 vue-router 自己处理 404
-    error_page 404 = /index.html;
+    # SPA回退仅由上面的location /负责，静态制品与文档保留各自错误状态。
 }
 
 # WebSocket 升级 map(SSE 不需要,但留着将来如果接 ws 不用改)

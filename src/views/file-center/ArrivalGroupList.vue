@@ -149,7 +149,7 @@
         >
           <template #default="{ row }">
             <div class="table-actions">
-              <el-button size="small" plain type="primary" :icon="CircleCheck" @click="confirm(row)">
+              <el-button size="small" plain type="primary" :icon="CircleCheck" @click="confirm(row as ConsoleFileArrivalGroupResponse)">
                 {{ t('arrivalGroupList.actionConfirm') }}
               </el-button>
             </div>
@@ -206,7 +206,8 @@
 
   const filtered = computed(() => {
     let r = allRows.value
-    const k = kwApplied.value.trim().toLowerCase()
+    const trimmedKeyword = kwApplied.value.trim()
+    const k = trimmedKeyword.toLowerCase()
     if (k) r = r.filter((row) => row.fileGroupCode?.toLowerCase().includes(k))
     const s = stateApplied.value.trim()
     if (s) r = r.filter((row) => String(row.arrivalState ?? '').includes(s))

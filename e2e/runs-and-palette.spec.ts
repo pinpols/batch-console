@@ -35,7 +35,7 @@ test.describe('/runs 全部运行聚合页', () => {
   test('点"失败"chip 触发 instanceStatus=FAILED 请求', async ({ page }) => {
     // 先到达页面,避免拦截 enter 阶段的请求
     await page.goto('/runs', { waitUntil: 'domcontentloaded' })
-    await page.waitForTimeout(500)
+    await expectPageTitle(page, '全部运行')
 
     // 监听后续请求
     const reqPromise = page.waitForRequest(
@@ -51,7 +51,7 @@ test.describe('/runs 全部运行聚合页', () => {
 
   test('点"运行中"chip 触发 runStatus=RUNNING 请求(工作流端)', async ({ page }) => {
     await page.goto('/runs', { waitUntil: 'domcontentloaded' })
-    await page.waitForTimeout(500)
+    await expectPageTitle(page, '全部运行')
 
     const reqPromise = page.waitForRequest(
       (req) =>
@@ -66,7 +66,7 @@ test.describe('/runs 全部运行聚合页', () => {
 
   test('"查看全部"链接跳到对应实体的完整列表', async ({ page }) => {
     await page.goto('/runs', { waitUntil: 'domcontentloaded' })
-    await page.waitForTimeout(500)
+    await expectPageTitle(page, '全部运行')
     // 找作业 section 的"查看全部 →"
     const moreLink = page.getByRole('link', { name: /查看全部/ }).first()
     if ((await moreLink.count()) > 0) {
@@ -84,9 +84,8 @@ test.describe('⌘K Command Palette', () => {
   test('Ctrl/Meta + K 打开 palette', async ({ page, browserName }) => {
     await page.goto('/ops/summary', { waitUntil: 'domcontentloaded' })
     // 等 DefaultLayout 的 onMounted (绑定 window keydown listener)
-    await page.locator('.layout-shell-lock, .layout-default').first().waitFor({ timeout: 8000 }).catch(() => undefined)
+    await page.locator('.layout-shell-lock, .layout-default').first().waitFor({ timeout: 8000 })
     await page.locator('body').click({ position: { x: 10, y: 10 } })
-    await page.waitForTimeout(300)
     const modifier = browserName === 'webkit' ? 'Meta' : 'Control'
     await page.keyboard.press(`${modifier}+KeyK`)
     const input = page.locator('.command-palette .cp-header__input').first()
@@ -95,9 +94,8 @@ test.describe('⌘K Command Palette', () => {
 
   test('搜菜单项 + 回车跳转', async ({ page, browserName }) => {
     await page.goto('/ops/summary', { waitUntil: 'domcontentloaded' })
-    await page.locator('.layout-shell-lock, .layout-default').first().waitFor({ timeout: 8000 }).catch(() => undefined)
+    await page.locator('.layout-shell-lock, .layout-default').first().waitFor({ timeout: 8000 })
     await page.locator('body').click({ position: { x: 10, y: 10 } })
-    await page.waitForTimeout(300)
     const modifier = browserName === 'webkit' ? 'Meta' : 'Control'
     await page.keyboard.press(`${modifier}+KeyK`)
     const input = page.locator('.command-palette .cp-header__input').first()
@@ -105,7 +103,6 @@ test.describe('⌘K Command Palette', () => {
 
     await input.fill('告警')
     // 等候列表渲染
-    await page.waitForTimeout(200)
     // 第一项应是"告警"菜单(或包含告警)
     const firstItem = page.locator('.command-palette .cp-item').first()
     await expect(firstItem).toBeVisible()
@@ -115,25 +112,22 @@ test.describe('⌘K Command Palette', () => {
 
   test('纯数字触发"作业实例 #N"跳转项', async ({ page, browserName }) => {
     await page.goto('/ops/summary', { waitUntil: 'domcontentloaded' })
-    await page.locator('.layout-shell-lock, .layout-default').first().waitFor({ timeout: 8000 }).catch(() => undefined)
+    await page.locator('.layout-shell-lock, .layout-default').first().waitFor({ timeout: 8000 })
     await page.locator('body').click({ position: { x: 10, y: 10 } })
-    await page.waitForTimeout(300)
     const modifier = browserName === 'webkit' ? 'Meta' : 'Control'
     await page.keyboard.press(`${modifier}+KeyK`)
     const input = page.locator('.command-palette .cp-header__input').first()
     await expect(input).toBeVisible({ timeout: 5000 })
 
     await input.fill('123')
-    await page.waitForTimeout(200)
     // 快捷跳转 section 应出现
     await expect(page.getByText(/作业实例 #123/)).toBeVisible()
   })
 
   test('Escape 关闭 palette', async ({ page, browserName }) => {
     await page.goto('/ops/summary', { waitUntil: 'domcontentloaded' })
-    await page.locator('.layout-shell-lock, .layout-default').first().waitFor({ timeout: 8000 }).catch(() => undefined)
+    await page.locator('.layout-shell-lock, .layout-default').first().waitFor({ timeout: 8000 })
     await page.locator('body').click({ position: { x: 10, y: 10 } })
-    await page.waitForTimeout(300)
     const modifier = browserName === 'webkit' ? 'Meta' : 'Control'
     await page.keyboard.press(`${modifier}+KeyK`)
     const input = page.locator('.command-palette .cp-header__input').first()

@@ -4,7 +4,7 @@
    *
    * 触发:Ctrl+K(Mac Cmd+K)+ toolbar 按钮(父组件控制 visible)。
    * 行为:
-   * - 模态浮窗 + 输入框 → 模糊匹配节点类型 + (JOB 类型)jobCode 下拉 + (FILE_STEP 类型)pipelineCode 下拉
+   * - 模态浮窗 + 输入框 → 模糊匹配 START/END/JOB/GATEWAY；业务执行统一使用 Job 节点
    * - ↑↓ 切换高亮、Enter 触发结构化添加、Esc 关闭
    *
    * 不直接操作 X6；和左侧节点库共用自动连线规则，父组件在创建后触发自动布局。
@@ -15,7 +15,6 @@
   import { useTenantStore } from '@/stores/tenant'
   import { useDesignerStore } from '../store/useDesignerStore'
   import { useJobCodeOptions } from '@/composables/useJobCodeOptions'
-  import { usePipelineCodeOptions } from '@/composables/usePipelineCodeOptions'
   import type { DesignerNodeType } from '../types'
   import { findVacantNodePosition } from '../canvas/nodePlacement'
   import {
@@ -39,7 +38,6 @@
   const store = useDesignerStore()
   const tenant = useTenantStore()
   const jobCodeOpts = useJobCodeOptions()
-  const pipelineCodeOpts = usePipelineCodeOptions()
 
   interface PaletteRow {
     key: string
@@ -53,7 +51,6 @@
     { key: 'END', nodeType: 'END', display: 'END' },
     { key: 'JOB', nodeType: 'JOB', display: 'JOB' },
     { key: 'GATEWAY', nodeType: 'GATEWAY', display: 'GATEWAY' },
-    { key: 'FILE_STEP', nodeType: 'FILE_STEP', display: 'FILE_STEP' },
   ]
 
   const query = ref('')
@@ -61,7 +58,8 @@
   const inputRef = ref<HTMLInputElement | null>(null)
 
   const filteredRows = computed<PaletteRow[]>(() => {
-    const q = query.value.trim().toLowerCase()
+    const trimmedQuery = query.value.trim()
+    const q = trimmedQuery.toLowerCase()
     const rows: PaletteRow[] = []
     for (const r of NODE_TYPE_ROWS) {
       if (!q || r.display.toLowerCase().includes(q)) rows.push(r)
@@ -69,16 +67,6 @@
     for (const code of jobCodeOpts.options.value) {
       if (!q || code.toLowerCase().includes(q)) {
         rows.push({ key: `JOB:${code}`, nodeType: 'JOB', display: `JOB · ${code}`, related: code })
-      }
-    }
-    for (const code of pipelineCodeOpts.options.value) {
-      if (!q || code.toLowerCase().includes(q)) {
-        rows.push({
-          key: `FILE_STEP:${code}`,
-          nodeType: 'FILE_STEP',
-          display: `FILE_STEP · ${code}`,
-          related: code,
-        })
       }
     }
     return rows
@@ -92,7 +80,6 @@
       highlight.value = 0
       if (tenant.tenantId) {
         void jobCodeOpts.load(tenant.tenantId)
-        void pipelineCodeOpts.load(tenant.tenantId)
       }
       await nextTick()
       inputRef.value?.focus()
@@ -115,7 +102,6 @@
     const code = createUniqueNodeCode(row.nodeType, store.nodes, row.related)
     const attrs: Record<string, unknown> = {}
     if (row.nodeType === 'JOB' && row.related) attrs.jobCode = row.related
-    if (row.nodeType === 'FILE_STEP' && row.related) attrs.pipelineCode = row.related
     const resolution = resolveAutomaticPlacement(
       store.nodes,
       store.edges,

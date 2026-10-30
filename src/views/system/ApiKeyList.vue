@@ -71,7 +71,7 @@
         <el-table-column :label="t('apiKeyList.colStatus')" width="110">
           <template #default="{ row }">
             <StatusTag
-              :value="String(isRevoked(row) ? 'REVOKED' : isEnabled(row) ? 'ENABLED' : 'DISABLED')"
+              :value="apiKeyStatus(row)"
               category="apiKey"
             />
           </template>
@@ -296,18 +296,25 @@
   function isRevoked(row: Record<string, unknown>): boolean {
     const v = row.revokedAt
     if (v == null) return false
-    const s = String(v).trim()
-    return s.length > 0 && s !== '0'
+    const valueText = String(v)
+    const trimmedValue = valueText.trim()
+    return trimmedValue.length > 0 && trimmedValue !== '0'
+  }
+
+  function apiKeyStatus(row: Record<string, unknown>): 'REVOKED' | 'ENABLED' | 'DISABLED' {
+    if (isRevoked(row)) return 'REVOKED'
+    return isEnabled(row) ? 'ENABLED' : 'DISABLED'
   }
 
   const filtered = computed(() => {
-    const k = keyword.value.trim().toLowerCase()
+    const trimmedKeyword = keyword.value.trim()
+    const k = trimmedKeyword.toLowerCase()
     if (!k) return allRows.value
-    return allRows.value.filter((r) =>
-      String(r.keyName ?? '')
-        .toLowerCase()
-        .includes(k),
-    )
+    return allRows.value.filter((row) => {
+      const keyNameText = String(row.keyName ?? '')
+      const normalizedKeyName = keyNameText.toLowerCase()
+      return normalizedKeyName.includes(k)
+    })
   })
 
   const pagedRows = computed(
@@ -424,16 +431,21 @@
     if (!ensureWriteAvailable()) return
     if (isRevoked(row)) return
     try {
+      const confirmVerb = t('apiKeyList.revokeVerb')
+      const keyName = String(row.keyName ?? '')
+      const confirmTarget = t('apiKeyList.revokeTarget', { name: keyName })
+      const confirmConsequence = t('apiKeyList.revokeConsequence')
       await confirmDanger({
-        verb: t('apiKeyList.revokeVerb'),
-        target: t('apiKeyList.revokeTarget', { name: String(row.keyName ?? '') }),
-        consequence: t('apiKeyList.revokeConsequence'),
+        verb: confirmVerb,
+        target: confirmTarget,
+        consequence: confirmConsequence,
         irreversible: true,
       })
       await revokeApiKey(row.id as number, tenant.tenantId)
       ElMessage.success(t('apiKeyList.revokedToast'))
       // 乐观更新：立即更新当前行，使按钮和文案及时变化。
-      row.revokedAt = new Date().toISOString()
+      const revokedAt = new Date()
+      row.revokedAt = revokedAt.toISOString()
       row.enabled = false
       await load()
     } catch {

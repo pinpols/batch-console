@@ -52,41 +52,43 @@ async function copyText(text: string) {
 export function showErrorToast(opts: ErrorToastOptions) {
   const trace = opts.traceId?.trim()
   const duration = opts.duration ?? (trace ? 6500 : 4000)
+  const title = h('div', { class: 'error-toast__title' }, opts.title)
+  const message = h('div', { class: 'error-toast__message' }, opts.message)
+  const suggestion = opts.suggestion
+    ? h('div', { class: 'error-toast__suggestion' }, opts.suggestion)
+    : null
+  let traceContent = null
+  if (trace) {
+    const traceLabel = h('span', { class: 'error-toast__trace-label' }, 'TraceId')
+    const traceCodeTitle = i18n.global.t('errorToast.copyTraceTitle')
+    const traceCode = h(
+      'code',
+      {
+        class: 'error-toast__trace-code',
+        title: traceCodeTitle,
+        onClick: () => copyText(trace),
+      },
+      trace,
+    )
+    const copyButtonLabel = i18n.global.t('common.copy')
+    const traceCopyButton = h(
+      'button',
+      {
+        type: 'button',
+        class: 'error-toast__trace-copy',
+        onClick: () => copyText(trace),
+      },
+      copyButtonLabel,
+    )
+    const traceChildren = [traceLabel, traceCode, traceCopyButton]
+    traceContent = h('div', { class: 'error-toast__trace' }, traceChildren)
+  }
+  const toastChildren = [title, message, suggestion, traceContent].filter(Boolean)
+  const toastContent = h('div', { class: 'error-toast' }, toastChildren)
 
   ElMessage.error({
     duration,
     showClose: true,
-    message: h(
-      'div',
-      { class: 'error-toast' },
-      [
-        h('div', { class: 'error-toast__title' }, opts.title),
-        h('div', { class: 'error-toast__message' }, opts.message),
-        opts.suggestion ? h('div', { class: 'error-toast__suggestion' }, opts.suggestion) : null,
-        trace
-          ? h('div', { class: 'error-toast__trace' }, [
-              h('span', { class: 'error-toast__trace-label' }, 'TraceId'),
-              h(
-                'code',
-                {
-                  class: 'error-toast__trace-code',
-                  title: i18n.global.t('errorToast.copyTraceTitle'),
-                  onClick: () => copyText(trace),
-                },
-                trace,
-              ),
-              h(
-                'button',
-                {
-                  type: 'button',
-                  class: 'error-toast__trace-copy',
-                  onClick: () => copyText(trace),
-                },
-                i18n.global.t('common.copy'),
-              ),
-            ])
-          : null,
-      ].filter(Boolean),
-    ),
+    message: toastContent,
   })
 }

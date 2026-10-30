@@ -24,7 +24,8 @@ function cloneSnapshot(nodes: DesignerNode[], edges: DesignerEdge[]): DesignerSn
 }
 
 function snapshotFingerprint(nodes: DesignerNode[], edges: DesignerEdge[]): string {
-  return JSON.stringify(cloneSnapshot(nodes, edges))
+  const snapshot = cloneSnapshot(nodes, edges)
+  return JSON.stringify(snapshot)
 }
 
 /** BE workflow_definition 元信息(load 时填充,保存时回传) */
@@ -104,7 +105,8 @@ export const useDesignerStore = defineStore('workflowDesigner', () => {
 
   /** 在变更前 push 当前快照到 undoStack,清空 redoStack。 */
   function pushUndo() {
-    undoStack.value.push(cloneSnapshot(nodes.value, edges.value))
+    const currentSnapshot = cloneSnapshot(nodes.value, edges.value)
+    undoStack.value.push(currentSnapshot)
     if (undoStack.value.length > UNDO_STACK_LIMIT) {
       undoStack.value.shift()
     }
@@ -213,13 +215,13 @@ export const useDesignerStore = defineStore('workflowDesigner', () => {
   ): DependencyMutationResult {
     const source = nodes.value.find((node) => node.id === sourceId)
     const target = nodes.value.find((node) => node.id === targetId)
-    if (
+    const hasInvalidEndpoint =
       !source ||
       !target ||
       source.id === target.id ||
       source.nodeType === 'END' ||
       target.nodeType === 'START'
-    ) {
+    if (hasInvalidEndpoint) {
       return { ok: false, reason: 'invalidEndpoint' }
     }
     if (
@@ -257,12 +259,12 @@ export const useDesignerStore = defineStore('workflowDesigner', () => {
     const validation = validateDependency(input.source, input.target)
     if (!validation.ok) return validation
     pushUndo()
-    edges.value.push(
-      createEdge(input.source, input.target, {
-        label: input.label,
-        attrs: input.attrs ?? { edgeType: 'SUCCESS', enabled: true },
-      }),
-    )
+    const dependencyEdges = edges.value
+    const dependency = createEdge(input.source, input.target, {
+      label: input.label,
+      attrs: input.attrs ?? { edgeType: 'SUCCESS', enabled: true },
+    })
+    dependencyEdges.push(dependency)
     dirty.value = true
     return { ok: true }
   }
@@ -310,9 +312,13 @@ export const useDesignerStore = defineStore('workflowDesigner', () => {
         ? edges.value.find((edge) => edge.id === placement.edgeId)
         : undefined
 
-    if (placement.kind === 'append' && (!source || source.nodeType === 'END')) return false
+    const appendPlacementHasNoValidSource =
+      placement.kind === 'append' && (!source || source.nodeType === 'END')
+    if (appendPlacementHasNoValidSource) return false
     if (placement.kind !== 'standalone' && input.nodeType === 'START') return false
-    if (placement.kind === 'insert' && (!splitEdge || input.nodeType === 'END')) return false
+    const insertPlacementHasNoSplittableEdge =
+      placement.kind === 'insert' && (!splitEdge || input.nodeType === 'END')
+    if (insertPlacementHasNoSplittableEdge) return false
 
     pushUndo()
     nodes.value.push({
@@ -326,14 +332,16 @@ export const useDesignerStore = defineStore('workflowDesigner', () => {
     })
 
     if (source) {
-      edges.value.push(createEdge(source.id, input.nodeCode))
+      const currentEdges = edges.value
+      const createdEdge = createEdge(source.id, input.nodeCode)
+      currentEdges.push(createdEdge)
     } else if (splitEdge) {
       edges.value = edges.value.filter((edge) => edge.id !== splitEdge.id)
       // 原依赖条件属于原上游节点，保留在“原上游 → 新节点”这一段。
-      edges.value.push(
-        createEdge(splitEdge.source, input.nodeCode, splitEdge),
-        createEdge(input.nodeCode, splitEdge.target),
-      )
+      const currentEdges = edges.value
+      const upstreamEdge = createEdge(splitEdge.source, input.nodeCode, splitEdge)
+      const downstreamEdge = createEdge(input.nodeCode, splitEdge.target)
+      currentEdges.push(upstreamEdge, downstreamEdge)
     }
 
     selectedIds.value = new Set([input.nodeCode])
@@ -403,7 +411,8 @@ export const useDesignerStore = defineStore('workflowDesigner', () => {
   function undo() {
     if (undoStack.value.length === 0) return
     const prev = undoStack.value.pop()!
-    redoStack.value.push(cloneSnapshot(nodes.value, edges.value))
+    const currentSnapshot = cloneSnapshot(nodes.value, edges.value)
+    redoStack.value.push(currentSnapshot)
     applySnapshot(prev)
     refreshDirtyFromBaseline()
   }
@@ -411,14 +420,18 @@ export const useDesignerStore = defineStore('workflowDesigner', () => {
   function redo() {
     if (redoStack.value.length === 0) return
     const next = redoStack.value.pop()!
-    undoStack.value.push(cloneSnapshot(nodes.value, edges.value))
+    const currentSnapshot = cloneSnapshot(nodes.value, edges.value)
+    undoStack.value.push(currentSnapshot)
     applySnapshot(next)
     refreshDirtyFromBaseline()
   }
 
-  function markClean() {
-    cleanFingerprint.value = snapshotFingerprint(nodes.value, edges.value)
-    dirty.value = false
+  /** 保存回包以实际提交的快照更新基线，保留请求期间新增的编辑。 */
+  function markClean(savedSnapshot?: DesignerSnapshot) {
+    cleanFingerprint.value = savedSnapshot
+      ? snapshotFingerprint(savedSnapshot.nodes, savedSnapshot.edges)
+      : snapshotFingerprint(nodes.value, edges.value)
+    refreshDirtyFromBaseline()
   }
 
   function markDirty() {

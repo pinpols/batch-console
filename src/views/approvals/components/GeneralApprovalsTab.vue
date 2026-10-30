@@ -75,7 +75,7 @@
               type="primary"
               plain
               :loading="running"
-              :disabled="writesFrozen"
+              :disabled="!canMutateConfig || writesFrozen"
               @click="runBatchApprove"
             >
               {{ t('approvals.batchApprove') }}
@@ -85,7 +85,7 @@
               type="danger"
               plain
               :loading="running"
-              :disabled="writesFrozen"
+              :disabled="!canMutateConfig || writesFrozen"
               @click="runBatchReject"
             >
               {{ t('approvals.batchReject') }}
@@ -166,7 +166,10 @@
       </el-table-column>
       <el-table-column :label="t('approvals.colActions')" width="176" fixed="right" align="center">
         <template #default="{ row }">
-          <RowActions :actions="approvalRowActions(row)" :inline-limit="2" />
+          <RowActions
+            :actions="approvalRowActions(row as ConsoleApprovalCommandResponse)"
+            :inline-limit="2"
+          />
         </template>
       </el-table-column>
     </ProTable>
@@ -272,6 +275,8 @@
   } from '@/api/approvals'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
+  import { useTenantRequestScope } from '@/composables/useTenantRequestScope'
+  import { usePermission } from '@/composables/usePermission'
   import { useWriteAvailability } from '@/composables/useWriteAvailability'
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
   import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
@@ -292,6 +297,9 @@
 
   const tenant = useTenantStore()
   const { writesFrozen, ensureWriteAvailable } = useWriteAvailability()
+  const { canMutateConfig } = usePermission()
+  const listScope = useTenantRequestScope()
+  const actionScope = useTenantRequestScope()
   const loading = ref(false)
   const loadError = ref<unknown>(null)
   const {
@@ -400,7 +408,7 @@
       {
         key: 'approve',
         label: t('approvals.actionApprove'),
-        disabled: !isPending(row),
+        disabled: batchRunning.value || !canMutateConfig.value || !isPending(row),
         onClick: () => approveRow(row),
       },
       {
@@ -408,7 +416,7 @@
         label: t('approvals.actionReject'),
         danger: true,
         divided: true,
-        disabled: !isPending(row),
+        disabled: batchRunning.value || !canMutateConfig.value || !isPending(row),
         onClick: () => rejectRow(row),
       },
     ]
@@ -441,22 +449,34 @@
   // 服务端分页 + 服务端筛选:status→approvalStatus / type→approvalType / keyword 跨列模糊 /
   // requesterId(?requester=me 入口)全部传后端,不再端上全量聚合 + 当前页局部过滤。
   async function load() {
+    const scope = listScope.begin()
+    if (!scope.tenantId) return
     loading.value = true
     loadError.value = null
     try {
-      const resp = await queryApprovalsPage(tenant.tenantId, page.value, pageSize.value, {
+      const resp = await queryApprovalsPage(scope.tenantId, page.value, pageSize.value, {
         approvalStatus: (filters.status ?? '').trim() || undefined,
         approvalType: (filters.type ?? '').trim() || undefined,
         keyword: (filters.keyword ?? '').trim() || undefined,
         requesterId: (filters.requesterId ?? '').trim() || undefined,
       })
+      if (!listScope.isCurrent(scope)) return
       rows.value = (resp.items ?? []) as ConsoleApprovalCommandResponse[]
       total.value = Number(resp.total ?? rows.value.length)
     } catch (err) {
+      if (!listScope.isCurrent(scope)) return
       loadError.value = err
       throw err
     } finally {
-      loading.value = false
+      if (listScope.isCurrent(scope)) loading.value = false
+    }
+  }
+
+  async function loadForNavigation() {
+    try {
+      await load()
+    } catch {
+      // 被动加载失败已由页面错误态呈现，主动查询仍传播失败以避免成功提示。
     }
   }
 
@@ -479,10 +499,46 @@
 
   // 翻页 / 改 pageSize 触发服务端重拉
   watch([page, pageSize], () => {
-    void load()
+    void loadForNavigation()
   })
 
+  /** 审批目标与确认时的租户、操作者绑定，切换后必须重新确认。 */
+  function captureApprovalAction(targets: ConsoleApprovalCommandResponse[]) {
+    const scope = actionScope.begin()
+    const operator = auth.userInfo?.username ?? auth.userInfo?.userId
+    const isCurrentContext = () =>
+      actionScope.isCurrent(scope) &&
+      operator === (auth.userInfo?.username ?? auth.userInfo?.userId)
+    const isCurrent = () =>
+      isCurrentContext() &&
+      canMutateConfig.value &&
+      targets.length > 0 &&
+      targets.every((target) =>
+        rows.value.some((row) => row.approvalNo === target.approvalNo && isPending(row)),
+      )
+    return { tenantId: scope.tenantId, isCurrent, isCurrentContext }
+  }
+
+  watch(
+    () => tenant.tenantId,
+    () => {
+      rows.value = []
+      total.value = 0
+      clearSelection()
+      detailVisible.value = false
+      detailRow.value = null
+      loading.value = false
+      loadError.value = null
+      batchRunning.value = false
+      page.value = 1
+    },
+    { flush: 'sync' },
+  )
+
   async function approveRow(row: ConsoleApprovalCommandResponse) {
+    if (batchRunning.value) return
+    const context = captureApprovalAction([row])
+    if (!context.isCurrent()) return
     try {
       const { value: reason } = await ElMessageBox.prompt(
         t('approvals.approveDialogPrompt'),
@@ -493,6 +549,7 @@
           inputPlaceholder: t('approvals.approveDialogPlaceholder'),
         },
       )
+      if (!context.isCurrent()) return
       // 补偿类审批:从审批单 payloadJson 取出 compensationType 一并提交,
       // 否则 BE 执行补偿时拒为 400「必须指定补偿类型」。非补偿单解析不到则为 undefined,不影响。
       let compensationType: string | undefined
@@ -503,10 +560,11 @@
         compensationType = undefined
       }
       await approveOne(row.approvalNo, {
-        tenantId: tenant.tenantId,
+        tenantId: context.tenantId,
         reason: reason || undefined,
         compensationType,
       })
+      if (!context.isCurrentContext()) return
       ElMessage.success(t('approvals.approvedToast', { no: row.approvalNo }))
       await load()
     } catch {
@@ -515,6 +573,9 @@
   }
 
   async function rejectRow(row: ConsoleApprovalCommandResponse) {
+    if (batchRunning.value) return
+    const context = captureApprovalAction([row])
+    if (!context.isCurrent()) return
     try {
       const { value: reason } = await ElMessageBox.prompt(
         t('approvals.rejectDialogPrompt'),
@@ -525,7 +586,9 @@
           inputPlaceholder: t('approvals.rejectDialogPlaceholder'),
         },
       )
-      await rejectOne(row.approvalNo, { tenantId: tenant.tenantId, reason: reason || undefined })
+      if (!context.isCurrent()) return
+      await rejectOne(row.approvalNo, { tenantId: context.tenantId, reason: reason || undefined })
+      if (!context.isCurrentContext()) return
       ElMessage.success(t('approvals.rejectedToast', { no: row.approvalNo }))
       await load()
     } catch {
@@ -576,39 +639,46 @@
       action === 'approve'
         ? t('approvals.batchApprovePartialSummary', { ok: okN, fail: failN })
         : t('approvals.batchRejectPartialSummary', { ok: okN, fail: failN })
+    const notificationType = okN === 0 ? 'error' : 'warning'
+    const summaryLine = h('div', { style: 'margin-bottom:8px' }, summary)
+    const visibleFailures = failList.slice(0, 50)
+    const failureItems = visibleFailures.map((result) => {
+      const approvalNo = result.approvalNo
+      const approvalCode = h('code', null, approvalNo)
+      const failureMessage = result.message || t('approvals.batchUnknownFailReason')
+      const failureChildren = [approvalCode, ' — ', failureMessage]
+      return h('li', { style: 'font-size:12px;line-height:1.6' }, failureChildren)
+    })
+    const failureList = h(
+      'ul',
+      { style: 'margin:0;padding-left:18px;max-height:200px;overflow:auto' },
+      failureItems,
+    )
+    let moreFailures = null
+    if (failList.length > 50) {
+      const moreFailureCount = failList.length - 50
+      const moreFailuresLabel = t('approvals.batchMoreFailures', { n: moreFailureCount })
+      moreFailures = h(
+        'div',
+        { style: 'font-size:12px;color:var(--el-text-color-secondary);margin-top:4px' },
+        moreFailuresLabel,
+      )
+    }
+    const notificationMessage = h('div', null, [summaryLine, failureList, moreFailures])
     ElNotification({
       title,
-      type: okN === 0 ? 'error' : 'warning',
+      type: notificationType,
       duration: 0,
-      message: h('div', null, [
-        h('div', { style: 'margin-bottom:8px' }, summary),
-        h(
-          'ul',
-          { style: 'margin:0;padding-left:18px;max-height:200px;overflow:auto' },
-          failList
-            .slice(0, 50)
-            .map((r) =>
-              h('li', { style: 'font-size:12px;line-height:1.6' }, [
-                h('code', null, r.approvalNo),
-                ' — ',
-                r.message || t('approvals.batchUnknownFailReason'),
-              ]),
-            ),
-        ),
-        failList.length > 50
-          ? h(
-              'div',
-              { style: 'font-size:12px;color:var(--el-text-color-secondary);margin-top:4px' },
-              t('approvals.batchMoreFailures', { n: failList.length - 50 }),
-            )
-          : null,
-      ]),
+      message: notificationMessage,
     })
   }
 
   async function runBatchApprove() {
-    if (!ensureWriteAvailable()) return
-    const nos = selection.value.map((r) => r.approvalNo)
+    if (!ensureWriteAvailable() || batchRunning.value) return
+    const targets = [...selection.value]
+    const context = captureApprovalAction(targets)
+    if (!context.isCurrent()) return
+    const nos = targets.map((r) => r.approvalNo)
     try {
       await ElMessageBox.confirm(
         t('approvals.batchApproveConfirm', { n: nos.length }),
@@ -622,22 +692,27 @@
     } catch {
       return
     }
+    if (!context.isCurrent()) return
     batchRunning.value = true
     try {
-      const results = await batchApprove({ tenantId: tenant.tenantId, approvalNos: nos })
+      const results = await batchApprove({ tenantId: context.tenantId, approvalNos: nos })
+      if (!context.isCurrentContext()) return
       reportBatchResult(results, nos.length, 'approve')
       clearSelection()
       await load()
     } catch (err) {
-      ElMessage.error(userErrorMessage(err))
+      if (context.isCurrentContext()) ElMessage.error(userErrorMessage(err))
     } finally {
-      batchRunning.value = false
+      if (context.isCurrentContext()) batchRunning.value = false
     }
   }
 
   async function runBatchReject() {
-    if (!ensureWriteAvailable()) return
-    const nos = selection.value.map((r) => r.approvalNo)
+    if (!ensureWriteAvailable() || batchRunning.value) return
+    const targets = [...selection.value]
+    const context = captureApprovalAction(targets)
+    if (!context.isCurrent()) return
+    const nos = targets.map((r) => r.approvalNo)
     let reason: string | undefined
     try {
       const r = await ElMessageBox.prompt(
@@ -652,20 +727,22 @@
     } catch {
       return
     }
+    if (!context.isCurrent()) return
     batchRunning.value = true
     try {
       const results = await batchReject({
-        tenantId: tenant.tenantId,
+        tenantId: context.tenantId,
         approvalNos: nos,
         reason,
       })
+      if (!context.isCurrentContext()) return
       reportBatchResult(results, nos.length, 'reject')
       clearSelection()
       await load()
     } catch (err) {
-      ElMessage.error(userErrorMessage(err))
+      if (context.isCurrentContext()) ElMessage.error(userErrorMessage(err))
     } finally {
-      batchRunning.value = false
+      if (context.isCurrentContext()) batchRunning.value = false
     }
   }
 

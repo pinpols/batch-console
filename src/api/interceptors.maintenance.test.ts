@@ -87,6 +87,40 @@ describe('maintenance write guard', () => {
     expect(adapter).toHaveBeenCalledOnce()
   })
 
+  it('keeps the current write freeze when an older maintenance response arrives', async () => {
+    const app = useAppStore()
+    app.setMaintenance({ enabled: true, active: true, version: 9 })
+    app.setMaintenance({ enabled: false, active: false, version: 8 })
+    const client = createClient()
+
+    await expect(client.post('/api/console/jobs', {})).rejects.toMatchObject({
+      code: 'ERR_MAINTENANCE_WRITE_FROZEN',
+    })
+    expect(app.maintenance.version).toBe(9)
+    expect(adapter).not.toHaveBeenCalled()
+  })
+
+  it('does not reactivate maintenance from an older response after recovery', () => {
+    const app = useAppStore()
+    app.setMaintenance({ enabled: false, active: false, version: 10 })
+    app.setMaintenance({ enabled: true, active: true, version: 9 })
+    expect(app.writesFrozen).toBe(false)
+  })
+
+  it('accepts scheduled activation within the same configuration version', () => {
+    const app = useAppStore()
+    app.setMaintenance({ enabled: true, active: false, version: 9 })
+    app.setMaintenance({ enabled: true, active: true, version: 9 })
+    expect(app.writesFrozen).toBe(true)
+  })
+
+  it('does not undo scheduled activation with an earlier poll from the same version', () => {
+    const app = useAppStore()
+    app.setMaintenance({ enabled: true, active: true, version: 9 })
+    app.setMaintenance({ enabled: true, active: false, version: 9 })
+    expect(app.writesFrozen).toBe(true)
+  })
+
   it('allowlist only covers authentication and maintenance administration', () => {
     expect(isMaintenanceWriteAllowed('/api/console/auth/login')).toBe(true)
     expect(isMaintenanceWriteAllowed('/api/console/admin/system/maintenance')).toBe(true)

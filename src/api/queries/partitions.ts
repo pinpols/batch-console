@@ -17,12 +17,13 @@ export type ConsoleJobPartitionResponse = components['schemas']['ConsoleJobParti
 export async function queryPartitionsPaged(
   query: PartitionQueryParams,
 ): Promise<PageResult<ConsoleJobPartitionResponse>> {
+  const partitionStatus = query.partitionStatus?.trim()
   const pr = await get<PageResponse<ConsoleJobPartitionResponse>>(
     '/api/console/queries/partitions',
     {
       tenantId: query.tenantId,
       ...(query.jobInstanceId != null ? { jobInstanceId: query.jobInstanceId } : {}),
-      ...(query.partitionStatus?.trim() ? { partitionStatus: query.partitionStatus.trim() } : {}),
+      ...(partitionStatus ? { partitionStatus } : {}),
       pageNo: query.page,
       pageSize: query.pageSize,
     },

@@ -1,6 +1,6 @@
 # batch-console 项目结构
 
-> 2026-10-01 更新。Vue 3 + TypeScript + Pinia + Element Plus 控制面前端,桌面 + 移动端双端。
+> Vue 3 + TypeScript + Pinia + Element Plus 控制面前端，桌面与移动端双端。路由和导航事实以 `src/router/index.ts` 与 `src/constants/navigation.ts` 为准。
 
 ## 顶层结构
 
@@ -91,18 +91,17 @@ src/
 ## 前端调用结构图
 
 ```mermaid
+%%{init: {"flowchart":{"curve":"linear","nodeSpacing":32,"rankSpacing":48},"sequence":{"mirrorActors":false}}}%%
 flowchart LR
-  USER["桌面 / 移动用户"] --> ROUTER["router\n路由与设备分流"]
-  ROUTER --> VIEWS["views / views-mobile\n页面编排"]
-  VIEWS --> COMPONENTS["components\n通用 UI / 工具 / Workflow / AI 助手"]
-  VIEWS --> STATE["composables / Pinia / TanStack Query\n页面状态与服务端状态"]
-  COMPONENTS --> STATE
-  STATE --> API["api\n统一 HTTP 客户端与领域适配"]
-  API -->|"Cookie / Tenant / CSRF / OpenAPI"| BACKEND["file-batch-system\nbatch-console-api"]
-  BACKEND -->|"SSE 文本流 / 附件元数据 / 受控文件流"| API
-  TYPES["api.generated.ts\n后端 OpenAPI 生成"] -. "类型约束" .-> API
-  I18N["locales\nzh-CN / en-US"] -. "用户文案" .-> VIEWS
-  TOKENS["styles / charts\n设计令牌"] -. "统一视觉" .-> COMPONENTS
+  USER["用户"] --> ROUTER["路由与权限"] --> VIEWS["业务页面"]
+  VIEWS --> UI["共享组件"]
+  VIEWS --> STATE["状态与组合逻辑"]
+  UI --> STATE
+  STATE --> API["API 客户端"]
+  API <-->|"HTTP / SSE"| BACKEND["Console API"]
+  TYPES["生成的 API 类型"] -. "类型约束" .-> API
+  I18N["双语文案"] -.-> VIEWS
+  TOKENS["视觉变量"] -.-> UI
 ```
 
 AI 图片和文件附件仍通过 `src/api/ai.ts` 访问 `batch-console-api`，浏览器不直连对象存储，也不持有对象存储凭据；历史消息只消费后端返回的附件元数据和受控读取地址。
@@ -111,15 +110,18 @@ AI 图片和文件附件仍通过 `src/api/ai.ts` 访问 `batch-console-api`，�
 
 | L1 模块         | 路由前缀           | 一句话职责                                |
 | --------------- | ------------------ | ----------------------------------------- |
-| `job`           | `/job/*`           | Job 定义 / Job 实例 / 历史                |
+| `job`           | `/jobs/*`          | Job 定义、向导、详情；系统阶段只读展示 |
+| `monitor`       | `/monitor/*`、`/runs` | Workflow 顶层运行、Job 实例、步骤与恢复 |
 | `workflow`      | `/workflow/*`      | Workflow DAG 编排 / Run / 节点干预        |
-| `observability` | `/obs/*`           | Alert / Outbox / Trace / Metrics          |
+| `observability` | `/observability/*` | Alert / Outbox / Trace / 使用统计 / 审计 |
 | `ops`           | `/ops/*`           | BatchDayReplay / 数据对账 / Forensic 导出 |
 | `approvals`     | `/approvals/*`     | 审批列表 / 批量审批 / 历史                |
 | `config`        | `/config/*`        | 配置发布 / Schema / 字典                  |
 | `system`        | `/system/*`        | 租户 / 用户 / RBAC / API Key / 通知通道   |
 | `auth`          | `/login` / `/init` | 登录 / 初始化                             |
-| `m/*`           | `/m/*`             | 移动端入口(双栈不共用 view)               |
+| `views-mobile`  | `/m/*`             | 移动端入口（独立 view，复用共享业务逻辑） |
+
+目录名、已发布 URL 和产品导航组有历史映射，不由该表推导新的路由别名；新增页面按[页面命名约定](../engineering/page-naming-convention.md)判断。Pipeline 定义编辑入口已退役，文件流水线观测仍保留。
 
 ## 关键 composable / 基建
 
@@ -216,3 +218,9 @@ scripts/
 | `fix/<topic>`     | bug 修复(PR → main)       |
 | `docs/<topic>`    | 纯文档(PR → main)         |
 | `cleanup/<topic>` | 规范化清理(PR → main)     |
+
+## 设计器会话与页面缓存
+
+`DefaultLayout` 的普通页面使用路径缓存；Workflow 设计器排除 KeepAlive，以路由名维持单一活动实例，同记录参数切换由设计器监听加载。原因是图数据和远端编辑锁共用一个 Store，不能缓存多个相互竞争的画布实例。离页和切换定义先保护未保存内容，确认后才销毁并释放锁。
+
+详情、保存及锁回包按目标/请求代次核对；保存基线采用提交时快照，新建成功只升级路由和获取锁，避免覆盖请求期间的新编辑。窗口卸载的尽力释放不保证送达，后端 TTL 和版本校验仍有效。长期使用说明见[作业与流程](../user-guide/jobs-and-workflows.md)。

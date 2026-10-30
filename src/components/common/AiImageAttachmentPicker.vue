@@ -88,9 +88,12 @@
 
   function onPaste(event: ClipboardEvent) {
     if (props.disabled) return
-    const files = Array.from(event.clipboardData?.items ?? [])
-      .filter((item) => item.kind === 'file' && item.type.startsWith('image/'))
-      .map((item) => item.getAsFile())
+    const clipboardItems = Array.from(event.clipboardData?.items ?? [])
+    const imageItems = clipboardItems.filter(
+      (item) => item.kind === 'file' && item.type.startsWith('image/'),
+    )
+    const convertedFiles = imageItems.map((item) => item.getAsFile())
+    const files = convertedFiles
       .filter((file): file is File => file != null)
     if (!files.length) return
     event.preventDefault()

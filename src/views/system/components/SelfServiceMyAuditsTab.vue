@@ -58,7 +58,7 @@
 </template>
 
 <script setup lang="ts">
-  import { ref } from 'vue'
+  import { ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import ProTable from '@/components/table/ProTable.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
@@ -66,6 +66,7 @@
   import { useTenantStore } from '@/stores/tenant'
   import { useAuthStore } from '@/stores/auth'
   import { useTenantReload } from '@/composables/useTenantReload'
+  import { useTenantRequestScope } from '@/composables/useTenantRequestScope'
   import { queryAuditsPage } from '@/api/observabilityQueries'
   import type { ConsoleAuditLogResponse } from '@/types/console-api'
 
@@ -77,22 +78,34 @@
   const error = ref(false)
   const rows = ref<ConsoleAuditLogResponse[]>([])
 
+  const loadScope = useTenantRequestScope()
   async function load() {
-    if (!tenant.tenantId) return
+    const request = loadScope.begin()
+    if (!request.tenantId) return
     loading.value = true
     error.value = false
     try {
-      const result = await queryAuditsPage(tenant.tenantId, 1, 20, {
+      const result = await queryAuditsPage(request.tenantId, 1, 20, {
         operatorId: auth.userInfo?.userId,
       })
+      if (!loadScope.isCurrent(request)) return
       rows.value = (result.items ?? []) as ConsoleAuditLogResponse[]
     } catch {
-      error.value = true
+      if (loadScope.isCurrent(request)) error.value = true
     } finally {
-      loading.value = false
+      if (loadScope.isCurrent(request)) loading.value = false
     }
   }
 
+  watch(
+    () => tenant.tenantId,
+    () => {
+      rows.value = []
+      error.value = false
+      loading.value = false
+    },
+    { flush: 'sync' },
+  )
   useTenantReload(load)
 </script>
 

@@ -104,7 +104,7 @@
               <span
                 class="tl-code"
                 :class="{ 'is-current': row.tenantId === tenant.tenantId }"
-                @click="switchToTenant(row)"
+                @click="switchToTenant(row as Tenant)"
               >
                 {{ row.tenantId }}
               </span>
@@ -155,7 +155,7 @@
                   {{ t('tenantList.currentTag') }}
                 </el-tag>
                 <!-- 设计操作列:1 个外露文字操作 + ⋯ 收纳其余(proto: 配置 + ⋯) -->
-                <RowActions :actions="rowActions(row)" :inline-limit="1" />
+                <RowActions :actions="rowActions(row as Tenant)" :inline-limit="1" />
               </div>
             </template>
           </el-table-column>
@@ -402,7 +402,7 @@
         divided: true,
         onClick: () => openInitConfig(row),
       })
-      if (isActive || row.status === 'SUSPENDING') {
+      if (isActive) {
         acts.push({
           key: 'suspend',
           label: t('tenantList.actionSuspend'),

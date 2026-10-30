@@ -7,7 +7,8 @@
  *       都按预期落在日志里,且敏感字段已脱敏。
  */
 import axios from 'axios'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { ElMessage } from 'element-plus'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { applyApiInterceptors } from './interceptors'
 import { clearLogs, getLogs } from '@/utils/logger'
 import { STORAGE_KEYS } from '@/constants/storageKeys'
@@ -36,6 +37,7 @@ function makeClient() {
 }
 
 beforeEach(() => {
+  vi.resetAllMocks()
   storage.clear()
   // D7 Stage B: token 不再前端持有；session flag 表达"已登录"
   storage.set(STORAGE_KEYS.session, '1')
@@ -45,9 +47,6 @@ beforeEach(() => {
   clearLogs()
 })
 
-afterEach(() => {
-  vi.clearAllMocks()
-})
 
 describe('API 成功日志:URL / params / request / response 全部捕获', () => {
   it('记录完整字段,敏感字段脱敏', async () => {
@@ -163,6 +162,55 @@ describe('API 4xx 错误日志:trace / request / response / error 全部保留',
       traceId: 'trace-from-header',
       requestId: 'req-from-header',
     })
+  })
+})
+
+describe('409 幂等冲突区分', () => {
+  function conflictAdapter(code: string) {
+    return async (cfg: { url?: string }) => {
+      throw Object.assign(new Error('Request failed with status code 409'), {
+        isAxiosError: true,
+        response: {
+          status: 409,
+          statusText: 'Conflict',
+          headers: {},
+          data: {
+            code,
+            message: '业务状态冲突',
+            ...(code === 'CONFLICT' ? { idempotentReplay: true } : {}),
+          },
+          config: cfg,
+        },
+        config: cfg,
+      })
+    }
+  }
+
+  it('自动注入幂等键的业务 STATE_CONFLICT 仍记录错误并提示用户', async () => {
+    const client = makeClient()
+    client.defaults.adapter = conflictAdapter('STATE_CONFLICT') as never
+
+    await expect(
+      client.post('/api/console/jobs/JOB-409/enable', { enabled: true }),
+    ).rejects.toThrow()
+
+    expect(getLogs().some((entry) => entry.type === 'error')).toBe(true)
+    expect(ElMessage.error).toHaveBeenCalled()
+  })
+
+  it('仅对服务端明确标记的幂等重放静默', async () => {
+    const client = makeClient()
+    client.defaults.adapter = conflictAdapter('CONFLICT') as never
+
+    await expect(
+      client.post('/api/console/jobs/JOB-410/enable', { enabled: true }),
+    ).rejects.toMatchObject({
+      idempotentReplay: true,
+      silenced: true,
+    })
+
+    expect(getLogs().some((entry) => entry.type === 'error')).toBe(false)
+    expect(ElMessage.error).not.toHaveBeenCalled()
   })
 })
 

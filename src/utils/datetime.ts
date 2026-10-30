@@ -43,8 +43,9 @@ function safeTimezone(timezone?: string): string {
 }
 
 function partsOf(date: Date, timezone?: string): CalendarParts {
-  const parts = new Intl.DateTimeFormat('en-CA', {
-    timeZone: safeTimezone(timezone),
+  const resolvedTimezone = safeTimezone(timezone)
+  const formatter = new Intl.DateTimeFormat('en-CA', {
+    timeZone: resolvedTimezone,
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
@@ -52,10 +53,14 @@ function partsOf(date: Date, timezone?: string): CalendarParts {
     minute: '2-digit',
     second: '2-digit',
     hourCycle: 'h23',
-  }).formatToParts(date)
+  })
+  const parts = formatter.formatToParts(date)
 
-  const value = (type: Intl.DateTimeFormatPartTypes) =>
-    Number(parts.find((part) => part.type === type)?.value ?? 0)
+  const value = (type: Intl.DateTimeFormatPartTypes) => {
+    const matchingPart = parts.find((part) => part.type === type)
+    const rawValue = matchingPart?.value ?? 0
+    return Number(rawValue)
+  }
   return {
     year: value('year'),
     month: value('month'),
@@ -79,7 +84,8 @@ function datetimeText(parts: CalendarParts): string {
 }
 
 function previousCalendarDate(parts: CalendarParts): CalendarParts {
-  const date = new Date(Date.UTC(parts.year, parts.month - 1, parts.day - 1))
+  const previousDateUtcMillis = Date.UTC(parts.year, parts.month - 1, parts.day - 1)
+  const date = new Date(previousDateUtcMillis)
   return {
     ...parts,
     year: date.getUTCFullYear(),
@@ -96,28 +102,35 @@ function previousCalendarDate(parts: CalendarParts): CalendarParts {
 export function fmtDatetime(val: unknown, timezone?: string): string {
   const date = parseDate(val)
   if (!date) return val === null || val === undefined || val === '' ? '—' : String(val)
-  return datetimeText(partsOf(date, timezone))
+  const dateParts = partsOf(date, timezone)
+  return datetimeText(dateParts)
 }
 
 /** 日期选择器的墙上时间转为 API Instant；不存在的夏令时时刻会被拒绝。 */
 export function wallTimeToApiInstant(value: string, zone = readDisplayTimezone()): string | null {
   if (!WALL_TIME_PATTERN.test(value)) return null
   const parsed = dayjs.tz(value, zone)
-  return parsed.isValid() && parsed.format(WALL_TIME_FORMAT) === value ? parsed.toISOString() : null
+  if (!parsed.isValid()) return null
+  const roundTrippedWallTime = parsed.format(WALL_TIME_FORMAT)
+  if (roundTrippedWallTime !== value) return null
+  return parsed.toISOString()
 }
 
 /** 后端 Instant 转日期选择器的墙上时间；兼容旧版已保存的无时区筛选值。 */
 export function apiInstantToWallTime(value: string, zone = readDisplayTimezone()): string {
   if (WALL_TIME_PATTERN.test(value)) return value
   const parsed = dayjs(value)
-  return parsed.isValid() ? parsed.tz(zone).format(WALL_TIME_FORMAT) : ''
+  if (!parsed.isValid()) return ''
+  const zonedDateTime = parsed.tz(zone)
+  return zonedDateTime.format(WALL_TIME_FORMAT)
 }
 
 export function readBusinessTimezone(): string {
   const configured = import.meta.env.VITE_DISPLAY_TIMEZONE?.trim()
   if (configured) {
     try {
-      new Intl.DateTimeFormat('en-US', { timeZone: configured }).format()
+      const formatter = new Intl.DateTimeFormat('en-US', { timeZone: configured })
+      formatter.format()
       return configured
     } catch {
       // Keep business-date defaults independent of the user's display preference.
@@ -128,25 +141,33 @@ export function readBusinessTimezone(): string {
 
 /** 业务日期使用部署配置的时区，不受个人展示时区切换影响。 */
 export function todayBusinessDate(now: Date = new Date()): string {
-  return fmtDate(now, readBusinessTimezone())
+  const businessTimezone = readBusinessTimezone()
+  return fmtDate(now, businessTimezone)
 }
 
 /** 将平台业务日映射为日历控件的本地日期模型，不把 LocalDate 当作 Instant 解析。 */
 export function businessCalendarDate(now: Date = new Date()): Date {
-  const [year, month, day] = todayBusinessDate(now).split('-').map(Number)
+  const businessDate = todayBusinessDate(now)
+  const dateParts = businessDate.split('-')
+  const [year, month, day] = dateParts.map(Number)
   return new Date(year, month - 1, day, 12)
 }
 
 /** 近 N 个业务日（包含今天），用于 LocalDate 筛选而非 Instant 时间窗口。 */
 export function recentBusinessDateRange(days = 7, now: Date = new Date()): [string, string] {
-  const today = dayjs(now).tz(readBusinessTimezone())
+  const currentDateTime = dayjs(now)
+  const businessTimezone = readBusinessTimezone()
+  const today = currentDateTime.tz(businessTimezone)
   const count = Math.max(1, Math.floor(days))
   return [today.subtract(count - 1, 'day').format('YYYY-MM-DD'), today.format('YYYY-MM-DD')]
 }
 
 /** 保持包含式结束边界，并对齐 PostgreSQL 时间戳的微秒精度。 */
 function inclusiveEndOfDayInstant(day: Dayjs): string {
-  const lastMillisecond = day.add(1, 'day').startOf('day').subtract(1, 'millisecond').toISOString()
+  const nextDay = day.add(1, 'day')
+  const startOfNextDay = nextDay.startOf('day')
+  const lastMillisecondOfDay = startOfNextDay.subtract(1, 'millisecond')
+  const lastMillisecond = lastMillisecondOfDay.toISOString()
   return lastMillisecond.replace(/\.999Z$/, '.999999Z')
 }
 
@@ -173,7 +194,9 @@ export function fmtDate(val: unknown, timezone?: string): string {
   const raw = String(val)
   if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw
   const date = parseDate(val)
-  return date ? dateText(partsOf(date, timezone)) : raw
+  if (!date) return raw
+  const dateParts = partsOf(date, timezone)
+  return dateText(dateParts)
 }
 
 /** 仅显示当前展示时区的钟表时间；用于刷新状态等不需要重复日期的场景。 */
@@ -190,7 +213,9 @@ export function fmtTodayOrDatetime(val: unknown, timezone?: string): string {
   const date = parseDate(val)
   if (!date) return fmtDatetime(val, timezone)
   const zone = safeTimezone(timezone)
-  return fmtDate(date, zone) === fmtDate(new Date(), zone)
+  const displayedDate = fmtDate(date, zone)
+  const todayDate = fmtDate(new Date(), zone)
+  return displayedDate === todayDate
     ? fmtCompact(date, zone)
     : fmtDatetime(date, zone)
 }

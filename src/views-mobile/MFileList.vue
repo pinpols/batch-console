@@ -39,11 +39,11 @@
           </div>
           <div>
             <span class="m-card__meta-key">{{ t('mobile.files.size') }}</span>
-            {{ formatSize(extraOf(row).fileSize) }}
+            {{ fileSizeLabel(row) }}
           </div>
           <div>
             <span class="m-card__meta-key">{{ t('mobile.files.received') }}</span>
-            {{ fmt(extraOf(row).receivedAt) }}
+            {{ receivedAtLabel(row) }}
           </div>
           <div v-if="row.traceId">
             <span class="m-card__meta-key">trace</span>
@@ -143,6 +143,16 @@
     return (row as { fileSize?: number | null; receivedAt?: string | null }) ?? {}
   }
 
+  function fileSizeLabel(row: unknown): string {
+    const fileSize = extraOf(row).fileSize
+    return formatSize(fileSize)
+  }
+
+  function receivedAtLabel(row: unknown): string {
+    const receivedAt = extraOf(row).receivedAt
+    return fmt(receivedAt)
+  }
+
   function fmt(ts?: string | null) {
     return fmtDatetime(ts)
   }
@@ -150,9 +160,16 @@
   function formatSize(bytes?: number | null) {
     if (bytes == null) return '—'
     if (bytes < 1024) return `${bytes} B`
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-    if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
-    return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`
+    if (bytes < 1024 * 1024) {
+      const kilobytes = bytes / 1024
+      return `${kilobytes.toFixed(1)} KB`
+    }
+    if (bytes < 1024 * 1024 * 1024) {
+      const megabytes = bytes / (1024 * 1024)
+      return `${megabytes.toFixed(1)} MB`
+    }
+    const gigabytes = bytes / (1024 * 1024 * 1024)
+    return `${gigabytes.toFixed(2)} GB`
   }
 
   function statusChipClass(status?: string | null): string {

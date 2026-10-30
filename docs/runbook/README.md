@@ -13,7 +13,7 @@
 | [上线准入清单](./go-live-readiness-checklist.md) | PR 门禁、真实环境、UI 交互和运行时发布证据 |
 | [前端事故处理](./frontend-incident.md) | 白屏、静态资源、API 和 PWA 缓存故障 |
 | [可观测性](./observability.md) | Sentry、遥测、告警和数据边界 |
-| [维护与降级前端实施方案](../engineering/maintenance-degradation-implementation-plan.md) | 维护公告、写操作冻结、503 跳转和下游降级提示 |
+| [维护与降级前端实施方案](../engineering/maintenance-degradation.md) | 维护公告、写操作冻结、503 跳转和下游降级提示 |
 
 ## QA 阶段报告（日期化证据）
 
@@ -27,5 +27,5 @@ C/D 档 QA campaign、联测计划与历史基线均已关闭并移至仓库内 
 
 | 文档 | 用途 |
 |---|---|
-| [Phase 1 API CRUD 历史问题](./be-fix-backlog.md) | 早期联调问题与修复依据；不作为当前待办 |
+| [Phase 1 API CRUD 历史问题](../archive/qa-2026-05/be-fix-backlog-2026-05-16.md) | 早期联调问题与修复依据；不作为当前待办 |
 | [移动端 tunnel](./mobile-frontend-tunnel.md) | 移动端联调隧道方案 |

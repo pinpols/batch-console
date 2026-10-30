@@ -43,7 +43,6 @@ test.describe('queue 表单校验', () => {
     const dialog1 = await openDialog(page, '新建队列')
     await fieldInput(dialog1, '队列编码').fill('e2e-residue-check')
     await cancelDialog(dialog1)
-    await page.waitForTimeout(200)
     const dialog2 = await openDialog(page, '新建队列')
     const value = await fieldInput(dialog2, '队列编码').inputValue()
     expect(value).toBe('')

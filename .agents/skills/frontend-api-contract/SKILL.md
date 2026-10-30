@@ -23,3 +23,9 @@ description: 修改或审查前端 API 调用、OpenAPI 生成类型、后端 Co
 - API 类型同步至少运行 `npm run gen:api:check`；涉及类型使用时运行 `npm run typecheck`。
 - 用户路径变化按范围补 Vitest 或 Playwright；未跑 paired backend 联调时明确说明。
 - 报告中区分“OpenAPI 已同步”“前端类型已生成”“真实后端联调已验证”。
+
+## 契约工具与来源记录
+
+- `scripts/gen-api-types.sh` 写生成类型，`scripts/check-api-drift.sh` 在临时目录重生成并比较。通过 `BE_OPENAPI_PATH` 选择当前配对工作树契约，或显式 `BE_OPENAPI_URL` 下载。漂移检查器在缺源、下载或工具链失败时返回 2；生成脚本按自身及下载/生成工具的真实退出码失败，均不能记为通过或跳过。
+- CI 的 `scripts/ci/resolve-backend-openapi.sh` 可选择 `BACKEND_API_REF` 或覆盖 URL；配对分支 404 时会回退 main，记录实际采用来源，不能把 main 契约结果当指定 WDI 分支结果。
+- 认证相关脚本也遵守当前 HttpOnly Cookie/CSRF 契约；历史响应体 token、Bearer 与旧路径仅是归档证据。当前 storageState 与角色准备由 `e2e/global-setup.cjs` 负责；脚本归属见 `docs/engineering/script-skill-routing.md`。

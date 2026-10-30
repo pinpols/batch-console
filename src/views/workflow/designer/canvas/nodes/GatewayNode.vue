@@ -24,7 +24,8 @@
     const incoming = store.edges.filter((edge) => edge.target === nodeId).length
     const outgoing = store.edges.filter((edge) => edge.source === nodeId).length
     const attrs = (data.value?.attrs ?? {}) as Record<string, unknown>
-    const mode = String(attrs.joinMode ?? 'ALL').toUpperCase()
+    const rawMode = String(attrs.joinMode ?? 'ALL')
+    const mode = rawMode.toUpperCase()
     if (incoming >= 2) {
       if (mode === 'N_OF') {
         const threshold = Number(attrs.joinThreshold) || incoming

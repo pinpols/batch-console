@@ -18,14 +18,18 @@ test.describe('Job 定义 — 筛选查询', () => {
     const input = page.getByRole('textbox', { name: '作业编码' })
     await input.fill('test')
     await page.getByRole('button', { name: '搜索' }).click()
-    await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
+    await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({
+      timeout: 10_000,
+    })
   })
 
   test('名称搜索', async ({ page }) => {
     const input = page.locator('.el-form-item').filter({ hasText: '名称' }).getByRole('textbox')
     await input.fill('job')
     await page.getByRole('button', { name: '搜索' }).click()
-    await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
+    await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({
+      timeout: 10_000,
+    })
   })
 
   test('启用状态筛选 → 查询 → 重置', async ({ page }) => {
@@ -38,7 +42,9 @@ test.describe('Job 定义 — 筛选查询', () => {
     if (await isVisible(opt, 2000)) {
       await opt.click()
       await page.getByRole('button', { name: '搜索' }).click()
-      await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
+      await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({
+        timeout: 10_000,
+      })
     }
     // 重置按钮动画后不稳定,force click 跳过 stability 检查
     await page.getByRole('button', { name: '重置' }).click({ force: true })
@@ -50,7 +56,9 @@ test.describe('Job 定义 — 筛选查询', () => {
   test('搜索按钮重新加载(新 UI 裁撤独立刷新钮)', async ({ page }) => {
     // 新 UI:作业定义查询条 show-refresh=false,重查载体是「搜索」按钮
     await page.getByRole('button', { name: '搜索' }).click()
-    await expect(page.getByRole('columnheader', { name: '作业编码' })).toBeVisible({ timeout: 6000 })
+    await expect(page.getByRole('columnheader', { name: '作业编码' })).toBeVisible({
+      timeout: 6000,
+    })
   })
 })
 
@@ -70,11 +78,17 @@ test.describe('Job 定义 — 操作流', () => {
     const label = await toggleBtn.textContent()
     await toggleBtn.click()
     await expect(page.locator('.el-message-box')).toBeVisible()
-    await page.locator('.el-message-box').getByRole('button', { name: /^(确定|确认.*)$/ }).click()
+    await page
+      .locator('.el-message-box')
+      .getByRole('button', { name: /^(确定|确认.*)$/ })
+      .click()
     await expect(page.locator('.el-message').first()).toBeVisible({ timeout: 8000 })
     // 按钮文字应已翻转
     await expect(
-      page.locator('.table-actions').getByRole('button', { name: /停用|启用/ }).first(),
+      page
+        .locator('.table-actions')
+        .getByRole('button', { name: /停用|启用/ })
+        .first(),
     ).not.toHaveText(label?.trim() ?? '')
   })
 
@@ -93,9 +107,14 @@ test.describe('Job 定义 — 操作流', () => {
     if (await isVisible(ta, 1000)) await ta.fill('{}')
     await triggerDialog.getByRole('button', { name: '触发' }).click()
     await expect(triggerDialog).toBeHidden({ timeout: 8000 })
-    const resultDialog = page.locator('.el-message-box:visible').filter({ hasText: /已触发|触发失败/ })
+    const resultDialog = page
+      .locator('.el-message-box:visible')
+      .filter({ hasText: /已触发|触发失败/ })
     if (await isVisible(resultDialog, 3000)) {
-      await resultDialog.getByRole('button', { name: /留在当前页|查看实例/ }).first().click()
+      await resultDialog
+        .getByRole('button', { name: /留在当前页|查看实例/ })
+        .first()
+        .click()
     }
   })
 
@@ -104,7 +123,10 @@ test.describe('Job 定义 — 操作流', () => {
     if (!(await isVisible(cloneBtn))) return
     await cloneBtn.click()
     await expect(page.locator('.el-message-box')).toBeVisible()
-    await page.locator('.el-message-box').getByRole('button', { name: /^(确定|确认.*)$/ }).click()
+    await page
+      .locator('.el-message-box')
+      .getByRole('button', { name: /^(确定|确认.*)$/ })
+      .click()
     await expect(page.locator('.el-message').first()).toBeVisible({ timeout: 8000 })
   })
 
@@ -136,7 +158,9 @@ test.describe('Workflow 定义 — 筛选查询', () => {
       .getByRole('textbox')
     await input.fill('test')
     await page.getByRole('button', { name: '搜索' }).click()
-    await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
+    await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({
+      timeout: 10_000,
+    })
   })
 
   test('重置清空筛选', async ({ page }) => {
@@ -168,18 +192,21 @@ test.describe('Workflow 定义 — 操作流', () => {
     const label = await toggleBtn.textContent()
     await toggleBtn.click()
     await expect(page.locator('.el-message-box')).toBeVisible()
-    await page.locator('.el-message-box').getByRole('button', { name: /^(确定|确认.*)$/ }).click()
+    await page
+      .locator('.el-message-box')
+      .getByRole('button', { name: /^(确定|确认.*)$/ })
+      .click()
     await expect(page.locator('.el-message').first()).toBeVisible({ timeout: 8000 })
     await expect(
-      page.locator('.table-actions').getByRole('button', { name: /停用|启用/ }).first(),
+      page
+        .locator('.table-actions')
+        .getByRole('button', { name: /停用|启用/ })
+        .first(),
     ).not.toHaveText(label?.trim() ?? '')
   })
 
   test('校验 Workflow → toast 或校验结果对话框', async ({ page }) => {
-    const validateBtn = page
-      .locator('.table-actions')
-      .getByRole('button', { name: '校验' })
-      .first()
+    const validateBtn = page.locator('.table-actions').getByRole('button', { name: '校验' }).first()
     if (!(await isVisible(validateBtn))) return
     await validateBtn.click()
     const resultDialog = page.getByText('Workflow 校验结果')
@@ -193,9 +220,7 @@ test.describe('Workflow 定义 — 操作流', () => {
     if (!(await isVisible(detailBtn))) return
     await detailBtn.click()
     // drawer title 改成"工作流详情 / 版本信息"
-    await expect(
-      page.getByText(/工作流详情|版本信息/),
-    ).toBeVisible({ timeout: 6000 })
+    await expect(page.getByText(/工作流详情|版本信息/)).toBeVisible({ timeout: 6000 })
     await page.locator('.el-drawer__close-btn').first().click()
   })
 
@@ -207,10 +232,7 @@ test.describe('Workflow 定义 — 操作流', () => {
   })
 
   test('删除 Workflow → 确认 → toast', async ({ page }) => {
-    const deleteBtn = page
-      .locator('.table-actions')
-      .getByRole('button', { name: '删除' })
-      .first()
+    const deleteBtn = page.locator('.table-actions').getByRole('button', { name: '删除' }).first()
     if (!(await isVisible(deleteBtn))) return
     await deleteBtn.click()
     await expect(page.locator('.el-message-box')).toBeVisible()
@@ -219,47 +241,6 @@ test.describe('Workflow 定义 — 操作流', () => {
       .locator('.el-message-box')
       .getByRole('button', { name: /^(确认删除|确定)$/ })
       .click()
-    await expect(page.locator('.el-message').first()).toBeVisible({ timeout: 8000 })
-  })
-})
-
-// ─── Pipeline 定义 ─────────────────────────────────────────────────
-
-test.describe('Pipeline 定义 — 筛选与 CRUD', () => {
-  test.beforeEach(async ({ page }) => {
-    await enterDemoApp(page)
-    await page.goto('/jobs/pipelines')
-    await expectPageTitle(page, '流水线定义')
-  })
-
-  test('关键字搜索', async ({ page }) => {
-    const input = page.locator('.el-form-item').filter({ hasText: '关键字' }).getByRole('textbox')
-    if (!(await isVisible(input, 2000))) return
-    await input.fill('pipe')
-    await page.getByRole('button', { name: '搜索' }).click()
-    await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
-  })
-
-  test('新建 Pipeline → 抽屉打开 → 填写并保存', async ({ page }) => {
-    await page.getByRole('button', { name: '新增 Pipeline' }).click()
-    await expect(page.getByText('新增 Pipeline').first()).toBeVisible()
-    const unique = `e2e-pipe-${Date.now()}`
-    // i18n 改造后 label 变中文 (fieldPipelineCode/Name)
-    await page.locator('.el-drawer').locator('.el-form-item').filter({ hasText: '编码' }).locator('input').first().fill(unique)
-    await page.locator('.el-drawer').locator('.el-form-item').filter({ hasText: '名称' }).locator('input').first().fill('E2E Pipeline')
-    await page.getByRole('button', { name: '保存' }).click()
-    await expect(page.locator('.el-message').first()).toBeVisible({ timeout: 8000 })
-  })
-
-  test('编辑 Pipeline → 修改名称 → 保存', async ({ page }) => {
-    const editBtn = page.locator('.table-actions').getByRole('button', { name: '编辑' }).first()
-    if (!(await isVisible(editBtn))) return
-    await editBtn.click()
-    await expect(page.getByText('编辑 Pipeline')).toBeVisible()
-    const nameInput = page.locator('.el-drawer').locator('.el-form-item').filter({ hasText: '名称' }).locator('input').first()
-    await nameInput.clear()
-    await nameInput.fill('E2E Pipeline Updated')
-    await page.getByRole('button', { name: '保存' }).click()
     await expect(page.locator('.el-message').first()).toBeVisible({ timeout: 8000 })
   })
 })

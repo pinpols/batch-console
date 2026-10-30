@@ -87,5 +87,5 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
     CMD curl -fs http://127.0.0.1:${NGINX_PORT}/healthz || exit 1
 
 # nginx 1.19+ 自带 envsubst on 启动 entry,会读 /etc/nginx/templates/*.template
-# 输出到 /etc/nginx/conf.d/*.conf,把 ${BACKEND_UPSTREAM} / ${NGINX_PORT} 替换掉
+# 输出到 /etc/nginx/conf.d/*.conf,把 ${BACKEND_UPSTREAM_HOST} / ${NGINX_PORT} 替换掉
 CMD ["nginx", "-g", "daemon off;"]

@@ -62,7 +62,9 @@ export function injectCrossDayEdges(baseMermaid: string, nodes: WorkflowNodeLike
   // classDef 用暖橙 + 虚线 stroke(走 design token 走不进 mermaid 主题,只能用字面色)
   const classDef =
     '  classDef crossDay fill:#fef3c7,stroke:#f59e0b,stroke-dasharray:5 5,color:#78350f;'
-  return baseMermaid.trimEnd() + '\n' + extras.join('\n') + '\n' + classDef + '\n'
+  const trimmedBaseMermaid = baseMermaid.trimEnd()
+  const extraLines = extras.join('\n')
+  return trimmedBaseMermaid + '\n' + extraLines + '\n' + classDef + '\n'
 }
 
 /** mermaid 节点 ID 必须是 `[A-Za-z0-9_]+`;与 BE 的 sanitize 规则一致,nodeCode 中非合法字符替 `_`。 */
@@ -78,7 +80,9 @@ function sanitizeGhostId(s: CrossDayDependencySpec): string {
       : s.bizDateRange
         ? s.bizDateRange.replace(/[^A-Za-z0-9_]/g, '_')
         : 'unknown_date'
-  return 'ghost_' + sanitizeNodeId(base) + '_' + sanitizeNodeId(offset)
+  const sanitizedBase = sanitizeNodeId(base)
+  const sanitizedOffset = sanitizeNodeId(offset)
+  return 'ghost_' + sanitizedBase + '_' + sanitizedOffset
 }
 
 function ghostLabel(s: CrossDayDependencySpec): string {
@@ -88,9 +92,9 @@ function ghostLabel(s: CrossDayDependencySpec): string {
 }
 
 function edgeAnnotation(s: CrossDayDependencySpec): string {
-  const scope = (s.scope || 'REQUIRED').toLowerCase()
-  const strat = (s.consumeVersionStrategy || 'EFFECTIVE_ONLY').toLowerCase()
-  return `cross-day · ${scope} · ${strat}`
+  const dependencyScope = (s.scope || 'REQUIRED').toLowerCase()
+  const versionStrategy = (s.consumeVersionStrategy || 'EFFECTIVE_ONLY').toLowerCase()
+  return `cross-day · ${dependencyScope} · ${versionStrategy}`
 }
 
 function formatBizDateHint(s: CrossDayDependencySpec): string {
@@ -114,7 +118,9 @@ export function describeCrossDayDeps(node: WorkflowNodeLike): {
         count = arr.length
         for (const s of arr) {
           const job = s.alias || s.jobCode || '?'
-          lines.push(`${job} @ ${formatBizDateHint(s)}(${(s.scope || 'REQUIRED').toLowerCase()})`)
+          const scope = (s.scope || 'REQUIRED').toLowerCase()
+          const dateHint = formatBizDateHint(s)
+          lines.push(`${job} @ ${dateHint}(${scope})`)
         }
       }
     } catch {

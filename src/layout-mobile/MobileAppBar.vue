@@ -176,9 +176,12 @@
   const timezoneOptions = computed(() => getDisplayTimezoneOptions(currentTimezone.value))
   const timezoneOptionLabel = (timezone: string) =>
     `${timezone} · ${getTimezoneOffsetLabel(timezone)}`
-  const userInitial = computed(() =>
-    (auth.userInfo?.username ?? '?').trim().charAt(0).toUpperCase(),
-  )
+  const userInitial = computed(() => {
+    const username = auth.userInfo?.username ?? '?'
+    const trimmedUsername = username.trim()
+    const firstUsernameCharacter = trimmedUsername.charAt(0)
+    return firstUsernameCharacter.toUpperCase()
+  })
   const userDisplayName = computed(() => auth.userInfo?.username ?? t('nav.notLoggedIn'))
   const userDisplayNameCompact = computed(() => truncateDisplayText(userDisplayName.value, 14))
   const userRoleLabel = computed(() => {

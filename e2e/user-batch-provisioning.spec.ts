@@ -131,6 +131,5 @@ test('批量开户预览修正后提交，关闭即清除一次性密码', async
     const dialogBox = element.querySelector('.el-dialog')
     return dialogBox ? Math.ceil(dialogBox.getBoundingClientRect().width) : 0
   })).toBeLessThanOrEqual(390)
-  await page.waitForTimeout(350)
-  await testInfo.attach('batch-preview-mobile-en.png', { body: await page.screenshot(), contentType: 'image/png' })
+  await testInfo.attach('batch-preview-mobile-en.png', { body: await page.screenshot({ animations: 'disabled' }), contentType: 'image/png' })
 })

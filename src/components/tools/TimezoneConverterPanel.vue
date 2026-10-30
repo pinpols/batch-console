@@ -82,9 +82,9 @@
   const timezoneOptions = listSupportedTimezones(DISPLAY_TIMEZONE_OPTIONS)
   const wallTime = ref(dayjs().format('YYYY-MM-DD HH:mm:ss'))
   const sourceTimezone = ref(displayTimezone.value)
-  const targetTimezones = ref(
-    Array.from(new Set([displayTimezone.value, 'UTC', 'Asia/Shanghai'])).slice(0, 3),
-  )
+  const uniqueTargetTimezones = Array.from(new Set([displayTimezone.value, 'UTC', 'Asia/Shanghai']))
+  const initialTargetTimezones = uniqueTargetTimezones.slice(0, 3)
+  const targetTimezones = ref(initialTargetTimezones)
   const conversion = computed(() =>
     convertWallTime(wallTime.value, sourceTimezone.value, targetTimezones.value),
   )

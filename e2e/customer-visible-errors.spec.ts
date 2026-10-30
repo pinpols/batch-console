@@ -23,7 +23,6 @@ const ERROR_TEXT = /资源不存在|请求失败|加载失败|系统错误|渲�
 
 // 受租户数据驱动、最易暴露渲染/加载错的页面
 const PAGES = [
-  '/jobs/pipelines',
   '/jobs/definitions',
   '/monitor/job-instances',
   '/monitor/job-steps',
@@ -58,10 +57,10 @@ async function assertNoCustomerVisibleError(page: Page, route: string, pageError
   await expect(page.getByText('组件渲染异常')).toHaveCount(0)
 
   // ① 错误 toast
-  const toasts = await page
-    .locator('.el-message--error, .el-notification--error')
-    .allTextContents()
-  const errorToasts = toasts.map((s) => s.replace(/\s+/g, ' ').trim()).filter((s) => ERROR_TEXT.test(s))
+  const toasts = await page.locator('.el-message--error, .el-notification--error').allTextContents()
+  const errorToasts = toasts
+    .map((s) => s.replace(/\s+/g, ' ').trim())
+    .filter((s) => ERROR_TEXT.test(s))
   expect(errorToasts, `${route} 加载弹出错误 toast: ${errorToasts.join(' | ')}`).toHaveLength(0)
 
   // ② 未捕获 JS 错
@@ -74,9 +73,10 @@ async function assertNoCustomerVisibleError(page: Page, route: string, pageError
     const firstCols = cells.slice(0, Math.min(5, cells.length))
     if (firstCols.length >= 3) {
       const emptyCount = firstCols.filter((c) => !c || c === '—' || c === '-').length
-      expect(emptyCount, `${route} 表格首行前 ${firstCols.length} 列全为空/—(疑似字段映射漂移)`).toBeLessThan(
-        firstCols.length,
-      )
+      expect(
+        emptyCount,
+        `${route} 表格首行前 ${firstCols.length} 列全为空/—(疑似字段映射漂移)`,
+      ).toBeLessThan(firstCols.length)
     }
   }
 }
@@ -102,6 +102,7 @@ for (const role of ROLES) {
         page.on('pageerror', (e) => pageErrors.push(e.message.split('\n')[0].slice(0, 80)))
 
         await page.goto(route, { waitUntil: 'domcontentloaded' })
+        // 覆盖路由守卫和异步数据返回的延迟报错，属于负观察窗口。
         await page.waitForTimeout(1800)
 
         // 无权角色会被守卫重定向到允许访问的页面。拒绝路径本身是验证目标，

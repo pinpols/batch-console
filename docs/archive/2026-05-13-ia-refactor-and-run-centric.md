@@ -1,5 +1,7 @@
 # 2026-05-13 · IA 审计与 Run-centric 详情页改造
 
+> **历史归档**：本文保留 2026-05 的 IA 评估与实施过程；文中的“当前”、导航数量和 roadmap 均为历史状态。现行导航以产品代码和[用户指南](../user-guide/README.md)为准。
+
 > 用户反馈:"前端页面好多好乱"。本文对照行业成熟批量/调度产品(Airflow / Dagster /
 > Prefect / DolphinScheduler),审计当前信息架构(IA),并给出已落地的
 > Run-centric 详情页改造记录与后续 IA 重排建议。

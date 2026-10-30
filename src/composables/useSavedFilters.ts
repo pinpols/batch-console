@@ -44,12 +44,15 @@ function genId(): string {
   } catch {
     /* crypto 不可用 — 退回时间戳 */
   }
-  return `sf_${Date.now()}_${Math.floor(Math.random() * 1e6)}`
+  const timestamp = Date.now()
+  const randomSuffix = Math.floor(Math.random() * 1e6)
+  return `sf_${timestamp}_${randomSuffix}`
 }
 
 /** 深拷贝快照,避免存进去的对象与页面 reactive 共享引用导致后续被改写。 */
 function snapshot<T>(value: T): T {
-  return JSON.parse(JSON.stringify(value)) as T
+  const serializedValue = JSON.stringify(value)
+  return JSON.parse(serializedValue) as T
 }
 
 /**
@@ -96,12 +99,15 @@ export function useSavedFilters<T extends Record<string, unknown>>(
     }
   }
 
-  const sets = ref(read().sort((a, b) => b.createdAt - a.createdAt)) as Ref<SavedFilterSet<T>[]>
+  const initialSets = read()
+  initialSets.sort((a, b) => b.createdAt - a.createdAt)
+  const sets = ref(initialSets) as Ref<SavedFilterSet<T>[]>
 
   function save(name: string): SavedFilterSet<T> | null {
     const trimmed = name.trim()
     if (!trimmed) return null
-    const filters = snapshot(getCurrent())
+    const currentFilters = getCurrent()
+    const filters = snapshot(currentFilters)
     const existing = sets.value.find((s) => s.name === trimmed)
     if (existing) {
       // 同名覆盖:更新 filters + 刷新时间戳(置顶)
@@ -122,7 +128,8 @@ export function useSavedFilters<T extends Record<string, unknown>>(
   function applySet(id: string) {
     const target = sets.value.find((s) => s.id === id)
     if (!target) return
-    apply(snapshot(target.filters))
+    const copiedFilters = snapshot(target.filters)
+    apply(copiedFilters)
   }
 
   function remove(id: string) {
@@ -154,12 +161,15 @@ export function useSavedFilters<T extends Record<string, unknown>>(
     if (!valid.length) return 0
     // 重新分配 id + 时间戳,避免与现有冲突
     const now = Date.now()
-    const normalized = valid.map((s, i) => ({
-      id: genId(),
-      name: String(s.name).trim() || `import-${i + 1}`,
-      filters: s.filters,
-      createdAt: now + i,
-    }))
+    const normalized = valid.map((s, i) => {
+      const id = genId()
+      const rawName = String(s.name)
+      const trimmedName = rawName.trim()
+      const name = trimmedName || `import-${i + 1}`
+      const filters = s.filters
+      const createdAt = now + i
+      return { id, name, filters, createdAt }
+    })
     write([...sets.value, ...normalized])
     return normalized.length
   }

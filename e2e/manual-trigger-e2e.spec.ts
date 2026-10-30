@@ -3,7 +3,8 @@
  *
  * 既有 job-ops 的「手动触发 → toast」只断言出现了 toast,不验操作结果。本 spec 补真闭环:
  * 在作业定义页对配置包稳定提供的手动作业(TA_EXPORT_REPORT)点手动触发 → 填 payload → 提交
- * → 断言 success toast → 跳监控页按 jobCode 过滤 → 断言【新实例出现】(操作真的产生了运行态)。
+ * → 断言 success toast → 按本次请求对应的 WorkflowDefinition 查询 RootRun 与节点实例，
+ *   断言 RootRun SUCCESS 且有成功 Job 节点实例，避免历史 JobInstance 造成假阳性。
  *
  * TA_EXPORT_REPORT 来自 ta 标准租户配置包，E2E_FORCE_SEED=1 时由 global setup 刷新。
  */
@@ -13,7 +14,7 @@ import { enterDemoApp, expectPageTitle, isVisible } from './support/app'
 const JOB = 'TA_EXPORT_REPORT'
 
 test.describe('@manual-trigger 手动触发作业 真端到端', () => {
-  test('手动触发 → 成功 → 监控页出现该作业新实例', async ({ page }) => {
+  test('手动触发 → 根 Workflow 成功 → 成功 Job 节点实例持久化', async ({ page }) => {
     await enterDemoApp(page)
     await page.goto('/jobs/definitions')
     await expectPageTitle(page, '作业定义')
@@ -48,7 +49,18 @@ test.describe('@manual-trigger 手动触发作业 真端到端', () => {
     await expect(box).toBeVisible({ timeout: 5000 })
     const ta = box.locator('textarea').first()
     if (await isVisible(ta, 1500)) await ta.fill('{}')
+    const triggerStartedAt = Date.now()
+    const triggerResponsePromise = page.waitForResponse((response) =>
+      response.request().method() === 'POST' &&
+      /\/api\/console\/workflow-definitions\/\d+\/trigger$/.test(response.url()),
+    )
     await box.getByRole('button', { name: /^触发$|确定|提交/ }).first().click()
+    const triggerResponse = await triggerResponsePromise
+    expect(triggerResponse.ok(), 'Workflow trigger API 必须成功受理').toBe(true)
+    const workflowDefinitionId = Number(
+      triggerResponse.url().match(/workflow-definitions\/(\d+)\/trigger$/)?.[1],
+    )
+    expect(workflowDefinitionId).toBeGreaterThan(0)
 
     // 操作真受理 → success toast。注意:el-message 约 3s 自动消失,4-worker 高负载下
     // 单次 toBeVisible 抓取窗口易错过 → 用 poll 容忍「toast 已出现过」或「弹窗已关闭」
@@ -64,20 +76,65 @@ test.describe('@manual-trigger 手动触发作业 真端到端', () => {
       )
       .toBe(true)
 
-    // 验真结果:监控页按 jobCode 过滤,出现该作业实例(刚触发产生)
-    await page.goto(`/monitor/job-instances?jobCode=${JOB}`)
-    await page.waitForLoadState('networkidle', { timeout: 8000 }).catch(() => {})
-    // 触发→outbox→kafka→launch→实例落库这条异步链有延迟。监控页虽有自动刷新,
-    // 但首轮刷新窗口可能错过刚落库实例;主动刷新让断言跟业务事实对齐。
+    // 按触发目标查询 RootRun，并只接受本次点击后创建的运行，避免旧记录误通过。
+    let launchedRun: { id: number; runStatus: string; createdAt: string } | undefined
     await expect
       .poll(
         async () => {
-          await page.getByRole('button', { name: '刷新' }).click().catch(() => {})
-          await page.waitForLoadState('networkidle', { timeout: 5000 }).catch(() => {})
-          return page.locator('tbody tr.el-table__row').filter({ hasText: JOB }).count()
+          const runs = await queryRows<{
+            id: number
+            workflowDefinitionId: number
+            runStatus: string
+            createdAt: string
+          }>(page, '/api/console/queries/workflow-runs', {
+            tenantId: 'ta',
+            workflowDefinitionId: String(workflowDefinitionId),
+            pageNo: '1',
+            pageSize: '100',
+          })
+          launchedRun = runs.find(
+            (run) =>
+              run.workflowDefinitionId === workflowDefinitionId &&
+              Date.parse(run.createdAt) >= triggerStartedAt - 1000,
+          )
+          return launchedRun?.runStatus ?? ''
         },
-        { timeout: 60000, intervals: [2000, 3000, 5000] },
+        { timeout: 60000, intervals: [1000, 2000, 3000] },
       )
-      .toBeGreaterThan(0)
+      .toMatch(/^(SUCCESS|FAILED)$/)
+    expect(launchedRun?.runStatus, '本次手动触发的 RootRun 必须成功').toBe('SUCCESS')
+
+    const nodeRuns = await queryRows<{
+      nodeCode: string
+      nodeStatus: string
+      jobInstanceId?: number
+    }>(page, '/api/console/queries/workflow-node-runs', {
+      tenantId: 'ta',
+      workflowRunId: String(launchedRun?.id),
+      pageNo: '1',
+      pageSize: '100',
+    })
+    expect(
+      nodeRuns.some(
+        (nodeRun) =>
+          nodeRun.nodeStatus === 'SUCCESS' && Number.isSafeInteger(nodeRun.jobInstanceId),
+      ),
+      '本次 RootRun 必须持久化至少一个成功 Job 节点实例',
+    ).toBe(true)
   })
 })
+
+async function queryRows<T>(
+  page: import('@playwright/test').Page,
+  path: string,
+  params: Record<string, string>,
+): Promise<T[]> {
+  const response = await page.request.get(path, { params })
+  expect(response.ok(), `${path} 查询必须成功`).toBe(true)
+  const body = (await response.json()) as {
+    data?: { items?: T[] } | T[]
+    items?: T[]
+  }
+  if (Array.isArray(body.data)) return body.data
+  return body.data?.items ?? body.items ?? []
+}

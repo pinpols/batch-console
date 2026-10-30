@@ -61,7 +61,9 @@ function defaultSteps(): TourStep[] {
 }
 
 export function shouldShowOnboarding(identity: OnboardingTourIdentity): boolean {
-  return localStorage.getItem(completionKey(identity)) !== '1'
+  const storageKey = completionKey(identity)
+  const completionMarker = localStorage.getItem(storageKey)
+  return completionMarker !== '1'
 }
 
 export function startOnboarding(

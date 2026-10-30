@@ -41,7 +41,8 @@ function deepRedact(value: unknown, depth: number, maxStringLen: number): unknow
   if (typeof value === 'function' || typeof value === 'symbol') return `[${typeof value}]`
 
   if (Array.isArray(value)) {
-    const arr = value.slice(0, MAX_ARRAY_ITEMS).map((x) => deepRedact(x, depth + 1, maxStringLen))
+    const boundedItems = value.slice(0, MAX_ARRAY_ITEMS)
+    const arr = boundedItems.map((x) => deepRedact(x, depth + 1, maxStringLen))
     if (value.length > MAX_ARRAY_ITEMS) {
       arr.push(`[+${value.length - MAX_ARRAY_ITEMS} more]`)
     }

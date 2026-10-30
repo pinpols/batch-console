@@ -1,0 +1,87 @@
+{
+  "scope": "real transport and SQL projection fixture; no Worker execution",
+  "tenantId": "e2e-bulk-32c43279acf94efb9533a14185d7e2b0",
+  "seed": {
+    "pipelineId": 93,
+    "stepId": 434
+  },
+  "snapshots": [
+    {
+      "tenantId": "e2e-bulk-32c43279acf94efb9533a14185d7e2b0",
+      "generatedAt": "2026-10-25T13:54:45.960800Z",
+      "pipelines": [
+        {
+          "pipelineInstanceId": 93,
+          "fileId": null,
+          "fileName": null,
+          "runStatus": "RUNNING",
+          "currentStage": "LOAD",
+          "systemPipelineCode": "IMPORT",
+          "systemPipelineVersion": 1,
+          "stageGraphAvailable": true,
+          "stageCodes": [
+            "RECEIVE",
+            "PREPROCESS",
+            "PARSE",
+            "VALIDATE",
+            "LOAD",
+            "FEEDBACK"
+          ],
+          "steps": [
+            {
+              "stepId": 434,
+              "pipelineInstanceId": 93,
+              "stepCode": "load",
+              "stageCode": "LOAD",
+              "rowsProcessed": 3,
+              "totalRowsHint": null,
+              "lastHeartbeatAt": 1792936485135,
+              "stepStatus": "RUNNING",
+              "runSeq": 1,
+              "errorCode": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tenantId": "e2e-bulk-32c43279acf94efb9533a14185d7e2b0",
+      "generatedAt": "2026-10-25T13:54:47.984228Z",
+      "pipelines": [
+        {
+          "pipelineInstanceId": 93,
+          "fileId": null,
+          "fileName": null,
+          "runStatus": "SUCCESS",
+          "currentStage": "LOAD",
+          "systemPipelineCode": "IMPORT",
+          "systemPipelineVersion": 1,
+          "stageGraphAvailable": true,
+          "stageCodes": [
+            "RECEIVE",
+            "PREPROCESS",
+            "PARSE",
+            "VALIDATE",
+            "LOAD",
+            "FEEDBACK"
+          ],
+          "steps": [
+            {
+              "stepId": 434,
+              "pipelineInstanceId": 93,
+              "stepCode": "load",
+              "stageCode": "LOAD",
+              "rowsProcessed": 88,
+              "totalRowsHint": null,
+              "lastHeartbeatAt": 1792936486084,
+              "stepStatus": "SUCCESS",
+              "runSeq": 1,
+              "errorCode": null
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "livePeriodicReads": 0
+}

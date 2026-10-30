@@ -26,7 +26,6 @@ test.describe('租户分片 tenant-placements (ADMIN)', () => {
 
   test('指派抽屉打开 + 租户/分片字段齐 + 可取消', async ({ page }) => {
     await page.getByRole('button', { name: '新建' }).first().click()
-    await page.waitForTimeout(400)
     const drawer = page.locator('.el-drawer:visible').filter({ hasText: '指派租户分片' })
     await expect(drawer).toBeVisible()
     await expect(drawer.getByText('租户', { exact: true }).first()).toBeVisible()
@@ -47,7 +46,6 @@ test.describe('租户分片 tenant-placements (ADMIN)', () => {
     await item.locator('.el-select__wrapper').first().click()
     const sel = item.locator('input.el-select__input, input').first()
     await sel.fill(PLACEMENT)
-    await page.waitForTimeout(400)
     const createOpt = page
       .locator('.el-select-dropdown:visible .el-select-dropdown__item')
       .filter({ hasText: PLACEMENT })

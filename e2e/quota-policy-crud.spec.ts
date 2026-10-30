@@ -14,7 +14,6 @@ test.describe('quota policy CRUD (配额策略)', () => {
   test('新增配额策略对话框可打开 + 验证字段', async ({ page }) => {
     await page.getByRole('button', { name: '新增策略' }).first().click()
     await expect(page.getByText('新增配额策略')).toBeVisible()
-    await page.waitForTimeout(400)
     const dialog = page.locator('.el-dialog:visible, .el-drawer:visible').filter({ hasText: '新增配额策略' })
     await expect(dialog.getByText('策略编码', { exact: true })).toBeVisible()
     await expect(dialog.getByText('租户并发上限', { exact: true })).toBeVisible()

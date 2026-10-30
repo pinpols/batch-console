@@ -2,6 +2,7 @@
 import { cp, lstat, mkdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { paginateEvidence } from './lib/docs-publication.mjs'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const frontendDocs = resolve(root, process.env.FRONTEND_DOCS_ROOT || 'docs')
@@ -11,7 +12,11 @@ const marker = join(generated, '.docs-generated')
 const ignoreFileName = '.docsignore'
 
 const contains = (parent, child) => child === parent || child.startsWith(`${parent}${sep}`)
-if ([frontendDocs, backendDocs].some((source) => contains(source, generated) || contains(generated, source))) {
+if (
+  [frontendDocs, backendDocs].some(
+    (source) => contains(source, generated) || contains(generated, source),
+  )
+) {
   throw new Error('Document source paths must not overlap the generated docs directory')
 }
 
@@ -54,7 +59,9 @@ function isIgnored(source, path, rules) {
 }
 
 if (!(await isFile(join(backendDocs, 'README.md')))) {
-  throw new Error(`Backend docs are unavailable: ${backendDocs}. Set BACKEND_DOCS_ROOT to the docs directory.`)
+  throw new Error(
+    `Backend docs are unavailable: ${backendDocs}. Set BACKEND_DOCS_ROOT to the docs directory.`,
+  )
 }
 if (!(await isFile(join(frontendDocs, 'README.md')))) {
   throw new Error(`Frontend docs are unavailable: ${frontendDocs}`)
@@ -95,6 +102,46 @@ await cp(frontendDocs, join(generated, 'frontend'), {
   force: true,
   filter: copyFilter(frontendDocs, frontendIgnoreRules),
 })
+
+// 只拆统一站点的发布副本，不改变配对后端的权威记录或移除历史正文。
+const largeEvidence = [
+  'audit/backend-25-package-governance-2026-10-26.md',
+  'audit/nested-callsite-inventory-2026-10-21.md',
+  'plans/workflow-daily-integration-execution-log-2026-10-14.md',
+]
+const publicationManifest = []
+for (const document of largeEvidence) {
+  const path = join(generated, 'backend', document)
+  if (!(await isFile(path))) continue
+  const source = await readFile(path, 'utf8')
+  if (Buffer.byteLength(source) < 250_000) continue
+  const publication = await paginateEvidence(source, document)
+  for (const part of publication.parts) {
+    const target = join(dirname(path), part.name)
+    if (await isFile(target)) throw new Error(`Refusing to replace canonical document: ${target}`)
+    await writeFile(target, part.markdown)
+  }
+  await writeFile(path, publication.index)
+  publicationManifest.push({
+    document,
+    sourceSha256: publication.sourceSha256,
+    sourceBytes: Buffer.byteLength(source),
+    headings: publication.headings.length,
+    parts: publication.parts.map(({ name, source, fromLine, toLine }) => ({
+      name,
+      sourceBytes: Buffer.byteLength(source),
+      fromLine,
+      toLine,
+    })),
+  })
+}
+await writeFile(
+  join(generated, '.publication-manifest.json'),
+  JSON.stringify(publicationManifest, null, 2) + '\n',
+)
+console.log(
+  `[docs-prepare] evidence publications: ${publicationManifest.map((item) => `${item.document}=${item.parts.length}`).join(', ')}`,
+)
 
 await writeFile(
   join(generated, 'README.md'),

@@ -10,8 +10,12 @@ export function parseCommandPaletteJump(raw: string): CommandPaletteJump | null 
   if (prefixed) {
     const kind = prefixed[1].toLowerCase() as CommandPaletteJump['kind']
     const value = prefixed[2].trim()
-    if ((kind === 'job' || kind === 'file') && !/^\d+$/.test(value)) return null
-    if (kind === 'trace' && !/^[a-z0-9._:-]{8,128}$/i.test(value)) return null
+    const hasInvalidNumericIdentifier =
+      (kind === 'job' || kind === 'file') && !/^\d+$/.test(value)
+    if (hasInvalidNumericIdentifier) return null
+    const hasInvalidTraceIdentifier =
+      kind === 'trace' && !/^[a-z0-9._:-]{8,128}$/i.test(value)
+    if (hasInvalidTraceIdentifier) return null
     return {
       kind,
       value,

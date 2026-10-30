@@ -24,7 +24,13 @@ const i18n = createI18n({
   },
 })
 
-function factory(props: Record<string, unknown>, slots?: Record<string, string>) {
+type SensitiveFieldAlertTestProps = {
+  value: string | Record<string, unknown> | null | undefined
+  inline?: boolean
+  exemptPaths?: string[]
+}
+
+function factory(props: SensitiveFieldAlertTestProps, slots?: Record<string, string>) {
   return mount(SensitiveFieldAlert, {
     props,
     slots,

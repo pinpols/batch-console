@@ -12,6 +12,7 @@
       :tenant-id="tenantId"
       @created="onWindowCreated"
     />
+    <slot name="before" />
     <!-- 基本信息 -->
     <div v-if="showSection('basic')" class="config-group">
       <div v-if="!singleSection" class="config-group__title">
@@ -27,7 +28,12 @@
       </el-form-item>
       <el-form-item :label="t('jobDefinitionList.fieldJobType')">
         <el-input v-if="readonlyIdentity" :model-value="model.jobType" disabled />
-        <MetaSelect v-else v-model="model.jobType" class="query-w-full" enum-key="jobType" />
+        <MetaSelect
+          v-else
+          v-model="model.jobType"
+          class="query-w-full"
+          enum-key="jobType"
+        />
       </el-form-item>
       <el-form-item :label="t('jobDefinitionList.enabledLabel')" prop="enabled">
         <el-switch v-model="model.enabled" />
@@ -210,7 +216,7 @@
         />
       </el-form-item>
       <el-form-item :label="t('jobConfigBasic.fieldPriority')" prop="priority">
-        <el-input-number v-model="model.priority" :min="0" :max="10" class="query-w-160" />
+        <el-input-number v-model="model.priority" :min="1" :max="9" class="query-w-160" />
       </el-form-item>
     </div>
 

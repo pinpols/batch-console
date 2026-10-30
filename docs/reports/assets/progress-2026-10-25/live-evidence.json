@@ -1,0 +1,178 @@
+{
+  "tenantId": "e2e-progress-ebe8825836e5469593066cf10e0ad442",
+  "bizDate": "2026-11-16",
+  "baseline": {
+    "frontend": "662d254",
+    "backend": "f3d5e400d"
+  },
+  "browser": {
+    "result": "PASS",
+    "realBrowser": true,
+    "livePeriodicReads": 0
+  },
+  "workflowId": 34,
+  "runId": 75,
+  "workflowPushStates": [
+    "RUNNING",
+    "PAUSED",
+    "RUNNING",
+    "SUCCESS",
+    "SUCCESS"
+  ],
+  "dailyPushSnapshots": 5,
+  "finalSnapshot": {
+    "workflowRunId": 75,
+    "tenantId": "e2e-progress-ebe8825836e5469593066cf10e0ad442",
+    "workflowDefinitionId": 34,
+    "workflowVersion": 1,
+    "runStatus": "SUCCESS",
+    "bizDate": "2026-11-16",
+    "snapshotAvailable": true,
+    "generatedAt": "2026-10-25T12:03:17.946267Z",
+    "nodes": [
+      {
+        "nodeCode": "START",
+        "nodeName": "Frozen start",
+        "nodeType": "START",
+        "relatedJobCode": null,
+        "nodeStatus": "SUCCESS",
+        "nodeRunId": 223,
+        "runSeq": 1,
+        "jobInstanceId": null,
+        "expectedPartitions": null,
+        "completedPartitions": null,
+        "createdTasks": 0,
+        "finishedTasks": 0,
+        "activeSteps": [],
+        "errorCode": null,
+        "skipReasonCode": null,
+        "startedAt": "2026-10-25T12:02:44.303722Z",
+        "finishedAt": "2026-10-25T12:02:44.303722Z"
+      },
+      {
+        "nodeCode": "WAIT",
+        "nodeName": "Frozen wait",
+        "nodeType": "WAIT",
+        "relatedJobCode": null,
+        "nodeStatus": "SKIPPED",
+        "nodeRunId": 224,
+        "runSeq": 1,
+        "jobInstanceId": null,
+        "expectedPartitions": null,
+        "completedPartitions": null,
+        "createdTasks": 0,
+        "finishedTasks": 0,
+        "activeSteps": [],
+        "errorCode": null,
+        "skipReasonCode": "SENSOR_TIMEOUT_SKIP_DOWNSTREAM",
+        "startedAt": "2026-10-25T12:02:44.331828Z",
+        "finishedAt": "2026-10-25T12:03:16.004795Z"
+      },
+      {
+        "nodeCode": "END",
+        "nodeName": "Frozen end",
+        "nodeType": "END",
+        "relatedJobCode": null,
+        "nodeStatus": "PENDING",
+        "nodeRunId": null,
+        "runSeq": null,
+        "jobInstanceId": null,
+        "expectedPartitions": null,
+        "completedPartitions": null,
+        "createdTasks": 0,
+        "finishedTasks": 0,
+        "activeSteps": [],
+        "errorCode": null,
+        "skipReasonCode": null,
+        "startedAt": null,
+        "finishedAt": null
+      }
+    ],
+    "edges": [
+      {
+        "fromNodeCode": "START",
+        "toNodeCode": "WAIT",
+        "edgeType": "SUCCESS"
+      },
+      {
+        "fromNodeCode": "WAIT",
+        "toNodeCode": "END",
+        "edgeType": "SUCCESS"
+      }
+    ]
+  },
+  "persisted": {
+    "definitions": [
+      {
+        "id": 34,
+        "workflowCode": "PROGRESS"
+      }
+    ],
+    "requests": [
+      {
+        "id": 151,
+        "workflowDefinitionId": 34,
+        "requestId": "req-20261025T120243Z-cda24e89d7974c86",
+        "status": "LAUNCHED",
+        "key": "1d439bf0-10e3-43d3-91c1-b4daebd76eb4"
+      }
+    ],
+    "runs": [
+      {
+        "id": 75,
+        "workflowDefinitionId": 34,
+        "status": "SUCCESS",
+        "triggerRequestId": 151,
+        "bizDate": "2026-11-16"
+      }
+    ],
+    "nodes": [
+      {
+        "workflowRunId": 75,
+        "nodeCode": "START",
+        "status": "SUCCESS"
+      },
+      {
+        "workflowRunId": 75,
+        "nodeCode": "WAIT",
+        "status": "SKIPPED"
+      }
+    ],
+    "terminalEvents": [
+      {
+        "key": "e2e-progress-ebe8825836e5469593066cf10e0ad442:workflow:75:terminal",
+        "status": "PUBLISHED"
+      }
+    ],
+    "jobInstances": 0
+  },
+  "authorization": {
+    "anonymous": 401,
+    "crossTenant": 403,
+    "tenantAdminPause": 403
+  },
+  "result": "PASS",
+  "cleanup": {
+    "definitions": 0,
+    "nodes": 0,
+    "edges": 0,
+    "versions": 0,
+    "runs": 0,
+    "nodeRuns": 0,
+    "requests": 0,
+    "jobInstances": 0,
+    "terminalEvents": 0,
+    "terminalReceipts": 0,
+    "terminalDedupKeys": 0,
+    "calendars": 0,
+    "batchDays": 0,
+    "dayCursors": 0,
+    "dayAudits": 0,
+    "catchupControls": 0,
+    "catchupEvents": 0,
+    "tenants": 0,
+    "configurationRevisions": 0,
+    "operationAudits": 0,
+    "credentialAccounts": 0
+  }
+}

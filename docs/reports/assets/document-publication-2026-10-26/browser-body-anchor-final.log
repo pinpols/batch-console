@@ -1,0 +1,9 @@
+### Result
+{
+  "url": "http://127.0.0.1:5181/docs/backend/plans/workflow-daily-integration-execution-log-2026-10-14.part-001#_2-%E6%8C%89%E6%89%B9%E6%AC%A1%E8%BF%BD%E5%8A%A0%E7%9A%84%E6%89%A7%E8%A1%8C%E8%AF%81%E6%8D%AE",
+  "heading": "2. 按批次追加的执行证据 ​"
+}
+### Ran Playwright code
+```js
+await page.evaluate('() => ({url:location.href,heading:document.getElementById(decodeURIComponent(location.hash.slice(1)))?.textContent})');
+```

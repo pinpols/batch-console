@@ -41,8 +41,10 @@ function isInStandalone(): boolean {
 /** base64-url-safe → Uint8Array(VAPID applicationServerKey 用) */
 function urlBase64ToUint8(base64: string): Uint8Array {
   const padding = '='.repeat((4 - (base64.length % 4)) % 4)
-  const b64 = (base64 + padding).replace(/-/g, '+').replace(/_/g, '/')
-  const raw = atob(b64)
+  const paddedBase64Url = base64 + padding
+  const base64WithPlusSigns = paddedBase64Url.replace(/-/g, '+')
+  const base64WithStandardAlphabet = base64WithPlusSigns.replace(/_/g, '/')
+  const raw = atob(base64WithStandardAlphabet)
   const arr = new Uint8Array(raw.length)
   for (let i = 0; i < raw.length; i++) arr[i] = raw.charCodeAt(i)
   return arr
@@ -66,13 +68,19 @@ export async function requestPushPermission(): Promise<PushPermissionResult> {
 
   // 3. SW 注册 + 订阅
   const reg = await navigator.serviceWorker.ready
+  const vapidKey = urlBase64ToUint8(publicKey)
+  const applicationServerKey = new ArrayBuffer(vapidKey.byteLength)
+  const applicationServerKeyView = new Uint8Array(applicationServerKey)
+  applicationServerKeyView.set(vapidKey)
   const sub = await reg.pushManager.subscribe({
     userVisibleOnly: true, // Web Push API 要求所有 push 必须有 UI(防 silent push)
-    applicationServerKey: urlBase64ToUint8(publicKey),
+    applicationServerKey,
   })
 
   // 4. 上报后端持久化
-  await pushApi.subscribe(readStoredTenantId(), sub.toJSON())
+  const tenantId = readStoredTenantId()
+  const subscriptionPayload = sub.toJSON()
+  await pushApi.subscribe(tenantId, subscriptionPayload)
 
   return 'granted'
 }
@@ -83,7 +91,8 @@ export async function unsubscribePush(): Promise<void> {
   const reg = await navigator.serviceWorker.ready
   const sub = await reg.pushManager.getSubscription()
   if (!sub) return
-  await pushApi.unsubscribe(readStoredTenantId(), sub.endpoint).catch(() => {
+  const tenantId = readStoredTenantId()
+  await pushApi.unsubscribe(tenantId, sub.endpoint).catch(() => {
     /* 后端失败也继续 unsubscribe,前端态优先 */
   })
   await sub.unsubscribe()

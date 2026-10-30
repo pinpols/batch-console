@@ -40,7 +40,7 @@
           <el-form-item :label="t('notificationCommon.enabledLabel')">
             <EnabledStatusFilter
               v-model="ruleFilterDraft.enabled"
-              :aria-label="t('notificationCommon.enabledLabel')"
+              :ariaLabel="t('notificationCommon.enabledLabel')"
             />
           </el-form-item>
         </ListPageQueryBar>
@@ -136,7 +136,7 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, reactive, computed } from 'vue'
+  import { ref, reactive, computed, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage, ElMessageBox } from 'element-plus'
 
@@ -157,6 +157,7 @@
   import { toPageResult } from '@/api/adapters'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
+  import { useTenantRequestScope } from '@/composables/useTenantRequestScope'
   import ProTable from '@/components/table/ProTable.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
   import RowActions, { type RowAction } from '@/components/common/RowActions.vue'
@@ -183,22 +184,29 @@
   const ruleForm = reactive({ ruleName: '', eventTypes: '', channelCode: '', enabled: true })
   // 通知渠道下拉源:避免手输不存在的 channelCode 形成悬挂引用
   const channelOptions = ref<Array<{ id: number; code: string; name: string }>>([])
+  const channelScope = useTenantRequestScope()
+  const listScope = useTenantRequestScope()
+  const formScope = useTenantRequestScope()
+  const deleteScope = useTenantRequestScope()
+  let openedForm: ReturnType<typeof formScope.begin> | null = null
   async function loadChannelOptions() {
+    const request = channelScope.begin()
     if (!tenant.tenantId) {
       channelOptions.value = []
       return
     }
     try {
-      const data = await listNotificationChannels(tenant.tenantId)
+      const data = await listNotificationChannels(request.tenantId)
+      if (!channelScope.isCurrent(request)) return
       const list = Array.isArray(data) ? (data as Record<string, unknown>[]) : []
-      channelOptions.value = list
-        .map((c) => ({
-          id: Number(c.id ?? 0),
-          code: String(c.channelCode ?? ''),
-          name: String(c.channelName ?? ''),
-        }))
-        .filter((c) => !!c.code)
+      const normalizedOptions = list.map((channel) => ({
+        id: Number(channel.id ?? 0),
+        code: String(channel.channelCode ?? ''),
+        name: String(channel.channelName ?? ''),
+      }))
+      channelOptions.value = normalizedOptions.filter((option) => !!option.code)
     } catch {
+      if (!channelScope.isCurrent(request)) return
       channelOptions.value = []
     }
   }
@@ -212,14 +220,20 @@
   }
 
   async function loadRules() {
+    const request = listScope.begin()
     if (!tenant.tenantId) {
       rules.value = []
       return
     }
-    await runLoadingRules(async () => {
-      const data = await listNotificationRules(tenant.tenantId)
-      rules.value = Array.isArray(data) ? (data as Record<string, unknown>[]) : []
-    }).catch(() => {
+    await runLoadingRules(
+      async () => {
+        const data = await listNotificationRules(request.tenantId)
+        if (!listScope.isCurrent(request)) return
+        rules.value = Array.isArray(data) ? (data as Record<string, unknown>[]) : []
+      },
+      () => listScope.isCurrent(request),
+    ).catch(() => {
+      if (!listScope.isCurrent(request)) return
       rules.value = []
     })
   }
@@ -230,8 +244,11 @@
 
   async function openRuleCreate() {
     if (!tenant.tenantId) return
+    const request = formScope.begin()
     // 通道可在相邻标签页创建；打开选择器前刷新列表，确保新建通道能立即用于规则。
     await loadChannelOptions()
+    if (!formScope.isCurrent(request)) return
+    openedForm = request
     ruleEditingId.value = null
     ruleForm.ruleName = ''
     ruleForm.eventTypes = ''
@@ -242,6 +259,8 @@
   }
 
   function openRuleEdit(row: Record<string, unknown>) {
+    if (!tenant.tenantId || (row.tenantId && row.tenantId !== tenant.tenantId)) return
+    openedForm = formScope.begin()
     ruleEditingId.value = Number(row.ruleId ?? row.id ?? 0) || null
     ruleForm.ruleName = String(row.ruleName ?? '')
     ruleForm.eventTypes = String(row.eventTypes ?? '')
@@ -281,27 +300,30 @@
   }
 
   async function saveRule() {
-    if (!tenant.tenantId) return
-    if (!(await validateRuleForm())) return
+    const request = openedForm
+    if (savingRule.value || !request || !formScope.isCurrent(request)) return
+    if (!(await validateRuleForm()) || !formScope.isCurrent(request)) return
     savingRule.value = true
     try {
       const body = { ...ruleForm }
       if (ruleEditingId.value) {
-        await updateNotificationRule(ruleEditingId.value, tenant.tenantId, body)
+        await updateNotificationRule(ruleEditingId.value, request.tenantId, body)
       } else {
-        await createNotificationRule(tenant.tenantId, body)
+        await createNotificationRule(request.tenantId, body)
       }
+      if (!formScope.isCurrent(request)) return
       ElMessage.success(t('notificationCommon.savedToast'))
       ruleDirty.markPristine()
       ruleFormVisible.value = false
       await loadRules()
     } finally {
-      savingRule.value = false
+      if (formScope.isCurrent(request)) savingRule.value = false
     }
   }
 
   async function confirmDeleteRule(row: Record<string, unknown>) {
-    if (!tenant.tenantId) return
+    if (!tenant.tenantId || (row.tenantId && row.tenantId !== tenant.tenantId)) return
+    const request = deleteScope.begin()
     const ruleId = Number(row.ruleId ?? row.id ?? 0)
     try {
       await confirmDanger({
@@ -310,7 +332,9 @@
         consequence: t('notificationRulesTab.deleteConsequence'),
         irreversible: false,
       })
-      await deleteNotificationRule(ruleId, tenant.tenantId)
+      if (!deleteScope.isCurrent(request)) return
+      await deleteNotificationRule(ruleId, request.tenantId)
+      if (!deleteScope.isCurrent(request)) return
       ElMessage.success(t('notificationCommon.deletedToast'))
       await loadRules()
     } catch {
@@ -358,7 +382,21 @@
     })
   }
 
+  watch(
+    () => tenant.tenantId,
+    () => {
+      ruleFormVisible.value = false
+      openedForm = null
+      savingRule.value = false
+      rules.value = []
+      channelOptions.value = []
+      loadingRules.value = false
+      loadRulesError.value = null
+    },
+    { flush: 'sync' },
+  )
   useTenantReload(() => {
+    void loadChannelOptions()
     rulePage.value = 1
     void loadRules()
   })

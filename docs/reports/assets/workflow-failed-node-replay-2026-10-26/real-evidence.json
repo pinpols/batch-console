@@ -1,0 +1,310 @@
+{
+  "date": "2026-10-26",
+  "scope": "local isolated real authenticated Console, Orchestrator, Trigger and Atomic Worker",
+  "branch": "fix/wdi-current",
+  "frontendHead": "662d254e2f8b97f93021de548815470d2291c997",
+  "backendHead": "f3d5e400d3b5bd737124b57cf0a38e685432aab2",
+  "uncommittedWorktree": true,
+  "browserStats": {
+    "startTime": "2026-10-26T03:28:16.520Z",
+    "duration": 121234.57800000001,
+    "expected": 2,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "errors": [],
+  "cases": [
+    {
+      "mode": "sql-unknown",
+      "status": "passed",
+      "retry": 0,
+      "cleanup": {
+        "definitions": 0,
+        "nodes": 0,
+        "edges": 0,
+        "versions": 0,
+        "runs": 0,
+        "nodeRuns": 0,
+        "requests": 0,
+        "jobInstances": 0,
+        "terminalEvents": 0,
+        "terminalReceipts": 0,
+        "terminalDedupKeys": 0,
+        "calendars": 0,
+        "batchDays": 0,
+        "dayCursors": 0,
+        "dayAudits": 0,
+        "catchupControls": 0,
+        "catchupEvents": 0,
+        "tenants": 0,
+        "configurationRevisions": 0,
+        "operationAudits": 0,
+        "credentialAccounts": 0,
+        "jobDefinitions": 0,
+        "instances": 0,
+        "partitions": 0,
+        "tasks": 0,
+        "stepInstances": 0,
+        "executionLogs": 0,
+        "workerReports": 0,
+        "jobEvents": 0,
+        "workerRegistry": 0,
+        "replayOperations": 0,
+        "replayTokens": 0,
+        "approvals": 0,
+        "approvalNotifications": 0,
+        "compensationCommands": 0,
+        "businessTables": 0,
+        "idempotencyRows": 0,
+        "lateApprovalNotifications": 0,
+        "usageRows": 0,
+        "deadLetters": 0,
+        "finalExecutionLogs": 0,
+        "finalJobDedupKeys": 0,
+        "alertRows": 0,
+        "remainingEventDeliveries": 0,
+        "remainingEventRetries": 0,
+        "remainingEventKeys": 0,
+        "remainingEvents": 0,
+        "remainingAssets": 0,
+        "tenantTableRows": 0
+      },
+      "proof": {
+        "sourceRunId": 1,
+        "errorCode": "EXTERNAL_OUTCOME_UNKNOWN",
+        "previewStatus": 409,
+        "approvals": 0,
+        "operations": 0,
+        "runs": 1
+      }
+    },
+    {
+      "mode": "http-get",
+      "status": "passed",
+      "retry": 0,
+      "cleanup": {
+        "definitions": 0,
+        "nodes": 0,
+        "edges": 0,
+        "versions": 0,
+        "runs": 0,
+        "nodeRuns": 0,
+        "requests": 0,
+        "jobInstances": 0,
+        "terminalEvents": 0,
+        "terminalReceipts": 0,
+        "terminalDedupKeys": 0,
+        "calendars": 0,
+        "batchDays": 0,
+        "dayCursors": 0,
+        "dayAudits": 0,
+        "catchupControls": 0,
+        "catchupEvents": 0,
+        "tenants": 0,
+        "configurationRevisions": 0,
+        "operationAudits": 0,
+        "credentialAccounts": 0,
+        "jobDefinitions": 0,
+        "instances": 0,
+        "partitions": 0,
+        "tasks": 0,
+        "stepInstances": 0,
+        "executionLogs": 0,
+        "workerReports": 0,
+        "jobEvents": 0,
+        "workerRegistry": 0,
+        "replayOperations": 0,
+        "replayTokens": 0,
+        "approvals": 0,
+        "approvalNotifications": 0,
+        "compensationCommands": 0,
+        "businessTables": 0,
+        "idempotencyRows": 0,
+        "lateApprovalNotifications": 0,
+        "usageRows": 0,
+        "deadLetters": 0,
+        "finalExecutionLogs": 0,
+        "finalJobDedupKeys": 0,
+        "alertRows": 0,
+        "remainingEventDeliveries": 0,
+        "remainingEventRetries": 0,
+        "remainingEventKeys": 0,
+        "remainingEvents": 0,
+        "remainingAssets": 0,
+        "tenantTableRows": 0
+      },
+      "proof": {
+        "sourceRunId": 2,
+        "targetRunId": 3,
+        "terminal": {
+          "failedTaskCodes": [
+            "EXECUTION_FAILED"
+          ],
+          "failedTasks": [
+            {
+              "code": "EXECUTION_FAILED",
+              "message": "status 503 not in expected [200]"
+            }
+          ],
+          "runs": [
+            {
+              "id": 2,
+              "status": "FAILED",
+              "startedAtMs": 1792985372892,
+              "finishedAtMs": 1792985402424
+            },
+            {
+              "id": 3,
+              "status": "SUCCESS",
+              "startedAtMs": 1792985407179,
+              "finishedAtMs": 1792985408102
+            }
+          ],
+          "nodes": [
+            {
+              "id": 7,
+              "runId": 2,
+              "code": "START",
+              "type": "START",
+              "status": "SUCCESS",
+              "jobInstanceId": null
+            },
+            {
+              "id": 8,
+              "runId": 2,
+              "code": "FORK",
+              "type": "GATEWAY",
+              "status": "SUCCESS",
+              "jobInstanceId": null
+            },
+            {
+              "id": 9,
+              "runId": 2,
+              "code": "LEFT",
+              "type": "GATEWAY",
+              "status": "SUCCESS",
+              "jobInstanceId": null
+            },
+            {
+              "id": 10,
+              "runId": 2,
+              "code": "RIGHT",
+              "type": "GATEWAY",
+              "status": "SUCCESS",
+              "jobInstanceId": null
+            },
+            {
+              "id": 11,
+              "runId": 2,
+              "code": "JOIN",
+              "type": "GATEWAY",
+              "status": "SUCCESS",
+              "jobInstanceId": null
+            },
+            {
+              "id": 12,
+              "runId": 2,
+              "code": "FAIL_JOB",
+              "type": "JOB",
+              "status": "FAILED",
+              "jobInstanceId": 3
+            },
+            {
+              "id": 13,
+              "runId": 3,
+              "code": "START",
+              "type": "START",
+              "status": "SUCCESS",
+              "jobInstanceId": null
+            },
+            {
+              "id": 14,
+              "runId": 3,
+              "code": "JOB",
+              "type": "JOB",
+              "status": "SUCCESS",
+              "jobInstanceId": 4
+            },
+            {
+              "id": 15,
+              "runId": 3,
+              "code": "END",
+              "type": "END",
+              "status": "SUCCESS",
+              "jobInstanceId": null
+            }
+          ],
+          "approvals": [
+            {
+              "number": "apr-20261026T033005Z-4114c4c197c34c88",
+              "status": "EXECUTED",
+              "targetType": "WORKFLOW_NODE",
+              "targetId": "12",
+              "requesterRole": "ADMIN",
+              "approverRole": "TENANT_ADMIN"
+            }
+          ],
+          "operations": [
+            {
+              "id": 1,
+              "status": "SUCCEEDED",
+              "sourceRunId": 2,
+              "sourceNodeId": 12,
+              "sourceJobId": 3,
+              "targetRunId": 3,
+              "targetRequestId": "req-20261026T033006Z-601cb90606ef4031",
+              "total": 1,
+              "succeeded": 1,
+              "inFlight": 0
+            }
+          ],
+          "commands": [
+            {
+              "status": "SUCCESS",
+              "type": "WORKFLOW_NODE",
+              "sourceJobId": null
+            }
+          ]
+        },
+        "periodicGets": 0,
+        "pushedSnapshots": 4,
+        "httpResults": [
+          503,
+          200
+        ],
+        "successfulResponseHeldUntilRunningPush": true,
+        "finishedAtVerifiedFromPush": true,
+        "distinctRequesterAndApprover": true
+      }
+    }
+  ],
+  "frontendTargetedTests": {
+    "passed": 24,
+    "failed": 0,
+    "files": 3,
+    "command": "npx vitest run src/utils/workflowExecutionGraph.test.ts src/views/monitor/canReplayFailedWorkflowJobNode.test.ts src/views/monitor/canReplayWholeWorkflowRun.test.ts"
+  },
+  "buildSha256": {
+    "orchestrator.jar": "58540ec3446a590de129127c90c53f8a5514aacefde93e14f32dba1f41b70c2c",
+    "console.jar": "2ef09e7aff81a1e97fd8ec2482376116df07c9b9ec43ba55b5e80db7284a8c41",
+    "trigger.jar": "1c159f265079cf5fe6fe9c635d72ec7b173f06688aa1297e2a39732b838b4342",
+    "worker-atomic.jar": "73c4e0efd09ca77e8364d89953fc3cc9fd29e8810d3008a0dcea3f637487db14"
+  },
+  "frontendIndexSha256": "d4172089ec8a55f26953b017ca93b40eeb3c8506c3d706b776a3eb599a488f3a",
+  "limits": [
+    "control-node split/join ALL; not two simultaneous business jobs",
+    "local HTTP GET with controlled response gating; not an external service acceptance",
+    "selected failed node replay; not whole Workflow replay or every recovery policy"
+  ],
+  "backendTargetedTests": {
+    "passed": 15,
+    "failed": 0,
+    "files": 3,
+    "classes": [
+      "WorkflowExecutionMapperIntegrationTest",
+      "WorkflowExecutionGraphAssemblerTest",
+      "WorkflowExecutionPushServiceTest"
+    ]
+  }
+}

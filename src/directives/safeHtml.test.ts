@@ -46,31 +46,31 @@ describe('v-safe-html directive', () => {
 
   it('handles null/undefined gracefully', () => {
     const el = makeEl()
-    safeHtmlDirective.mounted!(el, bind(null), null as never, null)
+    safeHtmlDirective.mounted!(el, bind(null), null as never, null as never)
     expect(el.innerHTML).toBe('')
   })
 
   it('updates on value change', () => {
     const el = makeEl()
-    safeHtmlDirective.mounted!(el, bind('<i>one</i>'), null as never, null)
-    safeHtmlDirective.updated!(el, bind('<i>two</i>', '<i>one</i>'), null as never, null)
+    safeHtmlDirective.mounted!(el, bind('<i>one</i>'), null as never, null as never)
+    safeHtmlDirective.updated!(el, bind('<i>two</i>', '<i>one</i>'), null as never, null as never)
     expect(el.innerHTML).toContain('two')
     expect(el.innerHTML).not.toContain('one')
   })
 
   it('updated is no-op when value unchanged', () => {
     const el = makeEl()
-    safeHtmlDirective.mounted!(el, bind('<i>x</i>'), null as never, null)
+    safeHtmlDirective.mounted!(el, bind('<i>x</i>'), null as never, null as never)
     const before = el.innerHTML
     // 同值传入,不应重渲(避免无意义 DOM 操作)
-    safeHtmlDirective.updated!(el, bind('<i>x</i>', '<i>x</i>'), null as never, null)
+    safeHtmlDirective.updated!(el, bind('<i>x</i>', '<i>x</i>'), null as never, null as never)
     expect(el.innerHTML).toBe(before)
   })
 
   it('clears innerHTML on unmount', () => {
     const el = makeEl()
-    safeHtmlDirective.mounted!(el, bind('<span>z</span>'), null as never, null)
-    safeHtmlDirective.beforeUnmount!(el, bind('<span>z</span>'), null as never, null)
+    safeHtmlDirective.mounted!(el, bind('<span>z</span>'), null as never, null as never)
+    safeHtmlDirective.beforeUnmount!(el, bind('<span>z</span>'), null as never, null as never)
     expect(el.innerHTML).toBe('')
   })
 })

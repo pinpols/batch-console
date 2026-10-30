@@ -24,9 +24,11 @@ import {
 import { applyContentDensityToDocument, readStoredContentDensity } from '@/constants/contentDensity'
 import App from './App.vue'
 
-applyThemeToDocument(
-  resolveThemeForPath(window.location.pathname, readThemePreference(), getSystemIsDark()),
-)
+const pathname = window.location.pathname
+const themePreference = readThemePreference()
+const systemIsDark = getSystemIsDark()
+const initialTheme = resolveThemeForPath(pathname, themePreference, systemIsDark)
+applyThemeToDocument(initialTheme)
 applyContentDensityToDocument(readStoredContentDensity())
 import router from './router'
 import { useAuthStore } from '@/stores/auth'
@@ -138,11 +140,18 @@ window.addEventListener('unhandledrejection', (event) => {
   }
 })
 
+function firstFiveStackLines(stack: string | null | undefined): string | undefined {
+  if (stack == null) return undefined
+  const stackLines = stack.split('\n')
+  const firstFiveLines = stackLines.slice(0, 5)
+  return firstFiveLines.join('\n')
+}
+
 // Vue 组件内未捕获异常 → 记录组件名、info、message、stack(前 5 行)供前后端联调
 app.config.errorHandler = (err, instance, info) => {
   const component = instance?.$options?.name || instance?.$options?.__name || 'Unknown'
   const message = err instanceof Error ? err.message : String(err)
-  const stack = err instanceof Error ? err.stack?.split('\n').slice(0, 5).join('\n') : undefined
+  const stack = err instanceof Error ? firstFiveStackLines(err.stack) : undefined
   logError(`Vue 异常:${component} [${info}]`, {
     kind: 'vue',
     component,
@@ -167,8 +176,7 @@ window.addEventListener('error', (event) => {
 window.addEventListener('unhandledrejection', (event) => {
   const reason = event.reason
   const message = reason instanceof Error ? reason.message : String(reason)
-  const stack =
-    reason instanceof Error ? reason.stack?.split('\n').slice(0, 5).join('\n') : undefined
+  const stack = reason instanceof Error ? firstFiveStackLines(reason.stack) : undefined
   logError(`未处理 Promise 异常:${message}`, {
     kind: 'unhandled-rejection',
     message,
@@ -186,11 +194,12 @@ document.addEventListener(
     if (!el) return
     // 已被 v-track-click 处理的跳过
     if ((el as HTMLElement & { __trackClick?: unknown }).__trackClick) return
-    const text =
-      el.getAttribute('aria-label') ||
-      el.textContent?.trim().slice(0, 40) ||
-      el.className.split(' ')[0] ||
-      'button'
+    let text: string | undefined = el.getAttribute('aria-label') || undefined
+    if (!text) {
+      const trimmedButtonText = el.textContent?.trim()
+      const truncatedButtonText = trimmedButtonText?.slice(0, 40)
+      text = truncatedButtonText || el.className.split(' ')[0] || 'button'
+    }
     logClick(text)
   },
   true,

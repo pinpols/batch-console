@@ -12,7 +12,6 @@ import { enterDemoApp, expectPageTitle, isVisible } from './support/app'
 type Pg = { path: string; title: string | RegExp; create?: RegExp; refresh?: boolean }
 const PAGES: Pg[] = [
   { path: '/jobs/definitions', title: '作业定义', create: /新建作业|新增作业/, refresh: false },
-  { path: '/jobs/pipelines', title: /流水线/, create: /新建|新增/, refresh: true },
   { path: '/governance/queues', title: /队列/, create: /新建|新增/, refresh: true },
   { path: '/governance/quota', title: /配额/, create: /新建|新增/, refresh: true },
   { path: '/system/api-keys', title: 'API Key', create: /新增 API Key|新建/, refresh: true },
@@ -50,9 +49,12 @@ for (const pg of PAGES) {
       }
       // 点刷新应发起一次 GET(列表 / 概览),用 response 监听断言"有反应"。
       const reqP = page
-        .waitForResponse((r) => r.url().includes('/api/console/') && r.request().method() === 'GET', {
-          timeout: 6000,
-        })
+        .waitForResponse(
+          (r) => r.url().includes('/api/console/') && r.request().method() === 'GET',
+          {
+            timeout: 6000,
+          },
+        )
         .catch(() => null)
       await refreshBtn.click()
       const resp = await reqP
@@ -76,10 +78,14 @@ for (const pg of PAGES) {
         await expect(panel, `${pg.path} 点新建应打开抽屉/弹窗`).toBeVisible({ timeout: 5000 })
         // 关闭(Esc 或关闭按钮),不提交
         await page.keyboard.press('Escape')
-        await expect(panel).toBeHidden({ timeout: 5000 }).catch(async () => {
-          const closeBtn = panel.locator('.el-drawer__close-btn, .el-dialog__headerbtn, button:has-text("取消")').first()
-          if (await isVisible(closeBtn, 1500)) await closeBtn.click()
-        })
+        await expect(panel)
+          .toBeHidden({ timeout: 5000 })
+          .catch(async () => {
+            const closeBtn = panel
+              .locator('.el-drawer__close-btn, .el-dialog__headerbtn, button:has-text("取消")')
+              .first()
+            if (await isVisible(closeBtn, 1500)) await closeBtn.click()
+          })
       })
     }
   })

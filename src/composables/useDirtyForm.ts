@@ -55,7 +55,8 @@ function deepClone<T>(value: T): T {
       // fall through
     }
   }
-  return JSON.parse(JSON.stringify(value)) as T
+  const serializedValue = JSON.stringify(value)
+  return JSON.parse(serializedValue) as T
 }
 
 function deepEqual(a: unknown, b: unknown): boolean {
@@ -98,7 +99,8 @@ export function useDirtyForm<T>(
   }
 
   function markPristine() {
-    baseline.value = deepClone(readCurrent()) as T
+    const currentSnapshot = readCurrent()
+    baseline.value = deepClone(currentSnapshot) as T
     isDirty.value = false
   }
 
@@ -108,7 +110,8 @@ export function useDirtyForm<T>(
       isDirty.value = false
       return
     }
-    isDirty.value = !deepEqual(readCurrent(), baseline.value)
+    const currentSnapshot = readCurrent()
+    isDirty.value = !deepEqual(currentSnapshot, baseline.value)
   }
 
   // 初始基线 = 挂载时当前快照

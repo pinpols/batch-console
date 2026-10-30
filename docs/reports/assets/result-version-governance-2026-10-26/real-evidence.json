@@ -1,0 +1,76 @@
+{
+  "anonymousAuthStatus": 401,
+  "apiPayloadFieldsOmitted": true,
+  "pagePayloadMarkerOmitted": true,
+  "effectiveTransition": [
+    {
+      "versionNo": 1,
+      "status": "SUPERSEDED"
+    },
+    {
+      "versionNo": 2,
+      "status": "EFFECTIVE"
+    }
+  ],
+  "archivedStatus": "已归档",
+  "permissions": {
+    "tenantUser": {
+      "list": 200,
+      "write": 403
+    },
+    "auditor": {
+      "list": 200,
+      "write": 403
+    },
+    "tenantAdmin": {
+      "list": 200,
+      "write": 200
+    },
+    "admin": {
+      "list": 200,
+      "write": 200
+    }
+  },
+  "successfulAudits": [
+    {
+      "action": "result_version.promote",
+      "result": "SUCCESS"
+    },
+    {
+      "action": "result_version.reject",
+      "result": "SUCCESS"
+    },
+    {
+      "action": "result_version.reject",
+      "result": "SUCCESS"
+    }
+  ],
+  "cleanup": {
+    "definitions": 0,
+    "nodes": 0,
+    "edges": 0,
+    "versions": 0,
+    "runs": 0,
+    "nodeRuns": 0,
+    "requests": 0,
+    "jobInstances": 0,
+    "terminalEvents": 0,
+    "terminalReceipts": 0,
+    "terminalDedupKeys": 0,
+    "calendars": 0,
+    "batchDays": 0,
+    "dayCursors": 0,
+    "dayAudits": 0,
+    "catchupControls": 0,
+    "catchupEvents": 0,
+    "tenants": 0,
+    "configurationRevisions": 0,
+    "operationAudits": 0,
+    "credentialAccounts": 0,
+    "extraAccounts": 0,
+    "manualDayLogs": 0,
+    "resultVersionsDeleted": 4,
+    "resultVersionRowsRemaining": 0
+  },
+  "cleanupAllZero": true
+}

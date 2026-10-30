@@ -1,5 +1,9 @@
-import { computed, onScopeDispose, ref, watch } from 'vue'
-import { queryPipelineProgress, type PipelineStepProgress } from '@/api/filePipelineQuery'
+import { computed, onScopeDispose, ref, watch, type DeepReadonly } from 'vue'
+import {
+  queryPipelineProgress,
+  type PipelineProgressResponse,
+  type PipelineStepProgress,
+} from '@/api/filePipelineQuery'
 
 const HISTORY_WINDOW_MS = 60_000
 const MAX_HISTORY_SAMPLES = 12
@@ -29,24 +33,27 @@ export function usePipelineProgress(tenantId: () => string) {
       if (sample.rowsProcessed == null) continue
       const samples = history.get(id) ?? []
       samples.push({ ts: now, processed: sample.rowsProcessed })
-      history.set(
-        id,
-        samples.filter((s) => s.ts >= now - HISTORY_WINDOW_MS * 2).slice(-MAX_HISTORY_SAMPLES),
-      )
+      const recentSamples = samples.filter((s) => s.ts >= now - HISTORY_WINDOW_MS * 2)
+      const boundedSamples = recentSamples.slice(-MAX_HISTORY_SAMPLES)
+      history.set(id, boundedSamples)
     }
   }
 
   function estimateMinutes(sample: PipelineStepProgress): number | null {
-    if (sample.stepId == null || sample.totalRowsHint == null) return null
+    if (sample.stepId == null || sample.totalRowsHint == null || sample.rowsProcessed == null)
+      return null
     const samples = history.get(sample.stepId) ?? []
     if (samples.length < 2) return null
     const first = samples[0]
     const last = samples[samples.length - 1]
     const windowMs = last.ts - first.ts
     const delta = last.processed - first.processed
-    const remaining = sample.totalRowsHint - (sample.rowsProcessed ?? 0)
-    if (windowMs < HISTORY_WINDOW_MS || delta <= 0 || remaining <= 0) return null
-    return Math.max(1, Math.round((remaining * windowMs) / delta / 60_000))
+    const remaining = sample.totalRowsHint - sample.rowsProcessed
+    const progressIsInsufficientForEstimate =
+      windowMs < HISTORY_WINDOW_MS || delta <= 0 || remaining <= 0
+    if (progressIsInsufficientForEstimate) return null
+    const estimatedMinutes = Math.round((remaining * windowMs) / delta / 60_000)
+    return Math.max(1, estimatedMinutes)
   }
 
   watch(tenantId, reset, { flush: 'sync' })
@@ -93,7 +100,29 @@ export function usePipelineProgress(tenantId: () => string) {
     return failed.size === 0
   }
 
+  function acceptSnapshot(
+    pipelines: readonly DeepReadonly<PipelineProgressResponse>[],
+    timestamp: number,
+  ) {
+    generation++
+    const next = new Map<number, PipelineStepProgress>()
+    for (const pipeline of pipelines)
+      for (const step of pipeline.steps ?? [])
+        if (step.stepId != null && step.pipelineInstanceId === pipeline.pipelineInstanceId)
+          next.set(step.stepId, step)
+    byStepId.value = next
+    failedPipelineIds.value = new Set()
+    lastSucceededAt.value = timestamp
+    recordHistory()
+  }
+  function markUnavailable(ids: readonly number[]) {
+    failedPipelineIds.value = new Set(ids)
+    history.clear()
+  }
+
   return {
+    acceptSnapshot,
+    markUnavailable,
     byStepId,
     failedPipelineIds,
     unavailable: computed(() => failedPipelineIds.value.size > 0),

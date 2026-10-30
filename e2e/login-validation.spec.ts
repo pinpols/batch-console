@@ -51,6 +51,7 @@ test.describe('login form validation', () => {
     const loginBtn = page.getByRole('button', { name: /登\s*录/ }).first()
     await expect(loginBtn).toBeVisible({ timeout: 8000 })
     await loginBtn.click()
+    // 负观察窗口：确认空表单校验后未异步发起登录请求。
     await page.waitForTimeout(800)
     expect(posted, '全空 submit 不应触发 /auth/login POST').toBe(false)
   })

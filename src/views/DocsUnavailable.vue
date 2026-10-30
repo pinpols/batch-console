@@ -39,8 +39,10 @@
   async function retry() {
     checking.value = true
     try {
-      if (await checkDocsAvailability(getDocsBase())) {
-        window.location.assign(getDocsBase())
+      const docsBase = getDocsBase()
+      const docsAreAvailable = await checkDocsAvailability(docsBase)
+      if (docsAreAvailable) {
+        window.location.assign(docsBase)
       }
     } finally {
       checking.value = false

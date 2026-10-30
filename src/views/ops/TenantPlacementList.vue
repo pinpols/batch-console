@@ -65,7 +65,7 @@
         </el-table-column>
         <el-table-column v-if="canManage" :label="t('common.actions')" width="160" fixed="right">
           <template #default="{ row }">
-            <RowActions :actions="rowActions(row)" />
+            <RowActions :actions="rowActions(row as TenantPlacementRow)" />
           </template>
         </el-table-column>
       </ProTable>

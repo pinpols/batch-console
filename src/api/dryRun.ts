@@ -13,7 +13,7 @@ export type DryRunPlanRequest = components['schemas']['DryRunPlanRequest']
 export type DryRunLevel = NonNullable<DryRunPlanRequest['level']>
 
 // #801-804 Map 收敛后 BE 暴露真 schema(对照 orchestrator DryRunPlanResult / DefaultDryRunPlanService):
-// wire 就是 {level, success, findings, summary} 四字段。L3 探测结果(EXPLAIN / headBucket /
+// wire 就是 {level, success, findings, summary} 四字段。L3 探测结果(SQL 静态检查 / headBucket /
 // HTTP HEAD)以 EXEC_* code 并入 findings;分区计划细节(queueCode/workerGroup/partitionCount 等)
 // 与探测计数(l3SqlProbed/l3S3Probed/l3EndpointProbed)在 summary(动态 Map)里。
 // 此前手写 shape 猜的顶层 probes / schedulePlan 在 wire 上从不存在,统一切生成类型。

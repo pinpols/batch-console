@@ -70,15 +70,18 @@
         </el-table-column>
         <el-table-column :label="t('jobMonitoringPolicy.scheduleType')" width="130">
           <template #default="{ row }">
-            <el-tag :type="hasStartDeadline(row) ? 'success' : 'info'" effect="plain">
+            <el-tag
+              :type="hasStartDeadline(row as ConsoleJobDefinitionResponse) ? 'success' : 'info'"
+              effect="plain"
+            >
               {{ scheduleTypeLabel(row.scheduleType) }}
             </el-tag>
           </template>
         </el-table-column>
         <el-table-column :label="t('jobMonitoringPolicy.monitoringCategory')" width="140">
           <template #default="{ row }">
-            <el-tag :type="categoryTagType(row)" effect="plain">
-              {{ monitoringCategoryLabel(row) }}
+            <el-tag :type="categoryTagType(row as ConsoleJobDefinitionResponse)" effect="plain">
+              {{ monitoringCategoryLabel(row as ConsoleJobDefinitionResponse) }}
             </el-tag>
           </template>
         </el-table-column>
@@ -89,7 +92,7 @@
         </el-table-column>
         <el-table-column :label="t('jobMonitoringPolicy.scheduledDeadlines')" min-width="250">
           <template #default="{ row }">
-            <ScheduledPolicySummary :job="row" />
+            <ScheduledPolicySummary :job="row as ConsoleJobDefinitionResponse" />
           </template>
         </el-table-column>
         <el-table-column :label="t('jobMonitoringPolicy.jobStatus')" width="105">
@@ -104,7 +107,12 @@
         <el-table-column :label="t('common.actions')" width="90" fixed="right">
           <template #default="{ row }">
             <el-tooltip :content="t('common.edit')" placement="top">
-              <el-button :icon="Edit" text type="primary" @click="openEdit(row)" />
+              <el-button
+                :icon="Edit"
+                text
+                type="primary"
+                @click="openEdit(row as ConsoleJobDefinitionResponse)"
+              />
             </el-tooltip>
           </template>
         </el-table-column>
@@ -195,6 +203,7 @@
   import { userErrorMessage } from '@/utils/userErrorMessage'
 
   type Severity = 'WARN' | 'ERROR' | 'CRITICAL'
+  type MonitoringCategory = 'DEPENDENCY' | 'SCHEDULED' | 'RUNTIME_ONLY'
   interface PolicyForm {
     softRuntimeSeconds: number
     softRuntimeSeverity: Severity
@@ -223,7 +232,7 @@
   const filters = reactive<{
     jobCode: string
     enabled: boolean
-    monitoringCategory: '' | 'SCHEDULED' | 'DEPENDENCY' | 'RUNTIME_ONLY'
+    monitoringCategory: '' | MonitoringCategory
   }>({ jobCode: '', enabled: true, monitoringCategory: '' })
   const monitoringCategories = computed(() => [
     {
@@ -335,16 +344,16 @@
       await jobApi.updateDefinition(job.id, {
         tenantId: tenant.tenantId,
         ...form,
-        completionDeadlineEnabled:
-          job.scheduleType === 'CRON' &&
-          !job.dependsOnJobCode &&
-          Boolean(form.completionDeadlineLocalTime),
+        completionDeadlineEnabled: Boolean(form.completionDeadlineLocalTime),
+        completionDeadlineLocalTime: form.completionDeadlineLocalTime ?? undefined,
       })
       drawerOpen.value = false
       ElMessage.success(t('jobMonitoringPolicy.saveSuccess'))
       await load()
     } catch (error) {
-      ElMessage.error(userErrorMessage(error, t('jobMonitoringPolicy.saveFailed')))
+      const fallbackMessage = t('jobMonitoringPolicy.saveFailed')
+      const displayMessage = userErrorMessage(error, fallbackMessage)
+      ElMessage.error(displayMessage)
     } finally {
       saving.value = false
     }
@@ -355,16 +364,35 @@
   }
 
   function hasStartDeadline(job: ConsoleJobDefinitionResponse) {
-    return job.scheduleType === 'CRON' || Boolean(job.dependsOnJobCode?.trim())
+    if (
+      job.scheduleType === 'CRON' ||
+      (job.startGraceSeconds ?? 0) > 0 ||
+      (job.dependencyCompletionWindowSeconds ?? 0) > 0 ||
+      job.completionDeadlineLocalTime
+    )
+      return true
+    const dependencyJobCode = job.dependsOnJobCode?.trim()
+    return Boolean(dependencyJobCode)
   }
 
-  function monitoringCategory(job: ConsoleJobDefinitionResponse) {
-    if (job.dependsOnJobCode?.trim()) return 'DEPENDENCY'
+  function monitoringCategory(job: ConsoleJobDefinitionResponse): MonitoringCategory {
+    const hasEligibilityRule =
+      (job.startGraceSeconds ?? 0) > 0 ||
+      (job.dependencyCompletionWindowSeconds ?? 0) > 0 ||
+      Boolean(job.completionDeadlineLocalTime)
+    if (job.dependsOnJobCode?.trim() || (job.scheduleType !== 'CRON' && hasEligibilityRule))
+      return 'DEPENDENCY'
     return job.scheduleType === 'CRON' ? 'SCHEDULED' : 'RUNTIME_ONLY'
   }
 
   function monitoringCategoryLabel(job: ConsoleJobDefinitionResponse) {
-    return t(`jobMonitoringPolicy.category${monitoringCategory(job)}`)
+    const category = monitoringCategory(job)
+    const labelKeys = {
+      DEPENDENCY: 'jobMonitoringPolicy.categoryDependency',
+      SCHEDULED: 'jobMonitoringPolicy.categoryScheduled',
+      RUNTIME_ONLY: 'jobMonitoringPolicy.categoryRuntimeOnly',
+    } as const
+    return t(labelKeys[category])
   }
 
   function categoryTagType(job: ConsoleJobDefinitionResponse) {

@@ -1,5 +1,7 @@
 # Boundary 边界值测试报告
 
+> **历史归档**：本文是 2026-05 QA campaign 的历史记录，端点、角色、环境、数量、PASS/SKIP 和待办均只反映执行当时的状态。当前测试与验收见[测试指南](../../../testing/README.md)和[CI 手册](../../../runbook/ci.md)。
+
 > 生成: Sun May 17 22:09:38 CST 2026
 > 隔离租户: tx
 

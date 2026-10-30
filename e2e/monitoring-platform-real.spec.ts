@@ -66,9 +66,11 @@ test.describe('真实监控联测 @monitoring-real', () => {
     const eventTypes = eventTypesBody.data.map(
       (item) => item.code ?? item.eventType ?? item.event_type ?? '',
     )
-    expect(eventTypes).toEqual(expect.arrayContaining(['ALERT_TRIGGERED', 'ALERT_ESCALATED']))
+    expect([...eventTypes].sort()).toEqual([
+      'ALERT_ESCALATED', 'JOB_FAILED', 'JOB_SUCCESS', 'WORKFLOW_FAILED', 'WORKFLOW_SUCCESS',
+    ])
     await expect(
-      page.locator('.catalog-list__item').filter({ hasText: 'ALERT_TRIGGERED' }),
+      page.locator('.catalog-list__item').filter({ hasText: 'ALERT_ESCALATED' }),
     ).toBeVisible()
 
     const alertQueryResponsePromise = page.waitForResponse((response) =>

@@ -247,9 +247,11 @@
         }),
       ])
       return {
-        items: [...(approved.items ?? []), ...(executed.items ?? [])].sort((a, b) =>
-          String(b.createdAt ?? '').localeCompare(String(a.createdAt ?? '')),
-        ),
+        items: [...(approved.items ?? []), ...(executed.items ?? [])].sort((a, b) => {
+          const rightCreatedAt = String(b.createdAt ?? '')
+          const leftCreatedAt = String(a.createdAt ?? '')
+          return rightCreatedAt.localeCompare(leftCreatedAt)
+        }),
         total: (approved.total ?? 0) + (executed.total ?? 0),
       }
     }

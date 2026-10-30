@@ -160,7 +160,8 @@
 
   const filteredReceipts = computed(() => {
     let rows = receiptRows.value
-    const cc = receiptApplied.channelCode.trim().toLowerCase()
+    const trimmedChannelCode = receiptApplied.channelCode.trim()
+    const cc = trimmedChannelCode.toLowerCase()
     if (cc)
       rows = rows.filter((x) =>
         String(x.channelCode ?? '')

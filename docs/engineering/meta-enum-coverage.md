@@ -1,48 +1,27 @@
-# 控制台筛选下拉：后端元数据覆盖说明
+# 控制台筛选下拉与后端元数据
 
-## 已对接的后端接口
+## 权威来源
 
-| 接口 | 用途 |
-|------|------|
-| `GET /api/console/meta/enums` | 枚举字典（键名以后端实际 `data` 为准） |
-| `GET /api/console/meta/worker-groups?tenantId=` | Worker 组代码列表 |
-| `GET /api/console/meta/calendars?tenantId=` | 日历编码列表（批次日等） |
-| `GET /api/console/meta/queues?tenantId=` | 队列（Job 定义等已用） |
-| `GET /api/console/query/job-definitions` | Job Code（聚合） |
-| `GET /api/console/query/workflow-definitions` | Workflow Code |
-| 各业务 `query/*` 列表 | 从返回行归纳的「动态选项」（如审批类型、审计操作类型） |
+枚举及对象字典由配对后端 `ConsoleMetaQueryService`、Controller 与 OpenAPI 维护。前端通过 `src/api/meta.ts` 和既有查询客户端读取，不在文档复制完整、容易漂移的枚举值表。
 
-前端实现：优先使用 **meta/enums** 与 **meta/*** 及 **query** 结果；仅在 **接口无数据或契约未声明该分组** 时，回退到本地 `constants/status.ts` 或当前列表数据归纳。
+| 入口 | 当前用途 |
+|---|---|
+| `GET /api/console/meta/enums` | 作业、Workflow、运行、审批、配置、Worker、Outbox、AI、文件、日历与资源治理的注册枚举 |
+| `GET /api/console/meta/worker-groups` | 当前租户 Worker 组代码 |
+| `GET /api/console/meta/calendars` | 当前租户日历编码 |
+| `GET /api/console/meta/queues` | 当前租户队列 |
+| 作业、Workflow 等领域查询 | 对象引用选择；按当前接口筛选与分页契约加载 |
 
-## 协议文档已写的 `meta/enums` 分组（console-api-protocol.md）
+`workflowRunStatus`、`workerStatus`、`partitionStatus`、`approvalStatus`、`approvalType`、`configStatus`、`operationType`、`operationResult`、`outboxPublishStatus`、`aiPromptCategory`、`fileStatus` 等已在当前后端注册；不再将它们列为“后端尚未提供”的建议项。具体字段与值以生成类型和当前响应为准。
 
-`triggerType`, `jobType`, `scheduleType`, `triggerMode`, `shardStrategy`, `retryPolicy`, `instanceStatus`, `workflowNodeType`, `channelType`。
+## 前端选择与回退
 
-## 建议后端补充（当前协议未列举、前端已做探测 key / 回退）
+- 优先读取后端当前 `meta/enums` 分组及对象字典，使用 `src/api/meta.ts` 的转换方法维护 option 形状。
+- 存量调用可能通过 `pickMetaEnumGroup` 探测兼容键；兼容别名不代表后端同时承诺多个权威键。
+- 只有响应缺少相应分组或确属列表派生字段时，才按现有实现回退到本地契约常量或当前页数据；不要把一页查询结果称作完整枚举。
+- 引用对象的选项不足时，检查服务器筛选、分页和租户；不得用静默全量聚合替代高基数对象查询。
+- 新增分组先核对后端注册与 OpenAPI，再同步生成类型、消费页面和必要的契约回归。
 
-若下列字典出现在 `meta/enums` 的 `data` 中，前端会**自动优先使用**（见 `pickMetaEnumGroup` 调用处）：
+## 复核入口
 
-| 业务场景 | 建议响应键名（任选其一即可被探测） |
-|----------|-------------------------------------|
-| Workflow Run 状态 | `workflowRunStatus`, `runStatus` |
-| Worker 连接状态 | `workerStatus`, `workerRegistryStatus` |
-| Job 步骤 / 分区状态 | `partitionStatus`, `stepStatus`, `jobStepStatus` |
-| 审批状态 | `approvalStatus` |
-| 配置发布状态 | `configReleaseStatus`, `configStatus` |
-| 审计 / 执行日志操作结果 | `operationResult`, `auditOperationResult`, `opResult` |
-| Outbox 重试状态 | `outboxRetryStatus`, `retryStatus` |
-| Outbox 投递状态 | `outboxDeliveryStatus`, `deliveryStatus` |
-| Catch-up 请求状态 | `catchUpRequestStatus`, `pendingCatchUpStatus`, `requestStatus` |
-| 文件状态 / 业务类型（文件列表） | `fileStatus`, `bizType` |
-| 审批类型 | `approvalType` |
-| AI 审计 Prompt 分类 | `aiPromptCategory`, `promptCategory` |
-
-## 暂无合适字典接口、依赖「列表数据归纳」的字段
-
-以下字段在 **`meta/enums` 未返回对应分组时**，控制台仍会用**已拉取的列表数据**归纳选项（并支持 `allow-create` 等手输）：
-
-- **审批类型** `approvalType`：`query/approvals` 行归纳。
-- **AI 审计分类** `promptCategory`：`query/ai-audits` 行归纳。
-- **审计操作类型** `operationType`：`query/audits` 行归纳。
-
-如需上述也为纯字典驱动，建议在 `meta/enums` 中增加对应数组字段，或提供独立 `GET /api/console/meta/...` 只读接口。
+后端注册实现：[`ConsoleMetaQueryService.java`](../../../file-batch-system/batch-console-api/src/main/java/io/github/pinpols/batch/console/application/rbac/ConsoleMetaQueryService.java)；前端消费：[`src/api/meta.ts`](../../src/api/meta.ts)。接口变更按 `frontend-api-contract` 执行，`npm run gen:api:check` 检查生成契约漂移，不证明所有业务枚举都已做真实环境验收。

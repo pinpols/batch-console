@@ -76,7 +76,10 @@
         />
         <div v-for="row in rows" :key="row.id" class="cr-item">
           <div class="cr-rail">
-            <span class="cr-rail__dot" :class="`cr-tone-border--${statusTone(row.configStatus)}`" />
+            <span
+              class="cr-rail__dot"
+              :class="`cr-tone-border--${configReleaseStatusTone(row.configStatus)}`"
+            />
             <span class="cr-rail__line" />
           </div>
           <div
@@ -89,7 +92,10 @@
           >
             <div class="cr-card__head">
               <span class="cr-card__key">{{ row.configKey }}</span>
-              <span class="cr-pill" :class="`cr-tone--${statusTone(row.configStatus)}`">
+              <span
+                class="cr-pill"
+                :class="`cr-tone--${configReleaseStatusTone(row.configStatus)}`"
+              >
                 {{ statusLabel(row.configStatus) }}
               </span>
               <span class="cr-card__spacer" />
@@ -129,7 +135,10 @@
       <aside v-if="selectedRow" class="cr-panel">
         <div class="cr-panel__head">
           <span class="cr-panel__key">{{ selectedRow.configKey }}</span>
-          <span class="cr-pill" :class="`cr-tone--${statusTone(selectedRow.configStatus)}`">
+          <span
+            class="cr-pill"
+            :class="`cr-tone--${configReleaseStatusTone(selectedRow.configStatus)}`"
+          >
             {{ statusLabel(selectedRow.configStatus) }}
           </span>
         </div>
@@ -236,6 +245,7 @@
         ref="createFormRef"
         :model="createForm"
         :rules="createRules"
+        :disabled="createSaving"
         label-width="120px"
         @submit.prevent="submitCreate"
       >
@@ -408,11 +418,17 @@
     listConfigGovernance,
   } from '@/api/configReleases'
   import { useTenantStore } from '@/stores/tenant'
+  import { useAuthStore } from '@/stores/auth'
+  import { useTenantRequestScope } from '@/composables/useTenantRequestScope'
   import { useTenantReload } from '@/composables/useTenantReload'
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
   import { toPageResult } from '@/api/adapters'
   import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
   import { fmtDatetime } from '@/utils/datetime'
+  import {
+    configReleaseStatusTone,
+    createConfigReleaseStatusLabel,
+  } from './configReleasePresentation'
   import PageContainer from '@/components/common/PageContainer.vue'
   import MetaSelect from '@/components/common/MetaSelect.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
@@ -426,10 +442,18 @@
   } from '@/types/console-api'
 
   const { t, te } = useI18n({ useScope: 'global' })
+  const statusLabel = createConfigReleaseStatusLabel(t, te)
   const { canManageSystem } = usePermission()
   const { writesFrozen } = useWriteAvailability()
 
   const tenant = useTenantStore()
+  const auth = useAuthStore()
+  const listScope = useTenantRequestScope()
+  const detailScope = useTenantRequestScope()
+  const depsScope = useTenantRequestScope()
+  const diffScope = useTenantRequestScope()
+  const actionScope = useTenantRequestScope()
+  const createScope = useTenantRequestScope()
   const loading = ref(false)
   const loadError = ref<unknown>(null)
   const {
@@ -478,12 +502,16 @@
           try {
             const parsed = JSON.parse(value)
             if (!parsed || Array.isArray(parsed) || typeof parsed !== 'object') {
-              callback(new Error(t('configReleaseList.ruleCreatePayloadObject')))
+              const errorMessage = t('configReleaseList.ruleCreatePayloadObject')
+              const validationError = new Error(errorMessage)
+              callback(validationError)
               return
             }
             callback()
           } catch {
-            callback(new Error(t('configReleaseList.ruleCreatePayloadJson')))
+            const errorMessage = t('configReleaseList.ruleCreatePayloadJson')
+            const validationError = new Error(errorMessage)
+            callback(validationError)
           }
         },
         trigger: 'blur',
@@ -515,7 +543,14 @@
     const n = filters.name.trim()
     if (n) r = r.filter((x) => String(x.configName ?? '').includes(n))
     const s = filters.status.trim()
-    if (s) r = r.filter((x) => String(x.configStatus ?? '').toUpperCase() === s.toUpperCase())
+    if (s) {
+      r = r.filter((x) => {
+        const rowStatusText = String(x.configStatus ?? '')
+        const rowStatus = rowStatusText.toUpperCase()
+        const filterStatus = s.toUpperCase()
+        return rowStatus === filterStatus
+      })
+    }
     return r
   })
 
@@ -540,21 +575,6 @@
 
   function selectRelease(row: ConsoleConfigReleaseResponse) {
     selectedId.value = row.id
-  }
-
-  /** 状态→语义色调(时间线圆点描边 + 状态 pill 共用) */
-  function statusTone(status?: string | null): 'success' | 'warning' | 'muted' {
-    const s = String(status ?? '').toUpperCase()
-    if (s === 'PUBLISHED') return 'success'
-    if (s === 'DRAFT' || s === 'GRAY' || s === 'ROLLING_BACK') return 'warning'
-    return 'muted'
-  }
-
-  function statusLabel(status?: string | null): string {
-    const s = String(status ?? '')
-    if (!s) return '—'
-    const key = `enum.configStatus.${s}`
-    return te(key) ? t(key) : s
   }
 
   function enumLabel(group: string, value?: string | null): string {
@@ -599,17 +619,22 @@
   })
 
   async function load() {
+    const scope = listScope.begin()
+    if (!scope.tenantId) return
     loading.value = true
     loadError.value = null
     try {
-      allRows.value = await listConfigReleases(tenant.tenantId)
+      const result = await listConfigReleases(scope.tenantId)
+      if (!listScope.isCurrent(scope)) return
+      allRows.value = result
       page.value = 1
       slicePage()
     } catch (err) {
+      if (!listScope.isCurrent(scope)) return
       loadError.value = err
       throw err
     } finally {
-      loading.value = false
+      if (listScope.isCurrent(scope)) loading.value = false
     }
   }
 
@@ -648,6 +673,9 @@
   useFormFocus(createFormRef, () => createVisible.value)
 
   function openCreate() {
+    if (!canManageSystem.value || writesFrozen.value || !tenant.tenantId) return
+    createScope.begin()
+    createSaving.value = false
     resetCreateForm()
     createVisible.value = true
     void createFormRef.value?.clearValidate()
@@ -666,29 +694,49 @@
   }
 
   async function submitCreate() {
-    const valid = await createFormRef.value?.validate().catch(() => false)
-    if (!valid) return
+    if (createSaving.value || !createVisible.value || !canManageSystem.value || writesFrozen.value)
+      return
+    const scope = createScope.begin()
+    if (!scope.tenantId) return
+    const body = {
+      tenantId: scope.tenantId,
+      configType: createForm.configType.trim(),
+      configKey: createForm.configKey.trim(),
+      configName: createForm.configName.trim(),
+      configPayloadJson: createForm.configPayloadJson.trim(),
+      reason: createForm.releaseNote.trim() || undefined,
+    }
     createSaving.value = true
     try {
-      await createConfigRelease({
-        tenantId: tenant.tenantId,
-        configType: createForm.configType.trim(),
-        configKey: createForm.configKey.trim(),
-        configName: createForm.configName.trim(),
-        configPayloadJson: createForm.configPayloadJson.trim(),
-        reason: createForm.releaseNote.trim() || undefined,
-      })
-      ElMessage.success(t('configReleaseList.createSuccess', { key: createForm.configKey }))
+      const valid = await createFormRef.value?.validate().catch(() => false)
+      if (!valid || !createScope.isCurrent(scope)) return
+      await createConfigRelease(body)
+      if (!createScope.isCurrent(scope)) return
+      ElMessage.success(t('configReleaseList.createSuccess', { key: body.configKey }))
       createDirty.markPristine()
       createVisible.value = false
-      filters.key = createForm.configKey.trim()
+      filters.key = body.configKey
       await load()
     } finally {
-      createSaving.value = false
+      if (createScope.isCurrent(scope)) createSaving.value = false
     }
   }
 
+  /** 确认与原因输入共享同一操作代次，租户、主体或写权限变化后旧操作失效。 */
+  function captureReleaseAction(row: ConsoleConfigReleaseResponse) {
+    const scope = actionScope.begin()
+    const isCurrent = () =>
+      actionScope.isCurrent(scope) &&
+      canManageSystem.value &&
+      !writesFrozen.value &&
+      (!row.tenantId || row.tenantId === scope.tenantId) &&
+      allRows.value.some((current) => current.id === row.id && current.versionNo === row.versionNo)
+    return { tenantId: scope.tenantId, isCurrent }
+  }
+
   async function doRollback(row: ConsoleConfigReleaseResponse) {
+    const context = captureReleaseAction(row)
+    if (!context.isCurrent()) return
     try {
       await confirmDanger({
         verb: t('configReleaseList.rollbackConfirmVerb'),
@@ -696,6 +744,7 @@
         consequence: t('configReleaseList.rollbackConfirmConsequence'),
         confirmButtonText: t('configReleaseList.rollbackConfirmButton'),
       })
+      if (!context.isCurrent()) return
       const { value: reason } = await ElMessageBox.prompt(
         t('configReleaseList.rollbackPrompt'),
         t('configReleaseList.rollbackTitle'),
@@ -704,11 +753,13 @@
           cancelButtonText: t('common.cancel'),
         },
       )
+      if (!context.isCurrent()) return
       await rollbackRelease(row.id, {
-        tenantId: row.tenantId ?? tenant.tenantId,
+        tenantId: context.tenantId,
         expectedVersionNo: row.versionNo,
         reason: reason || undefined,
       })
+      if (!context.isCurrent()) return
       ElMessage.success(t('configReleaseList.rollbackSuccess', { key: row.configKey }))
       await load()
     } catch {
@@ -720,14 +771,19 @@
   const detail = ref<Record<string, unknown> | null>(null)
 
   async function viewDetail(row: ConsoleConfigReleaseResponse) {
-    detail.value = (await getConfigRelease(
-      row.id,
-      row.tenantId ?? tenant.tenantId,
-    )) as unknown as Record<string, unknown>
+    const scope = detailScope.begin()
+    if (!scope.tenantId || (row.tenantId && row.tenantId !== scope.tenantId)) return
+    detail.value = null
+    detailVisible.value = false
+    const result = await getConfigRelease(row.id, scope.tenantId)
+    if (!detailScope.isCurrent(scope)) return
+    detail.value = result as unknown as Record<string, unknown>
     detailVisible.value = true
   }
 
   async function doSubmitApproval(row: ConsoleConfigReleaseResponse) {
+    const context = captureReleaseAction(row)
+    if (!context.isCurrent()) return
     try {
       const { value: reason } = await ElMessageBox.prompt(
         t('configReleaseList.submitPrompt'),
@@ -737,10 +793,12 @@
           cancelButtonText: t('common.cancel'),
         },
       )
+      if (!context.isCurrent()) return
       await submitReleaseApproval(row.id, {
-        tenantId: row.tenantId ?? tenant.tenantId,
+        tenantId: context.tenantId,
         reason: reason || undefined,
       })
+      if (!context.isCurrent()) return
       ElMessage.success(t('configReleaseList.submitSuccess', { key: row.configKey }))
       await load()
     } catch {
@@ -754,17 +812,20 @@
   const depsData = ref<unknown>(null)
 
   async function doDeps(row: ConsoleConfigReleaseResponse) {
+    const scope = depsScope.begin()
+    if (!scope.tenantId || (row.tenantId && row.tenantId !== scope.tenantId)) return
     depsData.value = null
     depsVisible.value = true
     depsLoading.value = true
     try {
-      depsData.value = await listConfigDependencies(
-        row.tenantId ?? tenant.tenantId,
+      const result = await listConfigDependencies(
+        scope.tenantId,
         String(row.configType ?? ''),
         String(row.configKey ?? ''),
       )
+      if (depsScope.isCurrent(scope)) depsData.value = result
     } finally {
-      depsLoading.value = false
+      if (depsScope.isCurrent(scope)) depsLoading.value = false
     }
   }
 
@@ -782,17 +843,79 @@
   }
 
   async function doDiff() {
+    const scope = diffScope.begin()
+    const { releaseIdA, releaseIdB } = diffForm
+    if (!scope.tenantId || !releaseIdA || !releaseIdB || releaseIdA === releaseIdB) return
+    if (![releaseIdA, releaseIdB].every((id) => allRows.value.some((row) => row.id === id))) return
+    diffData.value = null
     diffLoading.value = true
     try {
-      diffData.value = await diffConfigReleases(
-        tenant.tenantId,
-        diffForm.releaseIdA,
-        diffForm.releaseIdB,
-      )
+      const result = await diffConfigReleases(scope.tenantId, releaseIdA, releaseIdB)
+      if (diffScope.isCurrent(scope)) diffData.value = result
     } finally {
-      diffLoading.value = false
+      if (diffScope.isCurrent(scope)) diffLoading.value = false
     }
   }
+
+  watch(
+    [() => diffForm.releaseIdA, () => diffForm.releaseIdB, diffVisible],
+    () => {
+      diffScope.begin()
+      diffData.value = null
+      diffLoading.value = false
+    },
+    { flush: 'sync' },
+  )
+  watch(
+    createVisible,
+    () => {
+      createScope.begin()
+      createSaving.value = false
+    },
+    { flush: 'sync' },
+  )
+  watch(
+    [() => auth.userInfo?.username ?? auth.userInfo?.userId, canManageSystem, writesFrozen],
+    () => {
+      actionScope.begin()
+      createScope.begin()
+      createSaving.value = false
+    },
+    { flush: 'sync' },
+  )
+  watch(
+    () => tenant.tenantId,
+    () => {
+      listScope.begin()
+      detailScope.begin()
+      depsScope.begin()
+      diffScope.begin()
+      actionScope.begin()
+      createScope.begin()
+      allRows.value = []
+      rows.value = []
+      total.value = 0
+      page.value = 1
+      selectedId.value = null
+      loading.value = false
+      loadError.value = null
+      createVisible.value = false
+      resetCreateForm()
+      createDirty.markPristine()
+      createSaving.value = false
+      detailVisible.value = false
+      detail.value = null
+      depsVisible.value = false
+      depsData.value = null
+      depsLoading.value = false
+      diffVisible.value = false
+      diffData.value = null
+      diffLoading.value = false
+      diffForm.releaseIdA = 0
+      diffForm.releaseIdB = 0
+    },
+    { flush: 'sync' },
+  )
 
   useTenantReload(load)
 </script>

@@ -40,11 +40,7 @@
       show-icon
       :closable="false"
       :title="t('schedulerSnapshot.loadErrorTitle')"
-      :description="
-        snapshotFailed
-          ? t('schedulerSnapshot.staleDescription', { time: fmtDatetime(lastSuccessfulAt) })
-          : t('schedulerSnapshot.partialDescription')
-      "
+      :description="loadErrorDescription"
     >
       <template #default>
         <div class="snapshot-alert__actions">
@@ -383,7 +379,7 @@
             <template #default="{ row }">
               <div class="load-cell">
                 <el-progress
-                  :percentage="Math.min(100, Math.max(0, Number(row.currentLoad) || 0))"
+                  :percentage="clampLoadPercentage(row.currentLoad)"
                   :stroke-width="10"
                   :show-text="false"
                   :status="progressStatus(row.status)"
@@ -504,17 +500,20 @@
         />
       </div>
     </SectionCard>
+
+    <DependencyWaitPanel class="mt" />
   </PageContainer>
 </template>
 
 <script setup lang="ts">
-  import { computed, ref } from 'vue'
+  import { computed, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { useRouter } from 'vue-router'
   import { ElMessage } from 'element-plus'
   import { Copy as DocumentCopy, Pause, Play, RefreshCw as Refresh } from '@lucide/vue'
   import { confirmDanger } from '@/composables/useDangerConfirm'
   import { fmtDatetime } from '@/utils/datetime'
+  import { errorCorrelation, progressStatus, tagTypeForKey } from './schedulerSnapshotPresentation'
   import {
     getSchedulerSnapshot,
     getSchedulerSnapshotHistory,
@@ -525,6 +524,7 @@
   import { toPageResult } from '@/api/adapters'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
+  import { useTenantRequestScope } from '@/composables/useTenantRequestScope'
   import { usePermission } from '@/composables/usePermission'
   import { useWriteAvailability } from '@/composables/useWriteAvailability'
   import PageContainer from '@/components/common/PageContainer.vue'
@@ -535,6 +535,7 @@
   import CopyableText from '@/components/common/CopyableText.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
   import SnapshotKpiTab from './components/SnapshotKpiTab.vue'
+  import DependencyWaitPanel from './components/DependencyWaitPanel.vue'
   import type {
     ConsoleSchedulerSnapshotHistoryResponse,
     ConsoleSchedulerSnapshotResponse,
@@ -546,6 +547,7 @@
   type KpiVariant = 'primary' | 'success' | 'warning' | 'info'
 
   const tenant = useTenantStore()
+  const snapshotScope = useTenantRequestScope()
   const { canManageSystem } = usePermission()
   const { writesFrozen } = useWriteAvailability()
   const loading = ref(false)
@@ -562,6 +564,13 @@
   const KPI_KEYS: PanelKey[] = ['policies', 'queues', 'workers', 'history']
 
   const snapshotFailed = ref(false)
+  const loadErrorDescription = computed(() => {
+    if (!snapshotFailed.value) return t('schedulerSnapshot.partialDescription')
+
+    const lastSuccessfulTime = fmtDatetime(lastSuccessfulAt.value)
+    return t('schedulerSnapshot.staleDescription', { time: lastSuccessfulTime })
+  })
+
   function onKpiKeydown(event: KeyboardEvent) {
     let nextIndex = KPI_KEYS.indexOf(activePanel.value)
     if (event.key === 'ArrowRight' || event.key === 'ArrowDown')
@@ -635,9 +644,6 @@
     ],
   )
 
-  type TagType = 'primary' | 'success' | 'warning' | 'danger' | 'info'
-  const TAG_TYPES: TagType[] = ['primary', 'success', 'warning', 'danger', 'info']
-
   const pagedPolicies = computed(() =>
     toPageResult(snap.value?.policies ?? [], pagePolicies.value, pageSize.value),
   )
@@ -705,47 +711,23 @@
     return m[activePanel.value]
   })
 
-  function tagTypeForKey(key: string | null | undefined): TagType {
-    const s = String(key ?? '').trim()
-    if (!s) return 'info'
-    let hash = 0
-    for (let i = 0; i < s.length; i++) hash = (hash * 31 + s.charCodeAt(i)) >>> 0
-    return TAG_TYPES[hash % TAG_TYPES.length]
-  }
-
-  function progressStatus(
-    status: string | null | undefined,
-  ): 'success' | 'warning' | 'exception' | undefined {
-    const s = String(status ?? '').toUpperCase()
-    if (s === 'ONLINE') return 'success'
-    if (s === 'DRAINING') return 'warning'
-    if (s === 'OFFLINE') return 'exception'
-    return undefined
-  }
-
-  function errorCorrelation(reason: unknown): string {
-    const response = (reason as { response?: { data?: unknown; headers?: unknown } })?.response
-    const data = response?.data as { meta?: { traceId?: unknown; requestId?: unknown } } | undefined
-    const fromMeta = data?.meta?.traceId ?? data?.meta?.requestId
-    if (fromMeta) return String(fromMeta)
-    const headers = response?.headers as
-      { get?: (name: string) => unknown; [key: string]: unknown } | undefined
-    const fromHeader =
-      headers?.get?.('x-trace-id') ??
-      headers?.get?.('x-request-id') ??
-      headers?.['x-trace-id'] ??
-      headers?.['x-request-id']
-    return fromHeader ? String(fromHeader) : ''
+  function clampLoadPercentage(load: unknown): number {
+    const numericLoad = Number(load) || 0
+    const nonNegativeLoad = Math.max(0, numericLoad)
+    return Math.min(100, nonNegativeLoad)
   }
 
   async function loadAll(silent = false) {
+    const scope = snapshotScope.begin()
+    if (!scope.tenantId) return
     loading.value = true
     histLoading.value = true
     const [snapResult, historyResult, statusResult] = await Promise.allSettled([
-      getSchedulerSnapshot(tenant.tenantId, true),
-      getSchedulerSnapshotHistory(tenant.tenantId, undefined, true),
+      getSchedulerSnapshot(scope.tenantId, true),
+      getSchedulerSnapshotHistory(scope.tenantId, undefined, true),
       getSchedulerStatus(true),
     ])
+    if (!snapshotScope.isCurrent(scope)) return
     const snapOk = snapResult.status === 'fulfilled'
     const histOk = historyResult.status === 'fulfilled'
     const statusOk = statusResult.status === 'fulfilled'
@@ -754,18 +736,45 @@
     if (statusResult.status === 'fulfilled') schedulerStatus.value = statusResult.value.status
     else schedulerStatus.value = ''
     loadError.value = !snapOk || !histOk || !statusOk
-    loadErrorTrace.value =
-      [snapResult, historyResult, statusResult]
-        .filter((result) => result.status === 'rejected')
-        .map((result) => errorCorrelation(result.reason))
-        .find(Boolean) ?? ''
+    const rejectedResults = [snapResult, historyResult, statusResult].filter(
+      (result) => result.status === 'rejected',
+    )
+    const errorCorrelations = rejectedResults.map((result) => errorCorrelation(result.reason))
+    loadErrorTrace.value = errorCorrelations.find(Boolean) ?? ''
     snapshotFailed.value = !snapOk
-    if (snapOk) lastSuccessfulAt.value = snapResult.value.generatedAt || new Date().toISOString()
+    if (snapOk) {
+      const generatedAt = snapResult.value.generatedAt
+      if (generatedAt) {
+        lastSuccessfulAt.value = generatedAt
+      } else {
+        const currentDate = new Date()
+        const currentTimestamp = currentDate.toISOString()
+        lastSuccessfulAt.value = currentTimestamp
+      }
+    }
     loading.value = false
     histLoading.value = false
-    if (!silent && snapOk && histOk && statusOk)
+    const shouldShowRefreshSuccess = !silent && snapOk && histOk && statusOk
+    if (shouldShowRefreshSuccess) {
       ElMessage.success(t('schedulerSnapshot.refreshDone'))
+    }
   }
+
+  watch(
+    () => tenant.tenantId,
+    () => {
+      snap.value = null
+      history.value = []
+      schedulerStatus.value = ''
+      lastSuccessfulAt.value = null
+      loadError.value = false
+      loadErrorTrace.value = ''
+      snapshotFailed.value = false
+      loading.value = false
+      histLoading.value = false
+    },
+    { flush: 'sync' },
+  )
 
   useTenantReload(() => loadAll(true))
 

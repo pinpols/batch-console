@@ -2,12 +2,12 @@
  * X6 实例的初始化、节点注册、事件桥接,以及自动布局(dagre)。
  *
  * 当前实现:
- * - 注册 START / END / JOB / GATEWAY / FILE_STEP 节点视图
+ * - 注册 START / END / JOB / GATEWAY 节点视图
  * - 启用 mini-map + 对齐线;undo/redo 走 store
  * - 拖入节点 / 连线 / 删除 / 选中事件全部回写 store
  */
 
-import { Graph, Point } from '@antv/x6'
+import { Graph, Point } from '@antv/x6/es'
 // 必须走 es/ 构建:lib/(CJS)是另一份 x6 实例,其 NodeView.registry 里没有
 // x6-vue-shape 注册的 'vue-shape-view',minimap 渲染缩略图时会抛
 // 「View with name 'vue-shape-view' does not exist」(且随节点变化在 watcher 里间歇复现)。
@@ -25,7 +25,6 @@ import StartNode from './nodes/StartNode.vue'
 import EndNode from './nodes/EndNode.vue'
 import JobNode from './nodes/JobNode.vue'
 import GatewayNode from './nodes/GatewayNode.vue'
-import FileStepNode from './nodes/FileStepNode.vue'
 import type { DesignerNode, DesignerNodeType } from '../types'
 import { useDesignerStore } from '../store/useDesignerStore'
 import { designerNodeSize } from './nodePlacement'
@@ -40,7 +39,6 @@ function ensureRegistered() {
     { name: 'designer-end', component: EndNode as unknown as Component },
     { name: 'designer-job', component: JobNode as unknown as Component },
     { name: 'designer-gateway', component: GatewayNode as unknown as Component },
-    { name: 'designer-file-step', component: FileStepNode as unknown as Component },
   ]
   for (const s of shapes) {
     registerVueShape({ shape: s.name, component: s.component })
@@ -57,8 +55,6 @@ function shapeOf(type: DesignerNodeType): string {
       return 'designer-job'
     case 'GATEWAY':
       return 'designer-gateway'
-    case 'FILE_STEP':
-      return 'designer-file-step'
     default:
       return 'rect'
   }
@@ -267,7 +263,7 @@ export function useX6Graph(
         if (existing?.isEdge()) {
           existing.setSource({ cell: e.source, port: 'out' })
           existing.setTarget({ cell: e.target, port: 'in' })
-          existing.attr(presentation.line)
+          existing.attr('line', presentation.line)
           existing.setLabels(labels)
           continue
         }
@@ -318,12 +314,11 @@ export function useX6Graph(
       })
       .filter((position): position is { id: string; x: number; y: number } => position !== null)
     currentLayoutDirection = direction
-    if (
-      !nextPositions.some((position) => {
-        const current = store.nodes.find((node) => node.id === position.id)
-        return current !== undefined && (current.x !== position.x || current.y !== position.y)
-      })
-    ) {
+    const hasPositionChanges = nextPositions.some((position) => {
+      const current = store.nodes.find((node) => node.id === position.id)
+      return current !== undefined && (current.x !== position.x || current.y !== position.y)
+    })
+    if (!hasPositionChanges) {
       syncFromStore(handle.graph)
       return
     }

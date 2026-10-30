@@ -17,17 +17,17 @@
    *   锁获取流程：useLockManager.acquire → setLock(isMine / readonly)
    * - 保存 → validateDag → 有错弹 drawer;无错走 putFull(/full) + markClean
    * - 锁丢失(续期失败/被夺) → setLock 只读 + banner
-   * - onUnmounted → useLockManager 内置 release + beforeunload sendBeacon 兜底
+   * - 作用域销毁 → useLockManager 释放锁；窗口卸载时尝试 keepalive DELETE
    */
 
   import { computed, nextTick, onMounted, onBeforeUnmount, ref, watch } from 'vue'
-  import { useRoute, useRouter } from 'vue-router'
+  import { onBeforeRouteLeave, onBeforeRouteUpdate, useRoute, useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import { PanelRightOpen } from '@lucide/vue'
   import { useTenantStore } from '@/stores/tenant'
   import { useDesignerStore } from './store/useDesignerStore'
-  import type { DesignerNodeType } from './types'
+  import type { DesignerNodeType, DesignerSnapshot } from './types'
   import { exportMermaid } from './codec/mermaidExporter'
   import { graphToDefinition } from './codec/graphToDefinition'
   import { definitionToGraph } from './codec/definitionToGraph'
@@ -76,6 +76,28 @@
     onLost: (reason) => {
       ElMessage.warning(t(`workflowDesignerMvp.lock.lost_${reason}`))
     },
+  })
+
+  /** 路由离开会销毁当前画布；用户取消时保留草稿、编辑锁和续租。 */
+  async function confirmCanvasDiscard(): Promise<boolean> {
+    if (!store.dirty) return true
+    try {
+      await ElMessageBox.confirm(t('dirtyForm.confirmMessage'), t('dirtyForm.confirmTitle'), {
+        type: 'warning',
+        confirmButtonText: t('dirtyForm.confirmDiscard'),
+        cancelButtonText: t('dirtyForm.cancelDiscard'),
+      })
+      return true
+    } catch {
+      return false
+    }
+  }
+
+  onBeforeRouteLeave(confirmCanvasDiscard)
+  onBeforeRouteUpdate((to, from) => {
+    if (to.params.id === from.params.id) return true
+    if (createdWorkflowId != null && to.params.id === String(createdWorkflowId)) return true
+    return confirmCanvasDiscard()
   })
 
   const errorCount = computed(() => store.validationErrors.length)
@@ -228,21 +250,49 @@
    * 会复用组件实例。新建成功后仅靠 `router.replace` 不会再次触发 `onMounted`，因此必须
    * 由路由参数监听来完成新建态→已有定义态的重新加载与真实编辑锁获取。
    */
+  let loadGeneration = 0
+  let createdWorkflowId: number | null = null
   async function loadWorkflow(id: number | null) {
+    const generation = ++loadGeneration
+    const tenantId = tenantStore.tenantId
+    const retainCreatedGraph =
+      id != null && id === createdWorkflowId && tenantId === store.meta.tenantId
+    createdWorkflowId = null
+    saving.value = false
     loading.value = true
     await lockMgr.release()
+    if (generation !== loadGeneration) return
+    if (retainCreatedGraph) {
+      // 新建请求期间允许继续编辑；已有创建回包提供版本，路由升级只获取锁，不重载覆盖草稿。
+      store.setLock(null)
+      try {
+        await lockMgr.acquire(id as number, tenantId)
+      } catch (err) {
+        if (generation === loadGeneration) ElMessage.error(t('workflowDesignerMvp.loadFailed'))
+      } finally {
+        if (generation === loadGeneration) loading.value = false
+      }
+      return
+    }
     store.reset({ nodes: [], edges: [] })
     store.setLock(null)
+    store.setMeta({
+      id: null,
+      tenantId,
+      workflowCode: '',
+      workflowName: '',
+      description: undefined,
+      workflowType: 'DAG',
+      enabled: true,
+      version: 0,
+    })
+    if (!tenantId) {
+      loading.value = false
+      return
+    }
     if (id == null) {
-      // P3 新建模式:无 id → 无远端锁。模拟自己持锁让画布 / 表单可编辑(editable=true),
-      // 保存时再调创建 API 拿真 id 并跳转到 /workflow/designer/{newId}。
-      store.setMeta({
-        id: null,
-        tenantId: tenantStore.tenantId,
-        workflowType: 'DAG',
-        enabled: true,
-        version: 0,
-      })
+      // 新建模式没有远端锁，只有选定租户后才允许编辑。
+      // 首次保存取得定义 ID 后，再沿既有路由获取真实编辑锁。
       store.setLock({
         isMine: true,
         lockedBy: tenantStore.tenantId || 'me',
@@ -253,10 +303,16 @@
       return
     }
     try {
-      const detail = await workflowDesignerApi.getFull(id, tenantStore.tenantId)
+      const detail = await workflowDesignerApi.getFull(id, tenantId)
+      if (generation !== loadGeneration) return
+      if (detail.singleJobDefinitionId != null) {
+        ElMessage.info(t('workflowDesignerMvp.systemManagedSingleJobGraph'))
+        await router.replace(`/workflow/viewer/${id}`)
+        return
+      }
       // 反序列化 BE detail → designer snapshot。BE 的 ConsoleWorkflowNodeResponse
-      // 字段名(relatedJobCode / relatedPipelineCode / nodeParams JSON 等)与设计书的
-      // attrs key(jobCode / pipelineCode 等)之间走显式映射 + attrs 透传保底。
+      // 字段名(relatedJobCode / nodeParams JSON 等)与设计书的
+      // attrs key(jobCode 等)之间走显式映射 + attrs 透传保底。
       const defJson = {
         nodes: (detail.nodes ?? []).map((n) => {
           const raw = n as unknown as Record<string, unknown>
@@ -279,7 +335,6 @@
             // 持久化列是权威来源；旧 nodeParams 只作为兼容回退，避免保存时把旧 JSON
             // 中的值覆盖当前已更新的显式列。
             jobCode: raw.relatedJobCode ?? parsedParams.jobCode,
-            pipelineCode: raw.relatedPipelineCode ?? parsedParams.pipelineCode,
             workerGroup: raw.workerGroup ?? parsedParams.workerGroup,
             windowCode: raw.windowCode ?? parsedParams.windowCode,
             nodeOrder: raw.nodeOrder ?? parsedParams.nodeOrder,
@@ -303,7 +358,8 @@
           }
         }),
       }
-      store.reset(definitionToGraph(defJson))
+      const graph = definitionToGraph(defJson)
+      store.reset(graph)
       store.setMeta({
         id: detail.id,
         tenantId: detail.tenantId,
@@ -315,33 +371,36 @@
         version: detail.version,
       })
       await nextTick()
+      if (generation !== loadGeneration) return
       // 加载时仅调整初始视图，不形成用户编辑/撤销记录；默认以横向作业链呈现。
       canvasRef.value?.autoLayout(layoutDirection.value, false)
       store.markClean()
       canvasRef.value?.fitToViewport()
-      await lockMgr.acquire(id, tenantStore.tenantId)
+      await lockMgr.acquire(id, tenantId)
     } catch (err) {
+      if (generation !== loadGeneration) return
       logRoute('[designer] load failed', { err: String(err) })
       ElMessage.error(t('workflowDesignerMvp.loadFailed'))
     } finally {
-      loading.value = false
+      if (generation === loadGeneration) loading.value = false
     }
   }
 
   watch(
-    workflowId,
-    (id) => {
+    [workflowId, () => tenantStore.tenantId],
+    ([id]) => {
       void loadWorkflow(id)
     },
-    { immediate: true },
+    { immediate: true, flush: 'sync' },
   )
 
-  // useLockManager 内部已在 onBeforeUnmount 兜底 release + beforeunload sendBeacon
+  // useLockManager 在作用域销毁时释放锁；只有路由确认通过后才会销毁当前画布。
 
   onMounted(() => {
     window.addEventListener('keydown', onGlobalKeyDown)
   })
   onBeforeUnmount(() => {
+    loadGeneration += 1
     window.removeEventListener('keydown', onGlobalKeyDown)
   })
 
@@ -451,7 +510,13 @@
    * 设计器暂无元信息编辑面板(P5-P8 范围外),故 workflowCode / workflowName 用
    * prompt 兜底收集(已有则复用 meta)。创建成功后跳转到带 id 的设计器路由(组件重挂载)。
    */
-  async function createNewWorkflow(): Promise<boolean> {
+  function captureSaveSnapshot(): DesignerSnapshot {
+    // 深拷贝 JSON 图数据，避免请求期间的嵌套属性编辑改变已提交基线。
+    const snapshotJson = JSON.stringify(store.snapshot)
+    return JSON.parse(snapshotJson) as DesignerSnapshot
+  }
+
+  async function createNewWorkflow(generation: number): Promise<boolean> {
     let workflowCode = store.meta.workflowCode
     let workflowName = store.meta.workflowName
     if (!workflowCode || !workflowName) {
@@ -482,7 +547,9 @@
         return false
       }
     }
-    const def = graphToDefinition(store.snapshot)
+    if (generation !== loadGeneration) return false
+    const savedSnapshot = captureSaveSnapshot()
+    const def = graphToDefinition(savedSnapshot)
     const body = {
       tenantId: store.meta.tenantId || tenantStore.tenantId,
       workflowCode,
@@ -493,14 +560,19 @@
       edges: toWorkflowSaveEdges(def.edges),
     }
     const created = await workflowApi.create(body)
-    store.markClean()
+    if (generation !== loadGeneration) return false
+    store.setMeta({ id: created.id, version: created.version, workflowCode, workflowName })
+    createdWorkflowId = created.id
+    store.markClean(savedSnapshot)
     ElMessage.success(t('workflowDesignerMvp.saveOk'))
-    // 跳转到带 id 的设计器路由 → 组件重挂载并 acquire 真实锁
+    // 同一设计器实例切到已创建定义；加载监听保留草稿并获取真实编辑锁。
     await router.replace({ path: `/workflow/designer/${created.id}` })
     return true
   }
 
   async function onSave() {
+    if (loading.value || saving.value) return
+    const generation = loadGeneration
     if (!store.editable) {
       ElMessage.warning(t('workflowDesignerMvp.lock.cannotSaveReadonly'))
       return
@@ -512,18 +584,20 @@
     if (isNewWorkflow.value) {
       saving.value = true
       try {
-        await createNewWorkflow()
+        await createNewWorkflow(generation)
       } catch (err) {
+        if (generation !== loadGeneration) return
         logRoute('[designer] create failed', { err: String(err) })
         ElMessage.error(t('workflowDesignerMvp.create.failed'))
       } finally {
-        saving.value = false
+        if (generation === loadGeneration) saving.value = false
       }
       return
     }
     saving.value = true
     try {
-      const def = graphToDefinition(store.snapshot)
+      const savedSnapshot = captureSaveSnapshot()
+      const def = graphToDefinition(savedSnapshot)
       // BE WorkflowDefinitionFullUpdateRequest 是 nested:{ definition: SaveRequest, expectedVersion, lockToken }
       // SaveRequest 内含 tenantId / workflowCode / workflowName / workflowType / enabled / nodes / edges
       // expectedVersion 与 lockToken 是顶层(乐观锁 + 锁归属预留)
@@ -541,10 +615,12 @@
       }
       // 此处必非新建态(isNewWorkflow 已早返),workflowId 必为有效 number
       const updated = await workflowDesignerApi.putFull(workflowId.value as number, body)
+      if (generation !== loadGeneration) return
       store.setMeta({ version: updated.version })
-      store.markClean()
+      store.markClean(savedSnapshot)
       ElMessage.success(t('workflowDesignerMvp.saveOk'))
     } catch (err) {
+      if (generation !== loadGeneration) return
       const ax = err as { response?: { status?: number; data?: Record<string, unknown> } }
       const status = ax?.response?.status
       if (status === 409) {
@@ -568,11 +644,13 @@
         // 非 409 的保存失败(如 BE 配置期校验拒绝:跨 workflow 嵌套环检测等)此前只 log、无任何
         // 用户提示 —— 用户点保存却"没反应"。改为弹出 BE 返回的具体原因(CommonResponse.message),
         // 取不到再回退通用文案。
-        ElMessage.error(userErrorMessage(err, t('workflowDesignerMvp.saveFailed')))
+        const saveFailedFallback = t('workflowDesignerMvp.saveFailed')
+        const saveErrorMessage = userErrorMessage(err, saveFailedFallback)
+        ElMessage.error(saveErrorMessage)
         logRoute('[designer] save failed', { status, err: String(err) })
       }
     } finally {
-      saving.value = false
+      if (generation === loadGeneration) saving.value = false
     }
   }
 

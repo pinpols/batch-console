@@ -30,7 +30,8 @@ export const SENSITIVE_KEYWORDS: readonly string[] = Object.freeze([
 
 /** 归一化 key:小写 + 去 `_-`,匹配 BE `SensitiveDataValidator#scan` 的策略。 */
 function normalizeKey(key: string): string {
-  return key.toLowerCase().replace(/[_-]/g, '')
+  const lowercaseKey = key.toLowerCase()
+  return lowercaseKey.replace(/[_-]/g, '')
 }
 
 function isSensitiveKey(key: string): boolean {

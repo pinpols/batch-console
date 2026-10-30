@@ -68,7 +68,7 @@
         </el-table-column>
         <el-table-column :label="t('systemParameterList.colActions')" width="160" fixed="right">
           <template #default="{ row }">
-            <RowActions :actions="parameterRowActions(row)" :inline-limit="1" />
+            <RowActions :actions="parameterRowActions(row as { key: string; value: string })" :inline-limit="1" />
           </template>
         </el-table-column>
       </ProTable>
@@ -174,7 +174,8 @@
   const keyword = ref('')
 
   const filtered = computed(() => {
-    const k = keyword.value.trim().toLowerCase()
+    const trimmedKeyword = keyword.value.trim()
+    const k = trimmedKeyword.toLowerCase()
     if (!k) return allRows.value
     return allRows.value.filter((r) => r.key.toLowerCase().includes(k))
   })

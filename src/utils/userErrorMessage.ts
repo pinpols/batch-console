@@ -21,7 +21,9 @@ function isApiError(error: unknown): error is ApiErrorLike {
 }
 
 function translateMessage(message: unknown): string | undefined {
-  if (typeof message !== 'string' || !message.trim()) return undefined
+  if (typeof message !== 'string') return undefined
+  const messageIsBlank = !message.trim()
+  if (messageIsBlank) return undefined
   const value = message.trim()
   if (/^error\.[a-z][a-z0-9_]*(?:\.[a-zA-Z0-9_]+)+$/.test(value)) {
     return i18n.global.te(value) ? i18n.global.t(value) : undefined

@@ -121,16 +121,26 @@ export function useImportWizard(): ImportWizardState {
   const issueRows = computed<PreviewIssue[]>(() => {
     const p = previewRaw.value
     if (!p || !Array.isArray(p.issues)) return []
-    return (p.issues as Record<string, unknown>[]).map((i) => ({
-      sheetName: String(i.sheetName ?? ''),
-      rowNo: i.rowNo,
-      columnName: typeof i.columnName === 'string' ? i.columnName : undefined,
-      messages: Array.isArray(i.messages)
-        ? (i.messages as string[]).join('; ')
-        : Array.isArray(i.message)
-          ? (i.message as string[]).join('; ')
-          : String(i.messages ?? i.message ?? ''),
-    }))
+    return (p.issues as Record<string, unknown>[]).map((issue) => {
+      const sheetName = String(issue.sheetName ?? '')
+      const rowNo = issue.rowNo
+      const columnName = typeof issue.columnName === 'string' ? issue.columnName : undefined
+      let normalizedMessages: string
+      if (Array.isArray(issue.messages)) {
+        normalizedMessages = (issue.messages as string[]).join('; ')
+      } else if (Array.isArray(issue.message)) {
+        normalizedMessages = (issue.message as string[]).join('; ')
+      } else {
+        normalizedMessages = String(issue.messages ?? issue.message ?? '')
+      }
+
+      return {
+        sheetName,
+        rowNo,
+        columnName,
+        messages: normalizedMessages,
+      }
+    })
   })
 
   const sheetStats = computed<SheetStats[]>(() => {
@@ -147,12 +157,19 @@ export function useImportWizard(): ImportWizardState {
   const errorRows = computed<PreviewErrorRow[]>(() => {
     const p = previewRaw.value
     if (!p || !Array.isArray(p.errorRows)) return []
-    return (p.errorRows as Record<string, unknown>[]).map((r) => ({
-      sheetName: String(r.sheetName ?? ''),
-      rowNo: typeof r.rowNo === 'number' ? r.rowNo : Number(r.rowNo ?? 0),
-      values: r.values && typeof r.values === 'object' ? (r.values as Record<string, string>) : {},
-      messages: Array.isArray(r.messages) ? (r.messages as string[]) : [],
-    }))
+    return (p.errorRows as Record<string, unknown>[]).map((r) => {
+      const sheetName = String(r.sheetName ?? '')
+      const normalizedRowNo = typeof r.rowNo === 'number' ? r.rowNo : Number(r.rowNo ?? 0)
+      const rowValues =
+        r.values && typeof r.values === 'object' ? (r.values as Record<string, string>) : {}
+      const rowMessages = Array.isArray(r.messages) ? (r.messages as string[]) : []
+      return {
+        sheetName,
+        rowNo: normalizedRowNo,
+        values: rowValues,
+        messages: rowMessages,
+      }
+    })
   })
 
   const hasBlockingIssues = computed<boolean>(() => {

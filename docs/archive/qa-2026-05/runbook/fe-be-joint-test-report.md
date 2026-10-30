@@ -111,4 +111,4 @@
 **文档**:
 - `docs/runbook/fe-be-joint-test-plan.md` (方案)
 - `docs/runbook/fe-be-joint-test-report.md` (本文件,报告)
-- `docs/runbook/be-fix-backlog.md` (BE 修复明细 + 已修标记)
+- `docs/archive/qa-2026-05/be-fix-backlog-2026-05-16.md` (历史 BE 修复明细)

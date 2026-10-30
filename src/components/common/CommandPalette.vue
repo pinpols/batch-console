@@ -98,7 +98,8 @@
   )
 
   function isSidebarHiddenPath(path: string): boolean {
-    return sidebarHiddenPaths.has(path.split(/[?#]/, 1)[0] || path)
+    const normalizedPath = displayPath(path)
+    return sidebarHiddenPaths.has(normalizedPath)
   }
 
   function displayPath(path: string): string {
@@ -211,15 +212,20 @@
     const sorted = [...props.recentTabs].sort(
       (a, b) => (b.lastAccessAt ?? 0) - (a.lastAccessAt ?? 0),
     )
-    return sorted.slice(0, 8).map((tab) => ({
-      key: `recent:${tab.key}`,
-      title: resolvePageTitle(displayPath(tab.path), tab.title),
-      subtitle: displayPath(tab.path),
-      meta: t('palette.metaRecent'),
-      path: tab.path,
-      sidebarHidden: isSidebarHiddenPath(tab.path),
-      source: 'recent' as const,
-    }))
+    return sorted.slice(0, 8).map((tab) => {
+      const key = `recent:${tab.key}`
+      const titlePath = displayPath(tab.path)
+      const title = resolvePageTitle(titlePath, tab.title)
+      return {
+        key,
+        title,
+        subtitle: displayPath(tab.path),
+        meta: t('palette.metaRecent'),
+        path: tab.path,
+        sidebarHidden: isSidebarHiddenPath(tab.path),
+        source: 'recent' as const,
+      }
+    })
   })
 
   const menuItems = computed((): Omit<PaletteItem, 'globalIndex'>[] => {
@@ -253,12 +259,14 @@
         : jump.kind === 'file'
           ? 'palette.jumpFile'
           : 'palette.jumpTrace'
+    const traceForTitle =
+      jump.value.length > 16 ? `${jump.value.slice(0, 16)}...` : jump.value
     return [
       {
         key: `jump:${jump.kind}:${jump.value}`,
         title: t(titleKey, {
           id: jump.value,
-          trace: jump.value.length > 16 ? `${jump.value.slice(0, 16)}...` : jump.value,
+          trace: traceForTitle,
         }),
         subtitle: jump.kind === 'trace' ? t('palette.jumpTraceSubtitle') : t('palette.jumpDetail'),
         meta: t('palette.metaJump'),

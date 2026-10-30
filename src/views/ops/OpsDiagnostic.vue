@@ -140,11 +140,107 @@
         </article>
       </div>
     </div>
+
+    <section v-if="canExportForensics" class="forensic-export">
+      <header class="forensic-export__header">
+        <div>
+          <h3>{{ t('opsDiagnostic.forensicTitle') }}</h3>
+          <p>{{ t('opsDiagnostic.forensicDescription') }}</p>
+        </div>
+        <el-tag type="warning" effect="plain">{{ t('opsDiagnostic.forensicAdminOnly') }}</el-tag>
+      </header>
+      <el-alert
+        :title="t('opsDiagnostic.forensicSensitiveDataNotice')"
+        type="warning"
+        :closable="false"
+        show-icon
+      />
+      <el-form label-position="top" class="forensic-export__form">
+        <el-form-item :label="t('opsDiagnostic.forensicTenant')">
+          <el-input :model-value="tenant.tenantId" disabled />
+        </el-form-item>
+        <el-form-item :label="t('opsDiagnostic.forensicDateFrom')">
+          <el-date-picker
+            v-model="forensicDateFrom"
+            type="date"
+            value-format="YYYY-MM-DD"
+            :placeholder="t('opsDiagnostic.forensicDatePlaceholder')"
+            :disabled="forensicPending || forensicDownloading"
+          />
+        </el-form-item>
+        <el-form-item :label="t('opsDiagnostic.forensicDateTo')">
+          <el-date-picker
+            v-model="forensicDateTo"
+            type="date"
+            value-format="YYYY-MM-DD"
+            :placeholder="t('opsDiagnostic.forensicDatePlaceholder')"
+            :disabled="forensicPending || forensicDownloading"
+          />
+        </el-form-item>
+        <el-form-item :label="t('opsDiagnostic.forensicJobCodes')">
+          <el-input
+            v-model="forensicJobCodeText"
+            type="textarea"
+            :rows="2"
+            :placeholder="t('opsDiagnostic.forensicJobCodesPlaceholder')"
+            :disabled="forensicPending || forensicDownloading"
+          />
+        </el-form-item>
+      </el-form>
+      <p v-if="forensicValidationKey" class="forensic-export__validation" role="alert">
+        {{ t(`opsDiagnostic.${forensicValidationKey}`) }}
+      </p>
+      <el-alert
+        v-if="forensicErrorKey"
+        class="forensic-export__error"
+        type="error"
+        :closable="false"
+        show-icon
+        :title="t(`opsDiagnostic.${forensicErrorKey}`)"
+      />
+      <div class="forensic-export__actions">
+        <el-button
+          type="warning"
+          :loading="forensicPending"
+          :disabled="
+            writesFrozen || !tenant.tenantId || !!forensicValidationKey || forensicDownloading
+          "
+          @click="submitForensicExport"
+        >
+          {{ t('opsDiagnostic.forensicCreate') }}
+        </el-button>
+      </div>
+      <el-descriptions v-if="forensicExport" class="forensic-export__result" :column="2" border>
+        <el-descriptions-item :label="t('opsDiagnostic.forensicExportId')">
+          {{ forensicExport.exportId }}
+        </el-descriptions-item>
+        <el-descriptions-item :label="t('opsDiagnostic.forensicStatus')">
+          {{ forensicExport.status }}
+        </el-descriptions-item>
+        <el-descriptions-item :label="t('opsDiagnostic.forensicFileSize')">
+          {{ forensicSizeText }}
+        </el-descriptions-item>
+        <el-descriptions-item :label="t('opsDiagnostic.forensicSha256')" :span="2">
+          <code>{{ forensicExport.sha256 || '—' }}</code>
+        </el-descriptions-item>
+      </el-descriptions>
+      <div v-if="forensicExport" class="forensic-export__actions">
+        <el-button
+          type="primary"
+          plain
+          :loading="forensicDownloading"
+          :disabled="forensicExport.status !== 'COMPLETED' || !forensicExport.sha256"
+          @click="downloadForensicBundle"
+        >
+          {{ t('opsDiagnostic.forensicDownload') }}
+        </el-button>
+      </div>
+    </section>
   </PageContainer>
 </template>
 
 <script setup lang="ts">
-  import { computed, h, onMounted, reactive, ref, type Component } from 'vue'
+  import { computed, h, onMounted, reactive, ref, watch, type Component } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import { confirmDanger } from '@/composables/useDangerConfirm'
@@ -169,16 +265,25 @@
     getShedLockStatus,
     getWorkerConsistency,
     getOutboxHealth,
+    getTerminalChildrenHealth,
   } from '@/api/clusterDiagnostic'
   import { useTenantStore } from '@/stores/tenant'
   import { useAuthStore } from '@/stores/auth'
-  import { useTenantReload } from '@/composables/useTenantReload'
   import { useWriteAvailability } from '@/composables/useWriteAvailability'
   import { purifyHtml } from '@/utils/safeHtml'
+  import { createIdempotencyKey } from '@/utils/idempotency'
+  import { todayBusinessDate } from '@/utils/datetime'
+  import {
+    downloadForensicExport,
+    requestForensicExport,
+    type ForensicExportResponse,
+  } from '@/api/forensic'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import JsonPreview from '@/components/common/JsonPreview.vue'
   import { fmtClockTime } from '@/utils/datetime'
+  import { createOpsDiagnosticSummaries } from './opsDiagnosticPresentation'
+  import { positiveLongId } from '@/utils/positiveLongId'
 
   const { t } = useI18n({ useScope: 'global' })
   const tenant = useTenantStore()
@@ -188,94 +293,152 @@
     ensureWriteAvailable,
   } = useWriteAvailability()
   const auth = useAuthStore()
+  const canExportForensics = computed(() => auth.hasPermission('ROLE_ADMIN'))
+  const forensicDateFrom = ref(todayBusinessDate())
+  const forensicDateTo = ref(todayBusinessDate())
+  const forensicJobCodeText = ref('')
+  const forensicPending = ref(false)
+  const forensicDownloading = ref(false)
+  const forensicErrorKey = ref('')
+  const forensicExport = ref<ForensicExportResponse | null>(null)
+  const forensicExportTenantId = ref('')
+  let forensicRequestSequence = 0
 
-  // ──────────────────────────────────────────────
-  // 摘要工具(保留原有 summary 函数)
-  // ──────────────────────────────────────────────
-  type Obj = Record<string, unknown>
-  const ok = (s: string | number) => `<strong style="color:var(--color-success)">${s}</strong>`
-  const bad = (s: string | number) => `<strong style="color:var(--color-danger)">${s}</strong>`
-  const dim = (s: string | number) => `<span style="color:var(--color-text-tertiary)">${s}</span>`
-  const n = (v: unknown) => (typeof v === 'number' ? v : 0)
-  const arr = (v: unknown) => (Array.isArray(v) ? v.length : 0)
-  const SEP = ' &nbsp;·&nbsp; '
-  const tx = (k: string, p?: Record<string, unknown>) => t(`opsDiagnostic.${k}`, p ?? {})
+  const forensicJobCodes = computed(() =>
+    forensicJobCodeText.value
+      .split(/[\s,，]+/u)
+      .map((code) => code.trim())
+      .filter(Boolean),
+  )
 
-  function summarizeOutbox(data: unknown): string {
-    if (!data || typeof data !== 'object') return ''
-    const d = data as Obj
-    const breakdown = Array.isArray(d.statusBreakdown) ? (d.statusBreakdown as Obj[]) : []
-    const total = breakdown.reduce((s, x) => s + n(x.cnt), 0)
-    const failed = breakdown
-      .filter((x) => /FAIL|ERROR/i.test(String(x.deliveryStatus ?? '')))
-      .reduce((s, x) => s + n(x.cnt), 0)
-    const pending = breakdown
-      .filter((x) => /PENDING|NEW|PUBLISHING/i.test(String(x.deliveryStatus ?? '')))
-      .reduce((s, x) => s + n(x.cnt), 0)
-    return [
-      tx('sumTotal', { n: total }),
-      `${tx('sumPending')} ${pending > 0 ? bad(pending) : ok(0)}`,
-      `${tx('sumFailed')} ${failed > 0 ? bad(failed) : ok(0)}`,
-    ].join(SEP)
+  function parseBusinessDate(value: string): number | null {
+    if (!/^\d{4}-\d{2}-\d{2}$/u.test(value)) return null
+    const timestamp = Date.parse(`${value}T00:00:00Z`)
+    if (!Number.isFinite(timestamp) || new Date(timestamp).toISOString().slice(0, 10) !== value) {
+      return null
+    }
+    return timestamp
   }
 
-  function summarizeCluster(data: unknown): string {
-    if (!data || typeof data !== 'object') return ''
-    const d = data as Obj
-    const sl = (d.shedLock as Obj) ?? {}
-    const wk = (d.workers as Obj) ?? {}
-    const ob = (d.outbox as Obj) ?? {}
-    const parts: string[] = []
-    parts.push(`${tx('sumShedLockActive')} ${ok(n(sl.activeLocks))}/${n(sl.totalLocks)}`)
-    const wkIssues =
-      n(wk.staleOnlineWorkers) +
-      n(wk.drainingPastDeadlineWorkers) +
-      n(wk.decommissionedWorkersWithActiveTasks)
-    parts.push(
-      wkIssues > 0
-        ? `${tx('sumWorkerHealthy')} ${ok(n(wk.onlineWorkers))} · ${tx('sumWorkerAbnormal')} ${bad(wkIssues)}`
-        : `${tx('sumWorkerHealthy')} ${ok(n(wk.onlineWorkers))}`,
-    )
-    const obIssues = n(ob.pendingEvents) + n(ob.stalePublishingEvents)
-    parts.push(obIssues > 0 ? `${tx('sumOutboxPending')} ${bad(obIssues)}` : ok(tx('sumOutboxOk')))
-    return parts.join(SEP)
+  const forensicValidationKey = computed(() => {
+    const from = parseBusinessDate(forensicDateFrom.value)
+    const to = parseBusinessDate(forensicDateTo.value)
+    if (from == null || to == null) return 'forensicInvalidDate'
+    if (from > to) return 'forensicDateOrderError'
+    if (Math.floor((to - from) / 86_400_000) + 1 > 31) return 'forensicRangeTooLong'
+    if (forensicJobCodes.value.length > 100) return 'forensicTooManyJobCodes'
+    if (forensicJobCodes.value.some((code) => code.length > 128)) {
+      return 'forensicJobCodeTooLong'
+    }
+    return ''
+  })
+
+  const forensicSizeText = computed(() => {
+    const size = forensicExport.value?.fileSizeBytes
+    return typeof size === 'number' && Number.isFinite(size)
+      ? new Intl.NumberFormat().format(size)
+      : '—'
+  })
+
+  watch(
+    () => tenant.tenantId,
+    () => {
+      forensicRequestSequence += 1
+      forensicExport.value = null
+      forensicExportTenantId.value = ''
+      forensicErrorKey.value = ''
+      forensicPending.value = false
+      forensicDownloading.value = false
+    },
+    { flush: 'sync' },
+  )
+
+  async function submitForensicExport() {
+    if (!canExportForensics.value || !tenant.tenantId || !ensureWriteAvailable()) return
+    if (forensicValidationKey.value) return
+    const tenantId = tenant.tenantId
+    const dateFrom = forensicDateFrom.value
+    const dateTo = forensicDateTo.value
+    const jobCodes = forensicJobCodes.value
+    const sequence = ++forensicRequestSequence
+    try {
+      await confirmDanger({
+        verb: t('opsDiagnostic.forensicConfirmTitle'),
+        target: t('opsDiagnostic.forensicConfirmTarget', {
+          from: dateFrom,
+          to: dateTo,
+          jobs: jobCodes.length,
+        }),
+        consequence: t('opsDiagnostic.forensicConfirmConsequence'),
+        irreversible: true,
+      })
+    } catch {
+      return
+    }
+    if (sequence !== forensicRequestSequence || tenant.tenantId !== tenantId) return
+    forensicPending.value = true
+    forensicErrorKey.value = ''
+    forensicExport.value = null
+    try {
+      const response = await requestForensicExport(
+        {
+          tenantId,
+          bizDateFrom: dateFrom,
+          bizDateTo: dateTo,
+          jobCodes: jobCodes.length ? jobCodes : undefined,
+          exportFormat: 'BUNDLE',
+        },
+        createIdempotencyKey(),
+      )
+      if (sequence !== forensicRequestSequence || tenant.tenantId !== tenantId) return
+      forensicExport.value = response
+      forensicExportTenantId.value = tenantId
+    } catch {
+      if (sequence === forensicRequestSequence) forensicErrorKey.value = 'forensicCreateUnknown'
+    } finally {
+      if (sequence === forensicRequestSequence) forensicPending.value = false
+    }
   }
 
-  function summarizeWorker(data: unknown): string {
-    if (!data || typeof data !== 'object') return ''
-    const d = data as Obj
-    const online = n(d.onlineWorkers)
-    const stale = n(d.staleOnlineWorkers)
-    const drainingOverdue = n(d.drainingPastDeadlineWorkers)
-    const decomActive = n(d.decommissionedWorkersWithActiveTasks)
-    const invalidTags = arr(d.invalidCapabilityTags)
-    const draining = n(d.drainingWorkers)
-    const running = n(d.runningInstances)
-    const parts: string[] = [`${tx('sumOnline')} ${ok(online)}`]
-    if (draining > 0) parts.push(`${tx('sumDraining')} ${dim(draining)}`)
-    if (running > 0) parts.push(`${tx('sumRunning')} ${dim(running)}`)
-    const issues: string[] = []
-    if (stale > 0) issues.push(`${tx('sumStaleHeartbeat')} ${bad(stale)}`)
-    if (drainingOverdue > 0) issues.push(`${tx('sumDrainingOverdue')} ${bad(drainingOverdue)}`)
-    if (decomActive > 0) issues.push(`${tx('sumDecomActive')} ${bad(decomActive)}`)
-    if (invalidTags > 0) issues.push(`${tx('sumInvalidTags')} ${bad(invalidTags)}`)
-    if (issues.length === 0) parts.push(`${tx('sumConsistencyOk')} ${ok('✓')}`)
-    else parts.push(...issues)
-    return parts.join(SEP)
+  async function downloadForensicBundle() {
+    const exportResult = forensicExport.value
+    const tenantId = forensicExportTenantId.value
+    if (
+      !exportResult ||
+      exportResult.status !== 'COMPLETED' ||
+      !exportResult.sha256 ||
+      !tenantId ||
+      tenant.tenantId !== tenantId ||
+      !canExportForensics.value
+    ) {
+      return
+    }
+    const sequence = forensicRequestSequence
+    forensicDownloading.value = true
+    forensicErrorKey.value = ''
+    try {
+      const response = await downloadForensicExport(exportResult.exportId, tenantId)
+      if (sequence !== forensicRequestSequence || tenant.tenantId !== tenantId) return
+      const url = URL.createObjectURL(response.data)
+      const anchor = document.createElement('a')
+      anchor.href = url
+      anchor.download = `${exportResult.exportId.replace(/[^a-zA-Z0-9_-]/gu, '_')}.zip`
+      anchor.click()
+      window.setTimeout(() => URL.revokeObjectURL(url), 1_000)
+    } catch {
+      if (sequence === forensicRequestSequence) forensicErrorKey.value = 'forensicDownloadFailed'
+    } finally {
+      if (sequence === forensicRequestSequence) forensicDownloading.value = false
+    }
   }
 
-  function summarizeOutboxHealth(data: unknown): string {
-    if (!data || typeof data !== 'object') return ''
-    const d = data as Obj
-    const pending = n(d.pendingEvents)
-    const active = n(d.activeEvents)
-    const stale = n(d.stalePublishingEvents)
-    return [
-      `${tx('sumPending')} ${pending > 0 ? bad(pending) : ok(0)}`,
-      `${tx('sumActive')} ${dim(active)}`,
-      `${tx('sumStuck')} ${stale > 0 ? bad(stale) : ok(0)}`,
-    ].join(SEP)
-  }
+  const {
+    summarizeOutbox,
+    summarizeCluster,
+    summarizeWorker,
+    summarizeOutboxHealth,
+    summarizeTerminalChildrenHealth,
+  } = createOpsDiagnosticSummaries((key, params) => t(key, params ?? {}))
 
   // ──────────────────────────────────────────────
   // 7 张诊断卡片状态机
@@ -292,11 +455,13 @@
     lastRunAt: string
     hasData: boolean
     run: () => Promise<void>
+    cancel: () => void
     resultRender: () => unknown
   }
 
   function fmtNow() {
-    return fmtClockTime(new Date())
+    const currentTime = new Date()
+    return fmtClockTime(currentTime)
   }
 
   function createCard(opts: {
@@ -308,6 +473,7 @@
     /** 渲染展开后的卡片结果体(JsonPreview / el-table 等) */
     render: (data: unknown) => unknown
   }): DiagCard {
+    let requestSequence = 0
     const state = reactive({
       loading: false,
       error: false,
@@ -317,19 +483,33 @@
     }) as Pick<DiagCard, 'loading' | 'error' | 'expanded' | 'data' | 'lastRunAt'>
 
     async function run() {
-      if (!tenant.tenantId) return
+      const sequence = ++requestSequence
+      const tenantId = tenant.tenantId
+      if (!tenantId) return
       state.loading = true
       state.error = false
       try {
-        state.data = await opts.fetch(tenant.tenantId)
+        const data = await opts.fetch(tenantId)
+        if (sequence !== requestSequence || tenant.tenantId !== tenantId) return
+        state.data = data
         state.lastRunAt = fmtNow()
         state.expanded = true
       } catch {
+        if (sequence !== requestSequence || tenant.tenantId !== tenantId) return
         state.data = null
         state.error = true
       } finally {
-        state.loading = false
+        if (sequence === requestSequence) state.loading = false
       }
+    }
+
+    function cancel() {
+      requestSequence += 1
+      state.loading = false
+      state.data = null
+      state.error = false
+      state.expanded = false
+      state.lastRunAt = ''
     }
 
     return reactive({
@@ -359,6 +539,7 @@
         return state.data != null
       },
       run,
+      cancel,
       resultRender: () => opts.render(state.data),
     }) as DiagCard
   }
@@ -370,8 +551,11 @@
         JsonPreview,
         { data },
         {
-          summary: ({ data: d }: { data: unknown }) =>
-            h('span', { innerHTML: purifyHtml(summarizer(d)) }),
+          summary: ({ data: d }: { data: unknown }) => {
+            const summary = summarizer(d)
+            const safeSummary = purifyHtml(summary)
+            return h('span', { innerHTML: safeSummary })
+          },
         },
       )
   }
@@ -381,68 +565,69 @@
     if (!Array.isArray(data) || data.length === 0) {
       return h('div', { class: 'diag-empty' }, t('opsDiagnostic.emptyData'))
     }
-    return h('div', { class: 'diag-kafka-lag' }, [
-      h('table', { class: 'diag-mini-table' }, [
-        h(
-          'thead',
-          null,
-          h('tr', null, [
-            h('th', null, 'Group ID'),
-            h('th', { class: 'num' }, 'Lag'),
-            h('th', { class: 'num' }, 'Partitions'),
-          ]),
-        ),
-        h(
-          'tbody',
-          null,
-          (data as Array<Record<string, unknown>>).map((row) =>
-            h('tr', { key: String(row.groupId) }, [
-              h('td', { class: 'mono' }, String(row.groupId ?? '')),
-              h(
-                'td',
-                { class: 'num' },
-                h(
-                  'span',
-                  { class: Number(row.totalLag) > 0 ? 'lag-bad' : 'lag-ok' },
-                  String(row.totalLag ?? 0),
-                ),
-              ),
-              h('td', { class: 'num' }, String(row.partitionCount ?? 0)),
-            ]),
-          ),
-        ),
-      ]),
-    ])
+    const headerCells = [
+      h('th', null, 'Group ID'),
+      h('th', { class: 'num' }, 'Lag'),
+      h('th', { class: 'num' }, 'Partitions'),
+    ]
+    const headerRow = h('tr', null, headerCells)
+    const tableHead = h('thead', null, headerRow)
+    const tableRows = (data as Array<Record<string, unknown>>).map((row) => {
+      const rowKey = String(row.groupId)
+      const groupId = String(row.groupId ?? '')
+      const groupCell = h('td', { class: 'mono' }, groupId)
+      if (row.error != null || row.totalLag == null || row.partitionCount == null) {
+        const message =
+          typeof row.error === 'string' && row.error.trim()
+            ? row.error
+            : t('opsDiagnostic.kafkaLagUnavailable')
+        const errorCell = h('td', { class: 'lag-bad', colspan: 2 }, message)
+        return h('tr', { key: rowKey }, [groupCell, errorCell])
+      }
+      const lagValue = Number(row.totalLag)
+      const lagLabel = String(row.totalLag)
+      const lagClass = lagValue > 0 ? 'lag-bad' : 'lag-ok'
+      const partitionCount = String(row.partitionCount)
+      const lagBadge = h('span', { class: lagClass }, lagLabel)
+      const lagCell = h('td', { class: 'num' }, lagBadge)
+      const partitionCell = h('td', { class: 'num' }, partitionCount)
+      const rowCells = [groupCell, lagCell, partitionCell]
+      return h('tr', { key: rowKey }, rowCells)
+    })
+    const tableBody = h('tbody', null, tableRows)
+    const tableSections = [tableHead, tableBody]
+    const table = h('table', { class: 'diag-mini-table' }, tableSections)
+    const content = h('div', { class: 'diag-kafka-lag' }, [table])
+    return content
   }
 
   function renderShedLock(data: unknown) {
-    if (!Array.isArray(data) || data.length === 0) {
+    const locks = data && typeof data === 'object' && 'locks' in data ? data.locks : undefined
+    if (!Array.isArray(locks) || locks.length === 0) {
       return h(JsonPreview, { data })
     }
-    return h('div', { class: 'diag-shedlock' }, [
-      h('table', { class: 'diag-mini-table' }, [
-        h(
-          'thead',
-          null,
-          h('tr', null, [
-            h('th', null, t('opsDiagnostic.colLockName')),
-            h('th', null, t('opsDiagnostic.colLockUntil')),
-            h('th', null, t('opsDiagnostic.colLockedBy')),
-          ]),
-        ),
-        h(
-          'tbody',
-          null,
-          (data as Array<Record<string, unknown>>).map((row, i) =>
-            h('tr', { key: i }, [
-              h('td', { class: 'mono' }, String(row.name ?? '')),
-              h('td', null, String(row.lockUntil ?? '')),
-              h('td', { class: 'mono' }, String(row.lockedBy ?? '')),
-            ]),
-          ),
-        ),
-      ]),
-    ])
+    const lockNameHeader = h('th', null, t('opsDiagnostic.colLockName'))
+    const lockUntilHeader = h('th', null, t('opsDiagnostic.colLockUntil'))
+    const lockedByHeader = h('th', null, t('opsDiagnostic.colLockedBy'))
+    const headerCells = [lockNameHeader, lockUntilHeader, lockedByHeader]
+    const headerRow = h('tr', null, headerCells)
+    const tableHead = h('thead', null, headerRow)
+    const tableRows = (locks as Array<Record<string, unknown>>).map((row, index) => {
+      const rowKey = index
+      const lockName = String(row.name ?? '')
+      const lockUntil = String(row.lockUntil ?? '')
+      const lockedBy = String(row.lockedBy ?? '')
+      const lockNameCell = h('td', { class: 'mono' }, lockName)
+      const lockUntilCell = h('td', null, lockUntil)
+      const lockedByCell = h('td', { class: 'mono' }, lockedBy)
+      const rowCells = [lockNameCell, lockUntilCell, lockedByCell]
+      return h('tr', { key: rowKey }, rowCells)
+    })
+    const tableBody = h('tbody', null, tableRows)
+    const tableSections = [tableHead, tableBody]
+    const table = h('table', { class: 'diag-mini-table' }, tableSections)
+    const content = h('div', { class: 'diag-shedlock' }, [table])
+    return content
   }
 
   const cardKafkaLag = createCard({
@@ -493,6 +678,14 @@
     fetch: getOutboxHealth,
     render: renderJsonWithSummary(summarizeOutboxHealth),
   })
+  const cardTerminalChildren = createCard({
+    key: 'terminalChildren',
+    icon: Warning,
+    title: t('opsDiagnostic.sectionTerminalChildren'),
+    desc: t('opsDiagnostic.descTerminalChildren'),
+    fetch: getTerminalChildrenHealth,
+    render: renderJsonWithSummary(summarizeTerminalChildrenHealth),
+  })
 
   // 卡片顺序按 oncall 排障扫读心智:
   // 集群概览(top-down)→ Worker 一致性 → Kafka Lag(消息层)→ Outbox 统计 → Outbox 健康
@@ -503,13 +696,27 @@
     cardKafkaLag,
     cardOutboxStats,
     cardOutboxHealth,
+    cardTerminalChildren,
     cardShedLock,
   ])
+
+  let tenantRevision = 0
+  watch(
+    () => tenant.tenantId,
+    (tenantId) => {
+      tenantRevision += 1
+      diagCards.value.forEach((card) => {
+        card.cancel()
+        if (tenantId) void card.run()
+      })
+    },
+    { flush: 'sync' },
+  )
 
   const anyLoading = computed(() => diagCards.value.some((c) => c.loading))
 
   async function runAll() {
-    // 并发跑全部 6 个,容忍单个失败
+    // 并发跑全部诊断卡片,容忍单个失败
     await Promise.all(diagCards.value.map((c) => c.run().catch(() => undefined)))
     const failed = diagCards.value.filter((c) => c.error).length
     if (failed === 0) ElMessage.success(t('opsDiagnostic.refreshDone'))
@@ -525,8 +732,8 @@
 
   /**
    * 前置条件:Outbox 补救按钮在不满足条件时禁用,tooltip 给出原因。
-   *  - 清理:需 ADMIN + Outbox 统计已加载 + 有可清理事件(脏数据/失败积压)
-   *  - 重发布:需 ADMIN + 健康状态已加载 + 当前有 pending 或 stale 事件
+   *  - 清理:需 ADMIN + 统计中存在已发布或已放弃事件，保留期由服务端判断
+   *  - 重发布:需 ADMIN + 统计中存在失败或已放弃事件
    */
   const isAdmin = computed(() => auth.role === 'ADMIN')
 
@@ -536,10 +743,10 @@
     const stats = cardOutboxStats.data as Record<string, unknown> | null
     if (!stats) return t('opsDiagnostic.needOutboxStats')
     const breakdown = Array.isArray(stats.statusBreakdown) ? stats.statusBreakdown : []
-    const total = breakdown.reduce(
-      (s: number, x: Record<string, unknown>) => s + Number(x.cnt ?? 0),
-      0,
-    )
+    const total = breakdown.reduce((sum: number, row: Record<string, unknown>) => {
+      const eligible = row.publishStatus === 'PUBLISHED' || row.publishStatus === 'GIVE_UP'
+      return sum + (eligible ? Number(row.count ?? 0) : 0)
+    }, 0)
     if (total === 0) return t('opsDiagnostic.cleanupNoTargets')
     return ''
   })
@@ -547,23 +754,34 @@
   const republishDisableReason = computed<string>(() => {
     if (writesFrozen.value) return maintenanceWriteReason.value ?? ''
     if (!isAdmin.value) return t('opsDiagnostic.needAdmin')
-    const health = cardOutboxHealth.data as Record<string, unknown> | null
-    if (!health) return t('opsDiagnostic.needOutboxHealth')
-    const failed = Number(health.pendingEvents ?? 0) + Number(health.stalePublishingEvents ?? 0)
-    if (failed === 0) return t('opsDiagnostic.republishNoTargets')
+    const stats = cardOutboxStats.data as Record<string, unknown> | null
+    if (!stats) return t('opsDiagnostic.needOutboxStats')
+    const breakdown = Array.isArray(stats.statusBreakdown) ? stats.statusBreakdown : []
+    const republishableEventCount = breakdown.reduce(
+      (sum: number, row: Record<string, unknown>) => {
+        const eligible = row.publishStatus === 'FAILED' || row.publishStatus === 'GIVE_UP'
+        return sum + (eligible ? Number(row.count ?? 0) : 0)
+      },
+      0,
+    )
+    if (republishableEventCount === 0) return t('opsDiagnostic.republishNoTargets')
     return ''
   })
 
   async function doCleanup() {
     if (!ensureWriteAvailable()) return
+    const tenantId = tenant.tenantId
+    const revision = tenantRevision
     try {
       await confirmDanger({
         verb: t('opsDiagnostic.cleanupConfirmTitle'),
         target: '',
         consequence: t('opsDiagnostic.cleanupConfirmText'),
       })
+      if (!tenantId || revision !== tenantRevision || !isAdmin.value || !ensureWriteAvailable())
+        return
       cleaning.value = true
-      await cleanupOutbox(tenant.tenantId)
+      await cleanupOutbox(tenantId)
       ElMessage.success(t('opsDiagnostic.cleanupDoneToast'))
       // 顺手刷新一下 outbox 卡片
       void cardOutboxStats.run()
@@ -576,6 +794,8 @@
 
   async function doRepublish() {
     if (!ensureWriteAvailable()) return
+    const tenantId = tenant.tenantId
+    const revision = tenantRevision
     try {
       const { value: idsText } = await ElMessageBox.prompt(
         t('opsDiagnostic.republishPromptText'),
@@ -586,17 +806,27 @@
           type: 'warning',
         },
       )
-      const ids = idsText
-        .split(',')
-        .map((s: string) => Number(s.trim()))
-        .filter((nn: number) => !Number.isNaN(nn) && nn > 0)
-      if (!ids.length) {
+      if (!tenantId || revision !== tenantRevision || !isAdmin.value || !ensureWriteAvailable())
+        return
+      const parts = idsText.split(',').map((value: string) => value.trim())
+      const ids = parts.map(positiveLongId)
+      if (ids.some((id: string | null) => id === null)) {
         ElMessage.warning(t('opsDiagnostic.noValidIds'))
         return
       }
       republishing.value = true
-      await republishOutbox(tenant.tenantId, ids)
-      ElMessage.success(t('opsDiagnostic.republishDoneToast', { n: ids.length }))
+      const result = await republishOutbox(tenantId, ids as string[])
+      if (revision !== tenantRevision) return
+      if (result.resetCount < result.requestedCount) {
+        ElMessage.warning(
+          t('opsDiagnostic.republishPartialToast', {
+            requested: result.requestedCount,
+            reset: result.resetCount,
+          }),
+        )
+      } else {
+        ElMessage.success(t('opsDiagnostic.republishDoneToast', { n: result.resetCount }))
+      }
       void cardOutboxStats.run()
     } catch {
       /* cancel */
@@ -608,13 +838,6 @@
   // 进页面并发预热所有卡，避免用户手动逐个点"加载"
   onMounted(() => {
     void Promise.all(diagCards.value.map((c) => c.run().catch(() => undefined)))
-  })
-
-  useTenantReload(() => {
-    // 切租户 → 重跑已展开的卡(用户已经在看的),其他保留旧数据 + 标记 stale 由用户决定
-    for (const c of diagCards.value) {
-      if (c.hasData) void c.run()
-    }
   })
 </script>
 
@@ -811,9 +1034,66 @@
     color: var(--color-text-tertiary);
   }
 
+  .forensic-export {
+    display: grid;
+    gap: 14px;
+    margin-top: 20px;
+    padding: 18px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-card);
+    background: var(--color-bg-card);
+  }
+
+  .forensic-export__header,
+  .forensic-export__actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .forensic-export__header h3 {
+    margin: 0;
+    font-size: 15px;
+  }
+
+  .forensic-export__header p {
+    margin: 5px 0 0;
+    color: var(--color-text-secondary);
+    font-size: 12px;
+  }
+
+  .forensic-export__form {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0 14px;
+  }
+
+  .forensic-export__form :deep(.el-form-item:last-child) {
+    grid-column: 1 / -1;
+  }
+
+  .forensic-export__validation {
+    margin: -8px 0 0;
+    color: var(--color-danger);
+    font-size: 12px;
+  }
+
+  .forensic-export__result code {
+    overflow-wrap: anywhere;
+  }
+
   @media (max-width: 640px) {
     .diag-catalog {
       grid-template-columns: 1fr;
+    }
+
+    .forensic-export__form {
+      grid-template-columns: 1fr;
+    }
+
+    .forensic-export__header {
+      align-items: flex-start;
     }
   }
 </style>

@@ -1,5 +1,7 @@
 # 前端文档索引
 
+系统与跨端改动的“查找、原文维护、阶段推进、增量记录”见 [配对后端文档路由](../../file-batch-system/docs/standards/document-routing-guide.md)；前端具体归属仍按下列本仓索引执行。
+
 本文档是 `batch-console` 的文档入口。所有文档按「权威设计 / 阶段报告 / 归档材料」分层维护:长期规则只放一处,阶段性结论保留日期,过时材料归档参考。
 
 ## 产品使用指南
@@ -22,18 +24,20 @@
 
 | 文档                                                                                   | 用途                                                              |
 | -------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
-| [项目结构图](./architecture/project-structure.md)                                      | 顶层 + src 子目录 + 关键 composable + npm script(2026-06-03 新增) |
-| [前端方案设计说明书 V3](./engineering/批量调度系统前端方案设计说明书_开发落地版_V3.md) | 前端总体方案:业务域 / 路由 / 页面职责 / 组件分层 / 联调边界       |
+| [作业与工作流联动、系统 Pipeline 前端实施方案](engineering/workflow-job-pipeline-unification-plan-2026-10-14.md) | 两个定义菜单联动、系统 Pipeline 只读展示、统一整体运行与兼容迁移；方案已确定，功能待实施 |
+| [项目结构图](./architecture/project-structure.md)                                      | 顶层 + src 子目录 + 关键 composable + npm script |
+| [前端方案设计说明书 V3](archive/early-proposals/frontend-design-v3-2026-03-28.md) | 前端总体方案:业务域 / 路由 / 页面职责 / 组件分层 / 联调边界       |
 | [设计 Token 治理](./engineering/design-tokens.md)                                       | 运行时 token 权威源；根目录 `design/` 是不发布到文档站的本地只读参考 |
 | [控制台交互约定](./engineering/ui-interaction-conventions.md)                             | 筛选提交时机、状态分段、列表操作、日历、图表空态、JSON、提示和国际化 |
-| [wrapper 迁移记录](./engineering/fe-wrapper-migration-plan.md)                         | 已完成批次、剩余边界与后续迁移规则                                  |
+| [wrapper 迁移记录](engineering/fe-wrapper-migration-plan-2026-06-02.md)                         | 已完成批次、剩余边界与后续迁移规则                                  |
 | [页面命名约定](./engineering/page-naming-convention.md)                                | URL / 代码目录 / 侧边栏分组三者一致规则                           |
 | [前端工程成熟度路线图](./engineering/engineering-maturity-roadmap.md)                  | 大厂工程实践对齐、上线准入、UI 治理和验收证据分层                 |
 | [Agent Skill 使用指南](./engineering/agent-skills-guide.md)                           | 前后端治理总控、前端专项和 PR 交付 Skill 的选择与调用             |
-| [前端可观测性方案](./engineering/前端可观测性方案.md)                                  | 操作日志 / 行为埋点 / Sentry / 错误追踪                           |
-| [Console AI 助手前端实施方案](./engineering/ai-assistant-frontend-implementation-plan.md) | 全局入口、页面上下文、会话 UI、移动端与前后端契约                 |
+| [文档治理](./engineering/document-governance.md)                                      | 当前文档、阶段报告、日期命名、历史归档与文档 Skill 路由           |
+| [前端可观测性方案](engineering/frontend-observability.md)                                  | 操作日志 / 行为埋点 / Sentry / 错误追踪                           |
+| [Console AI 助手前端实施方案](engineering/ai-assistant-frontend.md) | 全局入口、页面上下文、会话 UI、移动端与前后端契约                 |
 | [AI 对话流式交互](./engineering/ai-chat-streaming.md)                       | SSE 协议、停止生成、文本附件及数据保留边界                        |
-| [AI 图片对话与回答复制方案](./engineering/ai-image-conversation-plan.md) | 截图粘贴、图片历史、模型能力、附件治理与复制验收                 |
+| [AI 图片对话与回答复制方案](engineering/ai-image-conversation.md) | 截图粘贴、图片历史、模型能力、附件治理与复制验收                 |
 | [AI、使用率与降级交付记录](./backlog/ai-and-usage-statistics-todo-2026-09-29.md)             | AI、使用率与降级交付状态、联测证据和暂缓/不做边界                         |
 | [运行时与依赖版本](./engineering/runtime-versions.md)                                  | Node 运行约束、锁文件和后端权威支持矩阵                           |
 | [CI 依赖治理](./engineering/ci-dependency-governance.md)                              | Action、Runner、Artifact、分批升级、验证与回滚规则                 |
@@ -72,14 +76,15 @@
 
 | 日期       | 报告                                                                      | 关注点                              |
 | ---------- | ------------------------------------------------------------------------- | ----------------------------------- |
-| 2026-05-23 | [code-change 影响范围](./reports/code-change-upgrade-scope-2026-05-23.md) | 升级影响范围评估                    |
-| 2026-05-23 | [依赖升级评估](./reports/dependency-upgrade-evaluation-2026-05-23.md)     | npm / Vite / TS 升级评估            |
-| 2026-05-19 | [前后端文档整理与深扫](./reports/2026-05-19-前后端文档整理与深扫报告.md)  | 契约漂移 / Job Bundle / 分页 / 门禁 |
-| 2026-05-16 | [Prod readiness](./reports/2026-05-16-prod-readiness.md)                  | 上线就绪盘点                        |
-| 2026-05-16 | [Backlog cleanup](./reports/2026-05-16-backlog-cleanup.md)                | backlog 清理                        |
-| 2026-05-16 | [Deep scan v2](./reports/2026-05-16-deep-scan-v2.md)                      | 第二轮全方位深扫                    |
-| 2026-05-15 | [Deep scan v1](./reports/2026-05-15-deep-scan-v1.md)                      | 第一轮全方位深扫                    |
-| 2026-05-14 | [UI audit](./reports/2026-05-14-ui-audit.md)                              | UI 视觉一致性审计                   |
+| 2026-10-25 | [文档归档与 Skill 路由复核](./reports/2026-10-25-document-governance-and-skill-routing.md) | 前端文档分类、日期命名与脚本技能入口 |
+| 2026-05-23 | [code-change 影响范围](archive/reports/frontend-code-change-upgrade-scope-2026-05-23.md) | 升级影响范围评估                    |
+| 2026-05-23 | [依赖升级评估](archive/reports/frontend-dependency-upgrade-evaluation-2026-05-23.md)     | npm / Vite / TS 升级评估            |
+| 2026-05-19 | [前后端文档整理与深扫](archive/reports/frontend-backend-document-review-2026-05-19.md)  | 契约漂移 / Job Bundle / 分页 / 门禁 |
+| 2026-05-16 | [Prod readiness](archive/reports/frontend-prod-readiness-2026-05-16.md)                  | 上线就绪盘点                        |
+| 2026-05-16 | [Backlog cleanup](archive/reports/frontend-backlog-cleanup-2026-05-16.md)                | backlog 清理                        |
+| 2026-05-16 | [Deep scan v2](archive/reports/frontend-deep-scan-v2-2026-05-16.md)                      | 第二轮全方位深扫                    |
+| 2026-05-15 | [Deep scan v1](archive/reports/frontend-deep-scan-v1-2026-05-15.md)                      | 第一轮全方位深扫                    |
+| 2026-05-14 | [UI audit](archive/reports/frontend-ui-audit-2026-05-14.md)                              | UI 视觉一致性审计                   |
 
 > 4 月报告(2026-04-\*)已归档到 `archive/`,2026-05-13 IA 重构 / 2026-04-22 UI audit 也已归档。
 
@@ -94,6 +99,7 @@
 - 4 月旧报告(系统分析 / e2e / 分页迁移 / 审查清单 / 未完成项 / 优化清单 / 作业编排 bug)
 - 2026-04-22 Console UI/UX audit / 2026-05-13 IA 重构(已落地)
 - 2026-05-21 / 2026-05-23 FE acceptance 报告(历史)
+- 2026-06-22 E2E 剩余失败根因快照及历史 LOC 统计
 - 2026-04-01 多步骤对话落地指南(早期 AI 协作)
 - 2026-05 QA campaign、旧密码方案和废弃文档站提案
 - 2026-07 视觉原型与已完成重设计计划
@@ -107,6 +113,10 @@
 - **改列表页**:`src/components/table/ProTable.vue` / `ListPageQueryBar.vue`
 - **跨仓协作规则**:根 [AGENTS.md](../AGENTS.md)
 - **选择 Agent Skill**:[engineering/agent-skills-guide.md](./engineering/agent-skills-guide.md) → 根 [AGENTS.md](../AGENTS.md)
+
+## 全量治理证据
+
+文档与脚本职责、归档和操作边界见[脚本与 Skill 路由](engineering/script-skill-routing.md)；本轮逐文件覆盖表及检查限制见[2026-10-25 复核记录](reports/2026-10-25-document-governance-and-skill-routing.md)。
 
 ## 维护规则
 

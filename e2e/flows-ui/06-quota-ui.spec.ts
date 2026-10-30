@@ -38,7 +38,7 @@ test.describe('UI Flow 06: quota', () => {
       await codeInput.fill(`e2e-ui-quota-${Date.now()}`, { force: true })
     }
     await page.keyboard.press('Escape')
-    await page.waitForTimeout(300)
+    await expect(page.locator('.el-drawer:visible, .el-dialog:visible')).toHaveCount(0)
   })
 
   test('3. /self-service 配额申请 tab 表单渲染', async ({ page }) => {

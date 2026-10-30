@@ -1,0 +1,4 @@
+interface:
+  display_name: "前端文档与发布治理"
+  short_description: "维护前端文档归属、历史归档、命名索引、发布说明及当前事实一致性"
+  default_prompt: "使用 $frontend-docs-release-governance 整理指定前端文档，核对当前事实、引用及适用治理检查。"

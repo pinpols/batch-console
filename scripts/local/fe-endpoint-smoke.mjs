@@ -14,16 +14,13 @@
 //   405              → FAIL(方法/路由漂移)
 //   5xx / 网络错     → FAIL
 //
-// 安全:默认【只打 GET】(只读、零副作用)。今天暴露的 404/5xx 全是 GET 端点,GET-only
-// 已覆盖该 bug 类;写/删端点的契约对齐由 `npm run gen:api:check`(静态)保证,不在运行时盲打
-// —— 鉴权后盲打写端点可能误执行(如 DELETE /admin/test-data)。
-// 如确在【一次性/可重置环境】要探写端点路由存在性,加 --writes:对 POST/PUT/PATCH 发空 {} body
-// (靠参数校验 400 兜底、不产生有意义副作用),并 denylist 掉会话变更 / 已知破坏性端点;DELETE 始终不打。
+// 默认仅探测 GET；提供账号时仍会 POST 登录并可能替换该账号会话，先确认环境与账号归属。
+// --writes 会向非 denylist 的 POST/PUT/PATCH 发空对象；空 body 和 denylist 均不能保证没有业务副作用。
+// 写探测仅限已获准的一次性/可重置环境；DELETE 始终不打。路由状态分类不代表真实业务闭环。
 //
 // 用法:
 //   node scripts/local/fe-endpoint-smoke.mjs                 # 默认 GET-only,打 http://localhost:18080
 //   SMOKE_USER=admin SMOKE_PASS=*** node scripts/local/fe-endpoint-smoke.mjs   # 鉴权(覆盖鉴权后 GET)
-//   SMOKE_TOKEN=<jwt> node scripts/local/fe-endpoint-smoke.mjs
 //   node scripts/local/fe-endpoint-smoke.mjs --writes        # 额外探 POST/PUT/PATCH 路由(仅限可重置环境!)
 //   node scripts/local/fe-endpoint-smoke.mjs --list          # 离线:只打印套约清单,不打后端
 //   SMOKE_BASE_URL=http://localhost:18080 SMOKE_TENANT=ta ... # 覆盖默认
@@ -31,8 +28,7 @@
 // 环境变量:
 //   SMOKE_BASE_URL  默认 http://localhost:18080
 //   SMOKE_TENANT    默认 ta(X-Tenant-Id)
-//   SMOKE_TOKEN     直接给 bearer token(优先级最高)
-//   SMOKE_USER/SMOKE_PASS  明文登录 /api/console/auth/login 换 token
+//   SMOKE_USER/SMOKE_PASS  登录 /api/console/auth/login 获取 Cookie/CSRF 会话
 //   SMOKE_OPENAPI   覆盖 OpenAPI 路径
 //   SMOKE_CONCURRENCY 默认 8
 //
@@ -128,37 +124,37 @@ function loadEndpoints() {
   return out
 }
 
-// 返回 { bearer?, cookie? } —— ADR-030:登录态走 HttpOnly cookie `batch_console_token`,
-// 响应体不含原始 token,故从 Set-Cookie 抓 cookie 回带;SMOKE_TOKEN 给则走 bearer。
+// 仅消费后端 Cookie/CSRF 契约；不从响应体或环境变量读取 Bearer。
 async function login() {
-  if (process.env.SMOKE_TOKEN) return { bearer: process.env.SMOKE_TOKEN }
+  if (process.env.SMOKE_TOKEN) {
+    throw new Error('SMOKE_TOKEN 已退役，请使用 SMOKE_USER/SMOKE_PASS 获取 Cookie 会话')
+  }
   const user = process.env.SMOKE_USER
   const pass = process.env.SMOKE_PASS
-  if (!user || !pass) return {}
-  try {
-    const res = await fetch(`${BASE_URL}/api/console/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username: user, password: pass }),
-      signal: AbortSignal.timeout(REQ_TIMEOUT_MS),
-    })
-    if (!res.ok) {
-      console.warn(`[auth] 登录失败 HTTP ${res.status}(可能开了登录加密 RSA-OAEP);转无凭证跑`)
-      return {}
+  if (!user && !pass) return {}
+  if (!user || !pass) throw new Error('SMOKE_USER 与 SMOKE_PASS 必须同时提供')
+  const res = await fetch(`${BASE_URL}/api/console/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username: user, password: pass }),
+    signal: AbortSignal.timeout(REQ_TIMEOUT_MS),
+  })
+  if (!res.ok) throw new Error(`登录失败 HTTP ${res.status}，停止鉴权探测`)
+  const rawCookies = typeof res.headers.getSetCookie === 'function'
+    ? res.headers.getSetCookie()
+    : [res.headers.get('set-cookie') || '']
+  const cookies = new Map()
+  for (const raw of rawCookies) {
+    for (const match of raw.matchAll(/(?:^|,\s*)(batch_console_token|XSRF-TOKEN)=([^;,]*)/g)) {
+      if (match[2]) cookies.set(match[1], match[2])
     }
-    const setCookie = res.headers.get('set-cookie') || ''
-    const m = setCookie.match(/batch_console_token=[^;]+/)
-    if (m) return { cookie: m[0] }
-    // 兜底:个别部署可能把 token 放响应体
-    const body = await res.json().catch(() => null)
-    const data = body?.data ?? body
-    const token = data?.token || data?.accessToken || data?.access_token
-    if (token) return { bearer: token }
-    console.warn('[auth] 登录成功但未取到 cookie/token;转无凭证跑')
-    return {}
-  } catch (e) {
-    console.warn(`[auth] 登录异常:${e?.message ?? e};转无凭证跑`)
-    return {}
+  }
+  if (!cookies.has('batch_console_token')) throw new Error('登录未返回认证 Cookie，停止探测')
+  const csrf = cookies.get('XSRF-TOKEN')
+  if (INCLUDE_WRITES && !csrf) throw new Error('登录未返回 CSRF Cookie，停止写探测')
+  return {
+    cookie: [...cookies].map(([name, value]) => `${name}=${value}`).join('; '),
+    csrf: csrf ? decodeURIComponent(csrf) : undefined,
   }
 }
 
@@ -186,11 +182,11 @@ function classify({
 
 async function probe(ep, auth) {
   const headers = { 'X-Tenant-Id': TENANT }
-  if (auth?.bearer) headers['Authorization'] = `Bearer ${auth.bearer}`
   if (auth?.cookie) headers['Cookie'] = auth.cookie
   let body
   if (['POST', 'PUT', 'PATCH'].includes(ep.method)) {
     headers['Content-Type'] = 'application/json'
+    if (auth?.csrf) headers['X-XSRF-TOKEN'] = auth.csrf
     body = '{}'
   }
   try {
@@ -261,9 +257,9 @@ async function main() {
 
   console.log(`目标后端: ${BASE_URL}  租户: ${TENANT}`)
   const auth = await login()
-  const authed = !!(auth.bearer || auth.cookie)
+  const authed = !!auth.cookie
   console.log(
-    `鉴权: ${authed ? (auth.cookie ? 'cookie 已就绪' : 'bearer 已就绪') : '无凭证(401/403 计入 AUTH,不算失败)'}\n`,
+    `鉴权: ${authed ? 'Cookie 会话已就绪' : '无凭证(401/403 计入 AUTH,不算失败)'}\n`,
   )
 
   const results = await runPool(toProbe, (ep) => probe(ep, auth), CONCURRENCY)
@@ -287,7 +283,7 @@ async function main() {
   console.log('汇总:')
   console.log(`   PASS ${by.PASS.length}   AUTH ${by.AUTH.length}   WARN ${by.WARN.length}   FAIL ${by.FAIL.length}`)
   if (by.AUTH.length && !authed)
-    console.log('   提示: AUTH 多因未配凭证;设 SMOKE_USER/SMOKE_PASS 或 SMOKE_TOKEN 后重跑可覆盖鉴权后路径。')
+    console.log('   提示: AUTH 多因未配凭证;设 SMOKE_USER/SMOKE_PASS 后重跑（登录会改变会话）可覆盖鉴权后路径。')
 
   process.exitCode = by.FAIL.length ? 1 : 0
 }

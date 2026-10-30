@@ -210,7 +210,7 @@
                     <template #default="{ row }">
                       <span>{{ row.sheetName }}</span>
                       <el-tag
-                        v-if="downstreamAtRisk.includes(normalizeSheetName(row.sheetName))"
+                        v-if="isDownstreamAtRisk(row.sheetName)"
                         size="small"
                         type="warning"
                         effect="plain"
@@ -344,27 +344,30 @@
                         />
                         <el-form label-position="top" class="error-row-editor__form">
                           <el-form-item
-                            v-for="col in columnsOf(row)"
+                            v-for="col in columnsOf(row as PreviewErrorRow)"
                             :key="col"
                             :label="col"
                             class="error-row-editor__field"
                           >
                             <el-input
-                              v-model="draftFor(row)[col]"
+                              v-model="draftFor(row as PreviewErrorRow)[col]"
                               clearable
                               :placeholder="t('tenantPackageImportWizard.cellPlaceholder')"
                             />
                           </el-form-item>
                         </el-form>
                         <div class="form-action-bar">
-                          <el-button :disabled="patchSaving !== null" @click="resetDraft(row)">
+                          <el-button
+                            :disabled="patchSaving !== null || pvLoading || applyLoading"
+                            @click="resetDraft(row as PreviewErrorRow)"
+                          >
                             {{ t('tenantPackageImportWizard.btnResetRow') }}
                           </el-button>
                           <el-button
                             type="primary"
-                            :loading="patchSaving === rowKeyOf(row)"
-                            :disabled="patchSaving !== null"
-                            @click="saveRow(row)"
+                            :loading="patchSaving === rowKeyOf(row as PreviewErrorRow)"
+                            :disabled="patchSaving !== null || pvLoading || applyLoading"
+                            @click="saveRow(row as PreviewErrorRow)"
                           >
                             {{ t('tenantPackageImportWizard.btnSaveRow') }}
                           </el-button>
@@ -420,7 +423,7 @@
                 <template #default>
                   {{
                     t('tenantPackageImportWizard.applyBlockedBody', {
-                      n: previewStats?.invalid ?? issueRows.length,
+                      n: previewStats?.invalid ?? errorRows.length,
                     })
                   }}
                 </template>
@@ -524,7 +527,7 @@
           <el-tooltip :content="t('excelMaintenanceWizard.btnPrev')" placement="top">
             <button
               class="wizard-nav wizard-nav--prev"
-              :disabled="step <= 0"
+              :disabled="step <= 0 || applyLoading"
               :aria-label="t('excelMaintenanceWizard.btnPrev')"
               @click="step--"
             >
@@ -683,7 +686,7 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, reactive, ref, shallowRef } from 'vue'
+  import { computed, reactive, ref, shallowRef, watch, onScopeDispose } from 'vue'
   import { useI18n } from 'vue-i18n'
   import {
     ArrowLeft,
@@ -758,8 +761,15 @@
     triggerBlobDownload,
   } = useImportWizard()
   const uploadRef = ref<UploadInstance>()
+  let workbookGeneration = 0
+  let previewGeneration = 0
+  onScopeDispose(() => {
+    workbookGeneration += 1
+    previewGeneration += 1
+  })
 
   function selectWorkbookFile(selectedFile: File): boolean {
+    if (applyLoading.value) return false
     const validationError = validateImportWorkbookFile(selectedFile)
     if (validationError === 'unsupported-type') {
       ElMessage.warning(
@@ -776,7 +786,8 @@
   }
 
   function onWorkbookFile(uploadFile: UploadFile) {
-    if (!uploadFile.raw || selectWorkbookFile(uploadFile.raw)) return
+    if (!uploadFile.raw) return
+    if (selectWorkbookFile(uploadFile.raw)) return
     uploadRef.value?.clearFiles()
     setRawFile(null)
   }
@@ -847,7 +858,8 @@
 
   const filteredGuideColumns = computed<TenantPackageColumnGuide[]>(() => {
     const columns = activeGuideSheet.value?.columns ?? []
-    const keyword = guideKeyword.value.trim().toLowerCase()
+    const trimmedKeyword = guideKeyword.value.trim()
+    const keyword = trimmedKeyword.toLowerCase()
     const scenario = selectedGuideScenario.value
     return columns.filter((column) => {
       if (!guideColumnMatchesScenario(column, activeGuideSheet.value, scenario)) return false
@@ -855,7 +867,7 @@
       if (guideLevelFilter.value === 'common' && column.guideLevel !== '常用') return false
       if (guideLevelFilter.value === 'advanced' && column.guideLevel !== '高级') return false
       if (!keyword) return true
-      return [
+      const searchableValues = [
         column.columnName,
         column.guideLevel,
         column.format,
@@ -866,8 +878,12 @@
         column.appliesTo,
         ...(column.allowedValues ?? []),
       ]
-        .filter(Boolean)
-        .some((text) => String(text).toLowerCase().includes(keyword))
+      const nonEmptyValues = searchableValues.filter(Boolean)
+      return nonEmptyValues.some((value) => {
+        const valueText = String(value)
+        const normalizedValue = valueText.toLowerCase()
+        return normalizedValue.includes(keyword)
+      })
     })
   })
 
@@ -916,23 +932,33 @@
   }
 
   async function saveRow(row: PreviewErrorRow) {
+    if (!uploadToken.value || applyLoading.value || pvLoading.value || patchSaving.value) return
     const key = rowKeyOf(row)
+    const generation = workbookGeneration
+    const sequence = ++previewGeneration
     patchSaving.value = key
     try {
-      const resp = await tenantPackagePatchRow(uploadToken.value, {
+      const currentUploadToken = uploadToken.value
+      const patchRequest = {
         previewToken: previewToken.value,
         sheetName: row.sheetName,
         rowNo: row.rowNo,
+        // 构造修复请求时，draftFor 才按需建立可编辑行副本。
         values: draftFor(row),
-      })
+      }
+      const resp = await tenantPackagePatchRow(currentUploadToken, patchRequest)
+      if (generation !== workbookGeneration || sequence !== previewGeneration) return
       // 用重校验后的新预览覆盖,errorRows 随之重算;修好的行会消失
       previewRaw.value = resp as unknown as Record<string, unknown>
       delete rowDrafts[key]
       ElMessage.success(t('tenantPackageImportWizard.rowSavedToast'))
     } catch (err: unknown) {
-      ElMessage.error(userErrorMessage(err, t('tenantPackageImportWizard.rowSaveFailedToast')))
+      if (generation !== workbookGeneration || sequence !== previewGeneration) return
+      const fallbackMessage = t('tenantPackageImportWizard.rowSaveFailedToast')
+      const displayMessage = userErrorMessage(err, fallbackMessage)
+      ElMessage.error(displayMessage)
     } finally {
-      patchSaving.value = null
+      if (generation === workbookGeneration) patchSaving.value = null
     }
   }
 
@@ -974,10 +1000,9 @@
 
   /** 按 sheet 名归一化:后端可能返 `BusinessCalendar` 或 `business-calendar` 任何风格,统一成 kebab。 */
   function normalizeSheetName(raw: string): string {
-    return raw
-      .replace(/([a-z0-9])([A-Z])/g, '$1-$2')
-      .replace(/[\s_]+/g, '-')
-      .toLowerCase()
+    const camelCaseSeparated = raw.replace(/([a-z0-9])([A-Z])/g, '$1-$2')
+    const separatorsNormalized = camelCaseSeparated.replace(/[\s_]+/g, '-')
+    return separatorsNormalized.toLowerCase()
   }
 
   /** 哪些 sheet 有错。 */
@@ -1019,6 +1044,11 @@
     return [...affectedSheets.value].filter((s) => !failing.has(s))
   })
 
+  function isDownstreamAtRisk(sheetName: string): boolean {
+    const normalizedSheetName = normalizeSheetName(sheetName)
+    return downstreamAtRisk.value.includes(normalizedSheetName)
+  }
+
   const hasInvalidSheets = computed<boolean>(() =>
     sheetStats.value.some((sheet) => sheet.invalid > 0),
   )
@@ -1030,6 +1060,7 @@
 
   const nextDisabled = computed<boolean>(
     () =>
+      applyLoading.value ||
       step.value >= 2 ||
       (step.value === 0 && !uploadToken.value) ||
       (step.value === 1 && (!previewStats.value || hasBlockingIssues.value)),
@@ -1043,7 +1074,9 @@
     const n = errorRows.value.length
     const rowH = 36
     const base = 64
-    return Math.min(480, Math.max(160, base + n * rowH))
+    const estimatedHeight = base + n * rowH
+    const heightWithMinimum = Math.max(160, estimatedHeight)
+    return Math.min(480, heightWithMinimum)
   })
 
   /**
@@ -1057,7 +1090,7 @@
   const applyError = ref<string | null>(null)
   const applyResult = shallowRef<TenantPackageApplyResponse | null>(null)
 
-  /** 把后端 apply 返回的 9 实体 insert/update 拆分,展平成表行 */
+  /** 把后端 apply 返回的 7 实体 insert/update 拆分,展平成表行 */
   const applyBreakdownRows = computed<Array<{ entity: string; inserted: number; updated: number }>>(
     () => {
       const r = applyResult.value
@@ -1069,18 +1102,33 @@
         ['job-definition', 'jobInserted', 'jobUpdated'],
         ['file-channel-config', 'channelInserted', 'channelUpdated'],
         ['file-template-config', 'fileTemplateInserted', 'fileTemplateUpdated'],
-        ['pipeline-definition (+ steps)', 'pipelineInserted', 'pipelineUpdated'],
         ['workflow-definition (+ nodes/edges)', 'workflowInserted', 'workflowUpdated'],
       ]
       return ents
-        .map(([entity, ik, uk]) => ({
-          entity,
-          inserted: Number(r[ik as keyof TenantPackageApplyResponse] ?? 0),
-          updated: Number(r[uk as keyof TenantPackageApplyResponse] ?? 0),
-        }))
+        .map(([entity, ik, uk]) => {
+          const inserted = Number(r[ik as keyof TenantPackageApplyResponse] ?? 0)
+          const updated = Number(r[uk as keyof TenantPackageApplyResponse] ?? 0)
+          return { entity, inserted, updated }
+        })
         .filter((row) => row.inserted > 0 || row.updated > 0)
     },
   )
+
+  function resetWorkbookSession() {
+    workbookGeneration += 1
+    previewGeneration += 1
+    uploadToken.value = ''
+    previewRaw.value = null
+    applyError.value = null
+    applyResult.value = null
+    step.value = 0
+    upLoading.value = false
+    pvLoading.value = false
+    wbLoading.value = false
+    patchSaving.value = null
+    for (const key of Object.keys(rowDrafts)) delete rowDrafts[key]
+  }
+  watch(file, resetWorkbookSession, { flush: 'sync' })
 
   /** I12 重置向导:回 step 0 + 清掉所有阶段状态,让用户重新走完整流程 */
   function resetWizard() {
@@ -1119,10 +1167,14 @@
   }
 
   async function doUpload() {
-    if (!file.value) return
+    if (!file.value || upLoading.value || applyLoading.value) return
+    resetWorkbookSession()
+    const generation = workbookGeneration
+    const selectedFile = file.value
     upLoading.value = true
     try {
-      const res = await tenantPackageUpload(file.value)
+      const res = await tenantPackageUpload(selectedFile)
+      if (generation !== workbookGeneration) return
       uploadToken.value = res.uploadToken ?? ''
       if (!uploadToken.value) {
         ElMessage.warning(t('excelMaintenanceWizard.noUploadTokenWarn'))
@@ -1131,35 +1183,55 @@
       step.value = 1
       await doPreview()
     } finally {
-      upLoading.value = false
+      if (generation === workbookGeneration) upLoading.value = false
     }
   }
 
   async function doPreview() {
-    if (!uploadToken.value) return
+    if (!uploadToken.value || applyLoading.value || patchSaving.value) return
+    const generation = workbookGeneration
+    const sequence = ++previewGeneration
+    const currentUploadToken = uploadToken.value
     pvLoading.value = true
     try {
-      previewRaw.value = (await tenantPackagePreview(uploadToken.value)) as Record<string, unknown>
+      const data = await tenantPackagePreview(currentUploadToken)
+      if (generation !== workbookGeneration || sequence !== previewGeneration) return
+      previewRaw.value = data as Record<string, unknown>
       showOnlyInvalidSheets.value = hasInvalidSheets.value
     } finally {
-      pvLoading.value = false
+      if (generation === workbookGeneration && sequence === previewGeneration)
+        pvLoading.value = false
     }
   }
 
   async function doDownloadWorkbook() {
-    if (!uploadToken.value) return
+    if (!uploadToken.value || wbLoading.value) return
+    const generation = workbookGeneration
+    const currentUploadToken = uploadToken.value
     wbLoading.value = true
     try {
-      const blob = await tenantPackageDownloadPreviewWorkbook(uploadToken.value)
-      triggerBlobDownload(blob, `tenant-package-preview-${uploadToken.value}.xlsx`)
+      const blob = await tenantPackageDownloadPreviewWorkbook(currentUploadToken)
+      if (generation !== workbookGeneration) return
+      triggerBlobDownload(blob, `tenant-package-preview-${currentUploadToken}.xlsx`)
       ElMessage.success(t('excelMaintenanceWizard.annotatedDownloadedToast'))
     } finally {
-      wbLoading.value = false
+      if (generation === workbookGeneration) wbLoading.value = false
     }
   }
 
   async function doApply() {
-    if (!uploadToken.value || !previewToken.value) return
+    if (
+      !uploadToken.value ||
+      !previewToken.value ||
+      applyLoading.value ||
+      upLoading.value ||
+      pvLoading.value ||
+      patchSaving.value
+    )
+      return
+    const generation = workbookGeneration
+    const currentUploadToken = uploadToken.value
+    const currentPreviewToken = previewToken.value
     if (hasBlockingIssues.value) {
       ElMessage.error(t('tenantPackageImportWizard.applyBlockedTitle'))
       return
@@ -1188,29 +1260,40 @@
     } catch {
       return /* 用户取消确认 */
     }
+    if (
+      generation !== workbookGeneration ||
+      currentUploadToken !== uploadToken.value ||
+      currentPreviewToken !== previewToken.value
+    )
+      return
     applyLoading.value = true
     applyError.value = null
     try {
-      const res = await tenantPackageApply(uploadToken.value, {
-        previewToken: previewToken.value,
+      const res = await tenantPackageApply(currentUploadToken, {
+        previewToken: currentPreviewToken,
       })
+      if (generation !== workbookGeneration) return
       // 后端 apply 返每实体 insert/update 拆分,放进 applyResult 让 I10 面板展示完整 breakdown
       applyResult.value = res
       ElMessage.success(t('tenantPackageImportWizard.appliedToast'))
     } catch (err: unknown) {
-      const recovery = await refreshTenantPackagePreviewOnConflict(err, doPreview)
+      if (generation !== workbookGeneration) return
+      const recovery = await refreshTenantPackagePreviewOnConflict(err, async () => {
+        applyLoading.value = false
+        await doPreview()
+      })
+      if (generation !== workbookGeneration) return
       if (recovery !== 'not-conflict') {
         step.value = 1
-        ElMessage[recovery === 'refreshed' ? 'warning' : 'error'](
-          t(
-            `tenantPackageImportWizard.conflictPreview${recovery === 'refreshed' ? 'Refreshed' : 'Failed'}`,
-          ),
-        )
+        const previewWasRefreshed = recovery === 'refreshed'
+        const recoveryMessageType = previewWasRefreshed ? 'warning' : 'error'
+        const recoveryMessageKey = `tenantPackageImportWizard.conflictPreview${previewWasRefreshed ? 'Refreshed' : 'Failed'}`
+        ElMessage[recoveryMessageType](t(recoveryMessageKey))
         return
       }
       applyError.value = userErrorMessage(err, t('tenantPackageImportWizard.applyBlockedTitle'))
     } finally {
-      applyLoading.value = false
+      if (generation === workbookGeneration) applyLoading.value = false
     }
   }
 </script>

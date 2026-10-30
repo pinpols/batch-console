@@ -1,5 +1,7 @@
 # Phase 6 — 真实业务流程端到端
 
+> **历史归档**：本文是 2026-05 QA campaign 的历史记录，端点、角色、环境、数量、PASS/SKIP 和待办均只反映执行当时的状态。当前测试与验收见[测试指南](../../../testing/README.md)和[CI 手册](../../../runbook/ci.md)。
+
 > 生成: 2026-05-18
 > 范围: SQL seed 完整运行时数据 → playwright 跑 9 个跨页业务流程 → watchdog 兜底 0 4xx/5xx
 > spec: [e2e/business-flows.spec.ts](../../../../e2e/business-flows.spec.ts)

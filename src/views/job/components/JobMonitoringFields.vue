@@ -17,90 +17,89 @@
       <div class="policy-rule__hint">{{ t('jobMonitoringPolicy.softRuntimeHint') }}</div>
     </section>
 
-    <template v-if="supportsStartDeadline">
-      <section class="policy-rule">
-        <div class="policy-rule__title">{{ t('jobMonitoringPolicy.startGrace') }}</div>
-        <div class="policy-rule__controls">
-          <el-form-item :label="t('jobMonitoringPolicy.thresholdSeconds')">
-            <el-input-number v-model="startGraceSeconds" :min="0" :max="2147483647" />
-          </el-form-item>
-          <el-form-item :label="t('jobMonitoringPolicy.severity')">
-            <el-select v-model="startGraceSeverity">
-              <el-option v-for="item in severities" :key="item" :label="item" :value="item" />
-            </el-select>
-          </el-form-item>
-        </div>
-        <div class="policy-rule__hint">
-          {{ t('jobMonitoringPolicy.startGraceHint', { timezone: timezone || 'UTC' }) }}
-        </div>
-      </section>
+    <section class="policy-rule">
+      <div class="policy-rule__title">{{ t('jobMonitoringPolicy.startGrace') }}</div>
+      <div class="policy-rule__controls">
+        <el-form-item :label="t('jobMonitoringPolicy.thresholdSeconds')">
+          <el-input-number v-model="startGraceSeconds" :min="0" :max="2147483647" />
+        </el-form-item>
+        <el-form-item :label="t('jobMonitoringPolicy.severity')">
+          <el-select v-model="startGraceSeverity">
+            <el-option v-for="item in severities" :key="item" :label="item" :value="item" />
+          </el-select>
+        </el-form-item>
+      </div>
+      <div class="policy-rule__hint">
+        {{ t('jobMonitoringPolicy.startGraceHint', { timezone: timezone || 'UTC' }) }}
+      </div>
+    </section>
 
-      <section v-if="isDependent" class="policy-rule">
-        <div class="policy-rule__title">{{ t('jobMonitoringPolicy.completionDeadline') }}</div>
-        <div class="policy-rule__controls">
-          <el-form-item :label="t('jobMonitoringPolicy.thresholdSeconds')">
-            <el-input-number
-              v-model="dependencyCompletionWindowSeconds"
-              :min="0"
-              :max="2147483647"
+    <el-form-item :label="t('jobMonitoringPolicy.completionMode')">
+      <el-radio-group v-model="completionMode" @update:model-value="changeCompletionMode">
+        <el-radio-button value="clock">{{
+          t('jobMonitoringPolicy.completionClockMode')
+        }}</el-radio-button>
+        <el-radio-button value="window">{{
+          t('jobMonitoringPolicy.completionWindowMode')
+        }}</el-radio-button>
+      </el-radio-group>
+    </el-form-item>
+
+    <section v-if="completionMode === 'window'" class="policy-rule">
+      <div class="policy-rule__title">{{ t('jobMonitoringPolicy.completionDeadline') }}</div>
+      <div class="policy-rule__controls">
+        <el-form-item :label="t('jobMonitoringPolicy.thresholdSeconds')">
+          <el-input-number v-model="dependencyCompletionWindowSeconds" :min="0" :max="2147483647" />
+        </el-form-item>
+        <el-form-item :label="t('jobMonitoringPolicy.severity')">
+          <el-select v-model="completionDeadlineSeverity">
+            <el-option v-for="item in severities" :key="item" :label="item" :value="item" />
+          </el-select>
+        </el-form-item>
+      </div>
+      <div class="policy-rule__hint">
+        {{ t('jobMonitoringPolicy.dependencyCompletionHint') }}
+      </div>
+    </section>
+
+    <section v-if="completionMode === 'clock'" class="policy-rule">
+      <div class="policy-rule__title">{{ t('jobMonitoringPolicy.completionDeadline') }}</div>
+      <div class="policy-rule__controls policy-rule__controls--deadline">
+        <div class="deadline-group">
+          <el-form-item :label="t('jobMonitoringPolicy.deadlineTime')">
+            <el-time-picker
+              v-model="completionDeadlineLocalTime"
+              format="HH:mm"
+              value-format="HH:mm"
+              :clearable="true"
+              :placeholder="t('jobMonitoringPolicy.deadlineTimePlaceholder')"
             />
           </el-form-item>
-          <el-form-item :label="t('jobMonitoringPolicy.severity')">
-            <el-select v-model="completionDeadlineSeverity">
-              <el-option v-for="item in severities" :key="item" :label="item" :value="item" />
+          <el-form-item :label="t('jobMonitoringPolicy.deadlineDay')">
+            <el-select
+              v-model="completionDeadlineDayOffset"
+              :disabled="!completionDeadlineLocalTime"
+            >
+              <el-option :label="t('jobMonitoringPolicy.sameDay')" :value="0" />
+              <el-option :label="t('jobMonitoringPolicy.nextDay')" :value="1" />
             </el-select>
           </el-form-item>
         </div>
-        <div class="policy-rule__hint">
-          {{ t('jobMonitoringPolicy.dependencyCompletionHint') }}
-        </div>
-      </section>
-
-      <section v-if="isCron && !isDependent" class="policy-rule">
-        <div class="policy-rule__title">{{ t('jobMonitoringPolicy.completionDeadline') }}</div>
-        <div class="policy-rule__controls policy-rule__controls--deadline">
-          <div class="deadline-group">
-            <el-form-item :label="t('jobMonitoringPolicy.deadlineTime')">
-              <el-time-picker
-                v-model="completionDeadlineLocalTime"
-                format="HH:mm"
-                value-format="HH:mm"
-                :clearable="true"
-                :placeholder="t('jobMonitoringPolicy.deadlineTimePlaceholder')"
-              />
-            </el-form-item>
-            <el-form-item :label="t('jobMonitoringPolicy.deadlineDay')">
-              <el-select
-                v-model="completionDeadlineDayOffset"
-                :disabled="!completionDeadlineLocalTime"
-              >
-                <el-option :label="t('jobMonitoringPolicy.sameDay')" :value="0" />
-                <el-option :label="t('jobMonitoringPolicy.nextDay')" :value="1" />
-              </el-select>
-            </el-form-item>
-          </div>
-          <el-form-item :label="t('jobMonitoringPolicy.severity')">
-            <el-select v-model="completionDeadlineSeverity">
-              <el-option v-for="item in severities" :key="item" :label="item" :value="item" />
-            </el-select>
-          </el-form-item>
-        </div>
-        <div class="policy-rule__hint">
-          {{ t('jobMonitoringPolicy.completionDeadlineHint', { timezone: timezone || 'UTC' }) }}
-        </div>
-      </section>
-    </template>
-    <el-alert
-      v-else
-      :title="t('jobMonitoringPolicy.manualScheduleHint')"
-      type="info"
-      :closable="false"
-    />
+        <el-form-item :label="t('jobMonitoringPolicy.severity')">
+          <el-select v-model="completionDeadlineSeverity">
+            <el-option v-for="item in severities" :key="item" :label="item" :value="item" />
+          </el-select>
+        </el-form-item>
+      </div>
+      <div class="policy-rule__hint">
+        {{ t('jobMonitoringPolicy.completionDeadlineHint', { timezone: timezone || 'UTC' }) }}
+      </div>
+    </section>
   </div>
 </template>
 
 <script setup lang="ts">
-  import { computed } from 'vue'
+  import { ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
 
   const props = defineProps<{
@@ -132,9 +131,25 @@
   )
   const { t } = useI18n()
   const severities = ['WARN', 'ERROR', 'CRITICAL'] as const
-  const isDependent = computed(() => Boolean(props.dependsOnJobCode?.trim()))
-  const supportsStartDeadline = computed(() => props.scheduleType === 'CRON' || isDependent.value)
-  const isCron = computed(() => props.scheduleType === 'CRON')
+  const hasWindow = dependencyCompletionWindowSeconds.value > 0
+  const hasClock = Boolean(completionDeadlineLocalTime.value)
+  const legacyClockDefault = props.scheduleType === 'CRON' && !props.dependsOnJobCode?.trim()
+  const completionMode = ref<'clock' | 'window'>(
+    !hasWindow && (hasClock || legacyClockDefault) ? 'clock' : 'window',
+  )
+
+  function changeCompletionMode(value: unknown) {
+    if (value === 'clock') dependencyCompletionWindowSeconds.value = 0
+    else if (value === 'window') {
+      completionDeadlineLocalTime.value = null
+      completionDeadlineDayOffset.value = 0
+    }
+  }
+
+  watch([dependencyCompletionWindowSeconds, completionDeadlineLocalTime], ([window, clock]) => {
+    if (window > 0) completionMode.value = 'window'
+    else if (clock) completionMode.value = 'clock'
+  })
 </script>
 
 <style scoped>

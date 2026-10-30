@@ -266,7 +266,10 @@
   const hasMore = computed(() => hasMoreRef.value)
 
   async function loadMore() {
-    if (loadingMore.value || loading.value || !hasMore.value || !query.cursor) return
+    const cannotLoadMoreInstances = loadingMore.value || loading.value || !hasMore.value || !query.cursor
+    if (cannotLoadMoreInstances) {
+      return
+    }
     loadingMore.value = true
     try {
       query.tenantId = tenant.tenantId

@@ -1,0 +1,457 @@
+{
+  "tenantId": "e2e-bulk-91aee8ebc6354a55b5415f7fa1e25d5b",
+  "bizDate": "2026-11-16",
+  "snapshots": [
+    {
+      "workflowRunId": 81,
+      "tenantId": "e2e-bulk-91aee8ebc6354a55b5415f7fa1e25d5b",
+      "workflowDefinitionId": 40,
+      "workflowVersion": 1,
+      "runStatus": "RUNNING",
+      "bizDate": "2026-11-16",
+      "snapshotAvailable": true,
+      "generatedAt": "2026-10-25T12:34:38.087863Z",
+      "nodes": [
+        {
+          "nodeCode": "START",
+          "nodeName": "Frozen start",
+          "nodeType": "START",
+          "relatedJobCode": null,
+          "nodeStatus": "SUCCESS",
+          "nodeRunId": 235,
+          "runSeq": 1,
+          "jobInstanceId": null,
+          "expectedPartitions": null,
+          "completedPartitions": null,
+          "createdTasks": 0,
+          "finishedTasks": 0,
+          "activeSteps": [],
+          "errorCode": null,
+          "skipReasonCode": null,
+          "startedAt": "2026-10-25T12:34:37.297162Z",
+          "finishedAt": "2026-10-25T12:34:37.297162Z"
+        },
+        {
+          "nodeCode": "WAIT",
+          "nodeName": "Frozen wait",
+          "nodeType": "WAIT",
+          "relatedJobCode": null,
+          "nodeStatus": "RUNNING",
+          "nodeRunId": 236,
+          "runSeq": 1,
+          "jobInstanceId": null,
+          "expectedPartitions": null,
+          "completedPartitions": null,
+          "createdTasks": 0,
+          "finishedTasks": 0,
+          "activeSteps": [],
+          "errorCode": null,
+          "skipReasonCode": null,
+          "startedAt": "2026-10-25T12:34:37.328772Z",
+          "finishedAt": null
+        },
+        {
+          "nodeCode": "END",
+          "nodeName": "Frozen end",
+          "nodeType": "END",
+          "relatedJobCode": null,
+          "nodeStatus": "PENDING",
+          "nodeRunId": null,
+          "runSeq": null,
+          "jobInstanceId": null,
+          "expectedPartitions": null,
+          "completedPartitions": null,
+          "createdTasks": 0,
+          "finishedTasks": 0,
+          "activeSteps": [],
+          "errorCode": null,
+          "skipReasonCode": null,
+          "startedAt": null,
+          "finishedAt": null
+        }
+      ],
+      "edges": [
+        {
+          "fromNodeCode": "START",
+          "toNodeCode": "WAIT",
+          "edgeType": "SUCCESS"
+        },
+        {
+          "fromNodeCode": "WAIT",
+          "toNodeCode": "END",
+          "edgeType": "SUCCESS"
+        }
+      ]
+    },
+    {
+      "workflowRunId": 81,
+      "tenantId": "e2e-bulk-91aee8ebc6354a55b5415f7fa1e25d5b",
+      "workflowDefinitionId": 40,
+      "workflowVersion": 1,
+      "runStatus": "PAUSED",
+      "bizDate": "2026-11-16",
+      "snapshotAvailable": true,
+      "generatedAt": "2026-10-25T12:34:40.156873Z",
+      "nodes": [
+        {
+          "nodeCode": "START",
+          "nodeName": "Frozen start",
+          "nodeType": "START",
+          "relatedJobCode": null,
+          "nodeStatus": "SUCCESS",
+          "nodeRunId": 235,
+          "runSeq": 1,
+          "jobInstanceId": null,
+          "expectedPartitions": null,
+          "completedPartitions": null,
+          "createdTasks": 0,
+          "finishedTasks": 0,
+          "activeSteps": [],
+          "errorCode": null,
+          "skipReasonCode": null,
+          "startedAt": "2026-10-25T12:34:37.297162Z",
+          "finishedAt": "2026-10-25T12:34:37.297162Z"
+        },
+        {
+          "nodeCode": "WAIT",
+          "nodeName": "Frozen wait",
+          "nodeType": "WAIT",
+          "relatedJobCode": null,
+          "nodeStatus": "RUNNING",
+          "nodeRunId": 236,
+          "runSeq": 1,
+          "jobInstanceId": null,
+          "expectedPartitions": null,
+          "completedPartitions": null,
+          "createdTasks": 0,
+          "finishedTasks": 0,
+          "activeSteps": [],
+          "errorCode": null,
+          "skipReasonCode": null,
+          "startedAt": "2026-10-25T12:34:37.328772Z",
+          "finishedAt": null
+        },
+        {
+          "nodeCode": "END",
+          "nodeName": "Frozen end",
+          "nodeType": "END",
+          "relatedJobCode": null,
+          "nodeStatus": "PENDING",
+          "nodeRunId": null,
+          "runSeq": null,
+          "jobInstanceId": null,
+          "expectedPartitions": null,
+          "completedPartitions": null,
+          "createdTasks": 0,
+          "finishedTasks": 0,
+          "activeSteps": [],
+          "errorCode": null,
+          "skipReasonCode": null,
+          "startedAt": null,
+          "finishedAt": null
+        }
+      ],
+      "edges": [
+        {
+          "fromNodeCode": "START",
+          "toNodeCode": "WAIT",
+          "edgeType": "SUCCESS"
+        },
+        {
+          "fromNodeCode": "WAIT",
+          "toNodeCode": "END",
+          "edgeType": "SUCCESS"
+        }
+      ]
+    },
+    {
+      "workflowRunId": 81,
+      "tenantId": "e2e-bulk-91aee8ebc6354a55b5415f7fa1e25d5b",
+      "workflowDefinitionId": 40,
+      "workflowVersion": 1,
+      "runStatus": "RUNNING",
+      "bizDate": "2026-11-16",
+      "snapshotAvailable": true,
+      "generatedAt": "2026-10-25T12:34:42.174974Z",
+      "nodes": [
+        {
+          "nodeCode": "START",
+          "nodeName": "Frozen start",
+          "nodeType": "START",
+          "relatedJobCode": null,
+          "nodeStatus": "SUCCESS",
+          "nodeRunId": 235,
+          "runSeq": 1,
+          "jobInstanceId": null,
+          "expectedPartitions": null,
+          "completedPartitions": null,
+          "createdTasks": 0,
+          "finishedTasks": 0,
+          "activeSteps": [],
+          "errorCode": null,
+          "skipReasonCode": null,
+          "startedAt": "2026-10-25T12:34:37.297162Z",
+          "finishedAt": "2026-10-25T12:34:37.297162Z"
+        },
+        {
+          "nodeCode": "WAIT",
+          "nodeName": "Frozen wait",
+          "nodeType": "WAIT",
+          "relatedJobCode": null,
+          "nodeStatus": "RUNNING",
+          "nodeRunId": 236,
+          "runSeq": 1,
+          "jobInstanceId": null,
+          "expectedPartitions": null,
+          "completedPartitions": null,
+          "createdTasks": 0,
+          "finishedTasks": 0,
+          "activeSteps": [],
+          "errorCode": null,
+          "skipReasonCode": null,
+          "startedAt": "2026-10-25T12:34:37.328772Z",
+          "finishedAt": null
+        },
+        {
+          "nodeCode": "END",
+          "nodeName": "Frozen end",
+          "nodeType": "END",
+          "relatedJobCode": null,
+          "nodeStatus": "PENDING",
+          "nodeRunId": null,
+          "runSeq": null,
+          "jobInstanceId": null,
+          "expectedPartitions": null,
+          "completedPartitions": null,
+          "createdTasks": 0,
+          "finishedTasks": 0,
+          "activeSteps": [],
+          "errorCode": null,
+          "skipReasonCode": null,
+          "startedAt": null,
+          "finishedAt": null
+        }
+      ],
+      "edges": [
+        {
+          "fromNodeCode": "START",
+          "toNodeCode": "WAIT",
+          "edgeType": "SUCCESS"
+        },
+        {
+          "fromNodeCode": "WAIT",
+          "toNodeCode": "END",
+          "edgeType": "SUCCESS"
+        }
+      ]
+    },
+    {
+      "workflowRunId": 81,
+      "tenantId": "e2e-bulk-91aee8ebc6354a55b5415f7fa1e25d5b",
+      "workflowDefinitionId": 40,
+      "workflowVersion": 1,
+      "runStatus": "SUCCESS",
+      "bizDate": "2026-11-16",
+      "snapshotAvailable": true,
+      "generatedAt": "2026-10-25T12:35:20.477560Z",
+      "nodes": [
+        {
+          "nodeCode": "START",
+          "nodeName": "Frozen start",
+          "nodeType": "START",
+          "relatedJobCode": null,
+          "nodeStatus": "SUCCESS",
+          "nodeRunId": 235,
+          "runSeq": 1,
+          "jobInstanceId": null,
+          "expectedPartitions": null,
+          "completedPartitions": null,
+          "createdTasks": 0,
+          "finishedTasks": 0,
+          "activeSteps": [],
+          "errorCode": null,
+          "skipReasonCode": null,
+          "startedAt": "2026-10-25T12:34:37.297162Z",
+          "finishedAt": "2026-10-25T12:34:37.297162Z"
+        },
+        {
+          "nodeCode": "WAIT",
+          "nodeName": "Frozen wait",
+          "nodeType": "WAIT",
+          "relatedJobCode": null,
+          "nodeStatus": "SKIPPED",
+          "nodeRunId": 236,
+          "runSeq": 1,
+          "jobInstanceId": null,
+          "expectedPartitions": null,
+          "completedPartitions": null,
+          "createdTasks": 0,
+          "finishedTasks": 0,
+          "activeSteps": [],
+          "errorCode": null,
+          "skipReasonCode": "SENSOR_TIMEOUT_SKIP_DOWNSTREAM",
+          "startedAt": "2026-10-25T12:34:37.328772Z",
+          "finishedAt": "2026-10-25T12:35:19.153450Z"
+        },
+        {
+          "nodeCode": "END",
+          "nodeName": "Frozen end",
+          "nodeType": "END",
+          "relatedJobCode": null,
+          "nodeStatus": "NOT_EXECUTED",
+          "nodeRunId": null,
+          "runSeq": null,
+          "jobInstanceId": null,
+          "expectedPartitions": null,
+          "completedPartitions": null,
+          "createdTasks": 0,
+          "finishedTasks": 0,
+          "activeSteps": [],
+          "errorCode": null,
+          "skipReasonCode": null,
+          "startedAt": null,
+          "finishedAt": null
+        }
+      ],
+      "edges": [
+        {
+          "fromNodeCode": "START",
+          "toNodeCode": "WAIT",
+          "edgeType": "SUCCESS"
+        },
+        {
+          "fromNodeCode": "WAIT",
+          "toNodeCode": "END",
+          "edgeType": "SUCCESS"
+        }
+      ]
+    },
+    {
+      "workflowRunId": 81,
+      "tenantId": "e2e-bulk-91aee8ebc6354a55b5415f7fa1e25d5b",
+      "workflowDefinitionId": 40,
+      "workflowVersion": 1,
+      "runStatus": "SUCCESS",
+      "bizDate": "2026-11-16",
+      "snapshotAvailable": true,
+      "generatedAt": "2026-10-25T12:35:22.068072Z",
+      "nodes": [
+        {
+          "nodeCode": "START",
+          "nodeName": "Frozen start",
+          "nodeType": "START",
+          "relatedJobCode": null,
+          "nodeStatus": "SUCCESS",
+          "nodeRunId": 235,
+          "runSeq": 1,
+          "jobInstanceId": null,
+          "expectedPartitions": null,
+          "completedPartitions": null,
+          "createdTasks": 0,
+          "finishedTasks": 0,
+          "activeSteps": [],
+          "errorCode": null,
+          "skipReasonCode": null,
+          "startedAt": "2026-10-25T12:34:37.297162Z",
+          "finishedAt": "2026-10-25T12:34:37.297162Z"
+        },
+        {
+          "nodeCode": "WAIT",
+          "nodeName": "Frozen wait",
+          "nodeType": "WAIT",
+          "relatedJobCode": null,
+          "nodeStatus": "SKIPPED",
+          "nodeRunId": 236,
+          "runSeq": 1,
+          "jobInstanceId": null,
+          "expectedPartitions": null,
+          "completedPartitions": null,
+          "createdTasks": 0,
+          "finishedTasks": 0,
+          "activeSteps": [],
+          "errorCode": null,
+          "skipReasonCode": "SENSOR_TIMEOUT_SKIP_DOWNSTREAM",
+          "startedAt": "2026-10-25T12:34:37.328772Z",
+          "finishedAt": "2026-10-25T12:35:19.153450Z"
+        },
+        {
+          "nodeCode": "END",
+          "nodeName": "Frozen end",
+          "nodeType": "END",
+          "relatedJobCode": null,
+          "nodeStatus": "NOT_EXECUTED",
+          "nodeRunId": null,
+          "runSeq": null,
+          "jobInstanceId": null,
+          "expectedPartitions": null,
+          "completedPartitions": null,
+          "createdTasks": 0,
+          "finishedTasks": 0,
+          "activeSteps": [],
+          "errorCode": null,
+          "skipReasonCode": null,
+          "startedAt": null,
+          "finishedAt": null
+        }
+      ],
+      "edges": [
+        {
+          "fromNodeCode": "START",
+          "toNodeCode": "WAIT",
+          "edgeType": "SUCCESS"
+        },
+        {
+          "fromNodeCode": "WAIT",
+          "toNodeCode": "END",
+          "edgeType": "SUCCESS"
+        }
+      ]
+    }
+  ],
+  "persisted": {
+    "definitions": [
+      {
+        "id": 40,
+        "workflowCode": "e2e-bulk-91aee8ebc6354a55b5415f7fa1e25d5b-A"
+      }
+    ],
+    "requests": [
+      {
+        "id": 157,
+        "workflowDefinitionId": 40,
+        "requestId": "req-20261025T123437Z-bd5a797601144d56",
+        "status": "LAUNCHED",
+        "key": "bca27e36-bb52-4a8b-9957-c899e42ebf7a"
+      }
+    ],
+    "runs": [
+      {
+        "id": 81,
+        "workflowDefinitionId": 40,
+        "status": "SUCCESS",
+        "triggerRequestId": 157,
+        "bizDate": "2026-11-16"
+      }
+    ],
+    "nodes": [
+      {
+        "workflowRunId": 81,
+        "nodeCode": "START",
+        "status": "SUCCESS"
+      },
+      {
+        "workflowRunId": 81,
+        "nodeCode": "WAIT",
+        "status": "SKIPPED"
+      }
+    ],
+    "terminalEvents": [
+      {
+        "key": "e2e-bulk-91aee8ebc6354a55b5415f7fa1e25d5b:workflow:81:terminal",
+        "status": "PUBLISHED"
+      }
+    ],
+    "jobInstances": 0
+  },
+  "livePeriodicReads": 0
+}

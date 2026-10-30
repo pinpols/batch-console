@@ -42,7 +42,8 @@ vi.stubGlobal('navigator', {
 import { useNetworkStatus } from './useNetworkStatus'
 
 beforeEach(() => {
-  elMessageMock.mockClear()
+  elMessageMock.mockReset()
+  elMessageMock.mockImplementation(() => ({ close: vi.fn() }))
   listeners.clear()
   online = true
 })

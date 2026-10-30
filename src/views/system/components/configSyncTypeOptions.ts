@@ -1,7 +1,6 @@
 export const CONFIG_SYNC_TYPE_DEFINITIONS = [
   { value: 'JOB', labelKey: 'configSyncTab.typeJob' },
   { value: 'WORKFLOW', labelKey: 'configSyncTab.typeWorkflow' },
-  { value: 'PIPELINE', labelKey: 'configSyncTab.typePipeline' },
   { value: 'FILE_CHANNEL', labelKey: 'configSyncTab.typeFileChannel' },
   { value: 'FILE_TEMPLATE', labelKey: 'configSyncTab.typeFileTemplate' },
   { value: 'RESOURCE_QUEUE', labelKey: 'configSyncTab.typeResourceQueue' },

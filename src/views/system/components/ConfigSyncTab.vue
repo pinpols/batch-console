@@ -1,6 +1,26 @@
 <template>
   <div class="sync">
     <p class="sync__hint">{{ t('configSyncTab.hint') }}</p>
+    <el-alert
+      v-if="recoveryBlocked || pendingCommand"
+      :closable="false"
+      :type="recoveryBlocked ? 'error' : 'warning'"
+      :title="
+        t(recoveryBlocked ? 'configSyncTab.recoveryUnavailable' : 'configSyncTab.unknownOutcome')
+      "
+    />
+    <div v-if="pendingCommand && canManageSystem">
+      <el-button :loading="checkingOutcome" :disabled="importing" @click="checkOriginalOutcome">
+        {{ t('configSyncTab.checkOriginal') }}
+      </el-button>
+      <el-button
+        :loading="importing"
+        :disabled="!canWriteSystem || checkingOutcome || recoveryBlocked || !importPayload.trim()"
+        @click="doImport(true)"
+      >
+        {{ t('configSyncTab.retryOriginal') }}
+      </el-button>
+    </div>
 
     <div class="sync__flow">
       <!-- ─── 源 ──────────────────────────────────────── -->
@@ -134,11 +154,17 @@
                   <el-button
                     type="primary"
                     :loading="importing"
-                    :disabled="!importPayload.trim()"
+                    :disabled="
+                      !canWriteSystem ||
+                      !!pendingCommand ||
+                      recoveryBlocked ||
+                      checkingOutcome ||
+                      !importPayload.trim()
+                    "
                     :icon="Upload"
                     class="sync__apply"
                     v-track-click="t('configSyncTab.trackImport')"
-                    @click="doImport"
+                    @click="doImport(false)"
                   >
                     {{ t('configSyncTab.btnImport') }}
                   </el-button>
@@ -161,14 +187,32 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, onMounted, ref, watch } from 'vue'
+  import { computed, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
   import { ArrowRight, Download, ChevronRight as Right, Eye as View, Upload } from '@lucide/vue'
-  import { exportConfigSync, importConfigSync } from '@/api/configReleases'
+  import {
+    exportConfigSync,
+    importConfigSync,
+    getConfigSyncRequestStatus,
+    reconcileConfigSyncLog,
+    type ConfigSyncImportBody,
+  } from '@/api/configReleases'
+  import { assessBatchInitOutcome } from '@/utils/batchInitOutcome'
+  import {
+    createConfigSyncRecovery,
+    restoreConfigSyncRecovery,
+    saveConfigSyncRecovery,
+    clearConfigSyncRecovery,
+    canRetryConfigSync,
+    type ConfigSyncRecovery,
+  } from './configSyncRecovery'
   import { listTenants } from '@/api/tenants'
   import { isReservedTenant } from './tenantConfigTypes'
   import { useTenantStore } from '@/stores/tenant'
+  import { useAuthStore } from '@/stores/auth'
+  import { useTenantRequestScope } from '@/composables/useTenantRequestScope'
+  import { usePermission } from '@/composables/usePermission'
   import { useTenantReload } from '@/composables/useTenantReload'
   import { confirmDanger } from '@/composables/useDangerConfirm'
   import type { ConfigSyncExportResponse } from '@/types/console-api'
@@ -180,6 +224,21 @@
 
   const { t } = useI18n({ useScope: 'global' })
   const tenant = useTenantStore()
+  const auth = useAuthStore()
+  const tenantOptionsScope = useTenantRequestScope()
+  const exportScope = useTenantRequestScope()
+  const previewScope = useTenantRequestScope()
+  const importScope = useTenantRequestScope()
+  const outcomeScope = useTenantRequestScope()
+  const actor = computed(() => String(auth.userInfo?.userId ?? auth.userInfo?.username ?? ''))
+  const recoveryScope = computed(() =>
+    actor.value && tenant.tenantId ? `${actor.value}\0${tenant.tenantId}` : '',
+  )
+  const pendingCommand = ref<ConfigSyncRecovery | null>(null)
+  const recoveryBlocked = ref(false)
+  const checkingOutcome = ref(false)
+  let inputRevision = 0
+  const { canManageSystem, canWriteSystem } = usePermission()
 
   // BE NotBlank,默认 'default' 兼容单环境场景
   const sourceEnv = ref('default')
@@ -191,18 +250,19 @@
   const tenantOptions = ref<{ tenantId: string; tenantName: string }[]>([])
 
   async function loadTenants() {
+    const scope = tenantOptionsScope.begin()
+    if (!scope.tenantId || !canManageSystem.value) return
     tenantsLoading.value = true
     try {
       const res = await listTenants({ pageNo: 1, pageSize: 500 })
+      if (!tenantOptionsScope.isCurrent(scope)) return
       tenantOptions.value = (res.items ?? []).filter(
-        (x) => !isReservedTenant(x.tenantId) && x.tenantId !== tenant.tenantId,
+        (x) => !isReservedTenant(x.tenantId) && x.tenantId !== scope.tenantId,
       )
     } finally {
-      tenantsLoading.value = false
+      if (tenantOptionsScope.isCurrent(scope)) tenantsLoading.value = false
     }
   }
-
-  onMounted(loadTenants)
 
   // 文案必须由 computed 生成,否则切换 locale 后初始化时的翻译会残留。
   const exportTypeOptions = computed(() => localizeConfigSyncTypeOptions(t))
@@ -229,31 +289,53 @@
     return t('configSyncTab.targetMultiTenants', { first: list[0], n: list.length })
   })
 
-  // 用户改了粘贴内容后,旧的差异预览就过期了 — 立即清掉避免误导
-  watch(importPayload, () => {
-    if (previewResult.value) previewResult.value = null
-  })
+  // 预览和确认均绑定完整输入代次；即使输入改回原值，旧确认也不能继续提交。
+  watch(
+    [importPayload, sourceEnv, targetEnv, targetTenantIds],
+    () => {
+      inputRevision += 1
+      previewScope.begin()
+      previewResult.value = null
+      previewing.value = false
+    },
+    { deep: true, flush: 'sync' },
+  )
+  watch(
+    [sourceEnv, targetEnv, selectedExportTypes],
+    () => {
+      exportScope.begin()
+      exportResult.value = null
+      exporting.value = false
+    },
+    { deep: true, flush: 'sync' },
+  )
 
   function resolvedTargetTenants(): string[] {
-    return targetTenantIds.value.length ? targetTenantIds.value : [tenant.tenantId]
+    return targetTenantIds.value.length ? [...targetTenantIds.value] : [tenant.tenantId]
   }
 
   async function doExport() {
+    if (!canManageSystem.value || !tenant.tenantId || exporting.value) return
+    const scope = exportScope.begin()
+    previewScope.begin()
+    previewResult.value = null
+    previewing.value = false
+    const types = [...selectedExportTypes.value]
+    const body = {
+      sourceTenantId: scope.tenantId,
+      sourceEnv: sourceEnv.value.trim() || 'default',
+      targetEnv: targetEnv.value.trim() || 'default',
+      ...(types.length ? { configTypes: types } : {}),
+    }
     exporting.value = true
     try {
-      const types = selectedExportTypes.value
-      const result = await exportConfigSync({
-        sourceTenantId: tenant.tenantId,
-        sourceEnv: sourceEnv.value.trim() || 'default',
-        targetEnv: targetEnv.value.trim() || 'default',
-        ...(types.length ? { configTypes: types } : {}),
-      })
+      const result = await exportConfigSync(body)
+      if (!exportScope.isCurrent(scope)) return
       exportResult.value = result
       downloadConfigBundle(result)
-      previewResult.value = null
       ElMessage.success(t('configSyncTab.toastExportDone'))
     } finally {
-      exporting.value = false
+      if (exportScope.isCurrent(scope)) exporting.value = false
     }
   }
 
@@ -272,7 +354,8 @@
         filenamePart(result.sourceEnv),
         filenamePart(result.targetEnv),
       ].join('-') + '.json'
-    const blob = new Blob([JSON.stringify(result.bundle, null, 2)], {
+    const bundleJson = JSON.stringify(result.bundle, null, 2)
+    const blob = new Blob([bundleJson], {
       type: 'application/json;charset=utf-8',
     })
     const objectUrl = URL.createObjectURL(blob)
@@ -287,6 +370,7 @@
   }
 
   async function doPreview() {
+    if (!canManageSystem.value || !tenant.tenantId || previewing.value) return
     if (!importPayload.value.trim()) {
       ElMessage.warning(t('configSyncTab.toastNeedPayload'))
       return
@@ -298,27 +382,47 @@
       ElMessage.error(t('configSyncTab.errInvalidJson'))
       return
     }
+    const scope = previewScope.begin()
     previewing.value = true
     try {
       // 用 import + dryRun 做真正的"按粘贴 JSON 预览差异",
       // 旧的 previewConfigSync 不接受 bundle,会按"从源租户重新算"做预览,
       // 用户粘贴/编辑过的 JSON 不会被实际预览到。
-      previewResult.value = await importConfigSync({
-        tenantId: tenant.tenantId,
+      const result = await importConfigSync({
+        tenantId: scope.tenantId,
         sourceEnv: sourceEnv.value.trim() || 'default',
         targetEnv: targetEnv.value.trim() || 'default',
         targetTenantIds: resolvedTargetTenants(),
         bundle,
         dryRun: true,
       })
+      if (!previewScope.isCurrent(scope)) return
+      previewResult.value = result
     } catch {
-      ElMessage.error(t('configSyncTab.errPreviewFailed'))
+      if (previewScope.isCurrent(scope)) ElMessage.error(t('configSyncTab.errPreviewFailed'))
     } finally {
-      previewing.value = false
+      if (previewScope.isCurrent(scope)) previewing.value = false
     }
   }
 
-  async function doImport() {
+  function reloadRecovery() {
+    const restored = recoveryScope.value
+      ? restoreConfigSyncRecovery(recoveryScope.value)
+      : { command: null, blocked: false }
+    pendingCommand.value = restored.command
+    recoveryBlocked.value = restored.blocked
+  }
+
+  async function doImport(retryOriginal = false) {
+    if (
+      !canWriteSystem.value ||
+      !recoveryScope.value ||
+      importing.value ||
+      checkingOutcome.value ||
+      recoveryBlocked.value
+    )
+      return
+    if (retryOriginal ? !pendingCommand.value : !!pendingCommand.value) return
     if (!importPayload.value.trim()) {
       ElMessage.warning(t('configSyncTab.toastNeedPayload'))
       return
@@ -330,44 +434,191 @@
       ElMessage.error(t('configSyncTab.errInvalidJson'))
       return
     }
-    const tenants = resolvedTargetTenants()
-    try {
-      const sample = `${tenants.slice(0, 3).join(', ')}${tenants.length > 3 ? '…' : ''}`
-      await confirmDanger({
-        verb: t('configSyncTab.importConfirmVerb'),
-        target: t('configSyncTab.importConfirmTarget', { count: tenants.length, sample }),
-        consequence: t('configSyncTab.importConsequence'),
-        irreversible: true,
-        confirmButtonText: t('configSyncTab.importConfirmButton'),
-      })
-    } catch {
-      return
+    const scope = importScope.begin()
+    const revision = inputRevision
+    const commandScope = recoveryScope.value
+    const body: ConfigSyncImportBody = {
+      tenantId: scope.tenantId,
+      sourceEnv: sourceEnv.value.trim() || 'default',
+      targetEnv: targetEnv.value.trim() || 'default',
+      targetTenantIds: resolvedTargetTenants(),
+      bundle,
     }
+    const isCurrent = () =>
+      importScope.isCurrent(scope) && revision === inputRevision && canWriteSystem.value
+    let command: ConfigSyncRecovery | null = null
+    let sent = false
     importing.value = true
     try {
-      await importConfigSync({
-        tenantId: tenant.tenantId,
-        sourceEnv: sourceEnv.value.trim() || 'default',
-        targetEnv: targetEnv.value.trim() || 'default',
-        targetTenantIds: tenants,
-        bundle,
-      })
+      command = retryOriginal
+        ? pendingCommand.value
+        : await createConfigSyncRecovery(commandScope, body)
+      if (!isCurrent() || !command) return
+      if (retryOriginal && !(await canRetryConfigSync(command, body))) {
+        if (isCurrent()) ElMessage.warning(t('configSyncTab.restoreOriginalInput'))
+        return
+      }
+      if (!isCurrent()) return
+      const tenants = body.targetTenantIds
+      const sample = `${tenants.slice(0, 3).join(', ')}${tenants.length > 3 ? '…' : ''}`
+      try {
+        await confirmDanger({
+          verb: t('configSyncTab.importConfirmVerb'),
+          target: t('configSyncTab.importConfirmTarget', { count: tenants.length, sample }),
+          consequence: t('configSyncTab.importConsequence'),
+          irreversible: true,
+          confirmButtonText: t('configSyncTab.importConfirmButton'),
+        })
+      } catch {
+        return
+      }
+      if (!isCurrent()) return
+      if (!saveConfigSyncRecovery(command)) {
+        recoveryBlocked.value = true
+        return
+      }
+      pendingCommand.value = command
+      sent = true
+      const response = await importConfigSync(body, command.key)
+      const outcome = assessBatchInitOutcome(response.result)
+      const cleared = clearConfigSyncRecovery(command)
+      if (command.scope === recoveryScope.value && pendingCommand.value?.key === command.key) {
+        reloadRecovery()
+        if (!cleared) recoveryBlocked.value = true
+      }
+      if (!isCurrent()) return
+      if (!outcome.fullySuccessful) {
+        const failedTenants = outcome.failedTenantIds.length
+          ? outcome.failedTenantIds.join(', ')
+          : tenants.join(', ')
+        ElMessage.error(t('configSyncTab.errImportBusinessFailed', { tenants: failedTenants }))
+        return
+      }
       ElMessage.success(t('configSyncTab.toastImportDone'))
-    } catch {
-      ElMessage.error(t('configSyncTab.errImportFailed'))
+    } catch (error) {
+      // 只有首次请求在业务执行前被明确拒绝才解除记录；重试的拒绝不能证明原请求未执行。
+      const status = (error as { response?: { status?: number } }).response?.status
+      let definitiveRejection = false
+      if (
+        sent &&
+        command &&
+        !retryOriginal &&
+        status &&
+        [400, 401, 403, 404, 405, 413, 415, 422, 429].includes(status)
+      ) {
+        const cleared = clearConfigSyncRecovery(command)
+        definitiveRejection = cleared
+        if (command.scope === recoveryScope.value && pendingCommand.value?.key === command.key) {
+          reloadRecovery()
+          if (!cleared) recoveryBlocked.value = true
+        }
+      }
+      if (!sent && isCurrent()) recoveryBlocked.value = true
+      if (isCurrent())
+        ElMessage.error(
+          t(
+            sent
+              ? definitiveRejection
+                ? 'configSyncTab.errImportFailed'
+                : 'configSyncTab.unknownOutcome'
+              : 'configSyncTab.recoveryUnavailable',
+          ),
+        )
     } finally {
-      importing.value = false
+      if (importScope.isCurrent(scope)) importing.value = false
     }
   }
 
-  useTenantReload(() => {
+  async function checkOriginalOutcome() {
+    const command = pendingCommand.value
+    if (
+      !command ||
+      command.scope !== recoveryScope.value ||
+      !canManageSystem.value ||
+      checkingOutcome.value ||
+      importing.value
+    )
+      return
+    const scope = outcomeScope.begin()
+    const isCurrent = () =>
+      outcomeScope.isCurrent(scope) &&
+      pendingCommand.value?.key === command.key &&
+      command.scope === recoveryScope.value
+    checkingOutcome.value = true
+    try {
+      const observed = await getConfigSyncRequestStatus(scope.tenantId, command.key)
+      if (!isCurrent()) return
+      let audit = observed.audit
+      if (!observed.found || !audit) {
+        ElMessage.warning(t('configSyncTab.unknownOutcome'))
+        return
+      }
+      if (
+        audit.tenantId !== scope.tenantId ||
+        audit.syncDirection !== 'IMPORT' ||
+        typeof audit.id !== 'number' ||
+        !Number.isSafeInteger(audit.id) ||
+        audit.id <= 0
+      )
+        throw new Error('Config sync audit identity mismatch')
+      if (audit.syncStatus === 'RUNNING' && canWriteSystem.value) {
+        const result = await reconcileConfigSyncLog(scope.tenantId, audit.id)
+        if (!isCurrent()) return
+        if (result.id !== audit.id || result.tenantId !== scope.tenantId)
+          throw new Error('Config sync reconciliation identity mismatch')
+        audit = result
+      }
+      if (!['SUCCESS', 'PARTIAL_FAILED', 'FAILED'].includes(String(audit.syncStatus))) {
+        ElMessage.warning(t('configSyncTab.unknownOutcome'))
+        return
+      }
+      if (!clearConfigSyncRecovery(command)) {
+        recoveryBlocked.value = true
+        return
+      }
+      reloadRecovery()
+      importPayload.value = ''
+      if (audit.syncStatus === 'SUCCESS') ElMessage.success(t('configSyncTab.originalConfirmed'))
+      else ElMessage.warning(t('configSyncTab.originalReviewRequired'))
+    } catch {
+      if (isCurrent()) ElMessage.error(t('configSyncTab.checkOriginalFailed'))
+    } finally {
+      if (outcomeScope.isCurrent(scope)) checkingOutcome.value = false
+    }
+  }
+
+  function resetSyncState() {
+    outcomeScope.begin()
+    checkingOutcome.value = false
+    tenantOptionsScope.begin()
+    exportScope.begin()
+    previewScope.begin()
+    importScope.begin()
     exportResult.value = null
     previewResult.value = null
     importPayload.value = ''
     targetTenantIds.value = []
     selectedExportTypes.value = []
-    void loadTenants()
+    tenantOptions.value = []
+    tenantsLoading.value = false
+    exporting.value = false
+    previewing.value = false
+    importing.value = false
+    reloadRecovery()
+  }
+  watch([() => tenant.tenantId, () => actor.value, canManageSystem], resetSyncState, {
+    flush: 'sync',
   })
+  watch(
+    canWriteSystem,
+    () => {
+      importScope.begin()
+      importing.value = false
+    },
+    { flush: 'sync' },
+  )
+  reloadRecovery()
+  useTenantReload(loadTenants)
 </script>
 
 <style scoped>

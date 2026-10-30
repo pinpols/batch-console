@@ -1,0 +1,18 @@
+{
+  "status": {
+    "available": false,
+    "unavailableReason": "batch.console.atomic-worker.enabled=false",
+    "workerCode": null,
+    "workerType": null,
+    "shell": null,
+    "sql": null,
+    "http": null,
+    "storedProc": null
+  },
+  "permissions": {
+    "admin": 200,
+    "tenantAdmin": 200,
+    "auditor": 403,
+    "tenantUser": 403
+  }
+}

@@ -34,7 +34,7 @@
     <div v-if="similar.length > 0" class="cnb-similar">
       {{ t('codeNameBuilder.bizHint') }}
       <span>{{
-        t('codeNameBuilder.existingPrefix', { list: similar.slice(0, 3).join(' / ') })
+        t('codeNameBuilder.existingPrefix', { list: similarCodeSummary })
       }}</span>
     </div>
     <div v-else class="cnb-hint">{{ t('codeNameBuilder.bizHint') }}</div>
@@ -45,7 +45,7 @@
   /**
    * 资源 code 命名向导(jobCode / workflowCode / templateCode / channelCode 通用)。
    *
-   * 3 段:DOMAIN 下拉(五类 Worker + WORKFLOW) + 业务名 input(自动转大写 + 非法字符转 _) + 可选版本。
+   * 3 段:DOMAIN 下拉(Worker 执行类型) + 业务名 input(自动转大写 + 非法字符转 _) + 可选版本。
    * 实时拼接为 `{DOMAIN}_{BIZ}[_v{N}]`,emit 给父组件。可选 existingCodes 显示同前缀已有,
    * 帮助避免重名 / 跟现有命名风格保持一致。
    */
@@ -54,7 +54,7 @@
 
   const { t } = useI18n({ useScope: 'global' })
 
-  const DOMAINS = ['IMPORT', 'EXPORT', 'PROCESS', 'DISPATCH', 'ATOMIC', 'WORKFLOW']
+  const DOMAINS = ['IMPORT', 'EXPORT', 'PROCESS', 'DISPATCH', 'ATOMIC']
   const BIZ_RE = /^[A-Z][A-Z0-9_]{2,29}$/
 
   const props = withDefaults(
@@ -74,14 +74,16 @@
   const version = ref('')
 
   function onBizInput(v: string) {
-    biz.value = v.toUpperCase().replace(/[^A-Z0-9_]/g, '_')
+    const uppercaseBizText = v.toUpperCase()
+    const normalizedBizCode = uppercaseBizText.replace(/[^A-Z0-9_]/g, '_')
+    biz.value = normalizedBizCode
   }
 
   const versionSuffix = computed(() => {
     if (!version.value.trim()) return ''
-    const n = version.value.replace(/^v/i, '')
-    if (!/^\d+$/.test(n)) return ''
-    return `_v${n}`
+    const versionNumberText = version.value.replace(/^v/i, '')
+    if (!/^\d+$/.test(versionNumberText)) return ''
+    return `_v${versionNumberText}`
   })
 
   const finalCode = computed(() => {
@@ -127,6 +129,7 @@
     const prefix = `${domain.value}_`
     return props.existingCodes.filter((c) => c.startsWith(prefix) && c !== finalCode.value)
   })
+  const similarCodeSummary = computed(() => similar.value.slice(0, 3).join(' / '))
 
   watch(finalCode, (v) => emit('update:modelValue', v))
 </script>

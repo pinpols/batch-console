@@ -1,0 +1,43 @@
+{
+  "anonymousAuthStatus": 401,
+  "adminClaimStatus": 200,
+  "tenantAdminOwnTenantStatus": 200,
+  "tenantAdminCrossTenantStatus": 403,
+  "terminalChildrenDiagnostic": {
+    "adminStatus": 200,
+    "tenantAdminStatus": 403
+  },
+  "safeSummary": {
+    "rowCount": 1,
+    "taskStatus": "RUNNING",
+    "responseFields": [
+      "assignedWorkerCode",
+      "createdAt",
+      "errorCode",
+      "finishedAt",
+      "id",
+      "jobInstanceId",
+      "jobPartitionId",
+      "startedAt",
+      "taskSeq",
+      "taskStatus",
+      "taskType",
+      "updatedAt"
+    ],
+    "omittedSensitiveFields": [
+      "tenantId",
+      "taskPayload",
+      "effectiveParameters",
+      "heartbeatDetails",
+      "resultSummary",
+      "errorMessage"
+    ]
+  },
+  "workerManagementDrawerRows": 1,
+  "cleanup": {
+    "fixtureTenants": 0,
+    "fixtureWorkers": 0,
+    "fixtureJobs": 0,
+    "activeFixtureTasks": 0
+  }
+}

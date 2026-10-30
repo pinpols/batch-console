@@ -63,25 +63,28 @@
   const etaText = computed(() => {
     const eta = app.maintenance.etaAt
     if (!eta) return ''
-    const target = new Date(eta).getTime()
+    const etaDate = new Date(eta)
+    const target = etaDate.getTime()
     if (Number.isNaN(target)) return ''
     const diffMs = target - now.value
     if (diffMs <= 0) return t('maintenance.etaPast')
     const mins = Math.round(diffMs / 60_000)
     if (mins < 60) return t('maintenance.etaInMinutes', { n: mins })
-    return t('maintenance.etaInHours', { n: Math.round(mins / 60) })
+    const estimatedHours = Math.round(mins / 60)
+    return t('maintenance.etaInHours', { n: estimatedHours })
   })
 
   async function checkNow() {
     checking.value = true
     try {
       const s = await getMaintenanceStatus()
-      app.setMaintenance({
+      const maintenanceUpdate = {
         ...s,
         lastSyncedAt: new Date().toISOString(),
         syncError: null,
         isStale: false,
-      })
+      }
+      app.setMaintenance(maintenanceUpdate)
     } finally {
       checking.value = false
     }

@@ -1,6 +1,6 @@
 # 开发工作流(dev workflow)
 
-本仓采用 **GitHub Flow 简化版**:只 `main` 一个长期分支,所有工作走短命子分支 + PR + merge 后自动删。
+本仓采用 **GitHub Flow 简化版**:只 `main` 一个长期分支,日常交付使用短期分支与 PR；合并及分支清理由本次授权和 `git-pr-workflow` 决定。
 
 > 与配对后端 `file-batch-system` 一致策略，详见[后端本地开发手册](../../../file-batch-system/docs/runbook/local-development.md)。
 
@@ -14,7 +14,7 @@
 | 杂项 | `chore/<topic>` | 重构 / 依赖升级 / CI 改动 |
 | 文档 | `docs/<topic>` | 仅文档改动 |
 | 紧急 | `hotfix/<topic>` | 生产 P0 bug |
-| Renovate / Release-please | 机器人前缀 | 别动 |
+| 自动化分支 | 以实际工作流为准 | 联合版本由后端准备 Release PR；本仓 Renovate 仅季度盘点 |
 
 ## 日常开发
 
@@ -26,7 +26,8 @@ git checkout main && git pull
 git checkout -b feature/dashboard-realtime main
 
 # 3. 改代码 + commit(无 emoji,信息说"为什么")
-git add . && git commit -m "feat(dashboard): 实时刷新 job 监控面板"
+git add <本次明确范围的文件>
+git commit -m "feat(dashboard): 实时刷新 job 监控面板"
 
 # 4. push + 开 PR
 git push -u origin feature/dashboard-realtime
@@ -58,18 +59,9 @@ npm run check:i18n     # zh/en 词条对齐
 npm run build:fast     # vite build
 ```
 
-## Hotfix(生产 P0)
+## Hotfix（生产 P0）
 
-```bash
-git checkout main && git pull
-git checkout -b hotfix/login-redirect-loop main
-# 改代码 + commit + push + PR
-# merge 后立即 tag:
-git checkout main && git pull
-git tag v1.2.4 && git push origin v1.2.4
-```
-
-tag `v*` push → staging-gate 自动跑 Playwright 真环境 e2e。
+从核实后的 main 基线建立 `fix/<topic>` 短期分支，完成针对性修复、检查和 PR。紧急情况也需核实前后端版本兼容；恢复当前服务优先按[回滚手册](./rollback.md)处理。正式版本、tag 和制品晋级仍走联合发布流程，不因合并 hotfix 就直接创建未经 staging 验收的 tag。
 
 ## Release(无 release 分支)
 
@@ -99,64 +91,18 @@ tag `v*` push → staging-gate 自动跑 Playwright 真环境 e2e。
 | 我的 PR 能不能合 | **pr-gate** ✓ |
 | main 现在坏没坏 | **full-ci-gate** 最新一次 |
 | 这次 release 能不能上 | **staging-gate**(tag 后)|
-| 我开了 PR 怎么自动合 | 贴 `automerge` 标签(本仓 0 reviewer,CI 绿了直接合)|
+| 我开了 PR 怎么自动合 | 贴 `automerge` 标签；是否可合并以当前远端保护与本次授权为准|
 
 完整 CI 设计细节 → [`ci.md`](ci.md)。
 
-## main 分支保护
+## 远端保护与权限
 
-| 项 | 值 |
-|---|---|
-| Required PR | ✓ |
-| Required reviewers | 0(温和,可自审 self-merge) |
-| Required status checks | `pr-gate` |
-| Strict | ✓ |
-| Enforce admins | ❌(admin 可 override 紧急 hotfix) |
-| Force push / 删除 | ❌ 禁 |
-| Auto-merge | ✓ |
-| Delete branch on merge | ✓ |
-
-## 谁能提代码 / 权限模型
-
-仓库是 **public**,但 push 权限只给 collaborator。任何人能 fork + cross-repo PR,但**直接 push 到仓内分支必须授权**。
-
-### 当前权限盘点
-
-| 设置 | 值 | 含义 |
-|---|---|---|
-| 可见性 | `public` | 任何人能 clone / fork / 开 cross-repo PR |
-| Collaborators | 只 `pinpols`(admin) | 只 owner 能直接 push 到仓内分支 |
-| Push main | branch protection 禁直接 push | 必须走 PR,**任何人**(含 admin)都不能直接 push main |
-| Merge PR | write 权限以上 | 路人能开 PR,但 merge 是仓内 collaborator 点 |
-
-### 谁能"提代码"
-
-| 角色 | 能做什么 | 需要授权? |
-|---|---|---|
-| owner(`pinpols`) | clone / `git push origin feature/xxx` / 开 PR / merge | 已是 admin |
-| 路人(任何 GH 用户) | fork → 自己 fork 改 → 开 **cross-repo PR** | ❌ public 仓自带 |
-| 想让 ta 在仓内直接开分支 | clone / `git push origin feature/xxx` | ✓ 加 collaborator |
-
-### 加协作者
-
-```bash
-# permission 等级:pull(只读) / triage(管 issue) / push(读写) / maintain(管 release) / admin
-gh api repos/pinpols/batch-console/collaborators/<username> \
-  -X PUT -f permission=push
-```
-
-被邀请方在 GitHub 邮件 / 通知里 accept 后生效。
-
-### 撤销
-
-```bash
-gh api -X DELETE repos/pinpols/batch-console/collaborators/<username>
-```
+仓库内 workflow 只能证明配置，不能证明 GitHub 当前分支保护、reviewer 数量、协作者或 auto-merge 设置。需要提交/合并时按 `git-pr-workflow` 查询当前远端状态，记录必需检查和授权。文档不固定个人账号清单，不将 admin 权限视为可绕过门禁的常规操作入口。
 
 ## 常见情况
 
 **Q: 误在 main 上 commit 了(没 push)**
-A: `git reset --soft HEAD~1` → `git stash` → `git checkout -b feature/xxx` → `git stash pop`。
+A: 先记录 HEAD 与工作区状态，保留当前提交和改动；建立本次短期分支后再核对基线。已有提交的搬移按 `git-pr-workflow` 明确目标，避免在未知脏工作区直接 reset/stash。
 
 **Q: PR 跟 main 漂了 conflict**
 A: `gh pr update-branch <PR#>` → 解 conflict → push。

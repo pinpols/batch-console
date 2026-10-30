@@ -20,6 +20,11 @@ function flatten(
 }
 
 describe('route inventory', () => {
+  it('作业包向导权限与后端管理员入口一致', () => {
+    const wizard = flatten(routes).find((item) => item.path === '/jobs/definitions/new')?.route
+    expect(wizard?.meta?.permissions).toEqual(['ROLE_ADMIN'])
+  })
+
   const inventory = flatten(routes)
   const routePaths = new Set(
     inventory.flatMap((item) => [item.path, item.path.replace(/\/:\w+\?$/, '')]),
@@ -29,10 +34,12 @@ describe('route inventory', () => {
     const navigationItems = navigationGroups.flatMap((group) => group.children)
     const navigationPaths = navigationItems.map((item) => item.path)
 
-    expect(navigationPaths).toHaveLength(57)
-    expect(navigationItems.filter((item) => !item.hidden)).toHaveLength(29)
+    expect(navigationPaths).toHaveLength(56)
+    expect(navigationItems.filter((item) => !item.hidden)).toHaveLength(28)
     expect(navigationItems.filter((item) => item.hidden)).toHaveLength(28)
     expect(navigationPaths.filter((path) => !routePaths.has(path))).toEqual([])
+    expect(navigationPaths).not.toContain('/jobs/pipelines')
+    expect(inventory.find((item) => item.path === '/jobs/pipelines')).toBeUndefined()
   })
 
   it('keeps secondary and detail routes titled and attached to their parent menu', () => {

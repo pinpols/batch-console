@@ -2,6 +2,9 @@
   <PageContainer>
     <PageHeader>
       <template #actions>
+        <el-button v-if="isPlatformAdmin" :icon="KeyRound" @click="oidcBindingsVisible = true">
+          {{ t('oidcIdentityBindings.open') }}
+        </el-button>
         <el-button
           v-if="canProvision"
           :icon="Upload"
@@ -124,7 +127,7 @@
           <DatetimeColumn prop="createdAt" :label="t('userAccountList.colCreatedAt')" width="160" />
           <el-table-column :label="t('userAccountList.colActions')" width="190" fixed="right">
             <template #default="{ row }">
-              <RowActions :actions="accountRowActions(row)" :inline-limit="1" />
+              <RowActions :actions="accountRowActions(row as UserAccount)" :inline-limit="1" />
             </template>
           </el-table-column>
         </el-table>
@@ -140,6 +143,11 @@
     </SectionCard>
 
     <UserBatchProvisioningDialog v-model="batchVisible" @applied="load" />
+    <OidcIdentityBindingsDrawer
+      v-model="oidcBindingsVisible"
+      :tenant-id="tenant.tenantId"
+      :writes-frozen="writesFrozen"
+    />
 
     <el-drawer
       :append-to-body="true"
@@ -307,9 +315,10 @@
   import { computed, onMounted, reactive, ref } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage, ElMessageBox } from 'element-plus'
-  import { Plus, Upload } from '@lucide/vue'
+  import { KeyRound, Plus, Upload } from '@lucide/vue'
   import RowActions, { type RowAction } from '@/components/common/RowActions.vue'
   import UserBatchProvisioningDialog from './UserBatchProvisioningDialog.vue'
+  import OidcIdentityBindingsDrawer from './components/OidcIdentityBindingsDrawer.vue'
   import { useWriteAvailability } from '@/composables/useWriteAvailability'
 
   const { t } = useI18n({ useScope: 'global' })
@@ -366,16 +375,18 @@
    */
   const ROLE_OPTIONS = computed(() => filterRoleOptionsFor(isPlatformAdmin.value))
   function csvToRoles(csv: string): string[] {
-    return (csv || '')
-      .split(',')
-      .map((s) => s.trim())
-      .filter(Boolean)
+    const roleEntries = (csv || '').split(',')
+    const normalizedRoles = roleEntries.map((role) => role.trim())
+    return normalizedRoles.filter(Boolean)
   }
   function rolesToCsv(arr: string[]): string {
-    return Array.from(new Set(arr || [])).join(',')
+    const uniqueRoles = new Set(arr || [])
+    const roleList = Array.from(uniqueRoles)
+    return roleList.join(',')
   }
   const creating = ref(false)
   const batchVisible = ref(false)
+  const oidcBindingsVisible = ref(false)
   const resetting = ref(false)
   const listRemote = ref(true)
   const { filterBusy, runSearch, runReset, runRefresh } = useListFilterFeedback(listRemote)
@@ -416,10 +427,9 @@
 
   function parseRoles(csv?: string): string[] {
     if (!csv) return []
-    return csv
-      .split(',')
-      .map((r) => r.trim())
-      .filter(Boolean)
+    const roleEntries = csv.split(',')
+    const normalizedRoles = roleEntries.map((role) => role.trim())
+    return normalizedRoles.filter(Boolean)
   }
 
   async function load() {

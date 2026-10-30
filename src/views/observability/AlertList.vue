@@ -114,6 +114,17 @@
           <div class="al-card__chips">
             <span class="al-card__chip">{{ row.serviceName }} · {{ row.alertType }}</span>
             <router-link
+              v-if="alertResourceTargets.get(row.id)"
+              class="al-card__chip al-card__chip--link"
+              :to="alertResourceTargets.get(row.id)?.path ?? ''"
+            >
+              {{
+                alertResourceTargets.get(row.id)?.type === 'workflowRun'
+                  ? t('alertList.viewWorkflowRun')
+                  : t('alertList.viewJobRun')
+              }}
+            </router-link>
+            <router-link
               v-if="row.traceId"
               class="al-card__chip al-card__chip--link"
               :to="`/observability/trace?traceId=${row.traceId}`"
@@ -212,6 +223,7 @@
   import { useAuthStore } from '@/stores/auth'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
+  import { useTenantRequestScope } from '@/composables/useTenantRequestScope'
   import { usePermission } from '@/composables/usePermission'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
@@ -231,11 +243,15 @@
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
   import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
   import type { ConsoleAlertEventResponse } from '@/types/console-api'
+  import { getAlertResourceTarget } from './alertResourceTarget'
 
   const route = useRoute()
   const router = useRouter()
   const tenant = useTenantStore()
   const auth = useAuthStore()
+  const readScope = useTenantRequestScope()
+  const countScope = useTenantRequestScope()
+  const actionScope = useTenantRequestScope()
   // VIEWER 角色看不到/点不动破坏性按钮:ack/silence/close 都属于"会改告警状态"的 mutation,
   // 旧版只是 v-if 隐藏顶部 Create 类按钮,行内 ack/silence/close 没 gate,VIEWER 点了才弹 403,
   // bad surprise。这里复用 canMutateConfig 灰显 + tooltip。
@@ -252,6 +268,12 @@
   // (alertType 后端无枚举字典,只能从已加载数据归纳候选)
   const allRows = ref<ConsoleAlertEventResponse[]>([])
   const rows = ref<ConsoleAlertEventResponse[]>([])
+  const alertResourceTargets = computed(() => {
+    const resourceTargetEntries = rows.value.map(
+      (row) => [row.id, getAlertResourceTarget(row.detailJson)] as const,
+    )
+    return new Map(resourceTargetEntries)
+  })
   const total = ref(0)
   const page = ref(1)
   const pageSize = ref(15)
@@ -296,11 +318,12 @@
   const severityOptions = computed(() => pickMetaEnumGroup(metaEnums.value, 'severity'))
   const statusOptions = computed(() => pickMetaEnumGroup(metaEnums.value, 'alertStatus'))
   // alertType 后端没枚举字典(各租户业务自定),保持从已加载数据 unique 派生
-  const alertTypeOptions = computed(() =>
-    Array.from(
-      new Set(allRows.value.map((row) => row.alertType).filter((item): item is string => !!item)),
-    ),
-  )
+  const alertTypeOptions = computed(() => {
+    const alertTypes = allRows.value.map((row) => row.alertType)
+    const availableAlertTypes = alertTypes.filter((item): item is string => !!item)
+    const uniqueAlertTypes = new Set(availableAlertTypes)
+    return Array.from(uniqueAlertTypes)
+  })
 
   const hasAlertFilters = computed(
     () =>
@@ -322,12 +345,23 @@
     hasAlertFilters.value ? alertFilteredEmptyText.value : t('alertList.emptyDescription'),
   )
 
-  function actionBody(reason?: string) {
+  function captureAlertAction(row: ConsoleAlertEventResponse) {
+    const scope = actionScope.begin()
+    const operator = auth.userInfo?.username ?? auth.userInfo?.userId
+    const isCurrentTarget = () =>
+      actionScope.isCurrent(scope) &&
+      (auth.userInfo?.username ?? auth.userInfo?.userId) === operator
     return {
-      tenantId: tenant.tenantId,
-      operatorId: auth.userInfo?.username ?? auth.userInfo?.userId,
-      reason,
+      tenantId: scope.tenantId,
+      operator,
+      isCurrentTarget,
+      isCurrent: () =>
+        isCurrentTarget() && canMutateConfig.value && rows.value.some((item) => item.id === row.id),
     }
+  }
+
+  function actionBody(reason: string | undefined, context: ReturnType<typeof captureAlertAction>) {
+    return { tenantId: context.tenantId, operatorId: context.operator, reason }
   }
 
   // ── 设计 #alerts:三分组 tab(未处理/已确认/全部)+ 真实计数 ──────────────
@@ -351,23 +385,30 @@
     ])
     if (sig === lastCountSig) return
     lastCountSig = sig
+    const scope = countScope.begin()
+    const query = { ...filters, tenantId: scope.tenantId }
+    let failed = false
     await Promise.all(
       GROUP_TABS.map(async (g) => {
         try {
-          const resp = await queryAlertsPage(filters.tenantId || tenant.tenantId, 1, 1, {
-            severity: (filters.severity ?? '').trim() || undefined,
+          const resp = await queryAlertsPage(query.tenantId, 1, 1, {
+            severity: (query.severity ?? '').trim() || undefined,
             status: g.key || undefined,
-            alertType: (filters.alertType ?? '').trim() || undefined,
-            traceId: (filters.traceId ?? '').trim() || undefined,
-            startDate: filters.startTime || undefined,
-            endDate: filters.endTime || undefined,
+            alertType: (query.alertType ?? '').trim() || undefined,
+            traceId: (query.traceId ?? '').trim() || undefined,
+            startDate: query.startTime || undefined,
+            endDate: query.endTime || undefined,
           })
-          groupCounts[g.key] = Number(resp.total ?? 0)
+          if (countScope.isCurrent(scope)) groupCounts[g.key] = Number(resp.total ?? 0)
         } catch {
-          groupCounts[g.key] = null
+          if (countScope.isCurrent(scope)) {
+            groupCounts[g.key] = null
+            failed = true
+          }
         }
       }),
     )
+    if (failed && countScope.isCurrent(scope)) lastCountSig = ''
   }
 
   const groupTabs = computed(() =>
@@ -406,7 +447,8 @@
 
   /** 严重度 → 设计卡片配色(左条/图标块/pill) */
   function sevMeta(sev: string | null | undefined) {
-    const s = String(sev ?? '').toUpperCase()
+    const severityText = String(sev ?? '')
+    const s = severityText.toUpperCase()
     if (s === 'CRITICAL' || s === 'ERROR' || s === 'P0')
       return {
         color: 'var(--color-danger)',
@@ -426,7 +468,8 @@
 
   /** severity pill 文案:复用 enum.severity.* 字典(严重/警告/错误/提示),缺字典回退原值 */
   function sevLabel(sev: string | null | undefined): string {
-    const s = String(sev ?? '').toUpperCase()
+    const severityText = String(sev ?? '')
+    const s = severityText.toUpperCase()
     if (!s) return ''
     const key = `enum.severity.${s}`
     const v = t(key)
@@ -445,34 +488,33 @@
   // (BE 2026-06-21 契约对齐,status 传真值 OPEN/ACKED/SUPPRESSED/CLOSED,时间走 last_seen_at),
   // 不再做 acknowledged 映射与"当前页局部过滤"。
   async function load() {
+    const scope = readScope.begin()
+    if (!scope.tenantId) return
+    const query = { ...filters, tenantId: scope.tenantId }
     loading.value = true
     loadError.value = null
     try {
-      const resp = await queryAlertsPage(
-        filters.tenantId || tenant.tenantId,
-        page.value,
-        pageSize.value,
-        {
-          severity: (filters.severity ?? '').trim() || undefined,
-          status: (filters.status ?? '').trim() || undefined,
-          alertType: (filters.alertType ?? '').trim() || undefined,
-          traceId: (filters.traceId ?? '').trim() || undefined,
-          startDate: filters.startTime || undefined,
-          endDate: filters.endTime || undefined,
-        },
-      )
+      const resp = await queryAlertsPage(scope.tenantId, page.value, pageSize.value, {
+        severity: (query.severity ?? '').trim() || undefined,
+        status: (query.status ?? '').trim() || undefined,
+        alertType: (query.alertType ?? '').trim() || undefined,
+        traceId: (query.traceId ?? '').trim() || undefined,
+        startDate: query.startTime || undefined,
+        endDate: query.endTime || undefined,
+      })
+      if (!readScope.isCurrent(scope)) return
       rows.value = (resp.items ?? []) as ConsoleAlertEventResponse[]
       total.value = Number(resp.total ?? rows.value.length)
       // 维护 union 供 alertType 候选,限制最近 5 页 ≈ 1000 行避免膨胀
       const cap = pageSize.value * 5
       allRows.value = [...allRows.value, ...rows.value].slice(-cap)
       void loadGroupCounts()
+      live.markRefreshed()
     } catch (err) {
-      loadError.value = err
+      if (readScope.isCurrent(scope)) loadError.value = err
       throw err
     } finally {
-      loading.value = false
-      live.markRefreshed()
+      if (readScope.isCurrent(scope)) loading.value = false
     }
   }
 
@@ -525,6 +567,11 @@
   }
 
   async function doAck(row: ConsoleAlertEventResponse) {
+    const context = captureAlertAction(row)
+    const canAct = () =>
+      context.isCurrent() &&
+      ['OPEN'].includes(rows.value.find((item) => item.id === row.id)?.status ?? '')
+    if (!canAct()) return
     try {
       await confirmDanger({
         verb: t('alertList.ackConfirmVerb'),
@@ -532,9 +579,12 @@
         consequence: t('alertList.ackConfirmConsequence'),
         confirmButtonText: t('alertList.ackConfirmButton'),
       })
+      if (!canAct()) return
       actingId.value = row.id
       const reason = await optionalReason(t('alertList.ackReasonTitle'))
-      await acknowledgeAlert(row.id, actionBody(reason))
+      if (!canAct()) return
+      await acknowledgeAlert(row.id, actionBody(reason, context))
+      if (!context.isCurrent()) return
       ElMessage.success(t('alertList.ackedToast'))
       await load()
     } catch (e) {
@@ -542,11 +592,16 @@
         /* handled */
       }
     } finally {
-      actingId.value = null
+      if (context.isCurrentTarget()) actingId.value = null
     }
   }
 
   async function doSilence(row: ConsoleAlertEventResponse) {
+    const context = captureAlertAction(row)
+    const canAct = () =>
+      context.isCurrent() &&
+      ['OPEN'].includes(rows.value.find((item) => item.id === row.id)?.status ?? '')
+    if (!canAct()) return
     try {
       await confirmDanger({
         verb: t('alertList.silenceConfirmVerb'),
@@ -554,9 +609,12 @@
         consequence: t('alertList.silenceConfirmConsequence'),
         confirmButtonText: t('alertList.silenceConfirmButton'),
       })
+      if (!canAct()) return
       actingId.value = row.id
       const reason = await optionalReason(t('alertList.silenceReasonTitle'))
-      await silenceAlert(row.id, actionBody(reason))
+      if (!canAct()) return
+      await silenceAlert(row.id, actionBody(reason, context))
+      if (!context.isCurrent()) return
       ElMessage.success(t('alertList.silencedToast'))
       await load()
     } catch (e) {
@@ -564,11 +622,16 @@
         /* handled */
       }
     } finally {
-      actingId.value = null
+      if (context.isCurrentTarget()) actingId.value = null
     }
   }
 
   async function doClose(row: ConsoleAlertEventResponse) {
+    const context = captureAlertAction(row)
+    const canAct = () =>
+      context.isCurrent() &&
+      ['OPEN', 'ACKED'].includes(rows.value.find((item) => item.id === row.id)?.status ?? '')
+    if (!canAct()) return
     try {
       await confirmDanger({
         verb: t('alertList.closeConfirmVerb'),
@@ -577,9 +640,12 @@
         irreversible: true,
         confirmButtonText: t('alertList.closeConfirmButton'),
       })
+      if (!canAct()) return
       actingId.value = row.id
       const reason = await optionalReason(t('alertList.closeReasonTitle'))
-      await closeAlert(row.id, actionBody(reason))
+      if (!canAct()) return
+      await closeAlert(row.id, actionBody(reason, context))
+      if (!context.isCurrent()) return
       ElMessage.success(t('alertList.closedToast'))
       await load()
     } catch (e) {
@@ -587,7 +653,7 @@
         /* handled */
       }
     } finally {
-      actingId.value = null
+      if (context.isCurrentTarget()) actingId.value = null
     }
   }
 
@@ -641,10 +707,23 @@
     syncFiltersToUrl,
   )
 
-  useTenantReload(() => {
-    page.value = 1
-    void load()
-  })
+  watch(
+    () => tenant.tenantId,
+    () => {
+      filters.tenantId = tenant.tenantId
+      page.value = 1
+      rows.value = []
+      allRows.value = []
+      total.value = 0
+      actingId.value = null
+      loading.value = false
+      loadError.value = null
+      lastCountSig = ''
+      for (const key of Object.keys(groupCounts)) groupCounts[key] = null
+    },
+    { flush: 'sync' },
+  )
+  useTenantReload(load)
 </script>
 
 <style scoped>

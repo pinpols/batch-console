@@ -32,10 +32,12 @@ export function queryAlertsPage(
   pageSize: number,
   filters?: AlertQueryFilters,
 ): Promise<PageResponse<ConsoleAlertEventResponse>> {
-  return get<PageResponse<ConsoleAlertEventResponse>>('/api/console/queries/alerts', {
+  const filterQuery = toQuery(filters)
+  const queryParams = {
     tenantId,
     pageNo,
     pageSize,
-    ...toQuery(filters),
-  })
+    ...filterQuery,
+  }
+  return get<PageResponse<ConsoleAlertEventResponse>>('/api/console/queries/alerts', queryParams)
 }

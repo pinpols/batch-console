@@ -8,8 +8,8 @@
  *  R4 无环(DFS 三色 GRAY 命中即环)
  *  R5 GATEWAY 汇聚节点允许单出边;分支语义由出边类型决定
  *  R6 JOB.attrs.jobCode 必填
- *  R7 FILE_STEP.attrs.pipelineCode 必填
- *  R8 入度 ≥ 2 的 GATEWAY 必须配置 joinMode(ALL/ANY/N_OF),N_OF 阈值必须合法
+ *  R8 入度 ≥ 2 的 GATEWAY 必须配置 joinMode(ALL/ANY/N_OF)；其他有入边节点可省略，显式配置时须合法
+ *     入度 ≥ 2 且模式为 N_OF 时，阈值须为 1 至入度之间的整数
  *  R9 START 入度 = 0(START 不应有入边)
  *  R10 END 出度 = 0(END 不应有出边)
  *  R11 非 END 节点出度 ≥ 1(除 END 外都要有出边,START 也要)
@@ -43,7 +43,8 @@ export interface ValidationError {
 const NS = 'workflowDesignerMvp.validation.'
 
 export function usesConditionTemplateWrapper(expression: string): boolean {
-  return /^\$\{[\s\S]*\}$/.test(expression.trim())
+  const normalizedExpression = expression.trim()
+  return /^\$\{[\s\S]*\}$/.test(normalizedExpression)
 }
 
 export function validateDag(snapshot: DesignerSnapshot): ValidationError[] {
@@ -72,7 +73,8 @@ export function validateDag(snapshot: DesignerSnapshot): ValidationError[] {
       })
       continue
     }
-    const edgeType = String(e.attrs?.edgeType ?? 'SUCCESS').toUpperCase()
+    const rawEdgeType = String(e.attrs?.edgeType ?? 'SUCCESS')
+    const edgeType = rawEdgeType.toUpperCase()
     if (edgeType === 'CONDITION') {
       if (!e.label?.trim()) {
         errors.push({
@@ -182,10 +184,12 @@ export function validateDag(snapshot: DesignerSnapshot): ValidationError[] {
     if (n.nodeType !== 'END' && nOut < 1) {
       errors.push({ nodeId: n.id, messageKey: NS + 'noOutEdge' })
     }
-    if (n.nodeType === 'GATEWAY') {
-      const incoming = inDegree.get(n.id) ?? 0
-      const joinMode = String(attrs.joinMode ?? '').toUpperCase()
-      if (incoming >= 2 && !['ALL', 'ANY', 'N_OF'].includes(joinMode)) {
+    const incoming = inDegree.get(n.id) ?? 0
+    if (incoming > 0) {
+      const rawJoinMode = String(attrs.joinMode ?? '')
+      const joinMode = rawJoinMode.trim().toUpperCase()
+      const joinModeRequired = n.nodeType === 'GATEWAY' && incoming >= 2
+      if ((joinModeRequired || joinMode) && !['ALL', 'ANY', 'N_OF'].includes(joinMode)) {
         errors.push({
           nodeId: n.id,
           field: 'joinMode',
@@ -193,8 +197,19 @@ export function validateDag(snapshot: DesignerSnapshot): ValidationError[] {
         })
       }
       if (incoming >= 2 && joinMode === 'N_OF') {
-        const threshold = Number(attrs.joinThreshold)
-        if (!Number.isInteger(threshold) || threshold < 1 || threshold > incoming) {
+        const rawThreshold = attrs.joinThreshold
+        const validThresholdType =
+          typeof rawThreshold === 'number' ||
+          (n.nodeType !== 'GATEWAY' &&
+            typeof rawThreshold === 'string' &&
+            /^[+-]?\d+$/.test(rawThreshold))
+        const threshold = Number(rawThreshold)
+        if (
+          !validThresholdType ||
+          !Number.isInteger(threshold) ||
+          threshold < 1 ||
+          threshold > incoming
+        ) {
           errors.push({
             nodeId: n.id,
             field: 'joinThreshold',
@@ -205,17 +220,10 @@ export function validateDag(snapshot: DesignerSnapshot): ValidationError[] {
       }
     }
     if (n.nodeType === 'JOB') {
-      if (!attrs.jobCode || String(attrs.jobCode).trim() === '') {
+      const rawJobCode = attrs.jobCode ? String(attrs.jobCode) : ''
+      const normalizedJobCode = rawJobCode.trim()
+      if (!normalizedJobCode) {
         errors.push({ nodeId: n.id, field: 'jobCode', messageKey: NS + 'jobCodeRequired' })
-      }
-    }
-    if (n.nodeType === 'FILE_STEP') {
-      if (!attrs.pipelineCode || String(attrs.pipelineCode).trim() === '') {
-        errors.push({
-          nodeId: n.id,
-          field: 'pipelineCode',
-          messageKey: NS + 'pipelineCodeRequired',
-        })
       }
     }
   }

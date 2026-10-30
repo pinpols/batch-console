@@ -21,21 +21,20 @@ export const usePermissionStore = defineStore('permission', () => {
   }
 
   function filterGroups(groups: NavigationGroup[]) {
-    return groups
-      .filter((group) => canAccessRole(group.minRole))
-      .map((group) => ({
-        ...group,
-        children: group.children.filter((item) => {
-          if (item.capabilities?.length) {
-            return item.capabilities.some((capability) => auth.hasCapability(capability))
-          }
-          if (item.authorities?.length) {
-            return item.authorities.some((authority) => auth.hasPermission(authority))
-          }
-          return canAccessRole(item.minRole)
-        }),
-      }))
-      .filter((group) => group.children.length > 0)
+    const roleAccessibleGroups = groups.filter((group) => canAccessRole(group.minRole))
+    const groupsWithAccessibleChildren = roleAccessibleGroups.map((group) => ({
+      ...group,
+      children: group.children.filter((item) => {
+        if (item.capabilities?.length) {
+          return item.capabilities.some((capability) => auth.hasCapability(capability))
+        }
+        if (item.authorities?.length) {
+          return item.authorities.some((authority) => auth.hasPermission(authority))
+        }
+        return canAccessRole(item.minRole)
+      }),
+    }))
+    return groupsWithAccessibleChildren.filter((group) => group.children.length > 0)
   }
 
   /**
@@ -76,11 +75,13 @@ export const usePermissionStore = defineStore('permission', () => {
 })
 
 export function backendVisiblePaths(backendMenus?: MenuGroup[] | null): Set<string> {
-  return new Set(
-    (backendMenus ?? []).flatMap((g) =>
-      Array.isArray(g.children) ? g.children.map((c) => c.path) : [],
-    ),
-  )
+  const menuGroups = backendMenus ?? []
+  const childPaths = menuGroups.flatMap((group) => {
+    const childrenAreArray = Array.isArray(group.children)
+    if (!childrenAreArray) return []
+    return group.children.map((child) => child.path)
+  })
+  return new Set(childPaths)
 }
 
 export function hasBackendMenuAccess(backendMenus?: MenuGroup[] | null, path?: string): boolean {
@@ -97,12 +98,16 @@ export function filterNavigationByBackendMenus(
   const visiblePaths = backendVisiblePaths(backendMenus)
   for (const path of additionalVisiblePaths) visiblePaths.add(path)
 
-  return groups
-    .map((group) => ({
-      ...group,
+  const groupsWithVisibleChildren = groups.map((group) => {
+    const groupFields = { ...group }
+    const groupChildren = group.children
+    const visibleChildren = groupChildren.filter((item) => {
       // 菜单项可带 query(如补跑审批 /approvals?tab=catch-up 复用审批页);后端菜单按真实页
       // path 收录,匹配时去掉 query 部分,避免带 tab 的项被误滤掉。
-      children: group.children.filter((item) => visiblePaths.has(item.path.split('?')[0])),
-    }))
-    .filter((group) => group.children.length > 0)
+      const pagePath = item.path.split('?')[0]
+      return visiblePaths.has(pagePath)
+    })
+    return { ...groupFields, children: visibleChildren }
+  })
+  return groupsWithVisibleChildren.filter((group) => group.children.length > 0)
 }

@@ -14,8 +14,6 @@ export async function openDialog(
   triggerName: string | RegExp,
 ): Promise<Locator> {
   await page.getByRole('button', { name: triggerName }).first().click()
-  // EP dialog/drawer 默认动画 ~300ms
-  await page.waitForTimeout(400)
   // 兼容 dialog & drawer。先取可见的那个。
   const candidate = page.locator('.el-dialog:visible, .el-drawer:visible').first()
   await expect(candidate).toBeVisible({ timeout: 3000 })
@@ -43,6 +41,7 @@ export async function cancelDialog(dialog: Locator): Promise<void> {
   } else {
     await dialog.page().keyboard.press('Escape')
   }
+  await expect(dialog).toBeHidden()
 }
 
 /**
@@ -129,7 +128,6 @@ export async function expectFormResetOnReopen(
   const dialog1 = await openDialog(page, triggerName)
   await fieldInput(dialog1, label).fill(testValue)
   await cancelDialog(dialog1)
-  await page.waitForTimeout(200)
   const dialog2 = await openDialog(page, triggerName)
   const value = await fieldInput(dialog2, label).inputValue()
   expect(value, `field "${label}" should reset on reopen`).toBe('')
