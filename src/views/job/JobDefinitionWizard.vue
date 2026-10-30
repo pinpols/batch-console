@@ -100,7 +100,16 @@
             :queue-options="queueOptions"
             :can-configure-routing="canManageSystem && !writesFrozen"
             :sections="['schedule']"
-          />
+          >
+            <template #before>
+              <el-alert
+                :title="t('jobDefinitionWizard.workflowScheduleBootstrapHint')"
+                type="info"
+                :closable="false"
+                show-icon
+              />
+            </template>
+          </JobConfigBasicForm>
           <JobConfigBasicForm
             v-else-if="current.key === 'resource'"
             :model="form"
@@ -327,10 +336,22 @@
           <el-button :disabled="step === 0 || saving" @click="step--">
             {{ t('jobDefinitionWizard.prevStep') }}
           </el-button>
-          <el-button v-if="step < steps.length - 1" type="primary" @click="next">
+          <el-button
+            v-if="step < steps.length - 1"
+            type="primary"
+            :loading="advancing"
+            :disabled="saving"
+            @click="next"
+          >
             {{ t('jobDefinitionWizard.nextStep') }}
           </el-button>
-          <el-button v-else type="primary" :loading="saving" @click="submit">
+          <el-button
+            v-else
+            type="primary"
+            :loading="saving"
+            :disabled="!canWriteSystem"
+            @click="submit"
+          >
             {{ t('jobDefinitionWizard.submitCreate') }}
           </el-button>
         </div>
@@ -347,6 +368,7 @@
   import { ElMessage } from 'element-plus'
   import JsonTextareaInput from '@/components/common/JsonTextareaInput.vue'
   import { jobApi, type JobBundlePayload } from '@/api/job'
+  import { assessBatchInitOutcome } from '@/utils/batchInitOutcome'
   import { getMetaEnums, getMetaQueues, type MetaOption } from '@/api/meta'
   import { queryFileChannels } from '@/api/fileChannelsQuery'
   import { queryFileTemplates } from '@/api/system'
@@ -356,6 +378,9 @@
   import { usePermission } from '@/composables/usePermission'
   import { useWriteAvailability } from '@/composables/useWriteAvailability'
   import { useTenantReload } from '@/composables/useTenantReload'
+  import { useTenantRequestScope } from '@/composables/useTenantRequestScope'
+  import { useAuthStore } from '@/stores/auth'
+  import { logError } from '@/utils/logger'
   import type {
     ConsoleFileChannelResponse,
     ConsoleFileTemplateResponse,
@@ -406,13 +431,14 @@
   )
   const router = useRouter()
   const tenant = useTenantStore()
-  const { canManageSystem } = usePermission()
+  const { canManageSystem, canWriteSystem } = usePermission()
   const { writesFrozen } = useWriteAvailability()
   const formRef = ref<FormInstance>()
   const step = ref(0)
   const current = computed(() => steps.value[step.value])
   const form = reactive(createEmptyJobEditForm())
   const saving = ref(false)
+  const advancing = ref(false)
   const executionModeOptions = ref<MetaOption[]>([])
   const scheduleTypeOptions = ref<MetaOption[]>([])
   const queueOptions = ref<MetaOption[]>([])
@@ -423,7 +449,7 @@
   const bundlePrefillVisible = ref(false)
   const bundlePrefillJson = ref('')
   // 拖拽 / 粘贴 / 选文件能力已下沉到 <JsonTextareaInput>,wizard 自身不再维护这些 state
-  const channelOptions = ref<ConsoleFileChannelResponse[]>([])
+  const channelOptions = ref<(ConsoleFileChannelResponse & { id: number })[]>([])
   const templateOptions = ref<ConsoleFileTemplateResponse[]>([])
   const workflowOptions = ref<ConsoleWorkflowDefinitionResponse[]>([])
   const alertRoutingOptions = ref<GovernanceAlertRoutingRow[]>([])
@@ -433,14 +459,39 @@
   const selectedWorkflowIds = ref<number[]>([])
   const selectedAlertRoutingIds = ref<number[]>([])
 
-  // jobType 由 BE /meta/enums 提供；包含五类 Worker、GENERAL/WORKFLOW 与文件束类型。
-  // GENERAL 是默认通用任务,绝大部分场景用这个;切到其他业务类型时 MetaSelect 加载 BE 选项
+  // JobType 由 BE /meta/enums 提供，GENERAL 是默认通用任务。
   form.jobType = 'GENERAL'
   form.scheduleType = 'MANUAL'
   form.executionMode = 'FULL'
   // 新建定义默认禁用:CRON 一旦启用就会按表达式持续触发,
   // 强制创建者先在列表页 dry-run / 校验后再 enable,避免脏数据(参考 e2e-job-* 历史)
   form.enabled = false
+  const submissionScope = useTenantRequestScope()
+  const navigationScope = useTenantRequestScope()
+  const optionsScope = useTenantRequestScope()
+  const auth = useAuthStore()
+  const actor = computed(() => auth.userInfo?.userId ?? auth.userInfo?.username)
+  let submissionRevision = 0
+  watch(
+    [
+      () => form,
+      fileChannelsJson,
+      fileTemplatesJson,
+      workflowDefinitionsJson,
+      alertRoutingsJson,
+      selectedChannelIds,
+      selectedTemplateIds,
+      selectedWorkflowIds,
+      selectedAlertRoutingIds,
+      actor,
+      canWriteSystem,
+      step,
+    ],
+    () => {
+      submissionRevision += 1
+    },
+    { deep: true, flush: 'sync' },
+  )
 
   // 表单校验:与编辑 drawer (JobDefinitionList) 一致的口径,避免向导提交后 BE 才报错
   const jobCodePattern = /^[a-zA-Z][a-zA-Z0-9_-]{0,127}$/
@@ -455,24 +506,33 @@
       JSON.parse(value)
       callback()
     } catch {
-      callback(new Error(t('jobDefinitionWizard.errJsonInvalid')))
+      const errorMessage = t('jobDefinitionWizard.errJsonInvalid')
+      const validationError = new Error(errorMessage)
+      callback(validationError)
     }
   }
   const watermarkValidator = (_rule: unknown, value: unknown, callback: (err?: Error) => void) => {
     if (form.executionMode !== 'INCREMENTAL') return callback()
     const v = typeof value === 'string' ? value.trim() : ''
-    if (!v) return callback(new Error(t('jobDefinitionWizard.errWatermarkRequired')))
+    if (!v) {
+      const errorMessage = t('jobDefinitionWizard.errWatermarkRequired')
+      const validationError = new Error(errorMessage)
+      return callback(validationError)
+    }
     if (!watermarkPattern.test(v)) {
-      return callback(new Error(t('jobDefinitionWizard.errWatermarkPattern')))
+      const errorMessage = t('jobDefinitionWizard.errWatermarkPattern')
+      const validationError = new Error(errorMessage)
+      return callback(validationError)
     }
     return callback()
   }
   const jobCodeRefValidator = (_rule: unknown, value: unknown, callback: (err?: Error) => void) => {
     const v = typeof value === 'string' ? value.trim() : ''
     if (!v) return callback()
-    return jobCodePattern.test(v)
-      ? callback()
-      : callback(new Error(t('jobDefinitionWizard.errJobCodePattern')))
+    if (jobCodePattern.test(v)) return callback()
+    const errorMessage = t('jobDefinitionWizard.errJobCodePattern')
+    const validationError = new Error(errorMessage)
+    return callback(validationError)
   }
   const scheduleExprValidator = (
     _rule: unknown,
@@ -481,7 +541,11 @@
   ) => {
     if (form.scheduleType === 'MANUAL') return callback()
     const v = typeof value === 'string' ? value.trim() : ''
-    if (!v) return callback(new Error(t('jobDefinitionWizard.errScheduleExprRequired')))
+    if (!v) {
+      const errorMessage = t('jobDefinitionWizard.errScheduleExprRequired')
+      const validationError = new Error(errorMessage)
+      return callback(validationError)
+    }
     return callback()
   }
   const rules: FormRules = {
@@ -490,9 +554,11 @@
       {
         validator: (_r, v, cb) => {
           if (!v) return cb()
-          return jobCodePattern.test(String(v))
-            ? cb()
-            : cb(new Error(t('jobDefinitionWizard.errJobCodePattern')))
+          const candidateJobCode = String(v)
+          if (jobCodePattern.test(candidateJobCode)) return cb()
+          const errorMessage = t('jobDefinitionWizard.errJobCodePattern')
+          const validationError = new Error(errorMessage)
+          return cb(validationError)
         },
         trigger: 'blur',
       },
@@ -552,45 +618,96 @@
     updatedAt: '',
   }))
 
-  useTenantReload(async () => {
-    const [enums, queues] = await Promise.all([getMetaEnums(), getMetaQueues(tenant.tenantId)])
-    executionModeOptions.value = enums.executionMode ?? []
-    scheduleTypeOptions.value = enums.scheduleType ?? []
-    queueOptions.value = queues
-    // 关联实体下拉(失败容忍,避免一项 4xx 阻塞向导)
-    void loadAssociations()
+  function clearAssociationOptions() {
+    queueOptions.value = []
+    channelOptions.value = []
+    templateOptions.value = []
+    workflowOptions.value = []
+    alertRoutingOptions.value = []
+    selectedChannelIds.value = []
+    selectedTemplateIds.value = []
+    selectedWorkflowIds.value = []
+    selectedAlertRoutingIds.value = []
+  }
+
+  watch(
+    [() => tenant.tenantId, actor],
+    () => {
+      optionsScope.begin()
+      clearAssociationOptions()
+      associationsLoading.value = false
+    },
+    { flush: 'sync' },
+  )
+  useTenantReload(loadWizardOptions)
+  watch(actor, () => {
+    if (!tenant.tenantId) return
+    void loadWizardOptions().catch((error: unknown) => {
+      const message = error instanceof Error ? error.message : String(error)
+      logError(`Job wizard options reload failed: ${message}`, { kind: 'jobWizardOptions' })
+    })
   })
 
-  async function loadAssociations() {
-    const tid = tenant.tenantId
+  async function loadWizardOptions() {
+    const scope = optionsScope.begin()
     associationsLoading.value = true
     try {
-      const [channels, templates, workflows, alerts] = await Promise.all([
-        queryFileChannels(tid).catch(() => [] as ConsoleFileChannelResponse[]),
-        queryFileTemplates(tid, 1, 200)
-          .then((p) => p.items ?? [])
-          .catch(() => [] as ConsoleFileTemplateResponse[]),
-        workflowApi
-          .listDefinitions({ tenantId: tid, page: 1, pageSize: 200 })
-          .then((r) => r.records ?? [])
-          .catch(() => [] as ConsoleWorkflowDefinitionResponse[]),
-        governanceApi.listAlertRoutings(tid).catch(() => [] as GovernanceAlertRoutingRow[]),
-      ])
-      channelOptions.value = channels
-      templateOptions.value = templates
-      workflowOptions.value = workflows
-      alertRoutingOptions.value = alerts
+      const [enums, queues] = await Promise.all([getMetaEnums(), getMetaQueues(scope.tenantId)])
+      if (!optionsScope.isCurrent(scope)) return
+      executionModeOptions.value = enums.executionMode ?? []
+      scheduleTypeOptions.value = enums.scheduleType ?? []
+      queueOptions.value = queues
+      await loadAssociations(scope)
     } finally {
-      associationsLoading.value = false
+      if (optionsScope.isCurrent(scope)) associationsLoading.value = false
     }
   }
 
+  async function loadAssociations(scope: ReturnType<typeof optionsScope.begin>) {
+    const tid = scope.tenantId
+    const [channels, templates, workflows, alerts] = await Promise.all([
+      queryFileChannels(tid).catch(() => [] as ConsoleFileChannelResponse[]),
+      queryFileTemplates(tid, 1, 200)
+        .then((p) => p.items ?? [])
+        .catch(() => [] as ConsoleFileTemplateResponse[]),
+      workflowApi
+        .listDefinitions({ tenantId: tid, page: 1, pageSize: 200 })
+        .then((r) => r.records ?? [])
+        .catch(() => [] as ConsoleWorkflowDefinitionResponse[]),
+      governanceApi.listAlertRoutings(tid).catch(() => [] as GovernanceAlertRoutingRow[]),
+    ])
+    // 同一代次覆盖元数据与关联读取，旧租户回包不能恢复选项或解除新读取状态。
+    if (!optionsScope.isCurrent(scope)) return
+    channelOptions.value = channels.flatMap((channel) =>
+      typeof channel.id === 'number' ? [{ ...channel, id: channel.id }] : [],
+    )
+    templateOptions.value = templates
+    workflowOptions.value = workflows
+    alertRoutingOptions.value = alerts
+  }
+
   async function next() {
-    if (step.value <= 3) {
-      const valid = await formRef.value?.validate().catch(() => false)
-      if (!valid) return
+    if (advancing.value || saving.value || step.value >= steps.value.length - 1) return
+    const scope = navigationScope.begin()
+    const revision = submissionRevision
+    const initialStep = step.value
+    advancing.value = true
+    try {
+      if (initialStep <= 3) {
+        const valid = await formRef.value?.validate().catch(() => false)
+        if (!valid) return
+      }
+      // 异步校验只推进发起时的同一步，输入或主体变化后必须重新校验。
+      if (
+        !navigationScope.isCurrent(scope) ||
+        revision !== submissionRevision ||
+        step.value !== initialStep
+      )
+        return
+      step.value = initialStep + 1
+    } finally {
+      advancing.value = false
     }
-    step.value += 1
   }
 
   function parseArray(raw: string): Array<Record<string, unknown>> {
@@ -661,22 +778,46 @@
     // 走 SpecHandler.upsertable() 路径,会读全字段做 upsert,缺字段直接 NPE / 持久化错列。
     // 这里把下拉里选中的整条 response 透传(展开为 Record<string, unknown>),
     // 由后端按 spec 字段名取用,缺失字段保留 null/undefined 不写。
-    const channelRefs = selectedChannelIds.value
-      .map((id) => channelOptions.value.find((c) => c.id === id))
-      .filter((x): x is ConsoleFileChannelResponse => !!x)
-      .map((c) => ({ ...c }) as Record<string, unknown>)
-    const templateRefs = selectedTemplateIds.value
-      .map((id) => templateOptions.value.find((t) => t.id === id))
-      .filter((x): x is ConsoleFileTemplateResponse => !!x)
-      .map((t) => ({ ...t }) as Record<string, unknown>)
-    const workflowRefs = selectedWorkflowIds.value
-      .map((id) => workflowOptions.value.find((w) => w.id === id))
-      .filter((x): x is ConsoleWorkflowDefinitionResponse => !!x)
-      .map((w) => ({ ...w }) as Record<string, unknown>)
-    const alertRoutingRefs = selectedAlertRoutingIds.value
-      .map((id) => alertRoutingOptions.value.find((a) => a.id === id))
-      .filter((x): x is GovernanceAlertRoutingRow => !!x)
-      .map((a) => ({ ...a }) as Record<string, unknown>)
+    const channelRefs = selectedChannelIds.value.flatMap((id) => {
+      const channel = channelOptions.value.find((candidate) => candidate.id === id)
+      return channel ? [{ ...channel } as Record<string, unknown>] : []
+    })
+    const selectedTemplates = selectedTemplateIds.value.map((id) =>
+      templateOptions.value.find((template) => template.id === id),
+    )
+    const existingTemplates = selectedTemplates.filter(
+      (template): template is ConsoleFileTemplateResponse => !!template,
+    )
+    const templateRefs = existingTemplates.map(
+      (template) =>
+        ({
+          ...template,
+        }) as Record<string, unknown>,
+    )
+    const selectedWorkflows = selectedWorkflowIds.value.map((id) =>
+      workflowOptions.value.find((workflow) => workflow.id === id),
+    )
+    const existingWorkflows = selectedWorkflows.filter(
+      (workflow): workflow is ConsoleWorkflowDefinitionResponse => !!workflow,
+    )
+    const workflowRefs = existingWorkflows.map(
+      (workflow) =>
+        ({
+          ...workflow,
+        }) as Record<string, unknown>,
+    )
+    const selectedAlertRoutings = selectedAlertRoutingIds.value.map((id) =>
+      alertRoutingOptions.value.find((routing) => routing.id === id),
+    )
+    const existingAlertRoutings = selectedAlertRoutings.filter(
+      (routing): routing is GovernanceAlertRoutingRow => !!routing,
+    )
+    const alertRoutingRefs = existingAlertRoutings.map(
+      (routing) =>
+        ({
+          ...routing,
+        }) as Record<string, unknown>,
+    )
 
     return {
       jobDefinitions: [
@@ -723,16 +864,34 @@
   }
 
   async function submit() {
+    if (saving.value || !canWriteSystem.value) return
+    const scope = submissionScope.begin()
+    const revision = submissionRevision
+    const submittedJobCode = form.jobCode.trim()
     saving.value = true
     try {
-      await jobApi.createBundle({
-        tenantId: tenant.tenantId,
+      const tenantId = tenant.tenantId
+      const bundle = buildBundle()
+      const response = await jobApi.createBundle({
+        tenantId,
         mode: 'SKIP_EXISTING',
         dryRun: false,
-        bundle: buildBundle(),
+        bundle,
       })
+      if (!submissionScope.isCurrent(scope) || revision !== submissionRevision) return
+      const outcome = assessBatchInitOutcome(response.result)
+      if (!outcome.fullySuccessful) {
+        const failedTenantNames = outcome.failedTenantIds.join(', ')
+        const tenantSummary = failedTenantNames || tenant.tenantId
+        ElMessage.error(
+          t('jobDefinitionWizard.createBundleFailed', {
+            tenants: tenantSummary,
+          }),
+        )
+        return
+      }
       ElMessage.success(t('jobDefinitionWizard.createBundleSuccess'))
-      await router.push({ path: '/jobs/definitions', query: { jobCode: form.jobCode.trim() } })
+      await router.push({ path: '/jobs/definitions', query: { jobCode: submittedJobCode } })
     } catch (error) {
       if (error instanceof SyntaxError) {
         ElMessage.error(t('jobDefinitionWizard.relatedJsonInvalid'))

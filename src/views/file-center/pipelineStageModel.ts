@@ -4,16 +4,18 @@ type PipelineStagesMap = Readonly<Record<string, readonly string[]>>
 
 export function pipelineStageCodes(
   pipelineType: string | null | undefined,
-  steps: ConsoleFilePipelineStepResponse[],
+  steps: ReadonlyArray<Pick<ConsoleFilePipelineStepResponse, 'stageCode'>>,
   stagesByType: PipelineStagesMap,
 ): string[] {
-  const canonical = stagesByType[String(pipelineType ?? '').toUpperCase()] ?? []
+  const pipelineTypeText = String(pipelineType ?? '')
+  const normalizedPipelineType = pipelineTypeText.toUpperCase()
+  const canonical = stagesByType[normalizedPipelineType] ?? []
   const actual = steps
-    .map((step) =>
-      String(step.stageCode ?? '')
-        .trim()
-        .toUpperCase(),
-    )
+    .map((step) => {
+      const stageCode = String(step.stageCode ?? '')
+      const trimmedStageCode = stageCode.trim()
+      return trimmedStageCode.toUpperCase()
+    })
     .filter(Boolean)
   return [...new Set([...canonical, ...actual])]
 }

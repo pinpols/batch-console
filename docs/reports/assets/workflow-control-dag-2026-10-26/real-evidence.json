@@ -1,0 +1,133 @@
+{
+  "verifiedOn": "2026-10-26",
+  "worktrees": {
+    "frontend": {
+      "branch": "fix/wdi-current",
+      "head": "662d254"
+    },
+    "backend": {
+      "branch": "fix/wdi-current",
+      "head": "f3d5e400d"
+    }
+  },
+  "scope": "Authenticated Workflow control DAG and tenant daily progress; no Worker execution or Job creation",
+  "browserAcceptance": {
+    "test": "npm run test:e2e:progress:real",
+    "result": "passed",
+    "passed": 1,
+    "failed": 0,
+    "retries": 0,
+    "durationSeconds": 57.3,
+    "anonymousAuthStatus": 401,
+    "workflowDetailButtonsClicked": [
+      "pause",
+      "resume"
+    ],
+    "confirmationDialogsAccepted": true
+  },
+  "authorization": {
+    "ADMIN": {
+      "pause": 200,
+      "resume": 200
+    },
+    "TENANT_ADMIN": {
+      "pause": 403,
+      "crossTenantWorkflowProgressRead": 403,
+      "crossTenantDailyProgressRead": 403
+    }
+  },
+  "observedSseRunStatusSequence": [
+    "RUNNING",
+    "PAUSED",
+    "RUNNING",
+    "SUCCESS"
+  ],
+  "finalWorkflowNodes": [
+    {
+      "nodeCode": "START",
+      "nodeStatus": "SUCCESS"
+    },
+    {
+      "nodeCode": "WAIT",
+      "nodeStatus": "SKIPPED",
+      "skipReasonCode": "SENSOR_TIMEOUT_SKIP_DOWNSTREAM"
+    },
+    {
+      "nodeCode": "END",
+      "nodeStatus": "NOT_EXECUTED"
+    }
+  ],
+  "frozenGraph": {
+    "nodes": [
+      "START",
+      "WAIT",
+      "END"
+    ],
+    "edges": [
+      "START -> WAIT (SUCCESS)",
+      "WAIT -> END (SUCCESS)"
+    ],
+    "definitionEditedAfterRun": true,
+    "originalFrozenNodeRetained": true
+  },
+  "dailyProgress": {
+    "page": "/ops/summary",
+    "businessDate": "2026-11-16",
+    "businessDateSource": "Manually triggered isolated test fixture; not the current business day or Quartz evidence",
+    "workflowRunRowObservedCellValues": [
+      "1",
+      "1"
+    ],
+    "liveBadgeVisible": true,
+    "onlineObservationSeconds": 4.5,
+    "periodicGetCount": 0
+  },
+  "persistedReadback": {
+    "runStatuses": [
+      "SUCCESS"
+    ],
+    "nodeStates": [
+      [
+        "START",
+        "SUCCESS"
+      ],
+      [
+        "WAIT",
+        "SKIPPED"
+      ]
+    ],
+    "terminalEventStatuses": [
+      "PUBLISHED"
+    ],
+    "jobInstances": 0
+  },
+  "cleanupCounts": {
+    "definitions": 0,
+    "nodes": 0,
+    "edges": 0,
+    "versions": 0,
+    "runs": 0,
+    "nodeRuns": 0,
+    "requests": 0,
+    "jobInstances": 0,
+    "terminalEvents": 0,
+    "terminalReceipts": 0,
+    "terminalDedupKeys": 0,
+    "calendars": 0,
+    "batchDays": 0,
+    "dayCursors": 0,
+    "dayAudits": 0,
+    "catchupControls": 0,
+    "catchupEvents": 0,
+    "tenants": 0,
+    "configurationRevisions": 0,
+    "operationAudits": 0,
+    "credentialAccounts": 0
+  },
+  "cleanupAllZero": true,
+  "runtimeConfiguration": {
+    "authBypassDuringAcceptance": false,
+    "localBypassRestoredAfterAcceptance": true,
+    "anonymousAuthStatusAfterRestore": 200
+  }
+}

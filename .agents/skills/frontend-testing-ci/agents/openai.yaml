@@ -1,0 +1,4 @@
+interface:
+  display_name: "前端测试与 CI 门禁"
+  short_description: "选择并执行前端单测、浏览器及CI门禁，区分本地与真实联调证据"
+  default_prompt: "使用 $frontend-testing-ci 规划并执行本次授权的前端验证，报告命令、结果及未验证范围。"

@@ -72,7 +72,9 @@
     }
     error.value = err
     errorText.value = `${message}(${info})`
-    const stack = err instanceof Error ? err.stack?.split('\n').slice(0, 5).join('\n') : undefined
+    const stackText = err instanceof Error ? err.stack : undefined
+    const stackLines = stackText?.split('\n').slice(0, 5)
+    const stack = stackLines?.join('\n')
     logError(`ErrorBoundary:${message}`, {
       kind: 'errorBoundary',
       info,

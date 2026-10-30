@@ -79,7 +79,9 @@ function resolveName(el: HTMLElement): string {
   if (aria) return `mobile:${aria.slice(0, 80)}`
 
   // 3) 文本(标准化:trim + 多空白合一 + 截断)
-  const text = el.textContent?.trim().replace(/\s+/g, ' ').slice(0, 80)
+  const trimmedText = el.textContent?.trim()
+  const normalizedText = trimmedText?.replace(/\s+/g, ' ')
+  const text = normalizedText?.slice(0, 80)
   if (text) return `mobile:${text}`
 
   // 4) class 兜底(几乎只在文本/aria 都没的极端情况)

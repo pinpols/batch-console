@@ -23,7 +23,6 @@ type ListPage = {
 // 每页一条「分页列表」API,URL 用子串正则匹配(避免 query 串细节脆弱)。
 const PAGES: ListPage[] = [
   { path: '/jobs/definitions', title: '作业定义', listUrl: /\/job-definitions(\?|\/?$|\/page)/ },
-  { path: '/jobs/pipelines', title: /流水线定义|流水线/, listUrl: /\/pipeline-definitions(\?|\/?$)/ },
   { path: '/governance/queues', title: /队列|队列配置/, listUrl: /\/queues(\?|\/?$)/ },
   {
     path: '/governance/quota',
@@ -51,13 +50,12 @@ for (const pg of PAGES) {
     // 响应到达后立即读取正文，避免后续导航和长标题断言使 Chromium 的响应句柄失效。
     let bodyPromise: Promise<unknown> | null = null
     const onResponse = (response: import('@playwright/test').Response) => {
-      if (
-        !bodyPromise &&
+      const isFirstSuccessfulListResponse = !bodyPromise &&
         pg.listUrl.test(response.url()) &&
         response.request().method() === 'GET' &&
         response.status() === 200 &&
         (response.headers()['content-type'] ?? '').includes('application/json')
-      ) {
+      if (isFirstSuccessfulListResponse) {
         bodyPromise = response.json()
       }
     }
@@ -70,12 +68,8 @@ for (const pg of PAGES) {
     const body = await bodyPromise!
     // 解析分页结构:data.items(主流)/ data.records / data 直接是数组。
     const data = (body as { data?: unknown })?.data as
-      | { items?: unknown[]; records?: unknown[]; total?: number }
-      | unknown[]
-      | undefined
-    const items: unknown[] = Array.isArray(data)
-      ? data
-      : (data?.items ?? data?.records ?? [])
+      { items?: unknown[]; records?: unknown[]; total?: number } | unknown[] | undefined
+    const items: unknown[] = Array.isArray(data) ? data : (data?.items ?? data?.records ?? [])
 
     await page.waitForLoadState('networkidle', { timeout: 8000 }).catch(() => {})
 
@@ -96,9 +90,10 @@ for (const pg of PAGES) {
     //   ① 前端【不会渲染比 API 给的更多】的行(无凭空多出 / 重复成行)→ rowCount <= items。
     //   ② 前端【不会静默丢行】:要么全渲染(rowCount === items),要么是分页只显示当前页,
     //      此时分页器的 total 必须 == API 返回的条数(每行可经翻页到达,不丢)。
-    expect(rowCount, `${pg.path} 渲染行数(${rowCount})不应超过 API items(${items.length})`).toBeLessThanOrEqual(
-      items.length,
-    )
+    expect(
+      rowCount,
+      `${pg.path} 渲染行数(${rowCount})不应超过 API items(${items.length})`,
+    ).toBeLessThanOrEqual(items.length)
     if (rowCount < items.length) {
       // 分页态:分页器 total 文本须体现完整条数(说明"剩余行可翻页到达",非丢失)。
       const totalText = await page

@@ -1,0 +1,4105 @@
+{
+  "sourceRunId": 1,
+  "targetRunId": 2,
+  "sourceJobId": 2,
+  "beforeCrash": {
+    "worker": {
+      "status": "ONLINE",
+      "workerGroup": "EXPORT"
+    },
+    "runs": [
+      {
+        "id": 1,
+        "status": "SUCCESS",
+        "startedAtMs": 1792992066809,
+        "finishedAtMs": 1792992145351
+      },
+      {
+        "id": 2,
+        "status": "RUNNING",
+        "startedAtMs": 1792992175113,
+        "finishedAtMs": null
+      }
+    ],
+    "nodes": [
+      {
+        "id": 1,
+        "runId": 1,
+        "code": "START",
+        "type": "START",
+        "status": "SUCCESS",
+        "jobInstanceId": null
+      },
+      {
+        "id": 2,
+        "runId": 1,
+        "code": "GATEWAY",
+        "type": "GATEWAY",
+        "status": "SUCCESS",
+        "jobInstanceId": null
+      },
+      {
+        "id": 3,
+        "runId": 1,
+        "code": "EXPORT_JOB",
+        "type": "JOB",
+        "status": "SUCCESS",
+        "jobInstanceId": 2
+      },
+      {
+        "id": 4,
+        "runId": 1,
+        "code": "END",
+        "type": "END",
+        "status": "SUCCESS",
+        "jobInstanceId": null
+      },
+      {
+        "id": 5,
+        "runId": 2,
+        "code": "START",
+        "type": "START",
+        "status": "SUCCESS",
+        "jobInstanceId": null
+      },
+      {
+        "id": 6,
+        "runId": 2,
+        "code": "GATEWAY",
+        "type": "GATEWAY",
+        "status": "SUCCESS",
+        "jobInstanceId": null
+      },
+      {
+        "id": 7,
+        "runId": 2,
+        "code": "EXPORT_JOB",
+        "type": "JOB",
+        "status": "READY",
+        "jobInstanceId": 3
+      }
+    ],
+    "instances": [
+      {
+        "id": 2,
+        "status": "SUCCESS",
+        "expectedPartitions": 1,
+        "successPartitions": 1,
+        "failedPartitions": 0
+      },
+      {
+        "id": 3,
+        "status": "RUNNING",
+        "expectedPartitions": 1,
+        "successPartitions": 0,
+        "failedPartitions": 0
+      }
+    ],
+    "partitions": [
+      {
+        "id": 1,
+        "jobInstanceId": 2,
+        "status": "SUCCESS"
+      },
+      {
+        "id": 2,
+        "jobInstanceId": 3,
+        "status": "RUNNING"
+      }
+    ],
+    "tasks": [
+      {
+        "id": 1,
+        "jobInstanceId": 2,
+        "status": "SUCCESS"
+      },
+      {
+        "id": 2,
+        "jobInstanceId": 3,
+        "status": "RUNNING"
+      }
+    ],
+    "approvals": [
+      {
+        "status": "EXECUTED",
+        "requester": "ROLE_admin",
+        "approver": "ROLE_reader",
+        "targetType": "WORKFLOW_RUN",
+        "targetId": "1"
+      }
+    ],
+    "operations": [
+      {
+        "id": 1,
+        "status": "RUNNING",
+        "sourceRunId": 1,
+        "targetRunId": 2,
+        "requestedBy": "ADMIN_APPLICANT",
+        "approvedBy": "TENANT_ADMIN_APPROVER",
+        "resultPolicy": "CREATE_NEW_VERSION",
+        "configPolicy": "USE_ORIGINAL_CONFIG",
+        "total": 1,
+        "succeeded": 0,
+        "inFlight": 1
+      }
+    ],
+    "businessRows": 1200,
+    "distinctRows": 1200,
+    "activeSourceQueries": 1,
+    "pipelines": [
+      {
+        "id": 1,
+        "jobInstanceId": 2,
+        "fileId": 1,
+        "status": "SUCCESS",
+        "stage": "COMPLETE",
+        "systemCode": "EXPORT",
+        "systemVersion": 1
+      },
+      {
+        "id": 2,
+        "jobInstanceId": 3,
+        "fileId": null,
+        "status": "RUNNING",
+        "stage": "GENERATE",
+        "systemCode": "EXPORT",
+        "systemVersion": 1
+      }
+    ],
+    "steps": [
+      {
+        "id": 1,
+        "pipelineId": 1,
+        "stage": "PREPARE",
+        "runSeq": 1,
+        "status": "SUCCESS",
+        "errorCode": null
+      },
+      {
+        "id": 2,
+        "pipelineId": 1,
+        "stage": "GENERATE",
+        "runSeq": 1,
+        "status": "SUCCESS",
+        "errorCode": null
+      },
+      {
+        "id": 3,
+        "pipelineId": 1,
+        "stage": "STORE",
+        "runSeq": 1,
+        "status": "SUCCESS",
+        "errorCode": null
+      },
+      {
+        "id": 4,
+        "pipelineId": 1,
+        "stage": "REGISTER",
+        "runSeq": 1,
+        "status": "SUCCESS",
+        "errorCode": null
+      },
+      {
+        "id": 5,
+        "pipelineId": 1,
+        "stage": "COMPLETE",
+        "runSeq": 1,
+        "status": "SUCCESS",
+        "errorCode": null
+      },
+      {
+        "id": 6,
+        "pipelineId": 2,
+        "stage": "PREPARE",
+        "runSeq": 1,
+        "status": "SUCCESS",
+        "errorCode": null
+      },
+      {
+        "id": 7,
+        "pipelineId": 2,
+        "stage": "GENERATE",
+        "runSeq": 1,
+        "status": "RUNNING",
+        "errorCode": null
+      }
+    ],
+    "checkpoints": [
+      {
+        "pipelineId": 1,
+        "stage": "GENERATE",
+        "processedCount": 1200,
+        "completed": true
+      },
+      {
+        "pipelineId": 2,
+        "stage": "GENERATE",
+        "processedCount": 50,
+        "completed": false
+      }
+    ],
+    "files": [
+      {
+        "id": 1,
+        "status": "GENERATED",
+        "size": 17131,
+        "sha256": "17571104f97d317cd0f0575e09d3190c6787ecd5a41b2c8eb80ac5732f806f40",
+        "jobInstanceId": "2"
+      }
+    ]
+  },
+  "terminal": {
+    "worker": {
+      "status": "ONLINE",
+      "workerGroup": "EXPORT"
+    },
+    "runs": [
+      {
+        "id": 1,
+        "status": "SUCCESS",
+        "startedAtMs": 1792992066809,
+        "finishedAtMs": 1792992145351
+      },
+      {
+        "id": 2,
+        "status": "SUCCESS",
+        "startedAtMs": 1792992175113,
+        "finishedAtMs": 1792992272957
+      }
+    ],
+    "nodes": [
+      {
+        "id": 1,
+        "runId": 1,
+        "code": "START",
+        "type": "START",
+        "status": "SUCCESS",
+        "jobInstanceId": null
+      },
+      {
+        "id": 2,
+        "runId": 1,
+        "code": "GATEWAY",
+        "type": "GATEWAY",
+        "status": "SUCCESS",
+        "jobInstanceId": null
+      },
+      {
+        "id": 3,
+        "runId": 1,
+        "code": "EXPORT_JOB",
+        "type": "JOB",
+        "status": "SUCCESS",
+        "jobInstanceId": 2
+      },
+      {
+        "id": 4,
+        "runId": 1,
+        "code": "END",
+        "type": "END",
+        "status": "SUCCESS",
+        "jobInstanceId": null
+      },
+      {
+        "id": 5,
+        "runId": 2,
+        "code": "START",
+        "type": "START",
+        "status": "SUCCESS",
+        "jobInstanceId": null
+      },
+      {
+        "id": 6,
+        "runId": 2,
+        "code": "GATEWAY",
+        "type": "GATEWAY",
+        "status": "SUCCESS",
+        "jobInstanceId": null
+      },
+      {
+        "id": 7,
+        "runId": 2,
+        "code": "EXPORT_JOB",
+        "type": "JOB",
+        "status": "SUCCESS",
+        "jobInstanceId": 3
+      },
+      {
+        "id": 8,
+        "runId": 2,
+        "code": "END",
+        "type": "END",
+        "status": "SUCCESS",
+        "jobInstanceId": null
+      }
+    ],
+    "instances": [
+      {
+        "id": 2,
+        "status": "SUCCESS",
+        "expectedPartitions": 1,
+        "successPartitions": 1,
+        "failedPartitions": 0
+      },
+      {
+        "id": 3,
+        "status": "SUCCESS",
+        "expectedPartitions": 1,
+        "successPartitions": 1,
+        "failedPartitions": 0
+      }
+    ],
+    "partitions": [
+      {
+        "id": 1,
+        "jobInstanceId": 2,
+        "status": "SUCCESS"
+      },
+      {
+        "id": 2,
+        "jobInstanceId": 3,
+        "status": "SUCCESS"
+      }
+    ],
+    "tasks": [
+      {
+        "id": 1,
+        "jobInstanceId": 2,
+        "status": "SUCCESS"
+      },
+      {
+        "id": 2,
+        "jobInstanceId": 3,
+        "status": "SUCCESS"
+      }
+    ],
+    "approvals": [
+      {
+        "status": "EXECUTED",
+        "requester": "ROLE_admin",
+        "approver": "ROLE_reader",
+        "targetType": "WORKFLOW_RUN",
+        "targetId": "1"
+      }
+    ],
+    "operations": [
+      {
+        "id": 1,
+        "status": "SUCCEEDED",
+        "sourceRunId": 1,
+        "targetRunId": 2,
+        "requestedBy": "ADMIN_APPLICANT",
+        "approvedBy": "TENANT_ADMIN_APPROVER",
+        "resultPolicy": "CREATE_NEW_VERSION",
+        "configPolicy": "USE_ORIGINAL_CONFIG",
+        "total": 1,
+        "succeeded": 1,
+        "inFlight": 0
+      }
+    ],
+    "businessRows": 1200,
+    "distinctRows": 1200,
+    "activeSourceQueries": 0,
+    "pipelines": [
+      {
+        "id": 1,
+        "jobInstanceId": 2,
+        "fileId": 1,
+        "status": "SUCCESS",
+        "stage": "COMPLETE",
+        "systemCode": "EXPORT",
+        "systemVersion": 1
+      },
+      {
+        "id": 2,
+        "jobInstanceId": 3,
+        "fileId": 3,
+        "status": "SUCCESS",
+        "stage": "COMPLETE",
+        "systemCode": "EXPORT",
+        "systemVersion": 1
+      }
+    ],
+    "steps": [
+      {
+        "id": 1,
+        "pipelineId": 1,
+        "stage": "PREPARE",
+        "runSeq": 1,
+        "status": "SUCCESS",
+        "errorCode": null
+      },
+      {
+        "id": 2,
+        "pipelineId": 1,
+        "stage": "GENERATE",
+        "runSeq": 1,
+        "status": "SUCCESS",
+        "errorCode": null
+      },
+      {
+        "id": 3,
+        "pipelineId": 1,
+        "stage": "STORE",
+        "runSeq": 1,
+        "status": "SUCCESS",
+        "errorCode": null
+      },
+      {
+        "id": 4,
+        "pipelineId": 1,
+        "stage": "REGISTER",
+        "runSeq": 1,
+        "status": "SUCCESS",
+        "errorCode": null
+      },
+      {
+        "id": 5,
+        "pipelineId": 1,
+        "stage": "COMPLETE",
+        "runSeq": 1,
+        "status": "SUCCESS",
+        "errorCode": null
+      },
+      {
+        "id": 6,
+        "pipelineId": 2,
+        "stage": "PREPARE",
+        "runSeq": 1,
+        "status": "SUCCESS",
+        "errorCode": null
+      },
+      {
+        "id": 7,
+        "pipelineId": 2,
+        "stage": "GENERATE",
+        "runSeq": 1,
+        "status": "FAILED",
+        "errorCode": "PIPELINE_ATTEMPT_INTERRUPTED"
+      },
+      {
+        "id": 8,
+        "pipelineId": 2,
+        "stage": "PREPARE",
+        "runSeq": 2,
+        "status": "SUCCESS",
+        "errorCode": null
+      },
+      {
+        "id": 9,
+        "pipelineId": 2,
+        "stage": "GENERATE",
+        "runSeq": 2,
+        "status": "SUCCESS",
+        "errorCode": null
+      },
+      {
+        "id": 10,
+        "pipelineId": 2,
+        "stage": "STORE",
+        "runSeq": 1,
+        "status": "SUCCESS",
+        "errorCode": null
+      },
+      {
+        "id": 11,
+        "pipelineId": 2,
+        "stage": "REGISTER",
+        "runSeq": 1,
+        "status": "SUCCESS",
+        "errorCode": null
+      },
+      {
+        "id": 12,
+        "pipelineId": 2,
+        "stage": "COMPLETE",
+        "runSeq": 1,
+        "status": "SUCCESS",
+        "errorCode": null
+      }
+    ],
+    "checkpoints": [
+      {
+        "pipelineId": 1,
+        "stage": "GENERATE",
+        "processedCount": 1200,
+        "completed": true
+      },
+      {
+        "pipelineId": 2,
+        "stage": "GENERATE",
+        "processedCount": 1200,
+        "completed": true
+      }
+    ],
+    "files": [
+      {
+        "id": 1,
+        "status": "GENERATED",
+        "size": 17131,
+        "sha256": "17571104f97d317cd0f0575e09d3190c6787ecd5a41b2c8eb80ac5732f806f40",
+        "jobInstanceId": "2"
+      },
+      {
+        "id": 3,
+        "status": "GENERATED",
+        "size": 17131,
+        "sha256": "17571104f97d317cd0f0575e09d3190c6787ecd5a41b2c8eb80ac5732f806f40",
+        "jobInstanceId": "3"
+      }
+    ]
+  },
+  "preview": {
+    "workflowVersion": 1,
+    "nodes": [
+      {
+        "nodeCode": "START",
+        "nodeType": "START",
+        "enabled": true,
+        "jobCode": null,
+        "jobDefinitionId": null,
+        "jobDefinitionVersion": null,
+        "workerGroup": null,
+        "pluginId": null,
+        "capability": null,
+        "blockers": []
+      },
+      {
+        "nodeCode": "GATEWAY",
+        "nodeType": "GATEWAY",
+        "enabled": true,
+        "jobCode": null,
+        "jobDefinitionId": null,
+        "jobDefinitionVersion": null,
+        "workerGroup": null,
+        "pluginId": null,
+        "capability": null,
+        "blockers": []
+      },
+      {
+        "nodeCode": "EXPORT_JOB",
+        "nodeType": "JOB",
+        "enabled": true,
+        "jobCode": "EXPORT_FIXTURE",
+        "jobDefinitionId": 1,
+        "jobDefinitionVersion": 1,
+        "workerGroup": "EXPORT",
+        "pluginId": "jdbc_mapped_export",
+        "capability": {
+          "status": "DECLARED_CONSISTENT",
+          "declaration": {
+            "pluginId": "jdbc_mapped_export",
+            "pluginVersion": "1",
+            "externalEffectCategories": [
+              "BUSINESS_DATABASE_READ"
+            ],
+            "idempotencyCapability": "IDEMPOTENT_BY_PLUGIN_LOGIC",
+            "idempotencyKeyScope": "tenantId:batchNo:templateCode:partitionNo:partitionCount",
+            "recoveryProtocolId": "read-only-jdbc-query-v1",
+            "contractVersion": 1,
+            "fullyDeclared": true
+          },
+          "workerCount": 1
+        },
+        "blockers": []
+      },
+      {
+        "nodeCode": "END",
+        "nodeType": "END",
+        "enabled": true,
+        "jobCode": null,
+        "jobDefinitionId": null,
+        "jobDefinitionVersion": null,
+        "workerGroup": null,
+        "pluginId": null,
+        "capability": null,
+        "blockers": []
+      }
+    ],
+    "edges": [
+      {
+        "fromNodeCode": "START",
+        "toNodeCode": "GATEWAY",
+        "edgeType": "SUCCESS",
+        "enabled": true
+      },
+      {
+        "fromNodeCode": "GATEWAY",
+        "toNodeCode": "EXPORT_JOB",
+        "edgeType": "SUCCESS",
+        "enabled": true
+      },
+      {
+        "fromNodeCode": "EXPORT_JOB",
+        "toNodeCode": "END",
+        "edgeType": "SUCCESS",
+        "enabled": true
+      }
+    ],
+    "resultPolicy": "CREATE_NEW_VERSION",
+    "configPolicy": "USE_ORIGINAL_CONFIG"
+  },
+  "sourceArtifactSha256": "17571104f97d317cd0f0575e09d3190c6787ecd5a41b2c8eb80ac5732f806f40",
+  "originalArtifactUnchanged": true,
+  "distinctOutputPaths": true,
+  "rowsPerOutput": 1200,
+  "noCrossTenantRow": true,
+  "tenantAdminJobRerunStatus": 403,
+  "tenantAdminJobCancelStatus": 403,
+  "tenantAdminJobWriteControlsHidden": true,
+  "moreMenuDoesNotOpenRowDetail": true,
+  "periodicGets": 0,
+  "workflowSnapshots": [
+    {
+      "workflowRunId": 1,
+      "workflowDefinitionId": 2,
+      "workflowVersion": 1,
+      "runStatus": "SUCCESS",
+      "bizDate": "2026-11-16",
+      "startedAt": "2026-10-26T05:21:06.809851Z",
+      "finishedAt": "2026-10-26T05:22:25.351439Z",
+      "snapshotAvailable": true,
+      "generatedAt": "2026-10-26T05:22:29.190597Z",
+      "nodes": [
+        {
+          "nodeCode": "START",
+          "nodeName": "Start",
+          "nodeType": "START",
+          "relatedJobCode": null,
+          "nodeStatus": "SUCCESS",
+          "nodeRunId": 1,
+          "runSeq": 1,
+          "jobInstanceId": null,
+          "jobInstanceStatus": null,
+          "expectedPartitions": null,
+          "completedPartitions": null,
+          "createdTasks": 0,
+          "finishedTasks": 0,
+          "activeSteps": [],
+          "errorCode": null,
+          "skipReasonCode": null,
+          "startedAt": "2026-10-26T05:21:06.786253Z",
+          "finishedAt": "2026-10-26T05:21:06.786253Z"
+        },
+        {
+          "nodeCode": "GATEWAY",
+          "nodeName": "Frozen gateway",
+          "nodeType": "GATEWAY",
+          "relatedJobCode": null,
+          "nodeStatus": "SUCCESS",
+          "nodeRunId": 2,
+          "runSeq": 1,
+          "jobInstanceId": null,
+          "jobInstanceStatus": null,
+          "expectedPartitions": null,
+          "completedPartitions": null,
+          "createdTasks": 0,
+          "finishedTasks": 0,
+          "activeSteps": [],
+          "errorCode": null,
+          "skipReasonCode": null,
+          "startedAt": "2026-10-26T05:21:06.848281Z",
+          "finishedAt": "2026-10-26T05:21:06.848281Z"
+        },
+        {
+          "nodeCode": "EXPORT_JOB",
+          "nodeName": "Actual EXPORT",
+          "nodeType": "JOB",
+          "relatedJobCode": "EXPORT_FIXTURE",
+          "nodeStatus": "SUCCESS",
+          "nodeRunId": 3,
+          "runSeq": 1,
+          "jobInstanceId": 2,
+          "jobInstanceStatus": "SUCCESS",
+          "expectedPartitions": 1,
+          "completedPartitions": 1,
+          "createdTasks": 1,
+          "finishedTasks": 1,
+          "activeSteps": [],
+          "errorCode": null,
+          "skipReasonCode": null,
+          "startedAt": null,
+          "finishedAt": "2026-10-26T05:22:25.216594Z"
+        },
+        {
+          "nodeCode": "END",
+          "nodeName": "End",
+          "nodeType": "END",
+          "relatedJobCode": null,
+          "nodeStatus": "SUCCESS",
+          "nodeRunId": 4,
+          "runSeq": 1,
+          "jobInstanceId": null,
+          "jobInstanceStatus": null,
+          "expectedPartitions": null,
+          "completedPartitions": null,
+          "createdTasks": 0,
+          "finishedTasks": 0,
+          "activeSteps": [],
+          "errorCode": null,
+          "skipReasonCode": null,
+          "startedAt": "2026-10-26T05:22:25.216594Z",
+          "finishedAt": "2026-10-26T05:22:25.216594Z"
+        }
+      ],
+      "edges": [
+        {
+          "fromNodeCode": "START",
+          "toNodeCode": "GATEWAY",
+          "edgeType": "SUCCESS"
+        },
+        {
+          "fromNodeCode": "GATEWAY",
+          "toNodeCode": "EXPORT_JOB",
+          "edgeType": "SUCCESS"
+        },
+        {
+          "fromNodeCode": "EXPORT_JOB",
+          "toNodeCode": "END",
+          "edgeType": "SUCCESS"
+        }
+      ]
+    },
+    {
+      "workflowRunId": 1,
+      "workflowDefinitionId": 2,
+      "workflowVersion": 1,
+      "runStatus": "SUCCESS",
+      "bizDate": "2026-11-16",
+      "startedAt": "2026-10-26T05:21:06.809851Z",
+      "finishedAt": "2026-10-26T05:22:25.351439Z",
+      "snapshotAvailable": true,
+      "generatedAt": "2026-10-26T05:22:30.395146Z",
+      "nodes": [
+        {
+          "nodeCode": "START",
+          "nodeName": "Start",
+          "nodeType": "START",
+          "relatedJobCode": null,
+          "nodeStatus": "SUCCESS",
+          "nodeRunId": 1,
+          "runSeq": 1,
+          "jobInstanceId": null,
+          "jobInstanceStatus": null,
+          "expectedPartitions": null,
+          "completedPartitions": null,
+          "createdTasks": 0,
+          "finishedTasks": 0,
+          "activeSteps": [],
+          "errorCode": null,
+          "skipReasonCode": null,
+          "startedAt": "2026-10-26T05:21:06.786253Z",
+          "finishedAt": "2026-10-26T05:21:06.786253Z"
+        },
+        {
+          "nodeCode": "GATEWAY",
+          "nodeName": "Frozen gateway",
+          "nodeType": "GATEWAY",
+          "relatedJobCode": null,
+          "nodeStatus": "SUCCESS",
+          "nodeRunId": 2,
+          "runSeq": 1,
+          "jobInstanceId": null,
+          "jobInstanceStatus": null,
+          "expectedPartitions": null,
+          "completedPartitions": null,
+          "createdTasks": 0,
+          "finishedTasks": 0,
+          "activeSteps": [],
+          "errorCode": null,
+          "skipReasonCode": null,
+          "startedAt": "2026-10-26T05:21:06.848281Z",
+          "finishedAt": "2026-10-26T05:21:06.848281Z"
+        },
+        {
+          "nodeCode": "EXPORT_JOB",
+          "nodeName": "Actual EXPORT",
+          "nodeType": "JOB",
+          "relatedJobCode": "EXPORT_FIXTURE",
+          "nodeStatus": "SUCCESS",
+          "nodeRunId": 3,
+          "runSeq": 1,
+          "jobInstanceId": 2,
+          "jobInstanceStatus": "SUCCESS",
+          "expectedPartitions": 1,
+          "completedPartitions": 1,
+          "createdTasks": 1,
+          "finishedTasks": 1,
+          "activeSteps": [],
+          "errorCode": null,
+          "skipReasonCode": null,
+          "startedAt": null,
+          "finishedAt": "2026-10-26T05:22:25.216594Z"
+        },
+        {
+          "nodeCode": "END",
+          "nodeName": "End",
+          "nodeType": "END",
+          "relatedJobCode": null,
+          "nodeStatus": "SUCCESS",
+          "nodeRunId": 4,
+          "runSeq": 1,
+          "jobInstanceId": null,
+          "jobInstanceStatus": null,
+          "expectedPartitions": null,
+          "completedPartitions": null,
+          "createdTasks": 0,
+          "finishedTasks": 0,
+          "activeSteps": [],
+          "errorCode": null,
+          "skipReasonCode": null,
+          "startedAt": "2026-10-26T05:22:25.216594Z",
+          "finishedAt": "2026-10-26T05:22:25.216594Z"
+        }
+      ],
+      "edges": [
+        {
+          "fromNodeCode": "START",
+          "toNodeCode": "GATEWAY",
+          "edgeType": "SUCCESS"
+        },
+        {
+          "fromNodeCode": "GATEWAY",
+          "toNodeCode": "EXPORT_JOB",
+          "edgeType": "SUCCESS"
+        },
+        {
+          "fromNodeCode": "EXPORT_JOB",
+          "toNodeCode": "END",
+          "edgeType": "SUCCESS"
+        }
+      ]
+    },
+    {
+      "workflowRunId": 1,
+      "workflowDefinitionId": 2,
+      "workflowVersion": 1,
+      "runStatus": "SUCCESS",
+      "bizDate": "2026-11-16",
+      "startedAt": "2026-10-26T05:21:06.809851Z",
+      "finishedAt": "2026-10-26T05:22:25.351439Z",
+      "snapshotAvailable": true,
+      "generatedAt": "2026-10-26T05:22:30.793116Z",
+      "nodes": [
+        {
+          "nodeCode": "START",
+          "nodeName": "Start",
+          "nodeType": "START",
+          "relatedJobCode": null,
+          "nodeStatus": "SUCCESS",
+          "nodeRunId": 1,
+          "runSeq": 1,
+          "jobInstanceId": null,
+          "jobInstanceStatus": null,
+          "expectedPartitions": null,
+          "completedPartitions": null,
+          "createdTasks": 0,
+          "finishedTasks": 0,
+          "activeSteps": [],
+          "errorCode": null,
+          "skipReasonCode": null,
+          "startedAt": "2026-10-26T05:21:06.786253Z",
+          "finishedAt": "2026-10-26T05:21:06.786253Z"
+        },
+        {
+          "nodeCode": "GATEWAY",
+          "nodeName": "Frozen gateway",
+          "nodeType": "GATEWAY",
+          "relatedJobCode": null,
+          "nodeStatus": "SUCCESS",
+          "nodeRunId": 2,
+          "runSeq": 1,
+          "jobInstanceId": null,
+          "jobInstanceStatus": null,
+          "expectedPartitions": null,
+          "completedPartitions": null,
+          "createdTasks": 0,
+          "finishedTasks": 0,
+          "activeSteps": [],
+          "errorCode": null,
+          "skipReasonCode": null,
+          "startedAt": "2026-10-26T05:21:06.848281Z",
+          "finishedAt": "2026-10-26T05:21:06.848281Z"
+        },
+        {
+          "nodeCode": "EXPORT_JOB",
+          "nodeName": "Actual EXPORT",
+          "nodeType": "JOB",
+          "relatedJobCode": "EXPORT_FIXTURE",
+          "nodeStatus": "SUCCESS",
+          "nodeRunId": 3,
+          "runSeq": 1,
+          "jobInstanceId": 2,
+          "jobInstanceStatus": "SUCCESS",
+          "expectedPartitions": 1,
+          "completedPartitions": 1,
+          "createdTasks": 1,
+          "finishedTasks": 1,
+          "activeSteps": [],
+          "errorCode": null,
+          "skipReasonCode": null,
+          "startedAt": null,
+          "finishedAt": "2026-10-26T05:22:25.216594Z"
+        },
+        {
+          "nodeCode": "END",
+          "nodeName": "End",
+          "nodeType": "END",
+          "relatedJobCode": null,
+          "nodeStatus": "SUCCESS",
+          "nodeRunId": 4,
+          "runSeq": 1,
+          "jobInstanceId": null,
+          "jobInstanceStatus": null,
+          "expectedPartitions": null,
+          "completedPartitions": null,
+          "createdTasks": 0,
+          "finishedTasks": 0,
+          "activeSteps": [],
+          "errorCode": null,
+          "skipReasonCode": null,
+          "startedAt": "2026-10-26T05:22:25.216594Z",
+          "finishedAt": "2026-10-26T05:22:25.216594Z"
+        }
+      ],
+      "edges": [
+        {
+          "fromNodeCode": "START",
+          "toNodeCode": "GATEWAY",
+          "edgeType": "SUCCESS"
+        },
+        {
+          "fromNodeCode": "GATEWAY",
+          "toNodeCode": "EXPORT_JOB",
+          "edgeType": "SUCCESS"
+        },
+        {
+          "fromNodeCode": "EXPORT_JOB",
+          "toNodeCode": "END",
+          "edgeType": "SUCCESS"
+        }
+      ]
+    },
+    {
+      "workflowRunId": 1,
+      "workflowDefinitionId": 2,
+      "workflowVersion": 1,
+      "runStatus": "SUCCESS",
+      "bizDate": "2026-11-16",
+      "startedAt": "2026-10-26T05:21:06.809851Z",
+      "finishedAt": "2026-10-26T05:22:25.351439Z",
+      "snapshotAvailable": true,
+      "generatedAt": "2026-10-26T05:22:32.317753Z",
+      "nodes": [
+        {
+          "nodeCode": "START",
+          "nodeName": "Start",
+          "nodeType": "START",
+          "relatedJobCode": null,
+          "nodeStatus": "SUCCESS",
+          "nodeRunId": 1,
+          "runSeq": 1,
+          "jobInstanceId": null,
+          "jobInstanceStatus": null,
+          "expectedPartitions": null,
+          "completedPartitions": null,
+          "createdTasks": 0,
+          "finishedTasks": 0,
+          "activeSteps": [],
+          "errorCode": null,
+          "skipReasonCode": null,
+          "startedAt": "2026-10-26T05:21:06.786253Z",
+          "finishedAt": "2026-10-26T05:21:06.786253Z"
+        },
+        {
+          "nodeCode": "GATEWAY",
+          "nodeName": "Frozen gateway",
+          "nodeType": "GATEWAY",
+          "relatedJobCode": null,
+          "nodeStatus": "SUCCESS",
+          "nodeRunId": 2,
+          "runSeq": 1,
+          "jobInstanceId": null,
+          "jobInstanceStatus": null,
+          "expectedPartitions": null,
+          "completedPartitions": null,
+          "createdTasks": 0,
+          "finishedTasks": 0,
+          "activeSteps": [],
+          "errorCode": null,
+          "skipReasonCode": null,
+          "startedAt": "2026-10-26T05:21:06.848281Z",
+          "finishedAt": "2026-10-26T05:21:06.848281Z"
+        },
+        {
+          "nodeCode": "EXPORT_JOB",
+          "nodeName": "Actual EXPORT",
+          "nodeType": "JOB",
+          "relatedJobCode": "EXPORT_FIXTURE",
+          "nodeStatus": "SUCCESS",
+          "nodeRunId": 3,
+          "runSeq": 1,
+          "jobInstanceId": 2,
+          "jobInstanceStatus": "SUCCESS",
+          "expectedPartitions": 1,
+          "completedPartitions": 1,
+          "createdTasks": 1,
+          "finishedTasks": 1,
+          "activeSteps": [],
+          "errorCode": null,
+          "skipReasonCode": null,
+          "startedAt": null,
+          "finishedAt": "2026-10-26T05:22:25.216594Z"
+        },
+        {
+          "nodeCode": "END",
+          "nodeName": "End",
+          "nodeType": "END",
+          "relatedJobCode": null,
+          "nodeStatus": "SUCCESS",
+          "nodeRunId": 4,
+          "runSeq": 1,
+          "jobInstanceId": null,
+          "jobInstanceStatus": null,
+          "expectedPartitions": null,
+          "completedPartitions": null,
+          "createdTasks": 0,
+          "finishedTasks": 0,
+          "activeSteps": [],
+          "errorCode": null,
+          "skipReasonCode": null,
+          "startedAt": "2026-10-26T05:22:25.216594Z",
+          "finishedAt": "2026-10-26T05:22:25.216594Z"
+        }
+      ],
+      "edges": [
+        {
+          "fromNodeCode": "START",
+          "toNodeCode": "GATEWAY",
+          "edgeType": "SUCCESS"
+        },
+        {
+          "fromNodeCode": "GATEWAY",
+          "toNodeCode": "EXPORT_JOB",
+          "edgeType": "SUCCESS"
+        },
+        {
+          "fromNodeCode": "EXPORT_JOB",
+          "toNodeCode": "END",
+          "edgeType": "SUCCESS"
+        }
+      ]
+    },
+    {
+      "workflowRunId": 1,
+      "workflowDefinitionId": 2,
+      "workflowVersion": 1,
+      "runStatus": "SUCCESS",
+      "bizDate": "2026-11-16",
+      "startedAt": "2026-10-26T05:21:06.809851Z",
+      "finishedAt": "2026-10-26T05:22:25.351439Z",
+      "snapshotAvailable": true,
+      "generatedAt": "2026-10-26T05:22:32.510308Z",
+      "nodes": [
+        {
+          "nodeCode": "START",
+          "nodeName": "Start",
+          "nodeType": "START",
+          "relatedJobCode": null,
+          "nodeStatus": "SUCCESS",
+          "nodeRunId": 1,
+          "runSeq": 1,
+          "jobInstanceId": null,
+          "jobInstanceStatus": null,
+          "expectedPartitions": null,
+          "completedPartitions": null,
+          "createdTasks": 0,
+          "finishedTasks": 0,
+          "activeSteps": [],
+          "errorCode": null,
+          "skipReasonCode": null,
+          "startedAt": "2026-10-26T05:21:06.786253Z",
+          "finishedAt": "2026-10-26T05:21:06.786253Z"
+        },
+        {
+          "nodeCode": "GATEWAY",
+          "nodeName": "Frozen gateway",
+          "nodeType": "GATEWAY",
+          "relatedJobCode": null,
+          "nodeStatus": "SUCCESS",
+          "nodeRunId": 2,
+          "runSeq": 1,
+          "jobInstanceId": null,
+          "jobInstanceStatus": null,
+          "expectedPartitions": null,
+          "completedPartitions": null,
+          "createdTasks": 0,
+          "finishedTasks": 0,
+          "activeSteps": [],
+          "errorCode": null,
+          "skipReasonCode": null,
+          "startedAt": "2026-10-26T05:21:06.848281Z",
+          "finishedAt": "2026-10-26T05:21:06.848281Z"
+        },
+        {
+          "nodeCode": "EXPORT_JOB",
+          "nodeName": "Actual EXPORT",
+          "nodeType": "JOB",
+          "relatedJobCode": "EXPORT_FIXTURE",
+          "nodeStatus": "SUCCESS",
+          "nodeRunId": 3,
+          "runSeq": 1,
+          "jobInstanceId": 2,
+          "jobInstanceStatus": "SUCCESS",
+          "expectedPartitions": 1,
+          "completedPartitions": 1,
+          "createdTasks": 1,
+          "finishedTasks": 1,
+          "activeSteps": [],
+          "errorCode": null,
+          "skipReasonCode": null,
+          "startedAt": null,
+          "finishedAt": "2026-10-26T05:22:25.216594Z"
+        },
+        {
+          "nodeCode": "END",
+          "nodeName": "End",
+          "nodeType": "END",
+          "relatedJobCode": null,
+          "nodeStatus": "SUCCESS",
+          "nodeRunId": 4,
+          "runSeq": 1,
+          "jobInstanceId": null,
+          "jobInstanceStatus": null,
+          "expectedPartitions": null,
+          "completedPartitions": null,
+          "createdTasks": 0,
+          "finishedTasks": 0,
+          "activeSteps": [],
+          "errorCode": null,
+          "skipReasonCode": null,
+          "startedAt": "2026-10-26T05:22:25.216594Z",
+          "finishedAt": "2026-10-26T05:22:25.216594Z"
+        }
+      ],
+      "edges": [
+        {
+          "fromNodeCode": "START",
+          "toNodeCode": "GATEWAY",
+          "edgeType": "SUCCESS"
+        },
+        {
+          "fromNodeCode": "GATEWAY",
+          "toNodeCode": "EXPORT_JOB",
+          "edgeType": "SUCCESS"
+        },
+        {
+          "fromNodeCode": "EXPORT_JOB",
+          "toNodeCode": "END",
+          "edgeType": "SUCCESS"
+        }
+      ]
+    },
+    {
+      "workflowRunId": 2,
+      "workflowDefinitionId": 2,
+      "workflowVersion": 1,
+      "runStatus": "RUNNING",
+      "bizDate": "2026-11-16",
+      "startedAt": "2026-10-26T05:22:55.113653Z",
+      "finishedAt": null,
+      "snapshotAvailable": true,
+      "generatedAt": "2026-10-26T05:22:57.792992Z",
+      "nodes": [
+        {
+          "nodeCode": "START",
+          "nodeName": "Start",
+          "nodeType": "START",
+          "relatedJobCode": null,
+          "nodeStatus": "SUCCESS",
+          "nodeRunId": 5,
+          "runSeq": 1,
+          "jobInstanceId": null,
+          "jobInstanceStatus": null,
+          "expectedPartitions": null,
+          "completedPartitions": null,
+          "createdTasks": 0,
+          "finishedTasks": 0,
+          "activeSteps": [],
+          "errorCode": null,
+          "skipReasonCode": null,
+          "startedAt": "2026-10-26T05:22:55.098069Z",
+          "finishedAt": "2026-10-26T05:22:55.098069Z"
+        },
+        {
+          "nodeCode": "GATEWAY",
+          "nodeName": "Frozen gateway",
+          "nodeType": "GATEWAY",
+          "relatedJobCode": null,
+          "nodeStatus": "SUCCESS",
+          "nodeRunId": 6,
+          "runSeq": 1,
+          "jobInstanceId": null,
+          "jobInstanceStatus": null,
+          "expectedPartitions": null,
+          "completedPartitions": null,
+          "createdTasks": 0,
+          "finishedTasks": 0,
+          "activeSteps": [],
+          "errorCode": null,
+          "skipReasonCode": null,
+          "startedAt": "2026-10-26T05:22:55.133653Z",
+          "finishedAt": "2026-10-26T05:22:55.133653Z"
+        },
+        {
+          "nodeCode": "EXPORT_JOB",
+          "nodeName": "Actual EXPORT",
+          "nodeType": "JOB",
+          "relatedJobCode": "EXPORT_FIXTURE",
+          "nodeStatus": "READY",
+          "nodeRunId": 7,
+          "runSeq": 1,
+          "jobInstanceId": 3,
+          "jobInstanceStatus": "RUNNING",
+          "expectedPartitions": 1,
+          "completedPartitions": 0,
+          "createdTasks": 1,
+          "finishedTasks": 0,
+          "activeSteps": [
+            "GENERATE"
+          ],
+          "errorCode": null,
+          "skipReasonCode": null,
+          "startedAt": null,
+          "finishedAt": null
+        },
+        {
+          "nodeCode": "END",
+          "nodeName": "End",
+          "nodeType": "END",
+          "relatedJobCode": null,
+          "nodeStatus": "PENDING",
+          "nodeRunId": null,
+          "runSeq": null,
+          "jobInstanceId": null,
+          "jobInstanceStatus": null,
+          "expectedPartitions": null,
+          "completedPartitions": null,
+          "createdTasks": 0,
+          "finishedTasks": 0,
+          "activeSteps": [],
+          "errorCode": null,
+          "skipReasonCode": null,
+          "startedAt": null,
+          "finishedAt": null
+        }
+      ],
+      "edges": [
+        {
+          "fromNodeCode": "START",
+          "toNodeCode": "GATEWAY",
+          "edgeType": "SUCCESS"
+        },
+        {
+          "fromNodeCode": "GATEWAY",
+          "toNodeCode": "EXPORT_JOB",
+          "edgeType": "SUCCESS"
+        },
+        {
+          "fromNodeCode": "EXPORT_JOB",
+          "toNodeCode": "END",
+          "edgeType": "SUCCESS"
+        }
+      ]
+    },
+    {
+      "workflowRunId": 2,
+      "workflowDefinitionId": 2,
+      "workflowVersion": 1,
+      "runStatus": "RUNNING",
+      "bizDate": "2026-11-16",
+      "startedAt": "2026-10-26T05:22:55.113653Z",
+      "finishedAt": null,
+      "snapshotAvailable": true,
+      "generatedAt": "2026-10-26T05:24:32.759358Z",
+      "nodes": [
+        {
+          "nodeCode": "START",
+          "nodeName": "Start",
+          "nodeType": "START",
+          "relatedJobCode": null,
+          "nodeStatus": "SUCCESS",
+          "nodeRunId": 5,
+          "runSeq": 1,
+          "jobInstanceId": null,
+          "jobInstanceStatus": null,
+          "expectedPartitions": null,
+          "completedPartitions": null,
+          "createdTasks": 0,
+          "finishedTasks": 0,
+          "activeSteps": [],
+          "errorCode": null,
+          "skipReasonCode": null,
+          "startedAt": "2026-10-26T05:22:55.098069Z",
+          "finishedAt": "2026-10-26T05:22:55.098069Z"
+        },
+        {
+          "nodeCode": "GATEWAY",
+          "nodeName": "Frozen gateway",
+          "nodeType": "GATEWAY",
+          "relatedJobCode": null,
+          "nodeStatus": "SUCCESS",
+          "nodeRunId": 6,
+          "runSeq": 1,
+          "jobInstanceId": null,
+          "jobInstanceStatus": null,
+          "expectedPartitions": null,
+          "completedPartitions": null,
+          "createdTasks": 0,
+          "finishedTasks": 0,
+          "activeSteps": [],
+          "errorCode": null,
+          "skipReasonCode": null,
+          "startedAt": "2026-10-26T05:22:55.133653Z",
+          "finishedAt": "2026-10-26T05:22:55.133653Z"
+        },
+        {
+          "nodeCode": "EXPORT_JOB",
+          "nodeName": "Actual EXPORT",
+          "nodeType": "JOB",
+          "relatedJobCode": "EXPORT_FIXTURE",
+          "nodeStatus": "READY",
+          "nodeRunId": 7,
+          "runSeq": 1,
+          "jobInstanceId": 3,
+          "jobInstanceStatus": "RUNNING",
+          "expectedPartitions": 1,
+          "completedPartitions": 0,
+          "createdTasks": 1,
+          "finishedTasks": 0,
+          "activeSteps": [],
+          "errorCode": null,
+          "skipReasonCode": null,
+          "startedAt": null,
+          "finishedAt": null
+        },
+        {
+          "nodeCode": "END",
+          "nodeName": "End",
+          "nodeType": "END",
+          "relatedJobCode": null,
+          "nodeStatus": "PENDING",
+          "nodeRunId": null,
+          "runSeq": null,
+          "jobInstanceId": null,
+          "jobInstanceStatus": null,
+          "expectedPartitions": null,
+          "completedPartitions": null,
+          "createdTasks": 0,
+          "finishedTasks": 0,
+          "activeSteps": [],
+          "errorCode": null,
+          "skipReasonCode": null,
+          "startedAt": null,
+          "finishedAt": null
+        }
+      ],
+      "edges": [
+        {
+          "fromNodeCode": "START",
+          "toNodeCode": "GATEWAY",
+          "edgeType": "SUCCESS"
+        },
+        {
+          "fromNodeCode": "GATEWAY",
+          "toNodeCode": "EXPORT_JOB",
+          "edgeType": "SUCCESS"
+        },
+        {
+          "fromNodeCode": "EXPORT_JOB",
+          "toNodeCode": "END",
+          "edgeType": "SUCCESS"
+        }
+      ]
+    },
+    {
+      "workflowRunId": 2,
+      "workflowDefinitionId": 2,
+      "workflowVersion": 1,
+      "runStatus": "SUCCESS",
+      "bizDate": "2026-11-16",
+      "startedAt": "2026-10-26T05:22:55.113653Z",
+      "finishedAt": "2026-10-26T05:24:32.957710Z",
+      "snapshotAvailable": true,
+      "generatedAt": "2026-10-26T05:24:34.776970Z",
+      "nodes": [
+        {
+          "nodeCode": "START",
+          "nodeName": "Start",
+          "nodeType": "START",
+          "relatedJobCode": null,
+          "nodeStatus": "SUCCESS",
+          "nodeRunId": 5,
+          "runSeq": 1,
+          "jobInstanceId": null,
+          "jobInstanceStatus": null,
+          "expectedPartitions": null,
+          "completedPartitions": null,
+          "createdTasks": 0,
+          "finishedTasks": 0,
+          "activeSteps": [],
+          "errorCode": null,
+          "skipReasonCode": null,
+          "startedAt": "2026-10-26T05:22:55.098069Z",
+          "finishedAt": "2026-10-26T05:22:55.098069Z"
+        },
+        {
+          "nodeCode": "GATEWAY",
+          "nodeName": "Frozen gateway",
+          "nodeType": "GATEWAY",
+          "relatedJobCode": null,
+          "nodeStatus": "SUCCESS",
+          "nodeRunId": 6,
+          "runSeq": 1,
+          "jobInstanceId": null,
+          "jobInstanceStatus": null,
+          "expectedPartitions": null,
+          "completedPartitions": null,
+          "createdTasks": 0,
+          "finishedTasks": 0,
+          "activeSteps": [],
+          "errorCode": null,
+          "skipReasonCode": null,
+          "startedAt": "2026-10-26T05:22:55.133653Z",
+          "finishedAt": "2026-10-26T05:22:55.133653Z"
+        },
+        {
+          "nodeCode": "EXPORT_JOB",
+          "nodeName": "Actual EXPORT",
+          "nodeType": "JOB",
+          "relatedJobCode": "EXPORT_FIXTURE",
+          "nodeStatus": "SUCCESS",
+          "nodeRunId": 7,
+          "runSeq": 1,
+          "jobInstanceId": 3,
+          "jobInstanceStatus": "SUCCESS",
+          "expectedPartitions": 1,
+          "completedPartitions": 1,
+          "createdTasks": 1,
+          "finishedTasks": 1,
+          "activeSteps": [],
+          "errorCode": null,
+          "skipReasonCode": null,
+          "startedAt": null,
+          "finishedAt": "2026-10-26T05:24:32.820864Z"
+        },
+        {
+          "nodeCode": "END",
+          "nodeName": "End",
+          "nodeType": "END",
+          "relatedJobCode": null,
+          "nodeStatus": "SUCCESS",
+          "nodeRunId": 8,
+          "runSeq": 1,
+          "jobInstanceId": null,
+          "jobInstanceStatus": null,
+          "expectedPartitions": null,
+          "completedPartitions": null,
+          "createdTasks": 0,
+          "finishedTasks": 0,
+          "activeSteps": [],
+          "errorCode": null,
+          "skipReasonCode": null,
+          "startedAt": "2026-10-26T05:24:32.820864Z",
+          "finishedAt": "2026-10-26T05:24:32.820864Z"
+        }
+      ],
+      "edges": [
+        {
+          "fromNodeCode": "START",
+          "toNodeCode": "GATEWAY",
+          "edgeType": "SUCCESS"
+        },
+        {
+          "fromNodeCode": "GATEWAY",
+          "toNodeCode": "EXPORT_JOB",
+          "edgeType": "SUCCESS"
+        },
+        {
+          "fromNodeCode": "EXPORT_JOB",
+          "toNodeCode": "END",
+          "edgeType": "SUCCESS"
+        }
+      ]
+    },
+    {
+      "workflowRunId": 2,
+      "workflowDefinitionId": 2,
+      "workflowVersion": 1,
+      "runStatus": "SUCCESS",
+      "bizDate": "2026-11-16",
+      "startedAt": "2026-10-26T05:22:55.113653Z",
+      "finishedAt": "2026-10-26T05:24:32.957710Z",
+      "snapshotAvailable": true,
+      "generatedAt": "2026-10-26T05:24:38.130314Z",
+      "nodes": [
+        {
+          "nodeCode": "START",
+          "nodeName": "Start",
+          "nodeType": "START",
+          "relatedJobCode": null,
+          "nodeStatus": "SUCCESS",
+          "nodeRunId": 5,
+          "runSeq": 1,
+          "jobInstanceId": null,
+          "jobInstanceStatus": null,
+          "expectedPartitions": null,
+          "completedPartitions": null,
+          "createdTasks": 0,
+          "finishedTasks": 0,
+          "activeSteps": [],
+          "errorCode": null,
+          "skipReasonCode": null,
+          "startedAt": "2026-10-26T05:22:55.098069Z",
+          "finishedAt": "2026-10-26T05:22:55.098069Z"
+        },
+        {
+          "nodeCode": "GATEWAY",
+          "nodeName": "Frozen gateway",
+          "nodeType": "GATEWAY",
+          "relatedJobCode": null,
+          "nodeStatus": "SUCCESS",
+          "nodeRunId": 6,
+          "runSeq": 1,
+          "jobInstanceId": null,
+          "jobInstanceStatus": null,
+          "expectedPartitions": null,
+          "completedPartitions": null,
+          "createdTasks": 0,
+          "finishedTasks": 0,
+          "activeSteps": [],
+          "errorCode": null,
+          "skipReasonCode": null,
+          "startedAt": "2026-10-26T05:22:55.133653Z",
+          "finishedAt": "2026-10-26T05:22:55.133653Z"
+        },
+        {
+          "nodeCode": "EXPORT_JOB",
+          "nodeName": "Actual EXPORT",
+          "nodeType": "JOB",
+          "relatedJobCode": "EXPORT_FIXTURE",
+          "nodeStatus": "SUCCESS",
+          "nodeRunId": 7,
+          "runSeq": 1,
+          "jobInstanceId": 3,
+          "jobInstanceStatus": "SUCCESS",
+          "expectedPartitions": 1,
+          "completedPartitions": 1,
+          "createdTasks": 1,
+          "finishedTasks": 1,
+          "activeSteps": [],
+          "errorCode": null,
+          "skipReasonCode": null,
+          "startedAt": null,
+          "finishedAt": "2026-10-26T05:24:32.820864Z"
+        },
+        {
+          "nodeCode": "END",
+          "nodeName": "End",
+          "nodeType": "END",
+          "relatedJobCode": null,
+          "nodeStatus": "SUCCESS",
+          "nodeRunId": 8,
+          "runSeq": 1,
+          "jobInstanceId": null,
+          "jobInstanceStatus": null,
+          "expectedPartitions": null,
+          "completedPartitions": null,
+          "createdTasks": 0,
+          "finishedTasks": 0,
+          "activeSteps": [],
+          "errorCode": null,
+          "skipReasonCode": null,
+          "startedAt": "2026-10-26T05:24:32.820864Z",
+          "finishedAt": "2026-10-26T05:24:32.820864Z"
+        }
+      ],
+      "edges": [
+        {
+          "fromNodeCode": "START",
+          "toNodeCode": "GATEWAY",
+          "edgeType": "SUCCESS"
+        },
+        {
+          "fromNodeCode": "GATEWAY",
+          "toNodeCode": "EXPORT_JOB",
+          "edgeType": "SUCCESS"
+        },
+        {
+          "fromNodeCode": "EXPORT_JOB",
+          "toNodeCode": "END",
+          "edgeType": "SUCCESS"
+        }
+      ]
+    }
+  ],
+  "jobSnapshots": [
+    {
+      "jobInstanceId": 2,
+      "jobCode": "EXPORT_FIXTURE",
+      "instanceStatus": "SUCCESS",
+      "generatedAt": "2026-10-26T05:22:29.849544Z",
+      "startedAt": "2026-10-26T05:21:06.958537Z",
+      "finishedAt": "2026-10-26T05:22:25.216594Z",
+      "expectedPartitions": 1,
+      "workflowRunId": 1,
+      "nodeCode": "EXPORT_JOB",
+      "pipelineInstanceId": 1,
+      "pipelineStatus": "SUCCESS",
+      "currentStage": "COMPLETE",
+      "systemPipelineCode": "EXPORT",
+      "systemPipelineVersion": 1,
+      "stageGraphAvailable": true,
+      "counts": [
+        {
+          "scope": "PARTITION",
+          "status": "SUCCESS",
+          "count": 1
+        },
+        {
+          "scope": "TASK",
+          "status": "SUCCESS",
+          "count": 1
+        }
+      ],
+      "stages": [
+        {
+          "stageCode": "PREPARE",
+          "stageStatus": "SUCCESS",
+          "stepRunId": 1,
+          "runSeq": 1,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "GENERATE",
+          "stageStatus": "SUCCESS",
+          "stepRunId": 2,
+          "runSeq": 1,
+          "rowsProcessed": 1200,
+          "lastHeartbeatAt": "2026-10-26T05:22:24.983788Z",
+          "errorCode": null
+        },
+        {
+          "stageCode": "STORE",
+          "stageStatus": "SUCCESS",
+          "stepRunId": 3,
+          "runSeq": 1,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "REGISTER",
+          "stageStatus": "SUCCESS",
+          "stepRunId": 4,
+          "runSeq": 1,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "COMPLETE",
+          "stageStatus": "SUCCESS",
+          "stepRunId": 5,
+          "runSeq": 1,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        }
+      ]
+    },
+    {
+      "jobInstanceId": 2,
+      "jobCode": "EXPORT_FIXTURE",
+      "instanceStatus": "SUCCESS",
+      "generatedAt": "2026-10-26T05:22:30.602644Z",
+      "startedAt": "2026-10-26T05:21:06.958537Z",
+      "finishedAt": "2026-10-26T05:22:25.216594Z",
+      "expectedPartitions": 1,
+      "workflowRunId": 1,
+      "nodeCode": "EXPORT_JOB",
+      "pipelineInstanceId": 1,
+      "pipelineStatus": "SUCCESS",
+      "currentStage": "COMPLETE",
+      "systemPipelineCode": "EXPORT",
+      "systemPipelineVersion": 1,
+      "stageGraphAvailable": true,
+      "counts": [
+        {
+          "scope": "PARTITION",
+          "status": "SUCCESS",
+          "count": 1
+        },
+        {
+          "scope": "TASK",
+          "status": "SUCCESS",
+          "count": 1
+        }
+      ],
+      "stages": [
+        {
+          "stageCode": "PREPARE",
+          "stageStatus": "SUCCESS",
+          "stepRunId": 1,
+          "runSeq": 1,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "GENERATE",
+          "stageStatus": "SUCCESS",
+          "stepRunId": 2,
+          "runSeq": 1,
+          "rowsProcessed": 1200,
+          "lastHeartbeatAt": "2026-10-26T05:22:24.983788Z",
+          "errorCode": null
+        },
+        {
+          "stageCode": "STORE",
+          "stageStatus": "SUCCESS",
+          "stepRunId": 3,
+          "runSeq": 1,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "REGISTER",
+          "stageStatus": "SUCCESS",
+          "stepRunId": 4,
+          "runSeq": 1,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "COMPLETE",
+          "stageStatus": "SUCCESS",
+          "stepRunId": 5,
+          "runSeq": 1,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        }
+      ]
+    },
+    {
+      "jobInstanceId": 3,
+      "jobCode": "EXPORT_FIXTURE",
+      "instanceStatus": "RUNNING",
+      "generatedAt": "2026-10-26T05:22:57.638161Z",
+      "startedAt": "2026-10-26T05:22:55.252473Z",
+      "finishedAt": null,
+      "expectedPartitions": 1,
+      "workflowRunId": 2,
+      "nodeCode": "EXPORT_JOB",
+      "pipelineInstanceId": 2,
+      "pipelineStatus": "RUNNING",
+      "currentStage": "GENERATE",
+      "systemPipelineCode": "EXPORT",
+      "systemPipelineVersion": 1,
+      "stageGraphAvailable": true,
+      "counts": [
+        {
+          "scope": "PARTITION",
+          "status": "RUNNING",
+          "count": 1
+        },
+        {
+          "scope": "TASK",
+          "status": "RUNNING",
+          "count": 1
+        }
+      ],
+      "stages": [
+        {
+          "stageCode": "PREPARE",
+          "stageStatus": "SUCCESS",
+          "stepRunId": 6,
+          "runSeq": 1,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "GENERATE",
+          "stageStatus": "RUNNING",
+          "stepRunId": 7,
+          "runSeq": 1,
+          "rowsProcessed": 25,
+          "lastHeartbeatAt": "2026-10-26T05:22:57.181701Z",
+          "errorCode": null
+        },
+        {
+          "stageCode": "STORE",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "REGISTER",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "COMPLETE",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        }
+      ]
+    },
+    {
+      "jobInstanceId": 3,
+      "jobCode": "EXPORT_FIXTURE",
+      "instanceStatus": "RUNNING",
+      "generatedAt": "2026-10-26T05:22:59.708753Z",
+      "startedAt": "2026-10-26T05:22:55.252473Z",
+      "finishedAt": null,
+      "expectedPartitions": 1,
+      "workflowRunId": 2,
+      "nodeCode": "EXPORT_JOB",
+      "pipelineInstanceId": 2,
+      "pipelineStatus": "RUNNING",
+      "currentStage": "GENERATE",
+      "systemPipelineCode": "EXPORT",
+      "systemPipelineVersion": 1,
+      "stageGraphAvailable": true,
+      "counts": [
+        {
+          "scope": "PARTITION",
+          "status": "RUNNING",
+          "count": 1
+        },
+        {
+          "scope": "TASK",
+          "status": "RUNNING",
+          "count": 1
+        }
+      ],
+      "stages": [
+        {
+          "stageCode": "PREPARE",
+          "stageStatus": "SUCCESS",
+          "stepRunId": 6,
+          "runSeq": 1,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "GENERATE",
+          "stageStatus": "RUNNING",
+          "stepRunId": 7,
+          "runSeq": 1,
+          "rowsProcessed": 50,
+          "lastHeartbeatAt": "2026-10-26T05:22:58.207222Z",
+          "errorCode": null
+        },
+        {
+          "stageCode": "STORE",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "REGISTER",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "COMPLETE",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        }
+      ]
+    },
+    {
+      "jobInstanceId": 3,
+      "jobCode": "EXPORT_FIXTURE",
+      "instanceStatus": "RUNNING",
+      "generatedAt": "2026-10-26T05:23:35.979090Z",
+      "startedAt": "2026-10-26T05:22:55.252473Z",
+      "finishedAt": null,
+      "expectedPartitions": 1,
+      "workflowRunId": 2,
+      "nodeCode": "EXPORT_JOB",
+      "pipelineInstanceId": 2,
+      "pipelineStatus": "RUNNING",
+      "currentStage": "GENERATE",
+      "systemPipelineCode": "EXPORT",
+      "systemPipelineVersion": 1,
+      "stageGraphAvailable": true,
+      "counts": [
+        {
+          "scope": "PARTITION",
+          "status": "READY",
+          "count": 1
+        },
+        {
+          "scope": "TASK",
+          "status": "READY",
+          "count": 1
+        }
+      ],
+      "stages": [
+        {
+          "stageCode": "PREPARE",
+          "stageStatus": "SUCCESS",
+          "stepRunId": 6,
+          "runSeq": 1,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "GENERATE",
+          "stageStatus": "RUNNING",
+          "stepRunId": 7,
+          "runSeq": 1,
+          "rowsProcessed": 50,
+          "lastHeartbeatAt": "2026-10-26T05:22:58.207222Z",
+          "errorCode": null
+        },
+        {
+          "stageCode": "STORE",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "REGISTER",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "COMPLETE",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        }
+      ]
+    },
+    {
+      "jobInstanceId": 3,
+      "jobCode": "EXPORT_FIXTURE",
+      "instanceStatus": "RUNNING",
+      "generatedAt": "2026-10-26T05:23:44.029786Z",
+      "startedAt": "2026-10-26T05:22:55.252473Z",
+      "finishedAt": null,
+      "expectedPartitions": 1,
+      "workflowRunId": 2,
+      "nodeCode": "EXPORT_JOB",
+      "pipelineInstanceId": 2,
+      "pipelineStatus": "RUNNING",
+      "currentStage": "GENERATE",
+      "systemPipelineCode": "EXPORT",
+      "systemPipelineVersion": 1,
+      "stageGraphAvailable": true,
+      "counts": [
+        {
+          "scope": "PARTITION",
+          "status": "RUNNING",
+          "count": 1
+        },
+        {
+          "scope": "TASK",
+          "status": "RUNNING",
+          "count": 1
+        }
+      ],
+      "stages": [
+        {
+          "stageCode": "PREPARE",
+          "stageStatus": "SUCCESS",
+          "stepRunId": 8,
+          "runSeq": 2,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "GENERATE",
+          "stageStatus": "RUNNING",
+          "stepRunId": 9,
+          "runSeq": 2,
+          "rowsProcessed": 50,
+          "lastHeartbeatAt": "2026-10-26T05:22:58.207222Z",
+          "errorCode": null
+        },
+        {
+          "stageCode": "STORE",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "REGISTER",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "COMPLETE",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        }
+      ]
+    },
+    {
+      "jobInstanceId": 3,
+      "jobCode": "EXPORT_FIXTURE",
+      "instanceStatus": "RUNNING",
+      "generatedAt": "2026-10-26T05:23:46.048958Z",
+      "startedAt": "2026-10-26T05:22:55.252473Z",
+      "finishedAt": null,
+      "expectedPartitions": 1,
+      "workflowRunId": 2,
+      "nodeCode": "EXPORT_JOB",
+      "pipelineInstanceId": 2,
+      "pipelineStatus": "RUNNING",
+      "currentStage": "GENERATE",
+      "systemPipelineCode": "EXPORT",
+      "systemPipelineVersion": 1,
+      "stageGraphAvailable": true,
+      "counts": [
+        {
+          "scope": "PARTITION",
+          "status": "RUNNING",
+          "count": 1
+        },
+        {
+          "scope": "TASK",
+          "status": "RUNNING",
+          "count": 1
+        }
+      ],
+      "stages": [
+        {
+          "stageCode": "PREPARE",
+          "stageStatus": "SUCCESS",
+          "stepRunId": 8,
+          "runSeq": 2,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "GENERATE",
+          "stageStatus": "RUNNING",
+          "stepRunId": 9,
+          "runSeq": 2,
+          "rowsProcessed": 75,
+          "lastHeartbeatAt": "2026-10-26T05:23:45.642110Z",
+          "errorCode": null
+        },
+        {
+          "stageCode": "STORE",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "REGISTER",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "COMPLETE",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        }
+      ]
+    },
+    {
+      "jobInstanceId": 3,
+      "jobCode": "EXPORT_FIXTURE",
+      "instanceStatus": "RUNNING",
+      "generatedAt": "2026-10-26T05:23:48.057151Z",
+      "startedAt": "2026-10-26T05:22:55.252473Z",
+      "finishedAt": null,
+      "expectedPartitions": 1,
+      "workflowRunId": 2,
+      "nodeCode": "EXPORT_JOB",
+      "pipelineInstanceId": 2,
+      "pipelineStatus": "RUNNING",
+      "currentStage": "GENERATE",
+      "systemPipelineCode": "EXPORT",
+      "systemPipelineVersion": 1,
+      "stageGraphAvailable": true,
+      "counts": [
+        {
+          "scope": "PARTITION",
+          "status": "RUNNING",
+          "count": 1
+        },
+        {
+          "scope": "TASK",
+          "status": "RUNNING",
+          "count": 1
+        }
+      ],
+      "stages": [
+        {
+          "stageCode": "PREPARE",
+          "stageStatus": "SUCCESS",
+          "stepRunId": 8,
+          "runSeq": 2,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "GENERATE",
+          "stageStatus": "RUNNING",
+          "stepRunId": 9,
+          "runSeq": 2,
+          "rowsProcessed": 125,
+          "lastHeartbeatAt": "2026-10-26T05:23:47.731931Z",
+          "errorCode": null
+        },
+        {
+          "stageCode": "STORE",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "REGISTER",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "COMPLETE",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        }
+      ]
+    },
+    {
+      "jobInstanceId": 3,
+      "jobCode": "EXPORT_FIXTURE",
+      "instanceStatus": "RUNNING",
+      "generatedAt": "2026-10-26T05:23:50.082596Z",
+      "startedAt": "2026-10-26T05:22:55.252473Z",
+      "finishedAt": null,
+      "expectedPartitions": 1,
+      "workflowRunId": 2,
+      "nodeCode": "EXPORT_JOB",
+      "pipelineInstanceId": 2,
+      "pipelineStatus": "RUNNING",
+      "currentStage": "GENERATE",
+      "systemPipelineCode": "EXPORT",
+      "systemPipelineVersion": 1,
+      "stageGraphAvailable": true,
+      "counts": [
+        {
+          "scope": "PARTITION",
+          "status": "RUNNING",
+          "count": 1
+        },
+        {
+          "scope": "TASK",
+          "status": "RUNNING",
+          "count": 1
+        }
+      ],
+      "stages": [
+        {
+          "stageCode": "PREPARE",
+          "stageStatus": "SUCCESS",
+          "stepRunId": 8,
+          "runSeq": 2,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "GENERATE",
+          "stageStatus": "RUNNING",
+          "stepRunId": 9,
+          "runSeq": 2,
+          "rowsProcessed": 175,
+          "lastHeartbeatAt": "2026-10-26T05:23:49.812326Z",
+          "errorCode": null
+        },
+        {
+          "stageCode": "STORE",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "REGISTER",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "COMPLETE",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        }
+      ]
+    },
+    {
+      "jobInstanceId": 3,
+      "jobCode": "EXPORT_FIXTURE",
+      "instanceStatus": "RUNNING",
+      "generatedAt": "2026-10-26T05:23:52.095127Z",
+      "startedAt": "2026-10-26T05:22:55.252473Z",
+      "finishedAt": null,
+      "expectedPartitions": 1,
+      "workflowRunId": 2,
+      "nodeCode": "EXPORT_JOB",
+      "pipelineInstanceId": 2,
+      "pipelineStatus": "RUNNING",
+      "currentStage": "GENERATE",
+      "systemPipelineCode": "EXPORT",
+      "systemPipelineVersion": 1,
+      "stageGraphAvailable": true,
+      "counts": [
+        {
+          "scope": "PARTITION",
+          "status": "RUNNING",
+          "count": 1
+        },
+        {
+          "scope": "TASK",
+          "status": "RUNNING",
+          "count": 1
+        }
+      ],
+      "stages": [
+        {
+          "stageCode": "PREPARE",
+          "stageStatus": "SUCCESS",
+          "stepRunId": 8,
+          "runSeq": 2,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "GENERATE",
+          "stageStatus": "RUNNING",
+          "stepRunId": 9,
+          "runSeq": 2,
+          "rowsProcessed": 225,
+          "lastHeartbeatAt": "2026-10-26T05:23:51.899898Z",
+          "errorCode": null
+        },
+        {
+          "stageCode": "STORE",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "REGISTER",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "COMPLETE",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        }
+      ]
+    },
+    {
+      "jobInstanceId": 3,
+      "jobCode": "EXPORT_FIXTURE",
+      "instanceStatus": "RUNNING",
+      "generatedAt": "2026-10-26T05:23:54.117137Z",
+      "startedAt": "2026-10-26T05:22:55.252473Z",
+      "finishedAt": null,
+      "expectedPartitions": 1,
+      "workflowRunId": 2,
+      "nodeCode": "EXPORT_JOB",
+      "pipelineInstanceId": 2,
+      "pipelineStatus": "RUNNING",
+      "currentStage": "GENERATE",
+      "systemPipelineCode": "EXPORT",
+      "systemPipelineVersion": 1,
+      "stageGraphAvailable": true,
+      "counts": [
+        {
+          "scope": "PARTITION",
+          "status": "RUNNING",
+          "count": 1
+        },
+        {
+          "scope": "TASK",
+          "status": "RUNNING",
+          "count": 1
+        }
+      ],
+      "stages": [
+        {
+          "stageCode": "PREPARE",
+          "stageStatus": "SUCCESS",
+          "stepRunId": 8,
+          "runSeq": 2,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "GENERATE",
+          "stageStatus": "RUNNING",
+          "stepRunId": 9,
+          "runSeq": 2,
+          "rowsProcessed": 275,
+          "lastHeartbeatAt": "2026-10-26T05:23:53.967943Z",
+          "errorCode": null
+        },
+        {
+          "stageCode": "STORE",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "REGISTER",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "COMPLETE",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        }
+      ]
+    },
+    {
+      "jobInstanceId": 3,
+      "jobCode": "EXPORT_FIXTURE",
+      "instanceStatus": "RUNNING",
+      "generatedAt": "2026-10-26T05:23:56.139986Z",
+      "startedAt": "2026-10-26T05:22:55.252473Z",
+      "finishedAt": null,
+      "expectedPartitions": 1,
+      "workflowRunId": 2,
+      "nodeCode": "EXPORT_JOB",
+      "pipelineInstanceId": 2,
+      "pipelineStatus": "RUNNING",
+      "currentStage": "GENERATE",
+      "systemPipelineCode": "EXPORT",
+      "systemPipelineVersion": 1,
+      "stageGraphAvailable": true,
+      "counts": [
+        {
+          "scope": "PARTITION",
+          "status": "RUNNING",
+          "count": 1
+        },
+        {
+          "scope": "TASK",
+          "status": "RUNNING",
+          "count": 1
+        }
+      ],
+      "stages": [
+        {
+          "stageCode": "PREPARE",
+          "stageStatus": "SUCCESS",
+          "stepRunId": 8,
+          "runSeq": 2,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "GENERATE",
+          "stageStatus": "RUNNING",
+          "stepRunId": 9,
+          "runSeq": 2,
+          "rowsProcessed": 325,
+          "lastHeartbeatAt": "2026-10-26T05:23:56.048532Z",
+          "errorCode": null
+        },
+        {
+          "stageCode": "STORE",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "REGISTER",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "COMPLETE",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        }
+      ]
+    },
+    {
+      "jobInstanceId": 3,
+      "jobCode": "EXPORT_FIXTURE",
+      "instanceStatus": "RUNNING",
+      "generatedAt": "2026-10-26T05:23:58.153123Z",
+      "startedAt": "2026-10-26T05:22:55.252473Z",
+      "finishedAt": null,
+      "expectedPartitions": 1,
+      "workflowRunId": 2,
+      "nodeCode": "EXPORT_JOB",
+      "pipelineInstanceId": 2,
+      "pipelineStatus": "RUNNING",
+      "currentStage": "GENERATE",
+      "systemPipelineCode": "EXPORT",
+      "systemPipelineVersion": 1,
+      "stageGraphAvailable": true,
+      "counts": [
+        {
+          "scope": "PARTITION",
+          "status": "RUNNING",
+          "count": 1
+        },
+        {
+          "scope": "TASK",
+          "status": "RUNNING",
+          "count": 1
+        }
+      ],
+      "stages": [
+        {
+          "stageCode": "PREPARE",
+          "stageStatus": "SUCCESS",
+          "stepRunId": 8,
+          "runSeq": 2,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "GENERATE",
+          "stageStatus": "RUNNING",
+          "stepRunId": 9,
+          "runSeq": 2,
+          "rowsProcessed": 350,
+          "lastHeartbeatAt": "2026-10-26T05:23:57.122794Z",
+          "errorCode": null
+        },
+        {
+          "stageCode": "STORE",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "REGISTER",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "COMPLETE",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        }
+      ]
+    },
+    {
+      "jobInstanceId": 3,
+      "jobCode": "EXPORT_FIXTURE",
+      "instanceStatus": "RUNNING",
+      "generatedAt": "2026-10-26T05:24:00.170160Z",
+      "startedAt": "2026-10-26T05:22:55.252473Z",
+      "finishedAt": null,
+      "expectedPartitions": 1,
+      "workflowRunId": 2,
+      "nodeCode": "EXPORT_JOB",
+      "pipelineInstanceId": 2,
+      "pipelineStatus": "RUNNING",
+      "currentStage": "GENERATE",
+      "systemPipelineCode": "EXPORT",
+      "systemPipelineVersion": 1,
+      "stageGraphAvailable": true,
+      "counts": [
+        {
+          "scope": "PARTITION",
+          "status": "RUNNING",
+          "count": 1
+        },
+        {
+          "scope": "TASK",
+          "status": "RUNNING",
+          "count": 1
+        }
+      ],
+      "stages": [
+        {
+          "stageCode": "PREPARE",
+          "stageStatus": "SUCCESS",
+          "stepRunId": 8,
+          "runSeq": 2,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "GENERATE",
+          "stageStatus": "RUNNING",
+          "stepRunId": 9,
+          "runSeq": 2,
+          "rowsProcessed": 400,
+          "lastHeartbeatAt": "2026-10-26T05:23:59.243259Z",
+          "errorCode": null
+        },
+        {
+          "stageCode": "STORE",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "REGISTER",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "COMPLETE",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        }
+      ]
+    },
+    {
+      "jobInstanceId": 3,
+      "jobCode": "EXPORT_FIXTURE",
+      "instanceStatus": "RUNNING",
+      "generatedAt": "2026-10-26T05:24:02.186581Z",
+      "startedAt": "2026-10-26T05:22:55.252473Z",
+      "finishedAt": null,
+      "expectedPartitions": 1,
+      "workflowRunId": 2,
+      "nodeCode": "EXPORT_JOB",
+      "pipelineInstanceId": 2,
+      "pipelineStatus": "RUNNING",
+      "currentStage": "GENERATE",
+      "systemPipelineCode": "EXPORT",
+      "systemPipelineVersion": 1,
+      "stageGraphAvailable": true,
+      "counts": [
+        {
+          "scope": "PARTITION",
+          "status": "RUNNING",
+          "count": 1
+        },
+        {
+          "scope": "TASK",
+          "status": "RUNNING",
+          "count": 1
+        }
+      ],
+      "stages": [
+        {
+          "stageCode": "PREPARE",
+          "stageStatus": "SUCCESS",
+          "stepRunId": 8,
+          "runSeq": 2,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "GENERATE",
+          "stageStatus": "RUNNING",
+          "stepRunId": 9,
+          "runSeq": 2,
+          "rowsProcessed": 450,
+          "lastHeartbeatAt": "2026-10-26T05:24:01.334072Z",
+          "errorCode": null
+        },
+        {
+          "stageCode": "STORE",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "REGISTER",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "COMPLETE",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        }
+      ]
+    },
+    {
+      "jobInstanceId": 3,
+      "jobCode": "EXPORT_FIXTURE",
+      "instanceStatus": "RUNNING",
+      "generatedAt": "2026-10-26T05:24:04.196675Z",
+      "startedAt": "2026-10-26T05:22:55.252473Z",
+      "finishedAt": null,
+      "expectedPartitions": 1,
+      "workflowRunId": 2,
+      "nodeCode": "EXPORT_JOB",
+      "pipelineInstanceId": 2,
+      "pipelineStatus": "RUNNING",
+      "currentStage": "GENERATE",
+      "systemPipelineCode": "EXPORT",
+      "systemPipelineVersion": 1,
+      "stageGraphAvailable": true,
+      "counts": [
+        {
+          "scope": "PARTITION",
+          "status": "RUNNING",
+          "count": 1
+        },
+        {
+          "scope": "TASK",
+          "status": "RUNNING",
+          "count": 1
+        }
+      ],
+      "stages": [
+        {
+          "stageCode": "PREPARE",
+          "stageStatus": "SUCCESS",
+          "stepRunId": 8,
+          "runSeq": 2,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "GENERATE",
+          "stageStatus": "RUNNING",
+          "stepRunId": 9,
+          "runSeq": 2,
+          "rowsProcessed": 500,
+          "lastHeartbeatAt": "2026-10-26T05:24:03.402975Z",
+          "errorCode": null
+        },
+        {
+          "stageCode": "STORE",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "REGISTER",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "COMPLETE",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        }
+      ]
+    },
+    {
+      "jobInstanceId": 3,
+      "jobCode": "EXPORT_FIXTURE",
+      "instanceStatus": "RUNNING",
+      "generatedAt": "2026-10-26T05:24:06.208678Z",
+      "startedAt": "2026-10-26T05:22:55.252473Z",
+      "finishedAt": null,
+      "expectedPartitions": 1,
+      "workflowRunId": 2,
+      "nodeCode": "EXPORT_JOB",
+      "pipelineInstanceId": 2,
+      "pipelineStatus": "RUNNING",
+      "currentStage": "GENERATE",
+      "systemPipelineCode": "EXPORT",
+      "systemPipelineVersion": 1,
+      "stageGraphAvailable": true,
+      "counts": [
+        {
+          "scope": "PARTITION",
+          "status": "RUNNING",
+          "count": 1
+        },
+        {
+          "scope": "TASK",
+          "status": "RUNNING",
+          "count": 1
+        }
+      ],
+      "stages": [
+        {
+          "stageCode": "PREPARE",
+          "stageStatus": "SUCCESS",
+          "stepRunId": 8,
+          "runSeq": 2,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "GENERATE",
+          "stageStatus": "RUNNING",
+          "stepRunId": 9,
+          "runSeq": 2,
+          "rowsProcessed": 550,
+          "lastHeartbeatAt": "2026-10-26T05:24:05.464189Z",
+          "errorCode": null
+        },
+        {
+          "stageCode": "STORE",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "REGISTER",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "COMPLETE",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        }
+      ]
+    },
+    {
+      "jobInstanceId": 3,
+      "jobCode": "EXPORT_FIXTURE",
+      "instanceStatus": "RUNNING",
+      "generatedAt": "2026-10-26T05:24:08.221758Z",
+      "startedAt": "2026-10-26T05:22:55.252473Z",
+      "finishedAt": null,
+      "expectedPartitions": 1,
+      "workflowRunId": 2,
+      "nodeCode": "EXPORT_JOB",
+      "pipelineInstanceId": 2,
+      "pipelineStatus": "RUNNING",
+      "currentStage": "GENERATE",
+      "systemPipelineCode": "EXPORT",
+      "systemPipelineVersion": 1,
+      "stageGraphAvailable": true,
+      "counts": [
+        {
+          "scope": "PARTITION",
+          "status": "RUNNING",
+          "count": 1
+        },
+        {
+          "scope": "TASK",
+          "status": "RUNNING",
+          "count": 1
+        }
+      ],
+      "stages": [
+        {
+          "stageCode": "PREPARE",
+          "stageStatus": "SUCCESS",
+          "stepRunId": 8,
+          "runSeq": 2,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "GENERATE",
+          "stageStatus": "RUNNING",
+          "stepRunId": 9,
+          "runSeq": 2,
+          "rowsProcessed": 600,
+          "lastHeartbeatAt": "2026-10-26T05:24:07.546665Z",
+          "errorCode": null
+        },
+        {
+          "stageCode": "STORE",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "REGISTER",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "COMPLETE",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        }
+      ]
+    },
+    {
+      "jobInstanceId": 3,
+      "jobCode": "EXPORT_FIXTURE",
+      "instanceStatus": "RUNNING",
+      "generatedAt": "2026-10-26T05:24:10.230304Z",
+      "startedAt": "2026-10-26T05:22:55.252473Z",
+      "finishedAt": null,
+      "expectedPartitions": 1,
+      "workflowRunId": 2,
+      "nodeCode": "EXPORT_JOB",
+      "pipelineInstanceId": 2,
+      "pipelineStatus": "RUNNING",
+      "currentStage": "GENERATE",
+      "systemPipelineCode": "EXPORT",
+      "systemPipelineVersion": 1,
+      "stageGraphAvailable": true,
+      "counts": [
+        {
+          "scope": "PARTITION",
+          "status": "RUNNING",
+          "count": 1
+        },
+        {
+          "scope": "TASK",
+          "status": "RUNNING",
+          "count": 1
+        }
+      ],
+      "stages": [
+        {
+          "stageCode": "PREPARE",
+          "stageStatus": "SUCCESS",
+          "stepRunId": 8,
+          "runSeq": 2,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "GENERATE",
+          "stageStatus": "RUNNING",
+          "stepRunId": 9,
+          "runSeq": 2,
+          "rowsProcessed": 650,
+          "lastHeartbeatAt": "2026-10-26T05:24:09.685006Z",
+          "errorCode": null
+        },
+        {
+          "stageCode": "STORE",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "REGISTER",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "COMPLETE",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        }
+      ]
+    },
+    {
+      "jobInstanceId": 3,
+      "jobCode": "EXPORT_FIXTURE",
+      "instanceStatus": "RUNNING",
+      "generatedAt": "2026-10-26T05:24:12.243406Z",
+      "startedAt": "2026-10-26T05:22:55.252473Z",
+      "finishedAt": null,
+      "expectedPartitions": 1,
+      "workflowRunId": 2,
+      "nodeCode": "EXPORT_JOB",
+      "pipelineInstanceId": 2,
+      "pipelineStatus": "RUNNING",
+      "currentStage": "GENERATE",
+      "systemPipelineCode": "EXPORT",
+      "systemPipelineVersion": 1,
+      "stageGraphAvailable": true,
+      "counts": [
+        {
+          "scope": "PARTITION",
+          "status": "RUNNING",
+          "count": 1
+        },
+        {
+          "scope": "TASK",
+          "status": "RUNNING",
+          "count": 1
+        }
+      ],
+      "stages": [
+        {
+          "stageCode": "PREPARE",
+          "stageStatus": "SUCCESS",
+          "stepRunId": 8,
+          "runSeq": 2,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "GENERATE",
+          "stageStatus": "RUNNING",
+          "stepRunId": 9,
+          "runSeq": 2,
+          "rowsProcessed": 700,
+          "lastHeartbeatAt": "2026-10-26T05:24:11.788249Z",
+          "errorCode": null
+        },
+        {
+          "stageCode": "STORE",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "REGISTER",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "COMPLETE",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        }
+      ]
+    },
+    {
+      "jobInstanceId": 3,
+      "jobCode": "EXPORT_FIXTURE",
+      "instanceStatus": "RUNNING",
+      "generatedAt": "2026-10-26T05:24:14.257940Z",
+      "startedAt": "2026-10-26T05:22:55.252473Z",
+      "finishedAt": null,
+      "expectedPartitions": 1,
+      "workflowRunId": 2,
+      "nodeCode": "EXPORT_JOB",
+      "pipelineInstanceId": 2,
+      "pipelineStatus": "RUNNING",
+      "currentStage": "GENERATE",
+      "systemPipelineCode": "EXPORT",
+      "systemPipelineVersion": 1,
+      "stageGraphAvailable": true,
+      "counts": [
+        {
+          "scope": "PARTITION",
+          "status": "RUNNING",
+          "count": 1
+        },
+        {
+          "scope": "TASK",
+          "status": "RUNNING",
+          "count": 1
+        }
+      ],
+      "stages": [
+        {
+          "stageCode": "PREPARE",
+          "stageStatus": "SUCCESS",
+          "stepRunId": 8,
+          "runSeq": 2,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "GENERATE",
+          "stageStatus": "RUNNING",
+          "stepRunId": 9,
+          "runSeq": 2,
+          "rowsProcessed": 750,
+          "lastHeartbeatAt": "2026-10-26T05:24:13.851853Z",
+          "errorCode": null
+        },
+        {
+          "stageCode": "STORE",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "REGISTER",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "COMPLETE",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        }
+      ]
+    },
+    {
+      "jobInstanceId": 3,
+      "jobCode": "EXPORT_FIXTURE",
+      "instanceStatus": "RUNNING",
+      "generatedAt": "2026-10-26T05:24:16.270412Z",
+      "startedAt": "2026-10-26T05:22:55.252473Z",
+      "finishedAt": null,
+      "expectedPartitions": 1,
+      "workflowRunId": 2,
+      "nodeCode": "EXPORT_JOB",
+      "pipelineInstanceId": 2,
+      "pipelineStatus": "RUNNING",
+      "currentStage": "GENERATE",
+      "systemPipelineCode": "EXPORT",
+      "systemPipelineVersion": 1,
+      "stageGraphAvailable": true,
+      "counts": [
+        {
+          "scope": "PARTITION",
+          "status": "RUNNING",
+          "count": 1
+        },
+        {
+          "scope": "TASK",
+          "status": "RUNNING",
+          "count": 1
+        }
+      ],
+      "stages": [
+        {
+          "stageCode": "PREPARE",
+          "stageStatus": "SUCCESS",
+          "stepRunId": 8,
+          "runSeq": 2,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "GENERATE",
+          "stageStatus": "RUNNING",
+          "stepRunId": 9,
+          "runSeq": 2,
+          "rowsProcessed": 800,
+          "lastHeartbeatAt": "2026-10-26T05:24:15.921082Z",
+          "errorCode": null
+        },
+        {
+          "stageCode": "STORE",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "REGISTER",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "COMPLETE",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        }
+      ]
+    },
+    {
+      "jobInstanceId": 3,
+      "jobCode": "EXPORT_FIXTURE",
+      "instanceStatus": "RUNNING",
+      "generatedAt": "2026-10-26T05:24:18.279189Z",
+      "startedAt": "2026-10-26T05:22:55.252473Z",
+      "finishedAt": null,
+      "expectedPartitions": 1,
+      "workflowRunId": 2,
+      "nodeCode": "EXPORT_JOB",
+      "pipelineInstanceId": 2,
+      "pipelineStatus": "RUNNING",
+      "currentStage": "GENERATE",
+      "systemPipelineCode": "EXPORT",
+      "systemPipelineVersion": 1,
+      "stageGraphAvailable": true,
+      "counts": [
+        {
+          "scope": "PARTITION",
+          "status": "RUNNING",
+          "count": 1
+        },
+        {
+          "scope": "TASK",
+          "status": "RUNNING",
+          "count": 1
+        }
+      ],
+      "stages": [
+        {
+          "stageCode": "PREPARE",
+          "stageStatus": "SUCCESS",
+          "stepRunId": 8,
+          "runSeq": 2,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "GENERATE",
+          "stageStatus": "RUNNING",
+          "stepRunId": 9,
+          "runSeq": 2,
+          "rowsProcessed": 850,
+          "lastHeartbeatAt": "2026-10-26T05:24:18.024361Z",
+          "errorCode": null
+        },
+        {
+          "stageCode": "STORE",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "REGISTER",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "COMPLETE",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        }
+      ]
+    },
+    {
+      "jobInstanceId": 3,
+      "jobCode": "EXPORT_FIXTURE",
+      "instanceStatus": "RUNNING",
+      "generatedAt": "2026-10-26T05:24:20.287693Z",
+      "startedAt": "2026-10-26T05:22:55.252473Z",
+      "finishedAt": null,
+      "expectedPartitions": 1,
+      "workflowRunId": 2,
+      "nodeCode": "EXPORT_JOB",
+      "pipelineInstanceId": 2,
+      "pipelineStatus": "RUNNING",
+      "currentStage": "GENERATE",
+      "systemPipelineCode": "EXPORT",
+      "systemPipelineVersion": 1,
+      "stageGraphAvailable": true,
+      "counts": [
+        {
+          "scope": "PARTITION",
+          "status": "RUNNING",
+          "count": 1
+        },
+        {
+          "scope": "TASK",
+          "status": "RUNNING",
+          "count": 1
+        }
+      ],
+      "stages": [
+        {
+          "stageCode": "PREPARE",
+          "stageStatus": "SUCCESS",
+          "stepRunId": 8,
+          "runSeq": 2,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "GENERATE",
+          "stageStatus": "RUNNING",
+          "stepRunId": 9,
+          "runSeq": 2,
+          "rowsProcessed": 900,
+          "lastHeartbeatAt": "2026-10-26T05:24:20.101715Z",
+          "errorCode": null
+        },
+        {
+          "stageCode": "STORE",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "REGISTER",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "COMPLETE",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        }
+      ]
+    },
+    {
+      "jobInstanceId": 3,
+      "jobCode": "EXPORT_FIXTURE",
+      "instanceStatus": "RUNNING",
+      "generatedAt": "2026-10-26T05:24:22.305267Z",
+      "startedAt": "2026-10-26T05:22:55.252473Z",
+      "finishedAt": null,
+      "expectedPartitions": 1,
+      "workflowRunId": 2,
+      "nodeCode": "EXPORT_JOB",
+      "pipelineInstanceId": 2,
+      "pipelineStatus": "RUNNING",
+      "currentStage": "GENERATE",
+      "systemPipelineCode": "EXPORT",
+      "systemPipelineVersion": 1,
+      "stageGraphAvailable": true,
+      "counts": [
+        {
+          "scope": "PARTITION",
+          "status": "RUNNING",
+          "count": 1
+        },
+        {
+          "scope": "TASK",
+          "status": "RUNNING",
+          "count": 1
+        }
+      ],
+      "stages": [
+        {
+          "stageCode": "PREPARE",
+          "stageStatus": "SUCCESS",
+          "stepRunId": 8,
+          "runSeq": 2,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "GENERATE",
+          "stageStatus": "RUNNING",
+          "stepRunId": 9,
+          "runSeq": 2,
+          "rowsProcessed": 950,
+          "lastHeartbeatAt": "2026-10-26T05:24:22.179718Z",
+          "errorCode": null
+        },
+        {
+          "stageCode": "STORE",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "REGISTER",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "COMPLETE",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        }
+      ]
+    },
+    {
+      "jobInstanceId": 3,
+      "jobCode": "EXPORT_FIXTURE",
+      "instanceStatus": "RUNNING",
+      "generatedAt": "2026-10-26T05:24:24.325173Z",
+      "startedAt": "2026-10-26T05:22:55.252473Z",
+      "finishedAt": null,
+      "expectedPartitions": 1,
+      "workflowRunId": 2,
+      "nodeCode": "EXPORT_JOB",
+      "pipelineInstanceId": 2,
+      "pipelineStatus": "RUNNING",
+      "currentStage": "GENERATE",
+      "systemPipelineCode": "EXPORT",
+      "systemPipelineVersion": 1,
+      "stageGraphAvailable": true,
+      "counts": [
+        {
+          "scope": "PARTITION",
+          "status": "RUNNING",
+          "count": 1
+        },
+        {
+          "scope": "TASK",
+          "status": "RUNNING",
+          "count": 1
+        }
+      ],
+      "stages": [
+        {
+          "stageCode": "PREPARE",
+          "stageStatus": "SUCCESS",
+          "stepRunId": 8,
+          "runSeq": 2,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "GENERATE",
+          "stageStatus": "RUNNING",
+          "stepRunId": 9,
+          "runSeq": 2,
+          "rowsProcessed": 1000,
+          "lastHeartbeatAt": "2026-10-26T05:24:24.289412Z",
+          "errorCode": null
+        },
+        {
+          "stageCode": "STORE",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "REGISTER",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "COMPLETE",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        }
+      ]
+    },
+    {
+      "jobInstanceId": 3,
+      "jobCode": "EXPORT_FIXTURE",
+      "instanceStatus": "RUNNING",
+      "generatedAt": "2026-10-26T05:24:26.334625Z",
+      "startedAt": "2026-10-26T05:22:55.252473Z",
+      "finishedAt": null,
+      "expectedPartitions": 1,
+      "workflowRunId": 2,
+      "nodeCode": "EXPORT_JOB",
+      "pipelineInstanceId": 2,
+      "pipelineStatus": "RUNNING",
+      "currentStage": "GENERATE",
+      "systemPipelineCode": "EXPORT",
+      "systemPipelineVersion": 1,
+      "stageGraphAvailable": true,
+      "counts": [
+        {
+          "scope": "PARTITION",
+          "status": "RUNNING",
+          "count": 1
+        },
+        {
+          "scope": "TASK",
+          "status": "RUNNING",
+          "count": 1
+        }
+      ],
+      "stages": [
+        {
+          "stageCode": "PREPARE",
+          "stageStatus": "SUCCESS",
+          "stepRunId": 8,
+          "runSeq": 2,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "GENERATE",
+          "stageStatus": "RUNNING",
+          "stepRunId": 9,
+          "runSeq": 2,
+          "rowsProcessed": 1025,
+          "lastHeartbeatAt": "2026-10-26T05:24:25.315516Z",
+          "errorCode": null
+        },
+        {
+          "stageCode": "STORE",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "REGISTER",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "COMPLETE",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        }
+      ]
+    },
+    {
+      "jobInstanceId": 3,
+      "jobCode": "EXPORT_FIXTURE",
+      "instanceStatus": "RUNNING",
+      "generatedAt": "2026-10-26T05:24:28.348228Z",
+      "startedAt": "2026-10-26T05:22:55.252473Z",
+      "finishedAt": null,
+      "expectedPartitions": 1,
+      "workflowRunId": 2,
+      "nodeCode": "EXPORT_JOB",
+      "pipelineInstanceId": 2,
+      "pipelineStatus": "RUNNING",
+      "currentStage": "GENERATE",
+      "systemPipelineCode": "EXPORT",
+      "systemPipelineVersion": 1,
+      "stageGraphAvailable": true,
+      "counts": [
+        {
+          "scope": "PARTITION",
+          "status": "RUNNING",
+          "count": 1
+        },
+        {
+          "scope": "TASK",
+          "status": "RUNNING",
+          "count": 1
+        }
+      ],
+      "stages": [
+        {
+          "stageCode": "PREPARE",
+          "stageStatus": "SUCCESS",
+          "stepRunId": 8,
+          "runSeq": 2,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "GENERATE",
+          "stageStatus": "RUNNING",
+          "stepRunId": 9,
+          "runSeq": 2,
+          "rowsProcessed": 1075,
+          "lastHeartbeatAt": "2026-10-26T05:24:27.381048Z",
+          "errorCode": null
+        },
+        {
+          "stageCode": "STORE",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "REGISTER",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "COMPLETE",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        }
+      ]
+    },
+    {
+      "jobInstanceId": 3,
+      "jobCode": "EXPORT_FIXTURE",
+      "instanceStatus": "RUNNING",
+      "generatedAt": "2026-10-26T05:24:30.359176Z",
+      "startedAt": "2026-10-26T05:22:55.252473Z",
+      "finishedAt": null,
+      "expectedPartitions": 1,
+      "workflowRunId": 2,
+      "nodeCode": "EXPORT_JOB",
+      "pipelineInstanceId": 2,
+      "pipelineStatus": "RUNNING",
+      "currentStage": "GENERATE",
+      "systemPipelineCode": "EXPORT",
+      "systemPipelineVersion": 1,
+      "stageGraphAvailable": true,
+      "counts": [
+        {
+          "scope": "PARTITION",
+          "status": "RUNNING",
+          "count": 1
+        },
+        {
+          "scope": "TASK",
+          "status": "RUNNING",
+          "count": 1
+        }
+      ],
+      "stages": [
+        {
+          "stageCode": "PREPARE",
+          "stageStatus": "SUCCESS",
+          "stepRunId": 8,
+          "runSeq": 2,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "GENERATE",
+          "stageStatus": "RUNNING",
+          "stepRunId": 9,
+          "runSeq": 2,
+          "rowsProcessed": 1125,
+          "lastHeartbeatAt": "2026-10-26T05:24:29.479526Z",
+          "errorCode": null
+        },
+        {
+          "stageCode": "STORE",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "REGISTER",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "COMPLETE",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        }
+      ]
+    },
+    {
+      "jobInstanceId": 3,
+      "jobCode": "EXPORT_FIXTURE",
+      "instanceStatus": "RUNNING",
+      "generatedAt": "2026-10-26T05:24:32.378053Z",
+      "startedAt": "2026-10-26T05:22:55.252473Z",
+      "finishedAt": null,
+      "expectedPartitions": 1,
+      "workflowRunId": 2,
+      "nodeCode": "EXPORT_JOB",
+      "pipelineInstanceId": 2,
+      "pipelineStatus": "RUNNING",
+      "currentStage": "GENERATE",
+      "systemPipelineCode": "EXPORT",
+      "systemPipelineVersion": 1,
+      "stageGraphAvailable": true,
+      "counts": [
+        {
+          "scope": "PARTITION",
+          "status": "RUNNING",
+          "count": 1
+        },
+        {
+          "scope": "TASK",
+          "status": "RUNNING",
+          "count": 1
+        }
+      ],
+      "stages": [
+        {
+          "stageCode": "PREPARE",
+          "stageStatus": "SUCCESS",
+          "stepRunId": 8,
+          "runSeq": 2,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "GENERATE",
+          "stageStatus": "RUNNING",
+          "stepRunId": 9,
+          "runSeq": 2,
+          "rowsProcessed": 1175,
+          "lastHeartbeatAt": "2026-10-26T05:24:31.557887Z",
+          "errorCode": null
+        },
+        {
+          "stageCode": "STORE",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "REGISTER",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "COMPLETE",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        }
+      ]
+    },
+    {
+      "jobInstanceId": 3,
+      "jobCode": "EXPORT_FIXTURE",
+      "instanceStatus": "SUCCESS",
+      "generatedAt": "2026-10-26T05:24:34.392420Z",
+      "startedAt": "2026-10-26T05:22:55.252473Z",
+      "finishedAt": "2026-10-26T05:24:32.820864Z",
+      "expectedPartitions": 1,
+      "workflowRunId": 2,
+      "nodeCode": "EXPORT_JOB",
+      "pipelineInstanceId": 2,
+      "pipelineStatus": "SUCCESS",
+      "currentStage": "COMPLETE",
+      "systemPipelineCode": "EXPORT",
+      "systemPipelineVersion": 1,
+      "stageGraphAvailable": true,
+      "counts": [
+        {
+          "scope": "PARTITION",
+          "status": "SUCCESS",
+          "count": 1
+        },
+        {
+          "scope": "TASK",
+          "status": "SUCCESS",
+          "count": 1
+        }
+      ],
+      "stages": [
+        {
+          "stageCode": "PREPARE",
+          "stageStatus": "SUCCESS",
+          "stepRunId": 8,
+          "runSeq": 2,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "GENERATE",
+          "stageStatus": "SUCCESS",
+          "stepRunId": 9,
+          "runSeq": 2,
+          "rowsProcessed": 1200,
+          "lastHeartbeatAt": "2026-10-26T05:24:32.621127Z",
+          "errorCode": null
+        },
+        {
+          "stageCode": "STORE",
+          "stageStatus": "SUCCESS",
+          "stepRunId": 10,
+          "runSeq": 1,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "REGISTER",
+          "stageStatus": "SUCCESS",
+          "stepRunId": 11,
+          "runSeq": 1,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "COMPLETE",
+          "stageStatus": "SUCCESS",
+          "stepRunId": 12,
+          "runSeq": 1,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "stats": {
+      "startTime": "2026-10-26T05:20:39.370Z",
+      "duration": 249357.06699999998,
+      "expected": 1,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "retry": 0,
+    "cleanup": {
+      "definitions": 0,
+      "nodes": 0,
+      "edges": 0,
+      "versions": 0,
+      "runs": 0,
+      "nodeRuns": 0,
+      "requests": 0,
+      "jobInstances": 0,
+      "terminalEvents": 0,
+      "terminalReceipts": 0,
+      "terminalDedupKeys": 0,
+      "calendars": 0,
+      "batchDays": 0,
+      "dayCursors": 0,
+      "dayAudits": 0,
+      "catchupControls": 0,
+      "catchupEvents": 0,
+      "tenants": 0,
+      "configurationRevisions": 0,
+      "operationAudits": 0,
+      "credentialAccounts": 0,
+      "exportPipelines": 0,
+      "exportSteps": 0,
+      "exportCheckpoints": 0,
+      "exportFiles": 0,
+      "exportTemplates": 0,
+      "replayOperations": 0,
+      "replayTokens": 0,
+      "approvals": 0,
+      "businessRelations": 0,
+      "jobDefinitions": 0,
+      "instances": 0,
+      "partitions": 0,
+      "tasks": 0,
+      "stepInstances": 0,
+      "executionLogs": 0,
+      "workerReports": 0,
+      "jobEvents": 0,
+      "workerRegistry": 0,
+      "idempotencyRows": 0,
+      "lateApprovalNotifications": 0,
+      "usageRows": 0,
+      "deadLetters": 0,
+      "finalExecutionLogs": 0,
+      "finalJobDedupKeys": 0,
+      "alertRows": 0,
+      "remainingEventDeliveries": 0,
+      "remainingEventRetries": 0,
+      "remainingEventKeys": 0,
+      "remainingEvents": 0,
+      "remainingAssets": 0,
+      "tenantTableRows": 0,
+      "javaTemporaryDirectories": 0
+    },
+    "allCleanupZero": true,
+    "isolatedServicesStopped": true,
+    "databaseDroppedByRunner": true,
+    "applicantAndApproverDistinct": true,
+    "artifactKeyCount": 2,
+    "actualWorker": "EXPORT",
+    "noRegistryCapabilityInjection": true
+  },
+  "baseline": {
+    "frontendHead": "662d254e2f8b97f93021de548815470d2291c997",
+    "backendHead": "f3d5e400d3b5bd737124b57cf0a38e685432aab2",
+    "branch": "fix/wdi-current",
+    "uncommittedWorktree": true
+  },
+  "buildSha256": {
+    "backend/orchestrator.jar": "58540ec3446a590de129127c90c53f8a5514aacefde93e14f32dba1f41b70c2c",
+    "backend/trigger.jar": "1c159f265079cf5fe6fe9c635d72ec7b173f06688aa1297e2a39732b838b4342",
+    "backend/console.jar": "2ef09e7aff81a1e97fd8ec2482376116df07c9b9ec43ba55b5e80db7284a8c41",
+    "backend/worker-export.jar": "db9333d90e4c546629543ffeb78cd63a90af964def5bd61d15d524b72a1aaf24",
+    "frontend/dist/index.html": "12c48e6f25eb9c44f3e49113c1a2c6f22423a8cfc3f968c1f7b05672dc2554ae"
+  },
+  "sourceSha256": {
+    "e2e/workflow-whole-replay-real.spec.ts": "095b047ab9fa43ae8ac20d7d9924058e938d9e46988aef5e8e7941ba7ed44b5a",
+    "e2e/fixtures/runtime-progress/exportWorkflowReplayFixture.ts": "f8684202df41bd00fb53311a5748990ee263c9e2c42eaae1cbf00da8128d5b4c",
+    "src/components/common/RowActions.vue": "94dd35103dd68a882d85c326eaf4e193552a104f30981707e4365449ddb8da13",
+    "src/views/monitor/JobInstanceList.vue": "ea5c1ac91f021d0f8ed7e4ca30ea35f1d21ab45da1f28935a30f373971ba7009",
+    "src/views/monitor/JobInstanceDetail.vue": "0572a22e3e1b0a450c25f819d0fac25311e771912c6cb819131aa466bc1e5458",
+    "src/views-mobile/MJobInstanceDetail.vue": "180077798b158baa9ab759d6d04fd42974524f919269520de59af1d67e0e89fe",
+    "e2e/fixtures/runtime-progress/sql/export-replay-cleanup.sql": "77a8cab5273b7fc76225bdc6f6390212fbfc80015281fa65230dcaf27f8d496e",
+    "e2e/fixtures/runtime-progress/sql/export-replay-state.sql": "93b792d9aed081a07127aaa9970d32c1b401401ba76a9e218a08fe2751b705b4",
+    "e2e/fixtures/runtime-progress/sql/export-replay-prepare.sql": "a1cd4ab4be9520ecdec9360aefaffc6ba8ec6eef65ba74c33532a607fc63a561"
+  },
+  "buildDependencyVersions": {
+    "markdown-it": "15.0.3",
+    "follow-redirects": "1.16.2"
+  }
+}

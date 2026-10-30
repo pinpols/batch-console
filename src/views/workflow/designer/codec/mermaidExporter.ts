@@ -2,7 +2,7 @@
  * designer 内部 DAG → Mermaid `graph TD` 字符串。
  *
  * 复用 `utils/crossDayMermaid.ts` 的字符串拼接思路，覆盖设计器 DAG 子集:
- * - START / END / JOB / GATEWAY / FILE_STEP 节点形状区分
+ * - START / END / JOB / GATEWAY 节点形状区分
  * - 边携带 label 时渲染 `-->|label|`
  * - 不处理跨日依赖(交给只读 viewer 的 `injectCrossDayEdges`)
  */
@@ -18,7 +18,8 @@ function sanitizeId(code: string): string {
 function renderNode(id: string, name: string, type: DesignerNodeType): string {
   const safeId = sanitizeId(id)
   // Mermaid 标签是双引号字符串:反斜杠必须先转义,否则 `\"` 序列会被重新组合成未转义的引号
-  const safeName = name.replace(/\\/g, '\\\\').replace(/"/g, '\\"')
+  const escapedBackslashes = name.replace(/\\/g, '\\\\')
+  const safeName = escapedBackslashes.replace(/"/g, '\\"')
   switch (type) {
     case 'START':
     case 'END':

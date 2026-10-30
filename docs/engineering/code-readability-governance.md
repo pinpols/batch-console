@@ -1,7 +1,8 @@
 # 前端代码可读性治理
 
-本文是 Vue / TypeScript 可读性改造与评审的工程约束。通用审查流程仍以
-[`frontend-quality-review`](../../.agents/skills/frontend-quality-review/SKILL.md) 为准；后端 Java 调用现场遵循配对仓库
+本文是 Vue / TypeScript 可读性改造与评审的工程约束。全量规约治理由
+[`frontend-engineering-governance`](../../.agents/skills/frontend-engineering-governance/SKILL.md) 承接；Bug/变更综合审查使用
+[`frontend-quality-review`](../../.agents/skills/frontend-quality-review/SKILL.md)。后端 Java 调用现场遵循配对仓库
 [`docs/coding-conventions.md` §1](../../../file-batch-system/docs/coding-conventions.md#1-方法参数约束)。
 
 ## 1. 治理目标
@@ -80,9 +81,6 @@ return total + group.children.filter((item) => !item.hidden).length
 - 当前 `Array` / `Set` / `Map` / tuple / 判别联合是否匹配查找、去重、顺序和合法状态需求？是否存在重复线性查找或构造后可变泄漏？
 - 自动门禁实际覆盖了什么？未覆盖的语义项是否有针对性测试或评审证据？
 
-## 8. 2026-10-13 治理闭环
+## 8. 历史执行证据
 
-本轮累计 diff 的明确问题已落地：权限树标题统一走 i18n key；导航分组 key 获得编译期完整性；权限树改为判别联合并移除展示哨兵；重复的下拉选项清洗收敛为纯函数；日期键、主题恢复、文本解码等复杂调用提取语义中间值。配对后端的重放状态参数、AI 结算模式、多个 `null` 实参、Query 工厂和 baseline 解析同步治理。
-
-完整的发现—处置矩阵、门禁漏检原因、保留例外与验证口径见配对后端
-[`code-readability-governance-2026-10-13.md`](../../../file-batch-system/docs/audit/code-readability-governance-2026-10-13.md)。
+2026-10-13 至 2026-10-24 的批次改造、候选分类、扫描计数和当时验证结果保存在[可读性治理执行记录](../reports/code-readability-execution-log-2026-10-13-to-2026-10-24.md)。该记录是原批次证据，不代表本轮重跑或全工作区验收；后续执行结果另存日期记录，当前规则继续维护本页。批次中的局部保留理由仍可作为案例查阅，不能把单一案例扩展成全工程豁免。

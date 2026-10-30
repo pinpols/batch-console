@@ -141,7 +141,7 @@
         </el-table-column>
         <el-table-column :label="t('userBatch.action')" width="94">
           <template #default="{ row }">
-            <el-button link type="primary" @click="editRow(row)">{{
+            <el-button link type="primary" @click="editRow(row as UserBatchAccountRow)">{{
               t('userBatch.edit')
             }}</el-button>
           </template>
@@ -316,7 +316,8 @@
   async function onFileChange(event: Event) {
     const file = (event.target as HTMLInputElement).files?.[0]
     if (!file) return
-    if (!file.name.toLowerCase().endsWith('.xlsx') || file.size > 2 * 1024 * 1024) {
+    const fileHasUnsupportedExtension = !file.name.toLowerCase().endsWith('.xlsx')
+    if (fileHasUnsupportedExtension || file.size > 2 * 1024 * 1024) {
       ElMessage.error(t('userBatch.fileLimit'))
       if (fileInput.value) fileInput.value.value = ''
       return

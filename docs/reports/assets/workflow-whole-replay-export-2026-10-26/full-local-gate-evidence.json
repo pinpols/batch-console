@@ -1,0 +1,61 @@
+{
+  "command": "npm run verify:local",
+  "exitCode": 0,
+  "scope": "WDI frontend local checks; not backend business or release acceptance",
+  "testFiles": 197,
+  "testsPassed": 1124,
+  "testsFailed": 0,
+  "coverage": {
+    "statements": 63.39,
+    "branches": 56.86,
+    "functions": 53.23,
+    "lines": 65.2
+  },
+  "productionAuditVulnerabilities": 0,
+  "statusLines": [
+    "✅ 通过 | code=FE_VERSION | gate=版本对齐 | group=general | mode=enforce | exit_code=0 | action=none",
+    "✅ 通过 | code=FE_LINT | gate=ESLint | group=general | mode=enforce | exit_code=0 | action=none",
+    "✅ 通过 | code=FE_TYPECHECK | gate=TypeScript 类型检查 | group=general | mode=enforce | exit_code=0 | action=none",
+    "✅ 通过 | code=FE_I18N | gate=国际化词条一致性 | group=general | mode=enforce | exit_code=0 | action=none",
+    "✅ 通过 | code=FE_API_DRIFT | gate=OpenAPI 漂移 | group=general | mode=enforce | exit_code=0 | action=none",
+    "✅ 通过 | code=FE_ENCODING | gate=UTF-8 编码 | group=governance | mode=enforce | exit_code=0 | action=none",
+    "✅ 通过 | code=FE_COMMENTS | gate=中文解释性注释 | group=governance | mode=enforce | exit_code=0 | action=none",
+    "✅ 通过 | code=FE_ARCHITECTURE | gate=架构边界 | group=governance | mode=enforce | exit_code=0 | action=none",
+    "✅ 通过 | code=FE_ENV | gate=环境变量治理 | group=governance | mode=enforce | exit_code=0 | action=none",
+    "✅ 通过 | code=FE_MAINTAINABILITY | gate=可维护性 | group=governance | mode=enforce | exit_code=0 | action=none",
+    "✅ 通过 | code=FE_READABILITY_CALLS | gate=新增调用现场深层嵌套 | group=governance | mode=enforce | exit_code=0 | action=none",
+    "✅ 通过 | code=FE_READABILITY_CALLS_TEST | gate=调用现场门禁正反例 | group=governance | mode=enforce | exit_code=0 | action=none",
+    "✅ 通过 | code=FE_BASELINE_EXPANSION | gate=治理基线扩张审批与反例 | group=governance | mode=enforce | exit_code=0 | action=none",
+    "✅ 通过 | code=TEST_FIXTURE_SOURCES | gate=测试配置事实来源 | group=testing | mode=enforce | exit_code=0 | action=none",
+    "✅ 通过 | code=FE_TEST_FIXTURE_SOURCES | gate=测试 fixture 事实来源 | group=testing | mode=enforce | exit_code=0 | action=none",
+    "✅ 通过 | code=FE_TYPECHECK_SCOPE_TEST | gate=类型检查源码范围正反例 | group=testing | mode=enforce | exit_code=0 | action=none",
+    "✅ 通过 | code=FE_UI_COMPLEXITY | gate=UI 复杂度预算 | group=governance | mode=enforce | exit_code=0 | action=none",
+    "✅ 通过 | code=FE_WORKFLOWS | gate=Workflow 治理 | group=governance | mode=enforce | exit_code=0 | action=none",
+    "✅ 通过 | code=FE_SHELL | gate=Shell 治理 | group=governance | mode=enforce | exit_code=0 | action=none",
+    "✅ 通过 | code=FE_DOCS | gate=文档治理 | group=governance | mode=enforce | exit_code=0 | action=none",
+    "✅ 通过 | code=FE_GO_LIVE_READINESS | gate=上线准入文档治理 | group=governance | mode=enforce | exit_code=0 | action=none",
+    "✅ 通过 | code=FE_COMPLIANCE | gate=SBOM 与许可证 | group=governance | mode=enforce | exit_code=0 | action=none",
+    "✅ 通过 | code=FE_CHANGELOG | gate=Changelog 同步 | group=governance | mode=enforce | exit_code=0 | action=none",
+    "✅ 通过 | code=FE_UNIT | gate=Vitest 单测与覆盖率 | group=general | mode=enforce | exit_code=0 | action=none",
+    "✅ 通过 | code=FE_BUILD | gate=Vite 生产构建 | group=general | mode=enforce | exit_code=0 | action=none",
+    "✅ 通过 | code=FE_BUNDLE_SIZE | gate=Bundle 体积预算 | group=general | mode=enforce | exit_code=0 | action=none",
+    "✅ 通过 | code=FE_NPM_AUDIT | gate=生产依赖漏洞审计 | group=general | mode=enforce | exit_code=0 | action=none",
+    "✅ 通过 | code=GATE_COLLECTION_SUMMARY | gate=门禁失败汇总 | group=general | mode=enforce | exit_code=0 | action=none"
+  ],
+  "sourceSha256": {
+    "package.json": "a80f1a6ed0f761390a272a72cbeb1415181b91993a32c452a50aa52f0580d4ce",
+    "package-lock.json": "b3894dfafa33be968875b62d31612cd0a885ff49da8b547c0f970158455b69fd",
+    "docs/compliance/sbom.json": "030ba8212c82ab4af47ef8d93b1c708433dba817ec3a0a994a5fed1ef6f7bc1e",
+    "docs/compliance/THIRD-PARTY-LICENSES.md": "9e9a1879032d83048004172c221bf40387bc27073ef9c6def6f3718c7d849465",
+    "src/views/ops/BatchDayReplay.test.ts": "315a0add21ae7cdbf0a8380e4030c4a24850b14850d876dccb7d80548ecdc63d"
+  },
+  "dependencyPatch": {
+    "markdown-it": "15.0.2 -> 15.0.3",
+    "follow-redirects": "1.16.0 -> 1.16.2",
+    "markdown-it/argparse": "3.0.2 -> 3.0.4",
+    "initialGateFailures": [
+      "10 BatchDayReplay component tests lacked app-store dependency",
+      "production npm audit: 2 high severity dependency packages"
+    ]
+  }
+}

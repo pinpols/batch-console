@@ -1,0 +1,903 @@
+{
+  "beforeCrash": {
+    "worker": {
+      "status": "ONLINE",
+      "workerGroup": "PROCESS"
+    },
+    "runs": [
+      {
+        "id": 1,
+        "status": "RUNNING"
+      }
+    ],
+    "nodes": [
+      {
+        "workflowRunId": 1,
+        "nodeCode": "GATEWAY",
+        "status": "SUCCESS",
+        "jobInstanceId": null
+      },
+      {
+        "workflowRunId": 1,
+        "nodeCode": "PROCESS_JOB",
+        "status": "READY",
+        "jobInstanceId": 2
+      },
+      {
+        "workflowRunId": 1,
+        "nodeCode": "START",
+        "status": "SUCCESS",
+        "jobInstanceId": null
+      }
+    ],
+    "instances": [
+      {
+        "id": 2,
+        "status": "RUNNING",
+        "expectedPartitions": 1,
+        "successPartitions": 0,
+        "failedPartitions": 0
+      }
+    ],
+    "partitions": [
+      {
+        "id": 1,
+        "jobInstanceId": 2,
+        "status": "RUNNING",
+        "workerCode": "progress-process-e15bbc547ed844f8a936"
+      }
+    ],
+    "tasks": [
+      {
+        "id": 1,
+        "jobInstanceId": 2,
+        "status": "RUNNING",
+        "workerCode": "progress-process-e15bbc547ed844f8a936"
+      }
+    ],
+    "platformDatabase": "wdi_p01_process_plat_20261026140650_19350",
+    "workerHeartbeatMs": 1792994926838.245,
+    "pipelines": [
+      {
+        "id": 1,
+        "jobInstanceId": 2,
+        "status": "RUNNING",
+        "stage": "COMMIT",
+        "systemCode": "PROCESS",
+        "systemVersion": 1
+      }
+    ],
+    "steps": [
+      {
+        "id": 1,
+        "pipelineId": 1,
+        "stage": "PREPARE",
+        "runSeq": 1,
+        "status": "SUCCESS",
+        "errorCode": null,
+        "outputSummary": {
+          "code": "SUCCESS",
+          "stage": "PREPARE",
+          "message": "ok",
+          "success": true,
+          "batchKey": "process-progress-fc93801df2634354",
+          "stagedCount": null,
+          "processedCount": null,
+          "publishedCount": null,
+          "highWaterMarkOut": null
+        }
+      },
+      {
+        "id": 2,
+        "pipelineId": 1,
+        "stage": "COMPUTE",
+        "runSeq": 1,
+        "status": "SUCCESS",
+        "errorCode": null,
+        "outputSummary": {
+          "code": "SUCCESS",
+          "stage": "COMPUTE",
+          "message": "ok",
+          "success": true,
+          "batchKey": "process-progress-fc93801df2634354",
+          "stagedCount": 600,
+          "processedCount": 600,
+          "publishedCount": null,
+          "highWaterMarkOut": null
+        }
+      },
+      {
+        "id": 3,
+        "pipelineId": 1,
+        "stage": "VALIDATE",
+        "runSeq": 1,
+        "status": "SUCCESS",
+        "errorCode": null,
+        "outputSummary": {
+          "code": "SUCCESS",
+          "stage": "VALIDATE",
+          "message": "ok",
+          "success": true,
+          "batchKey": "process-progress-fc93801df2634354",
+          "stagedCount": 600,
+          "processedCount": 600,
+          "publishedCount": null,
+          "highWaterMarkOut": null
+        }
+      },
+      {
+        "id": 4,
+        "pipelineId": 1,
+        "stage": "COMMIT",
+        "runSeq": 1,
+        "status": "RUNNING",
+        "errorCode": null,
+        "outputSummary": null
+      }
+    ],
+    "taskGenerations": [
+      {
+        "taskId": 1,
+        "generationId": "4726c75b-80dc-48dc-8d5a-8852d1288adf",
+        "batchKey": "process-progress-fc93801df2634354"
+      }
+    ],
+    "businessDatabase": "wdi_p01_process_biz_20261026140650_1796",
+    "sourceRows": 600,
+    "sourceTotalRows": 601,
+    "rlsSourceRows": 600,
+    "targetRows": 0,
+    "distinctRows": 0,
+    "totalAmount": 0,
+    "outsideTargetRows": 0,
+    "stagedRows": 600,
+    "generations": [
+      {
+        "id": "4726c75b-80dc-48dc-8d5a-8852d1288adf",
+        "taskId": 1,
+        "status": "OPEN"
+      }
+    ],
+    "activeCommitQueries": 1,
+    "activeCommitUsers": [
+      "batch_business_writer"
+    ]
+  },
+  "terminal": {
+    "worker": {
+      "status": "ONLINE",
+      "workerGroup": "PROCESS"
+    },
+    "runs": [
+      {
+        "id": 1,
+        "status": "SUCCESS"
+      }
+    ],
+    "nodes": [
+      {
+        "workflowRunId": 1,
+        "nodeCode": "END",
+        "status": "SUCCESS",
+        "jobInstanceId": null
+      },
+      {
+        "workflowRunId": 1,
+        "nodeCode": "GATEWAY",
+        "status": "SUCCESS",
+        "jobInstanceId": null
+      },
+      {
+        "workflowRunId": 1,
+        "nodeCode": "PROCESS_JOB",
+        "status": "SUCCESS",
+        "jobInstanceId": 2
+      },
+      {
+        "workflowRunId": 1,
+        "nodeCode": "START",
+        "status": "SUCCESS",
+        "jobInstanceId": null
+      }
+    ],
+    "instances": [
+      {
+        "id": 2,
+        "status": "SUCCESS",
+        "expectedPartitions": 1,
+        "successPartitions": 1,
+        "failedPartitions": 0
+      }
+    ],
+    "partitions": [
+      {
+        "id": 1,
+        "jobInstanceId": 2,
+        "status": "SUCCESS",
+        "workerCode": null
+      }
+    ],
+    "tasks": [
+      {
+        "id": 1,
+        "jobInstanceId": 2,
+        "status": "SUCCESS",
+        "workerCode": "progress-process-e15bbc547ed844f8a936"
+      }
+    ],
+    "platformDatabase": "wdi_p01_process_plat_20261026140650_19350",
+    "workerHeartbeatMs": 1792995022817.465,
+    "pipelines": [
+      {
+        "id": 1,
+        "jobInstanceId": 2,
+        "status": "SUCCESS",
+        "stage": "FEEDBACK",
+        "systemCode": "PROCESS",
+        "systemVersion": 1
+      }
+    ],
+    "steps": [
+      {
+        "id": 1,
+        "pipelineId": 1,
+        "stage": "PREPARE",
+        "runSeq": 1,
+        "status": "SUCCESS",
+        "errorCode": null,
+        "outputSummary": {
+          "code": "SUCCESS",
+          "stage": "PREPARE",
+          "message": "ok",
+          "success": true,
+          "batchKey": "process-progress-fc93801df2634354",
+          "stagedCount": null,
+          "processedCount": null,
+          "publishedCount": null,
+          "highWaterMarkOut": null
+        }
+      },
+      {
+        "id": 2,
+        "pipelineId": 1,
+        "stage": "COMPUTE",
+        "runSeq": 1,
+        "status": "SUCCESS",
+        "errorCode": null,
+        "outputSummary": {
+          "code": "SUCCESS",
+          "stage": "COMPUTE",
+          "message": "ok",
+          "success": true,
+          "batchKey": "process-progress-fc93801df2634354",
+          "stagedCount": 600,
+          "processedCount": 600,
+          "publishedCount": null,
+          "highWaterMarkOut": null
+        }
+      },
+      {
+        "id": 3,
+        "pipelineId": 1,
+        "stage": "VALIDATE",
+        "runSeq": 1,
+        "status": "SUCCESS",
+        "errorCode": null,
+        "outputSummary": {
+          "code": "SUCCESS",
+          "stage": "VALIDATE",
+          "message": "ok",
+          "success": true,
+          "batchKey": "process-progress-fc93801df2634354",
+          "stagedCount": 600,
+          "processedCount": 600,
+          "publishedCount": null,
+          "highWaterMarkOut": null
+        }
+      },
+      {
+        "id": 4,
+        "pipelineId": 1,
+        "stage": "COMMIT",
+        "runSeq": 1,
+        "status": "FAILED",
+        "errorCode": "PIPELINE_ATTEMPT_INTERRUPTED",
+        "outputSummary": null
+      },
+      {
+        "id": 5,
+        "pipelineId": 1,
+        "stage": "PREPARE",
+        "runSeq": 2,
+        "status": "SUCCESS",
+        "errorCode": null,
+        "outputSummary": {
+          "code": "SUCCESS",
+          "stage": "PREPARE",
+          "message": "ok",
+          "success": true,
+          "batchKey": "process-progress-fc93801df2634354",
+          "stagedCount": null,
+          "processedCount": null,
+          "publishedCount": null,
+          "highWaterMarkOut": null
+        }
+      },
+      {
+        "id": 6,
+        "pipelineId": 1,
+        "stage": "COMPUTE",
+        "runSeq": 2,
+        "status": "SUCCESS",
+        "errorCode": null,
+        "outputSummary": {
+          "code": "SUCCESS",
+          "stage": "COMPUTE",
+          "message": "ok",
+          "success": true,
+          "batchKey": "process-progress-fc93801df2634354",
+          "stagedCount": 600,
+          "processedCount": 600,
+          "publishedCount": null,
+          "highWaterMarkOut": null
+        }
+      },
+      {
+        "id": 7,
+        "pipelineId": 1,
+        "stage": "VALIDATE",
+        "runSeq": 2,
+        "status": "SUCCESS",
+        "errorCode": null,
+        "outputSummary": {
+          "code": "SUCCESS",
+          "stage": "VALIDATE",
+          "message": "ok",
+          "success": true,
+          "batchKey": "process-progress-fc93801df2634354",
+          "stagedCount": 600,
+          "processedCount": 600,
+          "publishedCount": null,
+          "highWaterMarkOut": null
+        }
+      },
+      {
+        "id": 8,
+        "pipelineId": 1,
+        "stage": "COMMIT",
+        "runSeq": 2,
+        "status": "SUCCESS",
+        "errorCode": null,
+        "outputSummary": {
+          "code": "SUCCESS",
+          "stage": "COMMIT",
+          "message": "ok",
+          "success": true,
+          "batchKey": "process-progress-fc93801df2634354",
+          "stagedCount": 600,
+          "processedCount": 600,
+          "publishedCount": 600,
+          "highWaterMarkOut": null
+        }
+      },
+      {
+        "id": 9,
+        "pipelineId": 1,
+        "stage": "FEEDBACK",
+        "runSeq": 1,
+        "status": "SUCCESS",
+        "errorCode": null,
+        "outputSummary": {
+          "code": "SUCCESS",
+          "stage": "FEEDBACK",
+          "message": "ok",
+          "success": true,
+          "batchKey": "process-progress-fc93801df2634354",
+          "stagedCount": 600,
+          "processedCount": 600,
+          "publishedCount": 600,
+          "highWaterMarkOut": null
+        }
+      }
+    ],
+    "taskGenerations": [
+      {
+        "taskId": 1,
+        "generationId": "e2992d95-b8e2-4806-9110-1f5ef1f66cb6",
+        "batchKey": "process-progress-fc93801df2634354"
+      }
+    ],
+    "businessDatabase": "wdi_p01_process_biz_20261026140650_1796",
+    "sourceRows": 600,
+    "sourceTotalRows": 601,
+    "rlsSourceRows": 600,
+    "targetRows": 600,
+    "distinctRows": 600,
+    "totalAmount": 450750,
+    "outsideTargetRows": 0,
+    "stagedRows": 600,
+    "generations": [
+      {
+        "id": "4726c75b-80dc-48dc-8d5a-8852d1288adf",
+        "taskId": 1,
+        "status": "OPEN"
+      },
+      {
+        "id": "e2992d95-b8e2-4806-9110-1f5ef1f66cb6",
+        "taskId": 1,
+        "status": "OPEN"
+      }
+    ],
+    "activeCommitQueries": 0,
+    "activeCommitUsers": [],
+    "recordValidation": {
+      "rowsVerified": 600,
+      "allExpectedKeysAndAmounts": true,
+      "orderedRecordsSha256": "fc9c10beddeb9ac8b882cae9ebcdc50f9ce32c0c89ef460b0be091c919de192b"
+    }
+  },
+  "jobs": [
+    {
+      "tenantId": "e2e-bulk-cedd0cdbd2de4a5885c12ed0951facc3",
+      "jobInstanceId": 2,
+      "jobCode": "progress-job-e15bbc547ed844f8a936",
+      "instanceStatus": "RUNNING",
+      "generatedAt": "2026-10-26T06:08:45.472160Z",
+      "startedAt": "2026-10-26T06:08:14.829240Z",
+      "finishedAt": null,
+      "expectedPartitions": 1,
+      "workflowRunId": 1,
+      "nodeCode": "PROCESS_JOB",
+      "pipelineInstanceId": 1,
+      "pipelineStatus": "RUNNING",
+      "currentStage": "COMMIT",
+      "systemPipelineCode": "PROCESS",
+      "systemPipelineVersion": 1,
+      "stageGraphAvailable": true,
+      "counts": [
+        {
+          "scope": "PARTITION",
+          "status": "RUNNING",
+          "count": 1
+        },
+        {
+          "scope": "TASK",
+          "status": "RUNNING",
+          "count": 1
+        }
+      ],
+      "stages": [
+        {
+          "stageCode": "PREPARE",
+          "stageStatus": "SUCCESS",
+          "stepRunId": 1,
+          "runSeq": 1,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "COMPUTE",
+          "stageStatus": "SUCCESS",
+          "stepRunId": 2,
+          "runSeq": 1,
+          "rowsProcessed": 600,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "VALIDATE",
+          "stageStatus": "SUCCESS",
+          "stepRunId": 3,
+          "runSeq": 1,
+          "rowsProcessed": 600,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "COMMIT",
+          "stageStatus": "RUNNING",
+          "stepRunId": 4,
+          "runSeq": 1,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "FEEDBACK",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        }
+      ]
+    },
+    {
+      "tenantId": "e2e-bulk-cedd0cdbd2de4a5885c12ed0951facc3",
+      "jobInstanceId": 2,
+      "jobCode": "progress-job-e15bbc547ed844f8a936",
+      "instanceStatus": "SUCCESS",
+      "generatedAt": "2026-10-26T06:10:24.148180Z",
+      "startedAt": "2026-10-26T06:08:14.829240Z",
+      "finishedAt": "2026-10-26T06:10:21.677775Z",
+      "expectedPartitions": 1,
+      "workflowRunId": 1,
+      "nodeCode": "PROCESS_JOB",
+      "pipelineInstanceId": 1,
+      "pipelineStatus": "SUCCESS",
+      "currentStage": "FEEDBACK",
+      "systemPipelineCode": "PROCESS",
+      "systemPipelineVersion": 1,
+      "stageGraphAvailable": true,
+      "counts": [
+        {
+          "scope": "PARTITION",
+          "status": "SUCCESS",
+          "count": 1
+        },
+        {
+          "scope": "TASK",
+          "status": "SUCCESS",
+          "count": 1
+        }
+      ],
+      "stages": [
+        {
+          "stageCode": "PREPARE",
+          "stageStatus": "SUCCESS",
+          "stepRunId": 5,
+          "runSeq": 2,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "COMPUTE",
+          "stageStatus": "SUCCESS",
+          "stepRunId": 6,
+          "runSeq": 2,
+          "rowsProcessed": 600,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "VALIDATE",
+          "stageStatus": "SUCCESS",
+          "stepRunId": 7,
+          "runSeq": 2,
+          "rowsProcessed": 600,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "COMMIT",
+          "stageStatus": "SUCCESS",
+          "stepRunId": 8,
+          "runSeq": 2,
+          "rowsProcessed": 600,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "FEEDBACK",
+          "stageStatus": "SUCCESS",
+          "stepRunId": 9,
+          "runSeq": 1,
+          "rowsProcessed": 600,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        }
+      ]
+    }
+  ],
+  "pipelines": [
+    {
+      "tenantId": "e2e-bulk-cedd0cdbd2de4a5885c12ed0951facc3",
+      "generatedAt": "2026-10-26T06:08:46.888736Z",
+      "pipelines": [
+        {
+          "pipelineInstanceId": 1,
+          "fileId": null,
+          "fileName": null,
+          "runStatus": "RUNNING",
+          "currentStage": "COMMIT",
+          "systemPipelineCode": "PROCESS",
+          "systemPipelineVersion": 1,
+          "stageGraphAvailable": true,
+          "stageCodes": [
+            "PREPARE",
+            "COMPUTE",
+            "VALIDATE",
+            "COMMIT",
+            "FEEDBACK"
+          ],
+          "steps": [
+            {
+              "stepId": 4,
+              "pipelineInstanceId": 1,
+              "stepCode": "PROCESS_COMMIT",
+              "stageCode": "COMMIT",
+              "rowsProcessed": null,
+              "totalRowsHint": null,
+              "lastHeartbeatAt": null,
+              "stepStatus": "RUNNING",
+              "runSeq": 1,
+              "errorCode": null
+            },
+            {
+              "stepId": 2,
+              "pipelineInstanceId": 1,
+              "stepCode": "PROCESS_COMPUTE",
+              "stageCode": "COMPUTE",
+              "rowsProcessed": 600,
+              "totalRowsHint": null,
+              "lastHeartbeatAt": null,
+              "stepStatus": "SUCCESS",
+              "runSeq": 1,
+              "errorCode": null
+            },
+            {
+              "stepId": 1,
+              "pipelineInstanceId": 1,
+              "stepCode": "PROCESS_PREPARE",
+              "stageCode": "PREPARE",
+              "rowsProcessed": null,
+              "totalRowsHint": null,
+              "lastHeartbeatAt": null,
+              "stepStatus": "SUCCESS",
+              "runSeq": 1,
+              "errorCode": null
+            },
+            {
+              "stepId": 3,
+              "pipelineInstanceId": 1,
+              "stepCode": "PROCESS_VALIDATE",
+              "stageCode": "VALIDATE",
+              "rowsProcessed": 600,
+              "totalRowsHint": null,
+              "lastHeartbeatAt": null,
+              "stepStatus": "SUCCESS",
+              "runSeq": 1,
+              "errorCode": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tenantId": "e2e-bulk-cedd0cdbd2de4a5885c12ed0951facc3",
+      "generatedAt": "2026-10-26T06:09:31.614577Z",
+      "pipelines": [
+        {
+          "pipelineInstanceId": 1,
+          "fileId": null,
+          "fileName": null,
+          "runStatus": "RUNNING",
+          "currentStage": "COMMIT",
+          "systemPipelineCode": "PROCESS",
+          "systemPipelineVersion": 1,
+          "stageGraphAvailable": true,
+          "stageCodes": [
+            "PREPARE",
+            "COMPUTE",
+            "VALIDATE",
+            "COMMIT",
+            "FEEDBACK"
+          ],
+          "steps": [
+            {
+              "stepId": 8,
+              "pipelineInstanceId": 1,
+              "stepCode": "PROCESS_COMMIT",
+              "stageCode": "COMMIT",
+              "rowsProcessed": null,
+              "totalRowsHint": null,
+              "lastHeartbeatAt": null,
+              "stepStatus": "RUNNING",
+              "runSeq": 2,
+              "errorCode": null
+            },
+            {
+              "stepId": 6,
+              "pipelineInstanceId": 1,
+              "stepCode": "PROCESS_COMPUTE",
+              "stageCode": "COMPUTE",
+              "rowsProcessed": 600,
+              "totalRowsHint": null,
+              "lastHeartbeatAt": null,
+              "stepStatus": "SUCCESS",
+              "runSeq": 2,
+              "errorCode": null
+            },
+            {
+              "stepId": 5,
+              "pipelineInstanceId": 1,
+              "stepCode": "PROCESS_PREPARE",
+              "stageCode": "PREPARE",
+              "rowsProcessed": null,
+              "totalRowsHint": null,
+              "lastHeartbeatAt": null,
+              "stepStatus": "SUCCESS",
+              "runSeq": 2,
+              "errorCode": null
+            },
+            {
+              "stepId": 7,
+              "pipelineInstanceId": 1,
+              "stepCode": "PROCESS_VALIDATE",
+              "stageCode": "VALIDATE",
+              "rowsProcessed": 600,
+              "totalRowsHint": null,
+              "lastHeartbeatAt": null,
+              "stepStatus": "SUCCESS",
+              "runSeq": 2,
+              "errorCode": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "tenantId": "e2e-bulk-cedd0cdbd2de4a5885c12ed0951facc3",
+      "generatedAt": "2026-10-26T06:10:22.370812Z",
+      "pipelines": [
+        {
+          "pipelineInstanceId": 1,
+          "fileId": null,
+          "fileName": null,
+          "runStatus": "SUCCESS",
+          "currentStage": "FEEDBACK",
+          "systemPipelineCode": "PROCESS",
+          "systemPipelineVersion": 1,
+          "stageGraphAvailable": true,
+          "stageCodes": [
+            "PREPARE",
+            "COMPUTE",
+            "VALIDATE",
+            "COMMIT",
+            "FEEDBACK"
+          ],
+          "steps": [
+            {
+              "stepId": 8,
+              "pipelineInstanceId": 1,
+              "stepCode": "PROCESS_COMMIT",
+              "stageCode": "COMMIT",
+              "rowsProcessed": 600,
+              "totalRowsHint": null,
+              "lastHeartbeatAt": null,
+              "stepStatus": "SUCCESS",
+              "runSeq": 2,
+              "errorCode": null
+            },
+            {
+              "stepId": 6,
+              "pipelineInstanceId": 1,
+              "stepCode": "PROCESS_COMPUTE",
+              "stageCode": "COMPUTE",
+              "rowsProcessed": 600,
+              "totalRowsHint": null,
+              "lastHeartbeatAt": null,
+              "stepStatus": "SUCCESS",
+              "runSeq": 2,
+              "errorCode": null
+            },
+            {
+              "stepId": 9,
+              "pipelineInstanceId": 1,
+              "stepCode": "PROCESS_FEEDBACK",
+              "stageCode": "FEEDBACK",
+              "rowsProcessed": 600,
+              "totalRowsHint": null,
+              "lastHeartbeatAt": null,
+              "stepStatus": "SUCCESS",
+              "runSeq": 1,
+              "errorCode": null
+            },
+            {
+              "stepId": 5,
+              "pipelineInstanceId": 1,
+              "stepCode": "PROCESS_PREPARE",
+              "stageCode": "PREPARE",
+              "rowsProcessed": null,
+              "totalRowsHint": null,
+              "lastHeartbeatAt": null,
+              "stepStatus": "SUCCESS",
+              "runSeq": 2,
+              "errorCode": null
+            },
+            {
+              "stepId": 7,
+              "pipelineInstanceId": 1,
+              "stepCode": "PROCESS_VALIDATE",
+              "stageCode": "VALIDATE",
+              "rowsProcessed": 600,
+              "totalRowsHint": null,
+              "lastHeartbeatAt": null,
+              "stepStatus": "SUCCESS",
+              "runSeq": 2,
+              "errorCode": null
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "periodicGets": 0,
+  "cleanup": {
+    "definitions": 0,
+    "nodes": 0,
+    "edges": 0,
+    "versions": 0,
+    "runs": 0,
+    "nodeRuns": 0,
+    "requests": 0,
+    "jobInstances": 0,
+    "terminalEvents": 0,
+    "terminalReceipts": 0,
+    "terminalDedupKeys": 0,
+    "calendars": 0,
+    "batchDays": 0,
+    "dayCursors": 0,
+    "dayAudits": 0,
+    "catchupControls": 0,
+    "catchupEvents": 0,
+    "tenants": 0,
+    "configurationRevisions": 0,
+    "operationAudits": 0,
+    "credentialAccounts": 0,
+    "jobDefinitions": 0,
+    "instances": 0,
+    "partitions": 0,
+    "tasks": 0,
+    "stepInstances": 0,
+    "executionLogs": 0,
+    "workerReports": 0,
+    "jobEvents": 0,
+    "workerRegistry": 0,
+    "processStagingRows": 0,
+    "processGenerations": 0,
+    "processBusinessTables": 0,
+    "processPauseFunctions": 0,
+    "processPipelines": 0,
+    "processSteps": 0,
+    "processCheckpoints": 0,
+    "idempotencyRows": 0,
+    "lateApprovalNotifications": 0,
+    "usageRows": 0,
+    "deadLetters": 0,
+    "finalExecutionLogs": 0,
+    "finalJobDedupKeys": 0,
+    "alertRows": 0,
+    "remainingEventDeliveries": 0,
+    "remainingEventRetries": 0,
+    "remainingEventKeys": 0,
+    "remainingEvents": 0,
+    "remainingAssets": 0,
+    "tenantTableRows": 0,
+    "businessTenantTableRows": 0
+  },
+  "validation": {
+    "status": "passed",
+    "tests": 1,
+    "retries": 0,
+    "cleanupCounters": 51,
+    "backendTargetedTests": 24,
+    "backendTargetedLog": "/private/tmp/wdi-process-job-count-green-2.log",
+    "scope": "local real PROCESS sqlTransformCompute dual database COMMIT interruption and recovery; not production or external dispatch acceptance",
+    "runnerExitCode": 0,
+    "isolatedDatabasesRemoved": true,
+    "processDatabaseResidue": 0,
+    "screenshotsVisuallyChecked": true
+  },
+  "sourceSha256": {
+    "e2e/fixtures/runtime-progress/fixture.ts": "42eb9bf566fbcccb15d739254352a4ef0cd20e09652d1ae93b191e359bc562f5",
+    "e2e/fixtures/runtime-progress/processWorkerPipelineFixture.ts": "c16b64ad04b2dc7271135931534ae0b6fc45c6574f59dafd496dd257ca5645b1",
+    "e2e/process-worker-pipeline-progress-real.spec.ts": "bbac9026cad0aaf3dfd216f282cda011abd67bb6667d679106b9abfa0f1c5eea",
+    "../file-batch-system/batch-console-api/src/main/resources/mapper/FilePipelineStepRunMapper.xml": "52062c4c890cb7138e07710a978d65ffc0879d0293674fdba97abc3df6b10711",
+    "../file-batch-system/batch-console-api/src/main/resources/mapper/JobExecutionMapper.xml": "2d1f3dba05da0ffe70e65b3957d7dcdd0d711d823f0f25d99abd5d2e9131e288",
+    "../file-batch-system/batch-console-api/src/main/resources/mapper/PipelineProgressFragments.xml": "530a286280f63dec12da657f765a3f8ac8fa90c7e6577cada92d1eaaad2998ef"
+  }
+}

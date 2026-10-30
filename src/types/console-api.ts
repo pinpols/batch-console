@@ -7,6 +7,7 @@ import type { components } from '@/types/api.generated'
 export type ConsoleJobDefinitionResponse = components['schemas']['ConsoleJobDefinitionResponse']
 export type CodeNameOption = components['schemas']['CodeNameOption']
 export type ConsoleJobInstanceResponse = components['schemas']['ConsoleJobInstanceResponse']
+export type ConsoleJobExecutionLogResponse = components['schemas']['ConsoleJobExecutionLogResponse']
 export type ConsoleJobStepInstanceResponse = components['schemas']['ConsoleJobStepInstanceResponse']
 export type ConsoleOpsSummaryResponse = components['schemas']['ConsoleOpsSummaryResponse']
 export type ConsoleApprovalCommandResponse = components['schemas']['ConsoleApprovalCommandResponse']
@@ -18,6 +19,10 @@ export type ConsoleFileRecordDetailResponse =
 export type ConsoleFileSummaryResponse = components['schemas']['ConsoleFileSummaryResponse']
 export type ConsoleFileArrivalGroupResponse =
   components['schemas']['ConsoleFileArrivalGroupResponse']
+export type ConsoleFileUploadBindingRequest =
+  components['schemas']['ConsoleFileUploadBindingRequest']
+export type ConsoleFileUploadTargetResponse =
+  components['schemas']['ConsoleFileUploadTargetResponse']
 export type ConsoleWorkerRegistryResponse = components['schemas']['ConsoleWorkerRegistryResponse']
 export type MyWorkerResponse = components['schemas']['MyWorkerResponse']
 export type ConsoleOperationAuditResponse = components['schemas']['ConsoleOperationAuditResponse']
@@ -44,6 +49,8 @@ export type ConsoleSchedulerQueueSnapshot = components['schemas']['ConsoleSchedu
 export type ConsoleAlertEventResponse = components['schemas']['ConsoleAlertEventResponse']
 export type ConsoleBatchDayResponse = components['schemas']['ConsoleBatchDayResponse']
 export type ConsoleBatchDayWindowResponse = components['schemas']['ConsoleBatchDayWindowResponse']
+export type ConsoleScheduledOccurrenceResponse =
+  components['schemas']['ConsoleScheduledOccurrenceResponse']
 export type ConsoleBatchDaySummaryResponse = components['schemas']['ConsoleBatchDaySummaryResponse']
 export type ConsoleBatchDayCatchUpResponse = components['schemas']['ConsoleBatchDayCatchUpResponse']
 export type BatchDayCatchUpRequest = components['schemas']['BatchDayCatchUpRequest']
@@ -103,6 +110,8 @@ export type ConsoleSecretVersionResponse = components['schemas']['ConsoleSecretV
 
 // --- 文件操作 ---
 export type ConsoleFileOperationResponse = components['schemas']['ConsoleFileOperationResponse']
+export type ConsoleFilePresignUploadResponse =
+  components['schemas']['ConsoleFilePresignUploadResponse']
 export type ConsolePresignDownloadResponse = components['schemas']['ConsolePresignDownloadResponse']
 
 // --- 死信与重试 ---

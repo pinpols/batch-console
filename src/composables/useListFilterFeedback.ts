@@ -47,15 +47,18 @@ export function useListFilterFeedback(remoteLoading: Ref<boolean>) {
   }
 
   function runSearch(fn: () => void | Promise<void>) {
-    return runWith(fn, i18n.global.t('commonAction.listUpdatedByFilter'), Search, 'success')
+    const successMessage = i18n.global.t('commonAction.listUpdatedByFilter')
+    return runWith(fn, successMessage, Search, 'success')
   }
 
   function runReset(fn: () => void | Promise<void>) {
-    return runWith(fn, i18n.global.t('commonAction.filterReset'), RefreshLeft, 'info')
+    const successMessage = i18n.global.t('commonAction.filterReset')
+    return runWith(fn, successMessage, RefreshLeft, 'info')
   }
 
   function runRefresh(fn: () => void | Promise<void>) {
-    return runWith(fn, i18n.global.t('commonAction.refreshed'), Refresh, 'success')
+    const successMessage = i18n.global.t('commonAction.refreshed')
+    return runWith(fn, successMessage, Refresh, 'success')
   }
 
   return { filterBusy, tableBlocking, runSearch, runReset, runRefresh }

@@ -28,21 +28,21 @@
       </template>
 
       <el-table-column
-        prop="ruleCode"
-        :label="t('selfServicePanel.colRuleCode')"
+        prop="ruleName"
+        :label="t('notificationRulesTab.colName')"
         min-width="160"
         show-overflow-tooltip
       />
       <el-table-column
-        prop="eventType"
+        prop="eventTypes"
         :label="t('selfServicePanel.colEventType')"
         min-width="160"
         show-overflow-tooltip
       />
-      <el-table-column prop="severity" :label="t('selfServicePanel.colSeverity')" width="100">
+      <el-table-column prop="severityFilter" :label="t('selfServicePanel.colSeverity')" width="100">
         <template #default="{ row }">
-          <el-tag size="small" effect="plain" :type="severityType(row.severity)">
-            {{ row.severity ?? '—' }}
+          <el-tag size="small" effect="plain" :type="severityType(row.severityFilter)">
+            {{ row.severityFilter ?? '—' }}
           </el-tag>
         </template>
       </el-table-column>
@@ -68,7 +68,7 @@
 </template>
 
 <script setup lang="ts">
-  import { ref } from 'vue'
+  import { ref, watch } from 'vue'
   import { useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
   import { ArrowUpRight as TopRight } from '@lucide/vue'
@@ -76,16 +76,10 @@
   import EmptyState from '@/components/common/EmptyState.vue'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
+  import { useTenantRequestScope } from '@/composables/useTenantRequestScope'
   import { listNotificationRules } from '@/api/notifications'
 
-  type Severity = 'INFO' | 'WARNING' | 'CRITICAL' | string
-
-  interface NotificationRule {
-    ruleCode?: string
-    eventType?: string
-    severity?: Severity
-    enabled?: boolean
-  }
+  type NotificationRule = Awaited<ReturnType<typeof listNotificationRules>>[number]
 
   const { t } = useI18n({ useScope: 'global' })
   const router = useRouter()
@@ -101,17 +95,20 @@
     return 'info'
   }
 
+  const loadScope = useTenantRequestScope()
   async function load() {
-    if (!tenant.tenantId) return
+    const request = loadScope.begin()
+    if (!request.tenantId) return
     loading.value = true
     error.value = false
     try {
-      const list = (await listNotificationRules(tenant.tenantId)) as NotificationRule[]
+      const list = await listNotificationRules(request.tenantId)
+      if (!loadScope.isCurrent(request)) return
       rules.value = list ?? []
     } catch {
-      error.value = true
+      if (loadScope.isCurrent(request)) error.value = true
     } finally {
-      loading.value = false
+      if (loadScope.isCurrent(request)) loading.value = false
     }
   }
 
@@ -119,6 +116,15 @@
     void router.push({ path: '/system/notifications' })
   }
 
+  watch(
+    () => tenant.tenantId,
+    () => {
+      rules.value = []
+      error.value = false
+      loading.value = false
+    },
+    { flush: 'sync' },
+  )
   useTenantReload(load)
 </script>
 

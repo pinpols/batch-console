@@ -20,7 +20,6 @@ test.describe('notification channel CRUD (通知渠道增删改)', () => {
     await page.getByRole('button', { name: /^新增/ }).first().click()
     await expect(page.getByText('新增渠道').first()).toBeVisible()
     // 等 dialog 进场动画完(transitionend 等不来,直接等 dialog 内容稳定)
-    await page.waitForTimeout(400)
     await page.getByLabel('编码').fill(uniqueCode)
     await page.getByLabel('名称').fill('E2E 测试渠道')
     // 填写"类型"下拉(在 dialog 内,避免多个 select 干扰)。用 force 跳过 stability 检测,
@@ -73,7 +72,6 @@ test.describe('subscription rule CRUD (订阅规则增删改)', () => {
   test('新增规则对话框可打开并填写', async ({ page }) => {
     await page.getByRole('button', { name: /^新增/ }).first().click()
     await expect(page.getByText('新增规则').first()).toBeVisible()
-    await page.waitForTimeout(400)
     await page.getByLabel('名称').fill('E2E 测试规则')
     await page.getByLabel('事件类型').fill('JOB_FAILED,JOB_TIMEOUT')
     await expect(page.getByRole('button', { name: '保存' })).toBeVisible()
@@ -93,7 +91,6 @@ test.describe('webhook CRUD (Webhook 增删改)', () => {
   test('新增 Webhook 对话框可打开并填写', async ({ page }) => {
     await page.getByRole('button', { name: /^新增/ }).first().click()
     await expect(page.getByText(/新增 Webhook/).first()).toBeVisible()
-    await page.waitForTimeout(400)
     // dialog 内的 URL input(避免与外面"搜索 URL / 事件类型"列表筛选 input 重名)
     await page.locator('.el-dialog:visible, .el-drawer:visible').getByLabel('URL').first().fill('https://example.com/hook')
     await page.locator('.el-dialog:visible, .el-drawer:visible').getByLabel('事件类型').first().fill('JOB_COMPLETED')

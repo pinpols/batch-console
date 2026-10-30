@@ -30,6 +30,7 @@
   import { computed, ref, watch } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
+  import { usePermission } from '@/composables/usePermission'
   import {
     Share2 as Connection,
     KeyRound as Key,
@@ -44,6 +45,7 @@
   import ConfigSyncLogsTab from './components/ConfigSyncLogsTab.vue'
 
   const { t } = useI18n({ useScope: 'global' })
+  const { canManageSystem } = usePermission()
   const route = useRoute()
   const router = useRouter()
 
@@ -54,32 +56,46 @@
     validTabs.has(route.query.tab as ConfigTab) ? (route.query.tab as ConfigTab) : 'logs',
   )
 
-  const navItems = computed(() => [
-    {
-      key: 'logs' as const,
-      icon: List,
-      title: t('configManagement.tabLogs'),
-    },
-    {
-      key: 'secrets' as const,
-      icon: Key,
-      title: t('configManagement.tabSecrets'),
-    },
-    {
-      key: 'sync' as const,
-      icon: Connection,
-      title: t('configManagement.tabSync'),
-    },
-    {
-      key: 'syncLogs' as const,
-      icon: Operation,
-      title: t('configManagement.tabSyncLogs'),
-    },
-  ])
+  const navItems = computed(() =>
+    [
+      {
+        key: 'logs' as const,
+        icon: List,
+        title: t('configManagement.tabLogs'),
+      },
+      {
+        key: 'secrets' as const,
+        icon: Key,
+        title: t('configManagement.tabSecrets'),
+      },
+      {
+        key: 'sync' as const,
+        icon: Connection,
+        title: t('configManagement.tabSync'),
+      },
+      {
+        key: 'syncLogs' as const,
+        icon: Operation,
+        title: t('configManagement.tabSyncLogs'),
+      },
+    ].filter((item) => canManageSystem.value || (item.key !== 'sync' && item.key !== 'syncLogs')),
+  )
 
-  watch(activeTab, (tab) => {
-    void router.replace({ query: { ...route.query, tab } })
-  })
+  watch(
+    navItems,
+    (items) => {
+      if (!items.some((item) => item.key === activeTab.value)) activeTab.value = 'logs'
+    },
+    { immediate: true },
+  )
+
+  watch(
+    activeTab,
+    (tab) => {
+      void router.replace({ query: { ...route.query, tab } })
+    },
+    { immediate: true },
+  )
 </script>
 
 <style scoped>

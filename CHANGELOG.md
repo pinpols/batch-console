@@ -1,9 +1,190 @@
 # Changelog
 
+## 2026-10-27 静态制品错误状态
+
+- 缺失脚本、字体、图片、版本文件、图标和清单保留404，普通前端路径继续history回退；固定名称缓存及原文档/API状态保留。
+- 新增独立真实Nginx HTTP回归，镜像取自Dockerfile，不连接真实业务后端；首红、验证和限制见[当日记录](../file-batch-system/docs/review/frontend-backend-bug-review-2026-10-27.md#frontend-review-静态制品错误状态续审)。
+
+## 2026-10-27 作业包与向导异步边界
+
+- 导入与打包新建绑定输入、租户、操作者、权限及页面会话，旧响应不关闭新面板或用新编码导航；等待期间重复提交受守卫保护。
+- 向导元数据和关联读取按范围丢弃旧响应，切换后清空旧选择；异步步骤校验不重复推进或沿用旧上下文。
+- 打包向导、JSON导入/导出入口及路由与服务端ROLE_ADMIN边界对齐；租户管理员的普通作业新建和编辑保留。
+
+## 2026-10-27 配置复制源目标保护
+
+- 更换源租户时移除重合目标并保留其余选择；提交前再次拒绝源目标重合，避免把去除环境字段的复制包回写源租户。
+- 前后端同步中文/英文提示及请求集合元素约束说明；非法请求在写入前拒绝。
+
+## 2026-10-27 租户复制预览与提交上下文
+
+- 复制、Overlay和作业矩阵预览随输入、账号和面板代次失效，迟到读取不会覆盖新结果或解除新预览的忙碌状态。
+- 正式复制与试运行在校验期间即锁定本次操作；关闭、编辑或写权限变化后不续发旧请求，按服务端HTTP方法策略，维护期间同时阻止这些POST预览和复制。
+
+## 2026-10-27 租户初始化异步写入边界
+
+- 初始化校验绑定当前面板、目标、输入、账号及写权限，关闭、切换或进入维护后停止旧操作；校验期间重复点击不再产生多笔写请求。
+- 旧请求回包不关闭重新打开的面板或覆盖新上下文结果，首次已打开及目标变更场景同步目标展示。
+
+## 2026-10-26 租户初始化目标与结果修复
+
+- 手写配置 JSON 不再覆盖界面选择的目标租户、执行模式及试运行开关，保留配置类型过滤。
+- 初始化按真实逐租户、逐条目结果提示；失败或部分失败保留面板，只有完整成功才显示完成并关闭。
+
+## 2026-10-26 配置同步原命令恢复
+
+- 配置导入超时或响应丢失后保留原请求身份，刷新后可按原环境、租户和输入恢复；未知时阻止新导入，重试沿用原键，不保存配置正文。
+- 增加原同步查询与回执核对，未找到或 RUNNING 不推断未执行；已确认终态后释放对应记录，部署/API地址、账号和租户相互隔离。
+
+## 2026-10-26 配置同步快照与审计上下文修复
+
+- 配置同步确认固定完整环境、目标及 JSON，输入或操作上下文改变后重新确认；旧预览和导出不恢复过期结果，导出与预览乱序保持最新操作展示。
+- 同步审计清空租户及快速往返时立即失效旧列表和核对响应，保留真实业务结果与待确认状态。
+
+## 2026-10-26 配置发布与补跑审批上下文修复
+
+- 配置创建、回滚和提交审批固定原租户及操作代次，异步校验、二次原因输入、租户或权限变化后不续传旧操作；迟到读取不恢复旧详情、依赖或列表。
+- 补跑审批列表只展示当前租户和最新页响应，旧请求失败不清空新结果，切换租户关闭旧详情。
+
+## 2026-10-26 Atomic 参数预设校验
+
+- 列表和映射参数按 JSON 数组或对象保存；格式错误及 Shell 参数中的明确凭据语法会在提交前提示。服务端同时校验字段类型，拒绝无效配置入库。
+
+## 2026-10-26 实例与告警操作上下文修复
+
+- 作业实例列表、详情与告警操作绑定确认时的租户、目标和操作者；切换后停止排队请求并忽略迟到结果，正常重试、取消和告警操作保持可用。
+- 告警查询切租户后使用当前范围，补全作业部分失败及演练终态分类，避免对终态显示取消操作。
+- Workflow 运行深链先解析筛选和分页，按定义编码查询时等待定义解析，避免首次错误查询全部 Workflow。
+
+## 2026-10-26 Outbox 重投范围与结果修复
+
+- Outbox 重投固定当前租户、操作者与写权限，确认和批量排队期间切换上下文会停止剩余发送；旧查询不覆盖新租户列表。仅管理员和租户管理员可写。
+- 人工重投允许 FAILED/GIVE_UP，以服务端实际 resetCount 计成功；并发发布导致零重置时显示失败，避免 HTTP 成功被误认为已重投。
+
+## 2026-10-26 分页、共享状态与设计器会话修复
+
+- 移动列表在加载中刷新可重新加载第一页；共享作业候选和导航徽章丢弃旧租户/旧请求结果，切租户不再被旧请求阻塞。
+- Workflow 设计器隔离旧详情及锁回包，切换新建清空元数据，离页释放锁并保护未保存内容；保存期间的新编辑保持未保存，新建成功保留当前草稿。验证见[续审记录](docs/reports/2026-10-26-frontend-bug-remediation.md#全工程续审第二批)。
+
+## 2026-10-26 前端异步状态与操作目标修复
+
+- 通知规则、Webhook、密钥和自助申请固定表单/确认时的租户；切换租户清理旧表单与列表，旧响应不覆盖当前结果。自助暂停/恢复只提供当前租户 Workflow，切换后需重新选择；共享作业搜索丢弃旧租户和旧关键词结果。
+- 维护状态拒绝旧版本回滚及同版本撤销已生效的计划维护，组件卸载后不接收轮询结果；修复自助通知订阅字段显示。
+- 配置包更换文件或重新上传时清除旧令牌/预览，上传、行修复和应用绑定文件身份，避免应用错误工作簿。详细证据见[本轮 Bug 记录](docs/reports/2026-10-26-frontend-bug-remediation.md)。
+
+## 2026-10-26 维护通知窗口说明
+
+- 维护设置说明固定服务编码的通知范围、Console 缺省范围、未知编码保留告警及有限截止时间；部署完成 Alertmanager 联动后生效，不改变服务启停和业务路由。同步中英文文案与维护设计说明。
+
+## 2026-10-26 能力对齐与运行观测补齐
+
+- 统一文档站对两份超长历史证据按完整块分卷，保留权威正文、原章节链接和前后卷／目录导航；工程标准采用标题搜索，正文继续完整可访问，既有体积预算和HTML禁用设置保持不变。修正执行日志两条原有章节导航引用，构建前加入分卷完整性回归。
+
+- 死信重放与批量选择仅向ADMIN开放，维护冻结时禁写；危险确认、表单提交及批量请求固定并复核当前租户／操作者，切换租户或写权限后丢弃旧表单，避免误用新租户提交旧死信ID。真实DISPATCH验收覆盖传输中断后的未知结果阻断、核实审批恢复，以及8 MiB文件／sidecar／回执一致性。
+- 死信页切换租户立即清除旧列表和详情，旧请求成功或失败晚到均不覆盖当前租户数据、错误和加载状态。
+
+- 补齐PROCESS成功阶段的实际计数展示：作业详情与Pipeline共用后端安全投影，COMMIT显示实际发布条数；真实0、未知及旧新尝试保持区分，不返回原始输出摘要。双库真实COMMIT中断恢复验证600条数据及页面进度正确，Atomic共用夹具回归独立通过。
+
+- 完整本地门禁发现并修复批次日重放父组件测试缺少维护状态依赖的问题；运行依赖升级markdown-it至15.0.3、锁定follow-redirects至1.16.2，同步许可证／SBOM，生产依赖审计恢复为0漏洞。修复公告见[follow-redirects](https://github.com/advisories/GHSA-q3jh-wrc6-jgq8)与[markdown-it](https://github.com/advisories/GHSA-gfr2-rv44-r23c)。
+
+- 修复列表“更多”菜单点击冒泡误打开行详情；作业批量重试／取消、详情重跑与移动端重跑／终止按后端 ADMIN 权限显示，并在确认后复核当前租户与写权限。
+
+- Workflow 节点及整轮重放入口按后端权限仅向平台管理员开放，确认后复核租户、运行与权限。详情中的执行／等待／失败节点来自完整冻结节点快照，保留多个并行位置，失败时不再误显示根运行的 END 游标；运行图默认适应画布，缩放工具继续可用。
+- Workflow 进度快照与推送携带根运行持久化的开始、结束时间，详情页随推送更新；同状态下补齐时间也会推送，未知时间保持为空。
+
+- 真实IMPORT文件链补齐Worker中断恢复与页面进度验收：原文件的固定六阶段、LOAD记录数及父Workflow图经完整快照推送更新。修复续跑成功后旧阶段仍显示运行中，以及托管上传对象被对账重复登记到默认租户的问题；本地真实浏览器验证600条数据不重不漏、对象仅一条登记，其他恢复与DAG组合仍按主实施矩阵推进。
+
+- Atomic 参数预设、OIDC 身份绑定、取证导出、Worker 已认领任务/终态子任务诊断、Workflow 定义版本差异和人工文件入站入口已接入现有页面；人工上传支持绑定文件组、业务日、必需文件和IMPORT模板，确认对象内容后才触发关联Workflow；Worker认领任务接口收窄为12字段白名单摘要，不返回租户ID、任务载荷、有效参数、心跳、结果或错误正文；操作范围与敏感信息展示按租户和角色约束。
+- 批次日重放页增加结果版本治理；Console 只返回版本元数据，不暴露原始载荷或内部存储引用，提升/拒绝动作记录操作审计。真实认证浏览器验收覆盖唯一 EFFECTIVE、归档、四角色、跨租户拒绝和零残留。
+- 新增readiness/Workflow容量持久等待安全查询，并接入调度快照页签；租户日统计留在运维总览，作业阶段、Workflow DAG与Pipeline进度留在各自详情/观测页。G07–G12及B01已完成各自本地真实认证浏览器与持久化验收，其中G12使用START→END控制图；真实文件Worker阶段和恢复继续按P01/P02验收。
+- 作业详情暂停/恢复通过真实 Worker 浏览器闭环：管理员可执行 RUNNING→PAUSED→RUNNING，租户管理员由后端拒绝，推送和持久状态一致；在途任务继续收尾。租户日统计表修复窄屏裁切，保留完整状态列并支持键盘聚焦横向滚动，动态标签有中英文缺省兜底。
+- Atomic 运行态面板通过真实 Worker HTTP、Console 反查及四角色本地验收；查询可用与禁用降级两种模式均通过，运行态仅返回脱敏后的有效门控，读取权限与角色一致。
+- 控制 DAG 真实验收覆盖 Workflow 暂停/恢复、全快照推送、冻结图与终态未执行节点；租户统计保留在运维总览，手工日期数据不冒充 Quartz 或当前业务日。
+
+## 2026-10-25 作业与 Workflow 时限策略配置
+
+- Workflow 定义列表新增根级监控策略入口，支持三类规则配置、只读权限、租户切换与过期响应保护，复用后端策略 API。
+- Job 监控策略允许 MANUAL 定义预先配置就绪规则；完成期限提供绝对钟点与相对窗口互斥选择，列表展示与保存按实际配置处理。独立手工运行没有资格依据时不判断迟到。
+- 同步生成 API 类型和用户说明；界面定向用例与类型检查已执行，整体自动解除、渠道恢复和最终联验仍按配对后端专项计划推进。
+
+## 2026-10-24 表达式与复合判断可读性
+
+- 拆分 10 个文件中已确认的嵌套业务转换，另在 14 个文件提取 18 处业务判断；合计 24 个不同源码文件。批量启动选择校验仍在权限及日期分支通过后计算，保留短路、异步顺序和调用次数。
+- 同步可读性文档和配对后端逐项清单；只做源码/AST 核对，未运行类型检查、构建或应用测试。
+
+## 2026-10-24 租户Pipeline定义退役
+
+- 移除旧Pipeline定义页面、路由重定向、CRUD/事件客户端和相应旧场景；系统固定阶段元数据与文件Pipeline运行观测继续保留。
+- 按后端OpenAPI重新生成类型，移除旧定义接口及运行响应中的旧定义ID；不提供旧入口兼容。
+
 ## [Unreleased]
 
+- 修复旧认证资料在退出、重新登录或租户往返后覆盖当前身份及清除新请求复用的问题；仅最新会话请求可更新资料，保留正常并发去重，认证/租户/权限关联 43 项通过。
+
+- 危险确认在租户、主体、权限或维护变化后失效；修复 Workflow 详情的旧确认/节点/预览、Worker 运维目标以及调度快照串用。相关 46 项定向回归通过。
+
+- 修复审批、分区及日历依赖等待在确认期间切换租户或实例后仍提交旧目标的问题；隔离旧列表回包，保留正常批量审批、分区重试及等待解除，新增 19 项交错与成功回归。
+
+- Atomic 节点配置中心支持在当前租户内保存、查询和复用参数预设；仅管理员角色可操作，敏感字段在前端提示并由后端校验拒绝。保存不会执行或发布工作流。
+
+- 批次日列表和窗口增加治理抽屉：补扫预览、历史缺口候选、六种合法治理动作及自动补扫暂停/恢复；按角色、租户、当前状态和原因约束操作，写后读回冻结状态。
+- 未确认治理命令在标签页按用户/租户/日历恢复，刷新后保留原幂等键；存储损坏、过期或不可用时阻止替代请求，迟到确认不删除新命令。
+
+- 修复SSE新连接反复申请一次性票据时复用短时幂等键、导致409的问题；每次发行新键，同次HTTP重试保留原键。Workflow原键重试语义保持；44个相关用例、真实票据刷新和批量回执联验通过，正向窗口WARN无UNKNOWN。
+
+- 控制面板新增租户业务日五层进度统计和状态分布，按计划投影覆盖决定计划分母是否完整；进度以完整快照推送为主，并防止迟到查询覆盖新推送。
+
+- Workflow运行详情与DAG查看页接入冻结执行图和完整快照推送，展示并行节点状态、当前步骤、分区进度与卡点；失联保留最后快照并补查，区分节点结束比例与成功计数。 Workflow响应同时保留节点状态并返回关联Job实例状态，READY节点可在关联作业运行时显示实时执行态而不改写Workflow模型；真实Atomic Worker浏览器子链路通过，Quartz计划仍待验。
+- 作业/Workflow运行详情补暂停和恢复操作，限制配置同步入口及运行敏感操作权限。
+
+- 修复 Workflow 调度列标题缺失，以及批量结果表注册列时空行探测触发不存在状态翻译的问题；批量发起已完成本地真实认证、失败项原键重试与刷新核对验证。
+
+- 工作流定义支持最多50项的独立批量发起、逐项结果和明确失败项重试；原请求身份按标签页/租户保存，未知结果须先核对，刷新和列表排序不生成替代键；预检单独操作。
+
+- Job 独立预检提示明确仅检查当前 Job 定义与必需参数，Workflow 日程和 DAG 不在本次预检范围；同步后端 OpenAPI 生成说明。
+
+- 配置同步 RUNNING 日志提供管理员“核对已提交结果”，仅读取服务端收据补录原审计；操作时固定租户/日志身份，阻止迟到刷新覆盖已核对结果。
+- 增加真实认证的配置同步、终态冷热历史与审计恢复浏览器场景，夹具按唯一租户清理并断言零残留；Vite 忽略测试输出，避免 trace HTML 触发开发页刷新。
+
+- 区间 Replay 的预览、提交和子 session 响应绑定当前日期/租户/操作身份，切换目标后旧结果不再覆盖页面；修复步骤列表分页变量自引用，并消除响应/缓存空值类型阻断。
+- 日期区间 Replay Operation 可下钻到每日 session 和 entry 明细；仅为未创建子运行的失败提交项显示重试入口，并要求填写原因。
+- 通知渠道表单在租户切换期间不会继续提交；租户列表迟到响应、同名渠道和删除确认竞态均由组件回归覆盖。
+
+- 终态恢复支持 PUSH 并区分服务接纳、设备失效与首次决定；手机 Job 通知固定链接租户和操作目标，忽略切换租户后的旧响应，避免确认弹窗期间将操作改派。
+
+- 通知管理和事件目录说明 Job SLA 告警使用告警中心通道；修正 Webhook 事件示例，同步后端订阅校验契约。
+
+- 终态通知恢复列表增加业务事件列，区分 Job 与 Workflow 通知；同步共享恢复接口的生成说明。
+
+- 通知管理新增终态投递恢复页：管理员核对接收端未处理后填写原因和凭证重投，冻结租户/原目标与请求身份，明确区分排队和投递完成，并可跳转关联审计。同步 OpenAPI 生成类型。
+
+- 配置同步日志在最终结果未确认时显示“结果尚未确认”，保留计划总数并隐藏暂存的成功/失败/跳过数；已完成日志继续显示实际统计，中英文文案同步。
+- Workflow 全量保存的生成请求类型要求 `expectedVersion`；补齐节点跳过原因的 OpenAPI 类型并修正 Trigger 动作 schema 引用，避免写入版本与运行原因在前后端契约中丢失。
+- 修复类型检查只读取空根项目的问题：显式检查应用 TS/Vue 和 Vite 配置，生产构建复用入口，并增加临时项目的范围正反例。补齐 Node 开发类型和依赖清单；已暴露的实际源码类型错误继续按整合计划修复。
+
+- 工作流与作业运行提示明确为请求已受理，资源可用后再创建运行；不再将异步排队误报为运行已创建，中英文文案同步。
+
+- 批量日 SKIP、REOPEN、SETTLE_EMPTY 的 API 契约明确要求操作原因；人工跳过是义务豁免，不表示作业成功。已重生成 OpenAPI 类型。
+- Bundle 创建、跨租户导入和 ConfigSync 导入现在按服务端逐租户结果及条目失败数判定业务成功；全失败、部分失败或响应计数不一致时保留表单/导入内容，不跳转或显示成功，并提示待检查租户。API 响应同步为 OpenAPI 生成类型；作业优先级编辑范围同步为 1–9。
+- 标签行保存/删除固定使用查询结果对应的租户与资源身份；筛选草稿变化时禁用旧行操作，且丢弃迟到查询响应，避免对另一资源执行写入。
+- Workflow 节点“跳过”操作只对 FAILED 节点显示，与后端管理服务准入条件一致。
+- 自助补偿入口限定为 JOB 实例补偿；实例候选按当前作业和业务日检索且必须选择，前端提交实例号，后端复核租户/作业/业务日并将真实实例 ID 绑定审批目标，拒绝无法解析或不匹配的目标。
+- API 拦截器仅对服务端明确标记的已完成幂等重放静默；自动幂等键请求收到 `STATE_CONFLICT` 时保留错误日志和用户提示。
+- Job 创建/编辑表单按后端 JobType 枚举展示，不再保留 `WORKFLOW` 包装作业类型或对应文案；Workflow 仍作为独立定义管理。
+- Trigger 运维列表、暂停/恢复动作及其 API 类型使用 Workflow Code，与 Trigger 管理接口保持一致。
 - 更新 2026 Q4 前端生产与开发依赖，重新生成锁文件、SBOM 和第三方许可证清单；保留直接依赖版本约束并通过依赖审计。
 - 作业定义列表新增触发模式和上游依赖展示/服务端分页筛选，新建表单可配置触发模式；修正调度类型提示把事件入口混为一谈的问题，并同步中英文案与后端 OpenAPI 生成类型。
+- Workflow Run 节点明细现在显示跳过原因类别或人工说明，旧运行会明确显示未记录原因。
+- Workflow 设计器 JOB 节点新增租户批次窗口选择，窗口作为节点级执行覆盖保存；受管单作业流程允许改窗口但不开放固定图结构编辑。
+- Workflow 定义列表展示独立定时启停状态并提供暂停/恢复操作；该控制只暂停 Quartz 定时触发，不禁用手动/API 运行，且不与 Workflow/Job 执行启用状态混用。
+- Workflow 定义列表新增调度设置对话框，可编辑类型、Cron/固定频率表达式、时区、触发模式、业务日历及依赖作业；依赖选项来自当前租户作业编码并保留历史值供清理，使用带版本号的 schedule-only API，避免全量替换 DAG。
+- Job 快速新建不再配置或写入 Job 调度，固定使用 MANUAL；Job 编辑不再暴露或提交旧调度字段，Job 详情将旧值标为兼容信息并引导到关联 Workflow 管理实际触发计划。
+- 从作业详情展示后端提供的固定 System Pipeline 阶段；移除可编辑 Pipeline 定义菜单及旧 `/jobs/pipelines` 路由，用户从作业定义查看系统阶段，历史 Workflow Pipeline 深链暂时按关联 Job 编码打开。
+- Workflow 定义列表新增显式顶层“运行”入口与业务日期选择，调用 Workflow ID 触发 API，成功后打开整体 Workflow Run；作业定义与工作流定义仍为分开的联动对象，Pipeline 阶段仅作为运行详情保留。
+- Workflow Run 详情支持展开 JOB 节点查看关联作业实例、分页分区状态和 Pipeline 阶段状态，并可继续打开完整作业实例或阶段观测；历史未关联节点与控制节点明确显示无作业实例。
+- 设计器中的历史 FILE_STEP 改为只读迁移/历史展示，不再加载租户 Pipeline 选项，不允许编辑或删除旧 Pipeline 关联；新建面板继续只提供 JOB/GATEWAY 等受支持节点。
+- 租户配置复制矩阵不再展示 Job-Pipeline 关联；同步移除后端响应字段并重新生成 API 类型，新的 Config Sync/Job Bundle 不再提供租户 Pipeline 定义作为可复制资源。
+- 配置包导入遇到旧 Pipeline sheet 时只显示阻断错误；移除已取消的参数迁移提示和 Pipeline 写入计数展示，并重新生成后端 API 类型。
 - 修复统一文档站搜索索引随后端历史设计稿增长而超出全量 CI 预算：带日期的设计稿保留页面和标题搜索，当前设计、API 与运维文档仍全文索引，不放宽既有体积上限。
 - 明确个人展示时区与平台业务时区的使用边界，在桌面和移动端提供说明、筛选器显示时区提示，并统一维护页更新时间的展示时区。
 - 维护模式支持计划开始时间：开始前展示公告与倒计时，到点后以服务端 `active` 状态统一触发路由降级、写请求拦截和重点写操作禁用；同步后端 OpenAPI 生成类型并补回归测试。
@@ -154,7 +335,7 @@
 
 ### Features
 
-- **ops:** Lane F worker fingerprint board (SDK Phase 5 / SDK-P5-3) ([#41](https://github.com/pinpols/batch-console/issues/41)) ([4d1c53b](https://github.com/pinpols/batch-console/commit/4d1c53b87cd5f4f05fd0267a637e798db06e912c))
+- **ops:** Lane F Worker 实例指纹看板 (SDK Phase 5 / SDK-P5-3) ([#41](https://github.com/pinpols/batch-console/issues/41)) ([4d1c53b](https://github.com/pinpols/batch-console/commit/4d1c53b87cd5f4f05fd0267a637e798db06e912c))
 - **security:** Lane G SensitiveFieldAlert 凭据警示组件 + 接入 atomic/custom task type 视图 ([#40](https://github.com/pinpols/batch-console/issues/40)) ([e45913f](https://github.com/pinpols/batch-console/commit/e45913fc99a35e87b77e50cc3f59d2e2b3581a6e))
 
 ## [0.1.6](https://github.com/pinpols/batch-console/compare/v0.1.5...v0.1.6) (2026-06-02)
@@ -167,9 +348,9 @@
 
 ### Bug Fixes
 
-- **ci:** frontend deploy HOST_PORT 8080 → 19080 ([#16](https://github.com/pinpols/batch-console/issues/16)) ([4836710](https://github.com/pinpols/batch-console/commit/4836710242096ec5a237edf591a88ace392b4d7d))
-- **deps:** update dependency element-plus to ^2.14.1 ([#31](https://github.com/pinpols/batch-console/issues/31)) ([b5c81a0](https://github.com/pinpols/batch-console/commit/b5c81a00b7fb313e11c772cf450aa51b510caaaa))
-- **deps:** update vue ecosystem ([#32](https://github.com/pinpols/batch-console/issues/32)) ([1d76b62](https://github.com/pinpols/batch-console/commit/1d76b6237c33ff9a909394c24225953ef92b40b3))
+- **ci:** 前端部署端口 HOST_PORT 从 8080 调整为 19080 ([#16](https://github.com/pinpols/batch-console/issues/16)) ([4836710](https://github.com/pinpols/batch-console/commit/4836710242096ec5a237edf591a88ace392b4d7d))
+- **deps:** 将 element-plus 依赖更新至 ^2.14.1 ([#31](https://github.com/pinpols/batch-console/issues/31)) ([b5c81a0](https://github.com/pinpols/batch-console/commit/b5c81a00b7fb313e11c772cf450aa51b510caaaa))
+- **deps:** 更新 Vue 生态依赖 ([#32](https://github.com/pinpols/batch-console/issues/32)) ([1d76b62](https://github.com/pinpols/batch-console/commit/1d76b6237c33ff9a909394c24225953ef92b40b3))
 - **layout:** 移除首次登录强制选租户弹窗 FirstTenantPicker ([#17](https://github.com/pinpols/batch-console/issues/17)) ([0d029c0](https://github.com/pinpols/batch-console/commit/0d029c05ec6c1cbb91a6ea443f30c59649068c07))
 - **security:** 租户/菜单/operator 权限硬化(去 default-tenant + 后端菜单 allowlist + mobile OPERATOR) ([#25](https://github.com/pinpols/batch-console/issues/25)) ([82b2510](https://github.com/pinpols/batch-console/commit/82b25100d805b7859cb7bd6b529483fdfe4c8bd4))
 - **ui:** tenant-package 导入向导大屏自适应(撑满高度 + 上传步骤垂直居中 + 放宽限宽) ([#21](https://github.com/pinpols/batch-console/issues/21)) ([d9ab142](https://github.com/pinpols/batch-console/commit/d9ab14251f293c1bfb8533fecb03d6581db65d12))
@@ -178,19 +359,19 @@
 
 ### Bug Fixes
 
-- **deps:** update element plus ([#13](https://github.com/pinpols/batch-console/issues/13)) ([38485a9](https://github.com/pinpols/batch-console/commit/38485a948ab95e1e8abaeb024cdde674784e555e))
+- **deps:** 更新 Element Plus ([#13](https://github.com/pinpols/batch-console/issues/13)) ([38485a9](https://github.com/pinpols/batch-console/commit/38485a948ab95e1e8abaeb024cdde674784e555e))
 
 ## [0.1.3](https://github.com/pinpols/batch-console/compare/v0.1.2...v0.1.3) (2026-05-22)
 
 ### Docs
 
-- **skill:** add branch-hygiene skill ([#8](https://github.com/pinpols/batch-console/issues/8)) ([9cb3cf3](https://github.com/pinpols/batch-console/commit/9cb3cf3a32dc71fa784dc6b457424745ae9605f3))
+- **skill:** 新增分支卫生 Skill ([#8](https://github.com/pinpols/batch-console/issues/8)) ([9cb3cf3](https://github.com/pinpols/batch-console/commit/9cb3cf3a32dc71fa784dc6b457424745ae9605f3))
 
 ## [0.1.2](https://github.com/pinpols/batch-console/compare/v0.1.1...v0.1.2) (2026-05-22)
 
 ### Docs
 
-- **ci:** add 2026-05-23 timing baseline + skip mechanism ([9877f35](https://github.com/pinpols/batch-console/commit/9877f354a14e2f29226ffe8a76f02168d79d53d3))
+- **ci:** 新增 2026-05-23 耗时基线和跳过机制 ([9877f35](https://github.com/pinpols/batch-console/commit/9877f354a14e2f29226ffe8a76f02168d79d53d3))
 - **runbook:** dev-workflow 加权限模型 / 谁能提代码 段 ([599f7b4](https://github.com/pinpols/batch-console/commit/599f7b4accc8d92c81956a4756f5efbae0ff0d93))
 
 ## [0.1.1](https://github.com/pinpols/batch-console/compare/v0.1.0...v0.1.1) (2026-05-22)
@@ -205,13 +386,13 @@
 - **auth:** D7 Stage B — 前端完全移除 localStorage token ([6405b5a](https://github.com/pinpols/batch-console/commit/6405b5adca46b0446407ad66f67f933edc638fdb))
 - batch-console 前端全量重构 ([dc0a335](https://github.com/pinpols/batch-console/commit/dc0a335091296b2189331b980c6fef824c060bed))
 - **config-sync:** 双栏对照重构(源 → 目标),修复"3 卡片视觉权重相等但语义不平等" ([da68071](https://github.com/pinpols/batch-console/commit/da680713110e804c25156bc7b21e46552e52a953))
-- **config:** add daily maintenance forms ([eba0c1c](https://github.com/pinpols/batch-console/commit/eba0c1cfad8d9435abb3634141bdd61824f04168))
+- **config:** 新增每日维护表单 ([eba0c1c](https://github.com/pinpols/batch-console/commit/eba0c1cfad8d9435abb3634141bdd61824f04168))
 - **console:** UI/UX 批量迭代 —— 错误 toast / 路由韧性 / 多业务页增强 ([4c65230](https://github.com/pinpols/batch-console/commit/4c652304094e5882556d60f74e5790b25ca0fbb5))
 - **cron:** 引 cronstrue + BE Quartz 预览,替换自实现解析 ([b1b0308](https://github.com/pinpols/batch-console/commit/b1b03081a1b154552ea6b0b6c329048289d7d674))
 - **definitions:** JobDefinition + WorkflowDefinition 详情抽屉加 Runs tab ([4ece3ef](https://github.com/pinpols/batch-console/commit/4ece3ef0819ff2fcb398d5499522a814dda5e03d))
 - **deploy:** docker + nginx 部署 + 内嵌文档 /docs auth_request 一键拉起 ([9a10964](https://github.com/pinpols/batch-console/commit/9a109643846704c483c4a028613d965a18eeb9b4))
-- enhance notification management and self-service panels ([2fb8c75](https://github.com/pinpols/batch-console/commit/2fb8c7577f5782f6135258e0c0224eefb85135ea))
-- enhance notification management and self-service panels ([9938410](https://github.com/pinpols/batch-console/commit/99384104f40e42f064fe12fe133f0715a549384b))
+- 增强通知管理和自助服务面板 ([2fb8c75](https://github.com/pinpols/batch-console/commit/2fb8c7577f5782f6135258e0c0224eefb85135ea))
+- 增强通知管理和自助服务面板 ([9938410](https://github.com/pinpols/batch-console/commit/99384104f40e42f064fe12fe133f0715a549384b))
 - **feedback:** 列表 toast 美化 + 7 处写操作补成功反馈 ([417d192](https://github.com/pinpols/batch-console/commit/417d19246dd09b17f2b4f21cfdc6ea884d210556))
 - **fe:** useAsyncAction 通用按钮防抖 composable + 8 业务页接入 ([687c5b8](https://github.com/pinpols/batch-console/commit/687c5b83d8344c9b9bfe19868afcec63603206ba))
 - **fe:** 拦截器 409 幂等重放静默,联动 L2 key 复用避免 toast 噪声 ([b6f92d5](https://github.com/pinpols/batch-console/commit/b6f92d5371132062fdf6daf34bc57e72d31d7ad2))
@@ -264,7 +445,7 @@
 - **maintenance:** 维护模式 banner / 降级页 / 503 拦截 + breakpoints token ([fe2165d](https://github.com/pinpols/batch-console/commit/fe2165dfc04325e62e04b6838badc843774ac209))
 - **meta-select:** 全站 30 处 enum 下拉统一中英双显风格 ([ad92eff](https://github.com/pinpols/batch-console/commit/ad92efff6b2a73a67e385ae12dcf8cc14a956759))
 - **mobile:** Liquid Glass lite + 全局 click 埋点委托 + 移动端体验打磨 ([fdae8f7](https://github.com/pinpols/batch-console/commit/fdae8f784992d77dc5f076e03622cb474b1d4726))
-- **mobile:** re-enable MCatchUp approve/reject buttons via unified approvals ([69b5377](https://github.com/pinpols/batch-console/commit/69b537722bd56f73da67f94f350226ff584b9341))
+- **mobile:** 通过统一审批流程恢复 MCatchUp 的批准/拒绝按钮 ([69b5377](https://github.com/pinpols/batch-console/commit/69b537722bd56f73da67f94f350226ff584b9341))
 - **mobile:** tab 徽章 + Job 详情 + 下拉刷新 + 骨架屏 + PWA ([2305737](https://github.com/pinpols/batch-console/commit/230573745066740eb875047a1c1f3989bdb16119))
 - **mobile:** 新增 /m/* 移动端独立路由（5 页） ([0aac893](https://github.com/pinpols/batch-console/commit/0aac8937527409df6b12de60ba264c629b9d5e3a))
 - **mobile:** 移动端 ⌘K palette + 搜索按钮 ([03b62b4](https://github.com/pinpols/batch-console/commit/03b62b43dfcfa1579de7e2e89dc43f10e59b9c7b))
@@ -272,7 +453,7 @@
 - **mobile:** 触底分页 + ID 一键复制 + 默认收起搜索 ([75194dc](https://github.com/pinpols/batch-console/commit/75194dc8cf2f76471e85d35032ee4a7f0e384bc8))
 - **mobile:** 账号面板加租户切换/主题切换 + 关键页自动刷新 ([fa5d2df](https://github.com/pinpols/batch-console/commit/fa5d2df55995a1a455592a6170034aa23dccb26d))
 - **mobile:** 重构 Tab Bar + 新增 Workers/Outbox/Logs + Step 钻取 + 批量 ack/retry ([d43fc06](https://github.com/pinpols/batch-console/commit/d43fc06817f7cb121850dc355d408aa4921e3106))
-- **monitor:** add traceId search to job-instance and workflow-run lists ([6ed04a7](https://github.com/pinpols/batch-console/commit/6ed04a7b78af761f2f868f8df895959ad0defd5d))
+- **monitor:** 为 JobInstance 和 WorkflowRun 列表增加 traceId 搜索 ([6ed04a7](https://github.com/pinpols/batch-console/commit/6ed04a7b78af761f2f868f8df895959ad0defd5d))
 - **monitor:** JobInstance 详情页改为 Dagster 风 tabs(概览/步骤/最近运行) ([732cb79](https://github.com/pinpols/batch-console/commit/732cb79d362a5323eb39f761b2375e86e8fc09b3))
 - **nav:** IA 重排到 6 组 + 新增 /runs 跨实体聚合页 ([b5aa1a9](https://github.com/pinpols/batch-console/commit/b5aa1a9dc545abc2da89e69700ab5cfc31d0bf6a))
 - **ops:** 3 个 ADR FE 落地 — dry-run / 跨日 DAG / 批次日重放 ([6448942](https://github.com/pinpols/batch-console/commit/6448942e21779c7541f119e828102eab5b9ecb0b))
@@ -489,7 +670,7 @@
 ### 端到端测试稳定化
 
 - E2E 通过率 82.3% → ~95%（320 → ~370 过 / 67 → ~19 挂）
-- 详细过程见 [docs/reports/2026-04-19-e2e测试报告.md](docs/reports/2026-04-19-e2e测试报告.md)
+- 详细过程见 [docs/reports/2026-04-19-e2e测试报告.md](docs/archive/2026-04-19-e2e测试报告.md)
 
 ### 后端真 bug 修复（对应 `file-batch-system` 仓）
 

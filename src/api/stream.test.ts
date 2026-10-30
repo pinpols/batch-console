@@ -62,7 +62,15 @@ vi.stubGlobal('EventSource', FakeEventSource)
 // 把 VITE_API_BASE_URL 设空,路径拼接简单化
 vi.stubEnv('VITE_API_BASE_URL', '')
 
-import { createLogStream, createSseStream, fetchStreamTicket } from './stream'
+import {
+  createLogStream,
+  createJobExecutionStream,
+  createPipelineProgressSnapshotStream,
+  createSseStream,
+  createWorkflowExecutionStream,
+  createDailyProgressStream,
+  fetchStreamTicket,
+} from './stream'
 import { post } from './client'
 
 const mockedPost = vi.mocked(post)
@@ -78,6 +86,19 @@ afterEach(() => {
 })
 
 describe('fetchStreamTicket', () => {
+  it('每次申请新票据使用独立幂等键，避免复用已消费的发行请求', async () => {
+    await fetchStreamTicket()
+    await fetchStreamTicket()
+
+    const first = mockedPost.mock.calls[0][2] as { headers?: Record<string, string> }
+    const second = mockedPost.mock.calls[1][2] as { headers?: Record<string, string> }
+    const firstKey = first.headers?.['Idempotency-Key']
+    const secondKey = second.headers?.['Idempotency-Key']
+    expect(firstKey).toBeTruthy()
+    expect(secondKey).toBeTruthy()
+    expect(secondKey).not.toBe(firstKey)
+  })
+
   it('POSTs to /api/console/auth/stream/ticket and returns ticket', async () => {
     const t = await fetchStreamTicket()
     expect(mockedPost).toHaveBeenCalledWith(
@@ -183,5 +204,144 @@ describe('createLogStream', () => {
       JSON.stringify({ data: { id: 42 } }),
     )
     expect(onMessage).toHaveBeenCalled()
+  })
+})
+
+describe('createWorkflowExecutionStream', () => {
+  it('uses the captured tenant and consumes only scoped full snapshots', async () => {
+    const handlers = { snapshot: vi.fn(), ready: vi.fn(), error: vi.fn(), reset: vi.fn() }
+    await createWorkflowExecutionStream(7, 'captured-tenant', handlers)
+    const es = FakeEventSource.instances[0]
+    expect(es.url).toContain('tenantId=captured-tenant')
+    es.emitNamed('ready', '{}')
+    es.emitNamed('heartbeat', '{}')
+    expect(handlers.ready).toHaveBeenCalledOnce()
+    expect(handlers.snapshot).not.toHaveBeenCalled()
+    const data = {
+      workflowRunId: 7,
+      tenantId: 'captured-tenant',
+      generatedAt: '2026-10-25T10:00:00Z',
+      nodes: [],
+      edges: [],
+    }
+    es.emitNamed('workflow-execution-progress', JSON.stringify({ data }))
+    expect(handlers.snapshot).toHaveBeenCalledWith(data)
+    es.emitNamed(
+      'workflow-execution-progress',
+      JSON.stringify({ data: { ...data, tenantId: 'other' } }),
+    )
+    expect(handlers.snapshot).toHaveBeenCalledOnce()
+    expect(handlers.error).toHaveBeenCalledOnce()
+    expect(es.closed).toBe(true)
+  })
+  it('reports malformed snapshots and explicit server errors as disconnected', async () => {
+    const handlers = { snapshot: vi.fn(), ready: vi.fn(), error: vi.fn(), reset: vi.fn() }
+    await createWorkflowExecutionStream(7, 'ta', handlers)
+    FakeEventSource.instances[0].emitNamed('workflow-execution-progress', '{')
+    expect(handlers.error).toHaveBeenCalledOnce()
+    expect(handlers.snapshot).not.toHaveBeenCalled()
+  })
+})
+
+describe('createDailyProgressStream', () => {
+  it('fixes date and tenant in the stream URL and rejects wrong-date snapshots', async () => {
+    const handlers = { ready: vi.fn(), snapshot: vi.fn(), error: vi.fn(), reset: vi.fn() }
+    await createDailyProgressStream('2040-04-05', 'daily-a', handlers)
+    const source = FakeEventSource.instances[0]
+    expect(source.url).toContain('bizDate=2040-04-05')
+    expect(source.url).toContain('tenantId=daily-a')
+    const data = {
+      bizDate: '2040-04-05',
+      tenantId: 'daily-a',
+      generatedAt: '2040-04-05T10:00:00Z',
+      counts: [],
+      coverage: { scheduledDefinitions: 0, uncoveredDefinitions: 0 },
+    }
+    source.emitNamed('daily-progress', JSON.stringify({ data }))
+    expect(handlers.snapshot).toHaveBeenCalledWith(data)
+    source.emitNamed('daily-progress', JSON.stringify({ data: { ...data, bizDate: '2040-04-06' } }))
+    expect(handlers.error).toHaveBeenCalledOnce()
+    expect(handlers.snapshot).toHaveBeenCalledOnce()
+    expect(source.closed).toBe(true)
+  })
+})
+
+describe('SSE production base URL', () => {
+  it.each(['pipeline', 'job', 'workflow', 'daily', 'domain', 'log'] as const)(
+    'keeps a root API base on the same origin for %s',
+    async (kind) => {
+      vi.stubEnv('VITE_API_BASE_URL', '/')
+      const handlers = { ready: vi.fn(), snapshot: vi.fn(), error: vi.fn(), reset: vi.fn() }
+      if (kind === 'pipeline') await createPipelineProgressSnapshotStream('7', 'ta', handlers)
+      if (kind === 'job') await createJobExecutionStream(42, 'ta', handlers)
+      if (kind === 'workflow') await createWorkflowExecutionStream(7, 'ta', handlers)
+      if (kind === 'daily') await createDailyProgressStream('2040-04-05', 'ta', handlers)
+      if (kind === 'domain') await createSseStream('workflow-runs', vi.fn())
+      if (kind === 'log') await createLogStream(7, vi.fn())
+      expect(FakeEventSource.instances[0].url).toMatch(/^\/api\/console\//)
+      vi.stubEnv('VITE_API_BASE_URL', '')
+    },
+  )
+  it('preserves an absolute API origin and path prefix with a trailing slash', async () => {
+    vi.stubEnv('VITE_API_BASE_URL', 'https://console.example.test/backend/')
+    await createWorkflowExecutionStream(7, 'ta', {
+      ready: vi.fn(),
+      snapshot: vi.fn(),
+      error: vi.fn(),
+      reset: vi.fn(),
+    })
+    expect(FakeEventSource.instances[0].url).toMatch(
+      /^https:\/\/console\.example\.test\/backend\/api\/console\/workflow-runs\/7\//,
+    )
+    vi.stubEnv('VITE_API_BASE_URL', '')
+  })
+})
+
+describe('createJobExecutionStream', () => {
+  it('fixes job/tenant scope and fails closed on wrong job snapshots', async () => {
+    const handlers = { ready: vi.fn(), snapshot: vi.fn(), error: vi.fn(), reset: vi.fn() }
+    await createJobExecutionStream(42, 'owned', handlers)
+    const es = FakeEventSource.instances[0]
+    expect(es.url).toContain('/job-instances/42/execution-progress/events')
+    expect(es.url).toContain('tenantId=owned')
+    const data = {
+      tenantId: 'owned',
+      jobInstanceId: 42,
+      generatedAt: '2026-10-25T10:00:00Z',
+      counts: [],
+      stages: [],
+    }
+    es.emitNamed('job-execution-progress', JSON.stringify({ data }))
+    expect(handlers.snapshot).toHaveBeenCalledWith(data)
+    es.emitNamed('job-execution-progress', JSON.stringify({ data: { ...data, jobInstanceId: 43 } }))
+    expect(handlers.error).toHaveBeenCalledOnce()
+    expect(handlers.snapshot).toHaveBeenCalledOnce()
+    expect(es.closed).toBe(true)
+  })
+})
+
+describe('createPipelineProgressSnapshotStream', () => {
+  it('fixes the complete sorted range and rejects incomplete or cross-tenant snapshots', async () => {
+    const handlers = { ready: vi.fn(), snapshot: vi.fn(), error: vi.fn(), reset: vi.fn() }
+    await createPipelineProgressSnapshotStream('7,9', 'owned', handlers)
+    const source = FakeEventSource.instances[0]
+    expect(source.url).toContain('pipelineInstanceIds=7%2C9')
+    const data = {
+      tenantId: 'owned',
+      generatedAt: '2026-10-25T10:00:00Z',
+      pipelines: [
+        { pipelineInstanceId: 9, stageCodes: [], steps: [] },
+        { pipelineInstanceId: 7, stageCodes: [], steps: [] },
+      ],
+    }
+    source.emitNamed('pipeline-progress-snapshot', JSON.stringify({ data }))
+    expect(handlers.snapshot).toHaveBeenCalledWith(data)
+    source.emitNamed(
+      'pipeline-progress-snapshot',
+      JSON.stringify({ data: { ...data, pipelines: data.pipelines.slice(0, 1) } }),
+    )
+    expect(handlers.error).toHaveBeenCalledOnce()
+    expect(handlers.snapshot).toHaveBeenCalledOnce()
+    expect(source.closed).toBe(true)
   })
 })

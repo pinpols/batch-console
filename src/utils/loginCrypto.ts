@@ -41,10 +41,9 @@ async function fetchPublicKey(): Promise<LoginPublicKeyResponse | null> {
   }
   try {
     const resp = await fetchLoginPublicKey()
-    sessionStorage.setItem(
-      CACHE_KEY,
-      JSON.stringify({ fetchedAt: Date.now(), payload: resp } satisfies CachedKey),
-    )
+    const cachedKey: CachedKey = { fetchedAt: Date.now(), payload: resp }
+    const serializedCachedKey = JSON.stringify(cachedKey)
+    sessionStorage.setItem(CACHE_KEY, serializedCachedKey)
     return resp
   } catch {
     return null
@@ -52,7 +51,8 @@ async function fetchPublicKey(): Promise<LoginPublicKeyResponse | null> {
 }
 
 function pemToArrayBuffer(pem: string): ArrayBuffer {
-  const b64 = pem.replace(/-----[^-]+-----/g, '').replace(/\s/g, '')
+  const pemBody = pem.replace(/-----[^-]+-----/g, '')
+  const b64 = pemBody.replace(/\s/g, '')
   const bin = atob(b64)
   const buf = new Uint8Array(bin.length)
   for (let i = 0; i < bin.length; i += 1) buf[i] = bin.charCodeAt(i)
@@ -77,9 +77,10 @@ export async function encryptLoginBody(
     return null
   }
   try {
+    const publicKeyBytes = pemToArrayBuffer(pub.publicKey)
     const rsaKey = await window.crypto.subtle.importKey(
       'spki',
-      pemToArrayBuffer(pub.publicKey),
+      publicKeyBytes,
       { name: 'RSA-OAEP', hash: 'SHA-256' },
       false,
       ['encrypt'],
@@ -91,10 +92,12 @@ export async function encryptLoginBody(
     const wrappedKey = await window.crypto.subtle.encrypt({ name: 'RSA-OAEP' }, rsaKey, aesKeyRaw)
     const iv = window.crypto.getRandomValues(new Uint8Array(12))
     const enc = new TextEncoder()
+    const serializedPlaintext = JSON.stringify(plaintext)
+    const encodedPlaintext = enc.encode(serializedPlaintext)
     const ciphertext = await window.crypto.subtle.encrypt(
       { name: 'AES-GCM', iv },
       aesKey,
-      enc.encode(JSON.stringify(plaintext)),
+      encodedPlaintext,
     )
     return {
       encryptedKey: bufToBase64(wrappedKey),

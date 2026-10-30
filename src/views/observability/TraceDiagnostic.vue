@@ -112,7 +112,7 @@
             <div class="trace-domain__body">
               <div v-if="d.rows.length > 0" class="trace-table-wrap">
                 <el-table
-                  :ref="(el) => setTableRef(d.domain, el)"
+                  :ref="(el: unknown) => setTableRef(d.domain, el)"
                   :data="d.rows"
                   stripe
                   size="small"
@@ -196,8 +196,10 @@
       window.setTimeout(() => domains.forEach((n) => tableRefs.get(n)?.doLayout?.()), 160)
     })
   }
-  function onCollapseChange(names: string | string[]) {
-    relayoutTables(Array.isArray(names) ? names : [names])
+  function onCollapseChange(names: string | number | Array<string | number>) {
+    const domainNames = Array.isArray(names) ? names : [names]
+    const normalizedDomainNames = domainNames.map(String)
+    relayoutTables(normalizedDomainNames)
   }
 
   interface DomainColumn {
@@ -244,7 +246,10 @@
   )
 
   function hasCellValue(value: unknown): boolean {
-    return value !== null && value !== undefined && String(value).trim() !== ''
+    if (value === null || value === undefined) return false
+    const valueText = String(value)
+    const trimmedValue = valueText.trim()
+    return trimmedValue !== ''
   }
 
   function formatCell(value: unknown): string {
@@ -465,11 +470,9 @@
       ElMessage.warning(t('traceDiagnostic.externalPlatformNotConfigured', { service }))
       return
     }
-    if (
-      (base.protocol !== 'http:' && base.protocol !== 'https:') ||
-      base.username ||
-      base.password
-    ) {
+    const hasUnsupportedProtocol = base.protocol !== 'http:' && base.protocol !== 'https:'
+    const diagnosticUrlIsUnsafe = hasUnsupportedProtocol || base.username || base.password
+    if (diagnosticUrlIsUnsafe) {
       ElMessage.warning(t('traceDiagnostic.externalPlatformNotConfigured', { service }))
       return
     }

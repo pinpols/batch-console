@@ -26,6 +26,16 @@ export interface WorkflowRunQuery {
 }
 
 export const instanceApi = {
+  pause: (instanceId: number, tenantId: string) =>
+    post<InstanceActionResponse>(`/api/console/instances/${instanceId}/pause`, undefined, {
+      params: { tenantId },
+    }),
+
+  resume: (instanceId: number, tenantId: string) =>
+    post<InstanceActionResponse>(`/api/console/instances/${instanceId}/resume`, undefined, {
+      params: { tenantId },
+    }),
+
   list: (query: InstanceQuery) => queryJobInstances(query),
 
   detail: (instanceId: number, tenantId: string) =>
@@ -54,6 +64,8 @@ export const instanceApi = {
   },
 
   workflowRuns: async (query: WorkflowRunQuery) => {
+    const runStatus = query.runStatus?.trim()
+    const traceId = query.traceId?.trim()
     const pr = await get<PageResponse<ConsoleWorkflowRunResponse>>(
       '/api/console/queries/workflow-runs',
       {
@@ -63,8 +75,8 @@ export const instanceApi = {
         ...(query.workflowDefinitionId != null
           ? { workflowDefinitionId: query.workflowDefinitionId }
           : {}),
-        ...(query.runStatus?.trim() ? { runStatus: query.runStatus.trim() } : {}),
-        ...(query.traceId?.trim() ? { traceId: query.traceId.trim() } : {}),
+        ...(runStatus ? { runStatus } : {}),
+        ...(traceId ? { traceId } : {}),
       },
     )
     return {

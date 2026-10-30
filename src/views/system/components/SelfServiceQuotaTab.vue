@@ -65,7 +65,7 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, ref } from 'vue'
+  import { computed, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
   import { useRouter } from 'vue-router'
@@ -80,6 +80,7 @@
   const { t } = useI18n({ useScope: 'global' })
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
+  import { useTenantRequestScope } from '@/composables/useTenantRequestScope'
   import JsonPreview from '@/components/common/JsonPreview.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
   import { fmtClockTime } from '@/utils/datetime'
@@ -106,7 +107,8 @@
   const hasUsageData = computed(() => !isEmptyPayload(usage.value))
 
   function formatNow() {
-    return fmtClockTime(new Date())
+    const currentTime = new Date()
+    return fmtClockTime(currentTime)
   }
 
   function isEmptyPayload(payload: unknown) {
@@ -118,31 +120,43 @@
     return Object.keys(obj).length === 0
   }
 
+  const quotaScope = useTenantRequestScope()
   async function loadQuota(showToast = false) {
+    const request = quotaScope.begin()
+    if (!request.tenantId) return
     loadingQuota.value = true
     try {
-      quota.value = await getTenantQuota(tenant.tenantId)
+      const data = await getTenantQuota(request.tenantId)
+      if (!quotaScope.isCurrent(request)) return
+      quota.value = data
       quotaLoadedAt.value = formatNow()
       if (showToast) ElMessage.success(t('selfServiceQuotaTab.refreshSuccess'))
     } catch {
+      if (!quotaScope.isCurrent(request)) return
       quota.value = null
       if (showToast) ElMessage.error(t('selfServiceQuotaTab.refreshFailed'))
     } finally {
-      loadingQuota.value = false
+      if (quotaScope.isCurrent(request)) loadingQuota.value = false
     }
   }
 
+  const usageScope = useTenantRequestScope()
   async function loadUsage(showToast = false) {
+    const request = usageScope.begin()
+    if (!request.tenantId) return
     loadingUsage.value = true
     try {
-      usage.value = await getTenantUsage(tenant.tenantId)
+      const data = await getTenantUsage(request.tenantId)
+      if (!usageScope.isCurrent(request)) return
+      usage.value = data
       usageLoadedAt.value = formatNow()
       if (showToast) ElMessage.success(t('selfServiceQuotaTab.refreshSuccess'))
     } catch {
+      if (!usageScope.isCurrent(request)) return
       usage.value = null
       if (showToast) ElMessage.error(t('selfServiceQuotaTab.refreshFailed'))
     } finally {
-      loadingUsage.value = false
+      if (usageScope.isCurrent(request)) loadingUsage.value = false
     }
   }
 
@@ -154,6 +168,18 @@
     void loadUsage(true)
   }
 
+  watch(
+    () => tenant.tenantId,
+    () => {
+      quota.value = null
+      usage.value = null
+      quotaLoadedAt.value = ''
+      usageLoadedAt.value = ''
+      loadingQuota.value = false
+      loadingUsage.value = false
+    },
+    { flush: 'sync' },
+  )
   useTenantReload(() => {
     void loadQuota()
     void loadUsage()

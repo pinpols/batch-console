@@ -14,8 +14,11 @@
         >
           {{ t('monitor.detailRefresh') }}
         </el-button>
+        <el-button v-if="lifecycleAction" :loading="lifecycleLoading" @click="changeLifecycle">
+          {{ t(`runControl.${lifecycleAction}`) }}
+        </el-button>
         <el-button
-          v-if="row && canCancelInstance(row.instanceStatus)"
+          v-if="canWriteSystem && row && canCancelInstance(row.instanceStatus)"
           type="danger"
           :disabled="writesFrozen"
           :loading="cancelLoading"
@@ -27,7 +30,7 @@
               : t('monitor.detailCancel')
           }}
         </el-button>
-        <el-button v-if="row" :loading="diagnosisLoading" @click="runDiagnosis">
+        <el-button v-if="row && canManageSystem" :loading="diagnosisLoading" @click="runDiagnosis">
           {{ t('monitor.detailDiagnose') }}
         </el-button>
         <el-button v-if="canManageSystem" @click="router.push('/ops/diagnostic')">
@@ -35,7 +38,7 @@
         </el-button>
         <el-button v-if="row" @click="goLogs">{{ t('monitor.detailGoLogs') }}</el-button>
         <el-button
-          v-if="row && isTerminal"
+          v-if="canWriteSystem && row && isTerminal"
           type="warning"
           :disabled="writesFrozen"
           :loading="rerunLoading"
@@ -44,7 +47,7 @@
           {{ t('monitor.detailRerunBtn') }}
         </el-button>
         <el-tooltip
-          v-if="row && isTerminal"
+          v-if="canWriteSystem && row && isTerminal"
           :disabled="canRetryFailedPartitions"
           :content="t('monitor.detailRetryFailedPartitionsDisabled')"
           placement="bottom"
@@ -60,7 +63,7 @@
           </span>
         </el-tooltip>
         <el-button
-          v-if="row && canTerminateInstance(row.instanceStatus)"
+          v-if="canWriteSystem && row && canTerminateInstance(row.instanceStatus)"
           type="danger"
           plain
           :disabled="writesFrozen"
@@ -126,6 +129,8 @@
         :description="t('jobInstanceDetail.metricQueueDescription')"
       />
     </div>
+
+    <JobExecutionPanel v-if="row" :job-id="instanceId" @snapshot="acceptExecutionProgress" />
 
     <el-tabs v-if="row" v-model="activeTab" class="detail-tabs">
       <!-- Tab 1: 概览 -->
@@ -236,11 +241,7 @@
               <el-button link type="primary" @click="loadSteps">{{ t('common.retry') }}</el-button>
             </template>
           </el-alert>
-          <div
-            v-else-if="!stepsTableView && stepsLoading && !orderedSteps.length"
-            v-loading="true"
-            class="steps-loading"
-          />
+          <div v-else-if="showInitialStepsLoading" v-loading="true" class="steps-loading" />
           <el-timeline v-else-if="!stepsTableView && orderedSteps.length" class="steps-timeline">
             <el-timeline-item
               v-for="step in orderedSteps"
@@ -451,6 +452,7 @@
   import { confirmDanger } from '@/composables/useDangerConfirm'
   import { showCreateSuccess } from '@/composables/useCreateSuccess'
   import { usePermission } from '@/composables/usePermission'
+  import { runLifecycleAction } from '@/utils/runControls'
   import { useWriteAvailability } from '@/composables/useWriteAvailability'
   import { diagnoseJobInstance } from '@/api/clusterDiagnostic'
   import { instanceApi } from '@/api/instance'
@@ -459,8 +461,14 @@
     canTerminateInstance,
     resolveInstanceCancelOutcome,
   } from '@/utils/instanceAction'
-  import { createLogStream } from '@/api/stream'
+  import JobExecutionPanel from '@/components/job/JobExecutionPanel.vue'
+  import type { JobExecutionProgress } from '@/api/jobProgress'
+  import type { DeepReadonly } from 'vue'
   import { useTenantStore } from '@/stores/tenant'
+  import { useTenantReload } from '@/composables/useTenantReload'
+  import { useTenantRequestScope } from '@/composables/useTenantRequestScope'
+  import { useAuthStore } from '@/stores/auth'
+  import { TERMINAL_INSTANCE_STATUSES } from './jobInstanceBulk'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import PrintButton from '@/components/common/PrintButton.vue'
@@ -478,11 +486,21 @@
   const route = useRoute()
   const router = useRouter()
   const tenant = useTenantStore()
-  const { canManageSystem } = usePermission()
+  const auth = useAuthStore()
+  const mainScope = useTenantRequestScope()
+  const stepsScope = useTenantRequestScope()
+  const recentScope = useTenantRequestScope()
+  const actionScope = useTenantRequestScope()
+  const diagnosisScope = useTenantRequestScope()
+  const { canManageSystem, canWriteSystem } = usePermission()
+  const lifecycleAction = computed(() =>
+    runLifecycleAction(row.value?.instanceStatus, canWriteSystem.value),
+  )
   const { writesFrozen, ensureWriteAvailable } = useWriteAvailability()
   const loading = ref(false)
   const rerunLoading = ref(false)
   const cancelLoading = ref(false)
+  const lifecycleLoading = ref(false)
   const terminateLoading = ref(false)
   const diagnosisLoading = ref(false)
   const retryFailedPartitionsLoading = ref(false)
@@ -492,7 +510,7 @@
 
   // 终态实例不能取消/终止(BE 会 409 STATE_CONFLICT「cannot transition from FAILED/SUCCESS...」)——
   // 按钮禁用,避免用户点了"没反应"(重跑不受此限,失败实例可重跑)。
-  const TERMINAL_STATUSES = ['SUCCESS', 'FAILED', 'CANCELLED', 'CANCELED', 'TERMINATED']
+  const TERMINAL_STATUSES = TERMINAL_INSTANCE_STATUSES
   const isTerminal = computed(() => TERMINAL_STATUSES.includes(row.value?.instanceStatus ?? ''))
   const RETRY_FAILED_PARTITION_STATUSES = ['FAILED', 'PARTIAL_FAILED', 'ERROR']
   const canRetryFailedPartitions = computed(() =>
@@ -508,10 +526,14 @@
     [...stepsRows.value].sort((a, b) => {
       const aStart = Date.parse(a.startedAt)
       const bStart = Date.parse(b.startedAt)
-      if (Number.isFinite(aStart) && Number.isFinite(bStart) && aStart !== bStart)
-        return aStart - bStart
+      const bothStartTimesAreValid = Number.isFinite(aStart) && Number.isFinite(bStart)
+      const startTimesCanDetermineOrder = bothStartTimesAreValid && aStart !== bStart
+      if (startTimesCanDetermineOrder) return aStart - bStart
       return a.id - b.id
     }),
+  )
+  const showInitialStepsLoading = computed(
+    () => !stepsTableView.value && stepsLoading.value && !orderedSteps.value.length,
   )
   const stepsLoaded = ref(false)
   const recentLoading = ref(false)
@@ -544,9 +566,9 @@
   function stepDuration(step: ConsoleJobStepInstanceResponse): string {
     const start = Date.parse(step.startedAt)
     const finish = Date.parse(step.finishedAt)
-    return Number.isFinite(start) && Number.isFinite(finish) && finish >= start
-      ? fmtDuration(finish - start)
-      : ''
+    const hasValidDurationRange =
+      Number.isFinite(start) && Number.isFinite(finish) && finish >= start
+    return hasValidDurationRange ? fmtDuration(finish - start) : ''
   }
 
   const taskOptions = computed(() =>
@@ -576,42 +598,55 @@
 
   // 切到 heartbeat tab 时,确保 steps 已加载(taskOptions 依赖它)
   watch(activeTab, async (tab) => {
-    if (tab === 'heartbeat' && !stepsLoaded.value && !stepsLoading.value) {
+    const heartbeatStepsNeedLoading =
+      tab === 'heartbeat' && !stepsLoaded.value && !stepsLoading.value
+    if (heartbeatStepsNeedLoading) {
       await loadSteps()
     }
   })
 
   async function loadSteps() {
     if (!row.value || !Number.isFinite(instanceId.value)) return
+    const scope = stepsScope.begin()
+    const targetId = instanceId.value
+    const isCurrent = () => stepsScope.isCurrent(scope) && instanceId.value === targetId
     stepsLoading.value = true
     stepsLoadError.value = false
     try {
-      stepsRows.value = await instanceApi.partitions(instanceId.value, tenant.tenantId)
+      const result = await instanceApi.partitions(targetId, scope.tenantId)
+      if (!isCurrent()) return
+      stepsRows.value = result
       stepsLoaded.value = true
     } catch {
+      if (!isCurrent()) return
       stepsRows.value = []
       stepsLoadError.value = true
     } finally {
-      stepsLoading.value = false
+      if (isCurrent()) stepsLoading.value = false
     }
   }
 
   async function loadRecent() {
     if (!row.value?.jobCode) return
+    const scope = recentScope.begin()
+    const targetId = instanceId.value
+    const jobCode = row.value.jobCode
+    const isCurrent = () => recentScope.isCurrent(scope) && instanceId.value === targetId
     recentLoading.value = true
     try {
       const page = await instanceApi.list({
-        tenantId: tenant.tenantId,
-        jobCode: row.value.jobCode,
+        tenantId: scope.tenantId,
+        jobCode,
         page: 1,
         pageSize: 10,
       })
+      if (!isCurrent()) return
       recentRows.value = page.records ?? []
       recentLoaded.value = true
     } catch {
-      recentRows.value = []
+      if (isCurrent()) recentRows.value = []
     } finally {
-      recentLoading.value = false
+      if (isCurrent()) recentLoading.value = false
     }
   }
 
@@ -627,6 +662,20 @@
     return `${row.value.jobCode} · ${row.value.bizDate || '—'} · ${row.value.instanceNo}`
   })
 
+  let loadSequence = 0
+  let progressRevision = 0
+  function acceptExecutionProgress(data: DeepReadonly<JobExecutionProgress>) {
+    if (data.tenantId !== tenant.tenantId || data.jobInstanceId !== instanceId.value) return
+    progressRevision++
+    const current = row.value
+    if (current && current.id === data.jobInstanceId)
+      row.value = {
+        ...current,
+        instanceStatus: data.instanceStatus,
+        startedAt: data.startedAt ?? '',
+        finishedAt: data.finishedAt ?? '',
+      }
+  }
   let activeLoadKey: string | null = null
   let activeLoadPromise: Promise<void> | null = null
 
@@ -635,14 +684,31 @@
     const loadKey = `${tenant.tenantId}:${instanceId.value}`
     if (activeLoadKey === loadKey && activeLoadPromise) return activeLoadPromise
 
+    const sequence = ++loadSequence
+    const scope = mainScope.begin()
+    const revision = progressRevision
+    const current = () =>
+      mainScope.isCurrent(scope) &&
+      sequence === loadSequence &&
+      loadKey === `${tenant.tenantId}:${instanceId.value}`
     const request = (async () => {
       loading.value = true
       try {
-        row.value = await instanceApi.detail(instanceId.value, tenant.tenantId)
+        const result = await instanceApi.detail(instanceId.value, tenant.tenantId)
+        if (current())
+          row.value =
+            revision === progressRevision || !row.value
+              ? result
+              : {
+                  ...result,
+                  instanceStatus: row.value.instanceStatus,
+                  startedAt: row.value.startedAt,
+                  finishedAt: row.value.finishedAt,
+                }
       } catch {
-        row.value = null
+        if (current()) row.value = null
       } finally {
-        loading.value = false
+        if (current()) loading.value = false
         if (activeLoadKey === loadKey) {
           activeLoadKey = null
           activeLoadPromise = null
@@ -663,10 +729,28 @@
     router.push({ path: '/observability/trace', query: t ? { traceId: t } : {} })
   }
 
+  /** 危险确认、原因输入和响应均绑定当时的租户、实例及操作者。 */
+  function captureInstanceAction(target: ConsoleJobInstanceResponse) {
+    const scope = actionScope.begin()
+    const operator = auth.userInfo?.username ?? auth.userInfo?.userId
+    const isCurrentTarget = () =>
+      actionScope.isCurrent(scope) &&
+      instanceId.value === target.id &&
+      row.value?.id === target.id &&
+      (auth.userInfo?.username ?? auth.userInfo?.userId) === operator
+    return {
+      tenantId: scope.tenantId,
+      isCurrentTarget,
+      isCurrent: () => isCurrentTarget() && canWriteSystem.value,
+    }
+  }
+
   async function confirmRerun() {
+    if (!canWriteSystem.value) return
     if (!ensureWriteAvailable()) return
     const r = row.value
     if (!r) return
+    const action = captureInstanceAction(r)
     try {
       await confirmDanger({
         verb: t('monitor.rerunConfirmVerb'),
@@ -677,9 +761,11 @@
     } catch {
       return
     }
+    if (!action.isCurrent() || !isTerminal.value) return
     rerunLoading.value = true
     try {
-      await instanceApi.retry(r.instanceNo, tenant.tenantId, r.jobCode, r.bizDate)
+      await instanceApi.retry(r.instanceNo, action.tenantId, r.jobCode, r.bizDate)
+      if (!action.isCurrent()) return
       // rerun 产生的是新实例;给用户两个明确动作:看新实例 / 留在当前
       showCreateSuccess({
         title: t('monitor.rerunSuccessTitle'),
@@ -696,25 +782,32 @@
         secondary: { label: t('monitor.rerunStay'), onClick: () => load() },
       })
     } finally {
-      rerunLoading.value = false
+      if (action.isCurrentTarget()) rerunLoading.value = false
     }
   }
 
   async function runDiagnosis() {
-    if (!Number.isFinite(instanceId.value)) return
+    if (!Number.isFinite(instanceId.value) || !tenant.tenantId) return
+    const scope = diagnosisScope.begin()
+    const targetId = instanceId.value
+    const isCurrent = () => diagnosisScope.isCurrent(scope) && instanceId.value === targetId
     diagnosisLoading.value = true
     try {
-      diagnosisResult.value = await diagnoseJobInstance(instanceId.value, tenant.tenantId)
+      const result = await diagnoseJobInstance(targetId, scope.tenantId)
+      if (!isCurrent()) return
+      diagnosisResult.value = result
       diagnosisDrawerOpen.value = true
     } finally {
-      diagnosisLoading.value = false
+      if (isCurrent()) diagnosisLoading.value = false
     }
   }
 
   async function confirmRetryFailedPartitions() {
+    if (!canWriteSystem.value) return
     if (!ensureWriteAvailable()) return
     const r = row.value
     if (!r) return
+    const action = captureInstanceAction(r)
     try {
       await confirmDanger({
         verb: t('monitor.detailRetryFailedPartitions'),
@@ -725,21 +818,48 @@
     } catch {
       return
     }
+    if (!action.isCurrent() || !canRetryFailedPartitions.value) return
     retryFailedPartitionsLoading.value = true
     try {
-      diagnosisResult.value = await instanceApi.retryFailedPartitions(r.id, tenant.tenantId)
+      const result = await instanceApi.retryFailedPartitions(r.id, action.tenantId)
+      if (!action.isCurrent()) return
+      diagnosisResult.value = result
       diagnosisDrawerOpen.value = true
       ElMessage.success(t('monitor.detailRetryFailedPartitionsOk'))
       await Promise.all([load(), loadSteps()])
     } finally {
-      retryFailedPartitionsLoading.value = false
+      if (action.isCurrentTarget()) retryFailedPartitionsLoading.value = false
+    }
+  }
+
+  async function changeLifecycle() {
+    const action = lifecycleAction.value
+    const target = row.value
+    if (!action || !target || !canWriteSystem.value) return
+    const context = captureInstanceAction(target)
+    try {
+      await confirmDanger({
+        verb: t(`runControl.${action}`),
+        target: target.instanceNo,
+        consequence: t(`runControl.${action}Hint`),
+      })
+      if (!context.isCurrent() || action !== lifecycleAction.value) return
+      lifecycleLoading.value = true
+      await instanceApi[action](target.id, context.tenantId)
+      if (context.isCurrent()) await load()
+    } catch {
+      /* 取消或接口错误由确认框/统一拦截器处理。 */
+    } finally {
+      if (context.isCurrentTarget()) lifecycleLoading.value = false
     }
   }
 
   async function confirmCancel() {
+    if (!canWriteSystem.value) return
     if (!ensureWriteAvailable()) return
     const r = row.value
     if (!r) return
+    const action = captureInstanceAction(r)
     const isRunning = r.instanceStatus === 'RUNNING'
     try {
       await confirmDanger({
@@ -756,9 +876,11 @@
     } catch {
       return
     }
+    if (!action.isCurrent() || !canCancelInstance(row.value?.instanceStatus ?? '')) return
     cancelLoading.value = true
     try {
-      const result = await instanceApi.cancel(r.id, tenant.tenantId)
+      const result = await instanceApi.cancel(r.id, action.tenantId)
+      if (!action.isCurrent()) return
       const outcome = resolveInstanceCancelOutcome(result.status)
       if (outcome === 'requested') {
         ElMessage.success(
@@ -776,14 +898,16 @@
       }
       await load()
     } finally {
-      cancelLoading.value = false
+      if (action.isCurrentTarget()) cancelLoading.value = false
     }
   }
 
   async function confirmTerminate() {
+    if (!canWriteSystem.value) return
     if (!ensureWriteAvailable()) return
     const r = row.value
     if (!r) return
+    const action = captureInstanceAction(r)
     try {
       await confirmDanger({
         verb: t('monitor.terminateVerb'),
@@ -794,108 +918,72 @@
     } catch {
       return
     }
+    if (!action.isCurrent() || !canTerminateInstance(row.value?.instanceStatus ?? '')) return
     terminateLoading.value = true
     try {
-      await instanceApi.terminate(r.id, tenant.tenantId)
+      await instanceApi.terminate(r.id, action.tenantId)
+      if (!action.isCurrent()) return
       ElMessage.success(t('monitor.terminateSuccess', { no: r.instanceNo }))
       await load()
     } finally {
-      terminateLoading.value = false
+      if (action.isCurrentTarget()) terminateLoading.value = false
     }
   }
 
-  let sse: EventSource | null = null
-  let reloadTimer: ReturnType<typeof setTimeout> | null = null
-  let reopenTimer: ReturnType<typeof setTimeout> | null = null
-  let streamGen = 0
-  let streamRetries = 0
-  const MAX_SSE_RETRIES = 5
-
-  function clearReopenTimer() {
-    if (reopenTimer) {
-      clearTimeout(reopenTimer)
-      reopenTimer = null
-    }
+  function reloadInstanceScope() {
+    const targetTenantId = tenant.tenantId
+    const targetInstanceId = instanceId.value
+    row.value = null
+    progressRevision = 0
+    // 切到不同实例时,steps/recent 数据要重新拉,但只在当前 tab 触发,避免无谓请求
+    stepsLoaded.value = false
+    recentLoaded.value = false
+    stepsRows.value = []
+    recentRows.value = []
+    // load() reject 不应升级为 unhandled rejection;失败时也尝试拉 tab 数据(其中
+    // load 内部已 toast 提示,这里只静默 catch)。
+    load()
+      .then(() => {
+        if (tenant.tenantId !== targetTenantId || instanceId.value !== targetInstanceId) return
+        if (activeTab.value === 'steps') void loadSteps()
+        else if (activeTab.value === 'recent') void loadRecent()
+      })
+      .catch(() => {
+        /* 已在 load() 内 toast 提示,无需重复 */
+      })
   }
-
-  function closeStream() {
-    streamGen++
-    clearReopenTimer()
-    if (sse) {
-      sse.close()
-      sse = null
-    }
-    if (reloadTimer) {
-      clearTimeout(reloadTimer)
-      reloadTimer = null
-    }
-  }
-
-  function scheduleReload() {
-    if (reloadTimer) return
-    reloadTimer = setTimeout(() => {
-      reloadTimer = null
-      load()
-    }, 400)
-  }
-
-  function scheduleReopen(capturedGen: number) {
-    if (capturedGen !== streamGen) return
-    if (streamRetries >= MAX_SSE_RETRIES) return
-    clearReopenTimer()
-    const delay = Math.min(30_000, 1_000 * 2 ** streamRetries)
-    streamRetries += 1
-    reopenTimer = setTimeout(() => {
-      reopenTimer = null
-      void openStream()
-    }, delay)
-  }
-
-  async function openStream() {
-    closeStream()
-    if (!Number.isFinite(instanceId.value) || !tenant.tenantId) return
-    const my = streamGen
-    try {
-      const es = await createLogStream(
-        instanceId.value,
-        () => scheduleReload(),
-        () => scheduleReopen(my),
-      )
-      if (my !== streamGen) {
-        es.close()
-        return
-      }
-      sse = es
-      streamRetries = 0
-    } catch {
-      scheduleReopen(my)
-    }
-  }
-
   watch(
     [instanceId, () => tenant.tenantId],
     () => {
-      // 切到不同实例时,steps/recent 数据要重新拉,但只在当前 tab 触发,避免无谓请求
-      stepsLoaded.value = false
-      recentLoaded.value = false
+      loadSequence += 1
+      mainScope.begin()
+      stepsScope.begin()
+      recentScope.begin()
+      actionScope.begin()
+      diagnosisScope.begin()
+      activeLoadKey = null
+      activeLoadPromise = null
+      row.value = null
       stepsRows.value = []
       recentRows.value = []
-      // load() reject 不应升级为 unhandled rejection;失败时也尝试拉 tab 数据(其中
-      // load 内部已 toast 提示,这里只静默 catch)。
-      load()
-        .then(() => {
-          if (activeTab.value === 'steps') void loadSteps()
-          else if (activeTab.value === 'recent') void loadRecent()
-        })
-        .catch(() => {
-          /* 已在 load() 内 toast 提示,无需重复 */
-        })
-      void openStream()
+      stepsLoaded.value = false
+      recentLoaded.value = false
+      loading.value = false
+      stepsLoading.value = false
+      recentLoading.value = false
+      rerunLoading.value = false
+      cancelLoading.value = false
+      lifecycleLoading.value = false
+      terminateLoading.value = false
+      retryFailedPartitionsLoading.value = false
+      diagnosisLoading.value = false
+      diagnosisDrawerOpen.value = false
+      diagnosisResult.value = null
     },
-    { immediate: true },
+    { flush: 'sync' },
   )
-
-  onBeforeUnmount(closeStream)
+  watch(instanceId, reloadInstanceScope)
+  useTenantReload(reloadInstanceScope)
 
   /**
    * 详情页快捷键(oncall 高频):
@@ -906,11 +994,14 @@
    * 在 input/textarea/contenteditable 内不触发,避免吞输入。
    */
   function onKey(e: KeyboardEvent) {
-    if (e.metaKey || e.ctrlKey || e.altKey) return
+    const hasShortcutModifier = e.metaKey || e.ctrlKey || e.altKey
+    if (hasShortcutModifier) return
     const tgt = e.target as HTMLElement | null
     if (tgt) {
       const tag = tgt.tagName
-      if (tag === 'INPUT' || tag === 'TEXTAREA' || tgt.isContentEditable) return
+      const eventTargetsEditableContent =
+        tag === 'INPUT' || tag === 'TEXTAREA' || tgt.isContentEditable
+      if (eventTargetsEditableContent) return
     }
     if (e.key === 'r' || e.key === 'R') {
       if (row.value?.instanceStatus === 'FAILED') {
@@ -932,229 +1023,4 @@
   onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
 </script>
 
-<style scoped>
-  .detail-grid {
-    display: grid;
-    grid-template-columns: repeat(6, minmax(0, 1fr));
-    gap: 10px;
-    margin-bottom: var(--space-md);
-  }
-
-  .detail-grid :deep(.metric-card) {
-    min-height: 82px;
-    border-radius: var(--radius-content);
-  }
-
-  .detail-grid :deep(.metric-card .el-card__body) {
-    padding: 11px 12px 10px;
-  }
-
-  .detail-grid :deep(.metric-card__label) {
-    margin-bottom: 5px;
-    font-size: 12px;
-  }
-
-  .detail-grid :deep(.metric-card__value) {
-    font-size: 18px;
-  }
-
-  .detail-grid :deep(.metric-card__value--long) {
-    font-size: 14px;
-  }
-
-  .detail-grid :deep(.metric-card__description) {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .detail-descriptions :deep(.el-descriptions__label) {
-    width: 132px;
-    color: var(--color-text-secondary);
-    font-weight: 500;
-  }
-
-  .detail-descriptions :deep(.el-descriptions__content) {
-    min-width: 0;
-    word-break: break-word;
-  }
-
-  .detail-table-wrap {
-    width: 100%;
-    overflow-x: auto;
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-content);
-    background: var(--color-bg-card);
-  }
-
-  .steps-section-header,
-  .steps-section-header__actions,
-  .step-event__heading,
-  .step-event__meta {
-    display: flex;
-    align-items: center;
-    gap: var(--space-sm);
-  }
-
-  .steps-section-header {
-    justify-content: space-between;
-    width: 100%;
-    min-width: 0;
-  }
-
-  .steps-section-header__actions {
-    flex-wrap: wrap;
-  }
-
-  .steps-timeline {
-    max-width: 58rem;
-    padding-top: var(--space-sm);
-  }
-
-  .steps-loading {
-    min-height: 8rem;
-  }
-
-  .step-event {
-    display: grid;
-    gap: var(--space-xs);
-    min-width: 0;
-    padding: 0 0 var(--space-md);
-    border-bottom: 1px solid var(--color-border-light);
-  }
-
-  .steps-timeline :deep(.el-timeline-item:last-child .step-event) {
-    border-bottom: 0;
-  }
-
-  .step-event__heading,
-  .step-event__meta {
-    flex-wrap: wrap;
-  }
-
-  .step-event__heading {
-    justify-content: space-between;
-  }
-
-  .step-event__meta {
-    color: var(--color-text-secondary);
-    font-size: var(--font-size-sm);
-  }
-
-  .step-event__meta > span + span::before {
-    content: '·';
-    margin-right: var(--space-xs);
-    color: var(--color-text-tertiary);
-  }
-
-  .step-event__error {
-    display: grid;
-    gap: var(--space-xs);
-    color: var(--color-danger);
-    overflow-wrap: anywhere;
-  }
-
-  .step-event__error code {
-    font-family: var(--font-family-mono);
-  }
-
-  .detail-table {
-    width: 100%;
-  }
-
-  .detail-table--steps {
-    min-width: 1080px;
-  }
-
-  .detail-table--recent {
-    min-width: 820px;
-  }
-
-  .detail-tabs :deep(.el-tabs__header) {
-    margin-bottom: var(--space-md);
-  }
-
-  .actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px 16px;
-    margin-top: var(--space-md);
-  }
-
-  .action-group {
-    display: inline-flex;
-    flex-wrap: wrap;
-    gap: var(--space-sm);
-  }
-
-  .action-group :deep(.el-button + .el-button) {
-    margin-left: 0;
-  }
-
-  .action-group--danger {
-    margin-left: auto;
-  }
-
-  .action-button-wrap {
-    display: inline-flex;
-  }
-
-  .mono {
-    margin: 0;
-    white-space: pre-wrap;
-    word-break: break-all;
-    font-size: 12px;
-  }
-
-  .hb-empty {
-    padding: 24px 0;
-  }
-
-  .hb-wrap {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-  }
-
-  .hb-picker {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    min-height: 40px;
-    padding-bottom: 14px;
-    border-bottom: 1px solid var(--color-border-subtle);
-  }
-
-  .hb-picker__label {
-    font-size: 12px;
-    color: var(--color-text-secondary);
-    white-space: nowrap;
-  }
-
-  .hb-picker__select {
-    width: min(440px, 100%);
-    max-width: 100%;
-  }
-
-  @media (max-width: 1100px) {
-    .detail-grid {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
-  }
-
-  @media (max-width: 720px) {
-    .detail-grid {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-    .action-group--danger {
-      margin-left: 0;
-    }
-
-    .hb-picker {
-      align-items: stretch;
-      flex-direction: column;
-      gap: 6px;
-    }
-  }
-</style>
+<style scoped src="./JobInstanceDetail.css"></style>

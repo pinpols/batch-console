@@ -5,7 +5,7 @@
       :model-value="modelValue"
       enum-key="triggerMode"
       :placeholder="t('jobConfigBasic.placeholderTriggerMode')"
-      @update:model-value="emit('update:modelValue', $event)"
+      @update:model-value="onUpdateModelValue"
     />
   </el-form-item>
 </template>
@@ -16,4 +16,8 @@
   defineProps<{ modelValue: string }>()
   const emit = defineEmits<{ 'update:modelValue': [value: string] }>()
   const { t } = useI18n()
+
+  function onUpdateModelValue(value: unknown) {
+    if (typeof value === 'string') emit('update:modelValue', value)
+  }
 </script>

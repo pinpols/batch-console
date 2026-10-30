@@ -51,22 +51,23 @@ function sendErrorKeyFor(error: unknown): SendErrorKey {
   }
   const status = result.response?.status
   const code = result.response?.data?.code
-  if (
+  const isRateLimited =
     result.rateLimited ||
     status === 429 ||
     code === 'RATE_LIMITED' ||
     result.code === 'RATE_LIMITED'
-  )
-    return 'aiChat.sendRateLimited'
-  if (status === 403 || code === 'FORBIDDEN' || result.code === 'FORBIDDEN')
-    return 'aiChat.sendForbidden'
-  if (status === 404 || code === 'NOT_FOUND' || result.code === 'NOT_FOUND')
-    return 'aiChat.sendSessionExpired'
-  if (status === 503 || code === 'SERVICE_UNAVAILABLE' || result.code === 'SERVICE_UNAVAILABLE')
-    return 'aiChat.sendUnavailable'
+  if (isRateLimited) return 'aiChat.sendRateLimited'
+  const isForbidden = status === 403 || code === 'FORBIDDEN' || result.code === 'FORBIDDEN'
+  if (isForbidden) return 'aiChat.sendForbidden'
+  const isExpiredSession = status === 404 || code === 'NOT_FOUND' || result.code === 'NOT_FOUND'
+  if (isExpiredSession) return 'aiChat.sendSessionExpired'
+  const isServiceUnavailable =
+    status === 503 || code === 'SERVICE_UNAVAILABLE' || result.code === 'SERVICE_UNAVAILABLE'
+  if (isServiceUnavailable) return 'aiChat.sendUnavailable'
   if (result.code === 'STREAM_FAILED') return 'aiChat.sendUnavailable'
-  if (result.code === 'ECONNABORTED' || result.code === 'ETIMEDOUT' || status === 504)
-    return 'aiChat.sendTimeout'
+  const isTimeout =
+    result.code === 'ECONNABORTED' || result.code === 'ETIMEDOUT' || status === 504
+  if (isTimeout) return 'aiChat.sendTimeout'
   return 'aiChat.sendError'
 }
 
@@ -75,9 +76,12 @@ function imageUploadErrorKeyFor(error: unknown): SendErrorKey {
   const result = error as { response?: { status?: number; data?: { code?: string } } }
   const status = result.response?.status
   const code = result.response?.data?.code
-  if (status === 429 || code === 'RATE_LIMITED') return 'aiChat.imageUploadRateLimited'
-  if (status === 400 || code === 'INVALID_ARGUMENT') return 'aiChat.imageInvalid'
-  if (status === 503 || code === 'SERVICE_UNAVAILABLE') return 'aiChat.imageUploadUnavailable'
+  const isRateLimited = status === 429 || code === 'RATE_LIMITED'
+  if (isRateLimited) return 'aiChat.imageUploadRateLimited'
+  const isInvalidImage = status === 400 || code === 'INVALID_ARGUMENT'
+  if (isInvalidImage) return 'aiChat.imageInvalid'
+  const isServiceUnavailable = status === 503 || code === 'SERVICE_UNAVAILABLE'
+  if (isServiceUnavailable) return 'aiChat.imageUploadUnavailable'
   return 'aiChat.imageUploadFailed'
 }
 
@@ -179,12 +183,14 @@ export function useAiChatSession() {
     if (!limits?.imageInput || !files.length) return
     const tenantId = tenant.tenantId
     for (const file of files) {
-      if (
-        !['image/png', 'image/jpeg', 'image/webp'].includes(file.type) ||
-        file.size > limits.maxImageBytes ||
-        images.value.length >= limits.maxImages ||
-        images.value.reduce((sum, item) => sum + item.size, 0) + file.size > limits.maxTotalBytes
-      ) {
+      let imageIsInvalid = !['image/png', 'image/jpeg', 'image/webp'].includes(file.type)
+      if (!imageIsInvalid) imageIsInvalid = file.size > limits.maxImageBytes
+      if (!imageIsInvalid) imageIsInvalid = images.value.length >= limits.maxImages
+      if (!imageIsInvalid) {
+        imageIsInvalid =
+          images.value.reduce((sum, item) => sum + item.size, 0) + file.size > limits.maxTotalBytes
+      }
+      if (imageIsInvalid) {
         sendError.value = true
         sendErrorKey.value = 'aiChat.imageInvalid'
         break
@@ -251,10 +257,10 @@ export function useAiChatSession() {
     deltaFrame = 0
     pendingDelta = ''
     if (clearDrafts) {
-      const abandoned = new Set([
-        ...images.value,
-        ...[...drafts.values()].flatMap((draft) => draft.images),
-      ])
+      const currentImages = images.value
+      const draftImages = [...drafts.values()].flatMap((draft) => draft.images)
+      const allAbandonedImages = [...currentImages, ...draftImages]
+      const abandoned = new Set(allAbandonedImages)
       for (const image of abandoned) {
         URL.revokeObjectURL(image.previewUrl)
         if (image.id && image.status === 'ready') {
@@ -285,7 +291,8 @@ export function useAiChatSession() {
   }
 
   function turnMessages(turns: AiTurn[], emptyAnswer: string): AiChatMessage[] {
-    return [...turns].reverse().flatMap((turn) => [
+    const newestFirstTurns = [...turns].reverse()
+    return newestFirstTurns.flatMap((turn) => [
       {
         id: `${turn.turnNo}-u`,
         role: 'user' as const,
@@ -335,7 +342,8 @@ export function useAiChatSession() {
   ): Promise<boolean> {
     const draft = prompt.value
     const content = draft.trim()
-    if (!content || sending.value || pendingTurnId.value) return false
+    const chatSubmissionIsBlocked = !content || sending.value || pendingTurnId.value
+    if (chatSubmissionIsBlocked) return false
     if (images.value.some((image) => image.status !== 'ready' || !image.id)) {
       sendError.value = true
       sendErrorKey.value = 'aiChat.imageUploadPending'
@@ -427,7 +435,9 @@ export function useAiChatSession() {
       assistantMessage.modelName = res.modelName ?? undefined
       assistantMessage.sources = sources
       assistantMessage.status = res.promptDecision === 'APPROVED' ? 'COMPLETE' : 'FAILED'
-      if (res.promptDecision !== 'APPROVED' && !prompt.value && !attachment.value) {
+      const shouldRestoreRejectedPromptDraft =
+        res.promptDecision !== 'APPROVED' && !prompt.value && !attachment.value
+      if (shouldRestoreRejectedPromptDraft) {
         prompt.value = draft
         attachment.value = sentAttachment
       }
@@ -443,7 +453,8 @@ export function useAiChatSession() {
           sessionId.value = persisted.sessionId
           assistantMessage.content = persisted.turn.response ?? ''
           assistantMessage.status = persisted.turn.status
-          assistantMessage.decision = persistedDecision(persisted.turn.promptDecision ?? null)
+          const restoredPromptDecision = persistedDecision(persisted.turn.promptDecision ?? null)
+          assistantMessage.decision = restoredPromptDecision
           assistantMessage.modelName = persisted.turn.modelName ?? undefined
           sentImages.forEach((image) => URL.revokeObjectURL(image.previewUrl))
           if (persisted.turn.status === 'IN_PROGRESS') {

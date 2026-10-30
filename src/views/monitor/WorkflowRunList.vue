@@ -164,7 +164,7 @@
 
 <script setup lang="ts">
   import { Eye } from '@lucide/vue'
-  import { ref, computed, watch, onMounted } from 'vue'
+  import { ref, computed, watch } from 'vue'
   import { useRouter, useRoute } from 'vue-router'
   import { useI18n } from 'vue-i18n'
 
@@ -176,6 +176,7 @@
   import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
+  import { useTenantRequestScope } from '@/composables/useTenantRequestScope'
   import PageContainer from '@/components/common/PageContainer.vue'
   import TraceIdInput from '@/components/common/TraceIdInput.vue'
   import MetaSelect from '@/components/common/MetaSelect.vue'
@@ -195,16 +196,22 @@
   const router = useRouter()
   const route = useRoute()
   const tenant = useTenantStore()
+  const listScope = useTenantRequestScope()
+  const codesScope = useTenantRequestScope()
   const loading = ref(false)
   const { filterBusy, tableBlocking, runSearch, runReset, runRefresh } =
     useListFilterFeedback(loading)
   const rows = ref<ConsoleWorkflowRunResponse[]>([])
   const total = ref(0)
-  const page = ref(1)
-  const pageSize = ref(15)
-  const workflowCode = ref('')
-  const runStatus = ref('')
-  const traceId = ref('')
+  function positiveQueryNumber(value: unknown, fallback: number) {
+    const parsed = Number(value)
+    return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : fallback
+  }
+  const page = ref(positiveQueryNumber(route.query.page, 1))
+  const pageSize = ref(positiveQueryNumber(route.query.pageSize, 15))
+  const workflowCode = ref(String(route.query.workflowCode ?? ''))
+  const runStatus = ref(String(route.query.status ?? ''))
+  const traceId = ref(String(route.query.traceId ?? ''))
   const workflowCodeOptions = ref<string[]>([])
 
   const auth = useAuthStore()
@@ -232,16 +239,38 @@
   /** 缓存定义列表，避免每次 load 都重新拉取 */
   const cachedDefs = ref<Awaited<ReturnType<typeof queryWorkflowDefinitions>>>([])
 
-  async function loadWorkflowCodes() {
-    try {
-      cachedDefs.value = await queryWorkflowDefinitions(tenant.tenantId)
-      workflowCodeOptions.value = [
-        ...new Set(cachedDefs.value.map((d) => d.workflowCode).filter(Boolean)),
-      ].sort((a, b) => a.localeCompare(b))
-    } catch {
-      cachedDefs.value = []
-      workflowCodeOptions.value = []
-    }
+  let definitionsTenant: string | null = null
+  let definitionsRequest: Promise<void> | null = null
+  let definitionsRequestTenant: string | null = null
+  function loadWorkflowCodes(): Promise<void> {
+    const tenantId = tenant.tenantId
+    if (!tenantId || definitionsTenant === tenantId) return Promise.resolve()
+    if (definitionsRequestTenant === tenantId && definitionsRequest) return definitionsRequest
+    const scope = codesScope.begin()
+    const request = (async () => {
+      try {
+        const definitions = await queryWorkflowDefinitions(tenantId)
+        if (!codesScope.isCurrent(scope)) return
+        cachedDefs.value = definitions
+        const codes = definitions.map((definition) => definition.workflowCode).filter(Boolean)
+        workflowCodeOptions.value = Array.from(new Set(codes)).sort((a, b) => a.localeCompare(b))
+        definitionsTenant = tenantId
+      } catch (error) {
+        if (codesScope.isCurrent(scope)) {
+          cachedDefs.value = []
+          workflowCodeOptions.value = []
+        }
+        throw error
+      } finally {
+        if (codesScope.isCurrent(scope)) {
+          definitionsRequest = null
+          definitionsRequestTenant = null
+        }
+      }
+    })()
+    definitionsRequest = request
+    definitionsRequestTenant = tenantId
+    return request
   }
 
   function resolveDefId(): number | undefined {
@@ -253,9 +282,13 @@
 
   const loadError = ref<unknown>(null)
   async function load() {
+    const scope = listScope.begin()
+    if (!scope.tenantId) return
     loading.value = true
     loadError.value = null
     try {
+      if (workflowCode.value.trim()) await loadWorkflowCodes()
+      if (!listScope.isCurrent(scope)) return
       const defId = resolveDefId()
       const code = workflowCode.value.trim()
       if (code && defId === undefined) {
@@ -264,21 +297,22 @@
         return
       }
       const pr = await instanceApi.workflowRuns({
-        tenantId: tenant.tenantId,
+        tenantId: scope.tenantId,
         workflowDefinitionId: defId,
         runStatus: runStatus.value.trim() || undefined,
         traceId: traceId.value.trim() || undefined,
         page: page.value,
         pageSize: pageSize.value,
       })
+      if (!listScope.isCurrent(scope)) return
       rows.value = pr.records
       total.value = pr.total
+      live.markRefreshed()
     } catch (err) {
-      loadError.value = err
+      if (listScope.isCurrent(scope)) loadError.value = err
       throw err
     } finally {
-      loading.value = false
-      live.markRefreshed()
+      if (listScope.isCurrent(scope)) loading.value = false
     }
   }
 
@@ -309,10 +343,24 @@
     scope: () => tenant.tenantId,
   })
 
-  useTenantReload(() => {
-    page.value = 1
-    void loadWorkflowCodes()
-    void load()
+  watch(
+    () => tenant.tenantId,
+    () => {
+      page.value = 1
+      rows.value = []
+      total.value = 0
+      cachedDefs.value = []
+      workflowCodeOptions.value = []
+      loading.value = false
+      loadError.value = null
+      definitionsTenant = null
+      definitionsRequest = null
+      definitionsRequestTenant = null
+    },
+    { flush: 'sync' },
+  )
+  useTenantReload(async () => {
+    await Promise.all([loadWorkflowCodes(), load()])
   })
 
   // URL state:筛选 + 分页 round-trip,详情页 back 返回不丢上下文
@@ -325,19 +373,5 @@
     if (pageSize.value !== 15) params.pageSize = String(pageSize.value)
     void router.replace({ query: params })
   }
-  onMounted(() => {
-    const q = route.query
-    if (q.workflowCode) workflowCode.value = String(q.workflowCode)
-    if (q.status) runStatus.value = String(q.status)
-    if (q.traceId) traceId.value = String(q.traceId)
-    if (q.page) {
-      const p = Number(q.page)
-      if (Number.isFinite(p) && p > 0) page.value = p
-    }
-    if (q.pageSize) {
-      const ps = Number(q.pageSize)
-      if (Number.isFinite(ps) && ps > 0) pageSize.value = ps
-    }
-  })
   watch([workflowCode, runStatus, traceId, page, pageSize], syncFiltersToUrl)
 </script>

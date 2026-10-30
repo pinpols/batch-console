@@ -33,7 +33,10 @@ export function resolveSidebarOperationalStatus(
 ): SidebarOperationalStatus {
   let tone: SidebarOperationalTone
 
-  if (!maintenance.lastSyncedAt || maintenance.syncError || maintenance.isStale) {
+  const maintenanceStateIsUnknown = Boolean(
+    !maintenance.lastSyncedAt || maintenance.syncError || maintenance.isStale,
+  )
+  if (maintenanceStateIsUnknown) {
     tone = 'unknown'
   } else if (maintenance.active && maintenance.adminBypass) {
     tone = 'admin-bypass'

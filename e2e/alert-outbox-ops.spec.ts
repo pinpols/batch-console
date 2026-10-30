@@ -71,7 +71,6 @@ test.describe('告警 — 操作流', () => {
 
     // ─── 第 2 步:optionalReason prompt(以 input 出现为信号)
     // FE optionalReason 用 ElMessageBox.prompt,confirmButton 文字是 i18n "提交" 不是默认"确定"
-    await page.waitForTimeout(400)
     const prompt = page.locator('.el-message-box').filter({ has: page.locator('input,textarea') })
     if (await isVisible(prompt.first(), 3000)) {
       await prompt.first().locator('input,textarea').first().fill(reason)

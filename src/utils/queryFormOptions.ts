@@ -6,7 +6,11 @@ export function uniqueFieldValues<T>(
   const set = new Set<string>()
   for (const row of rows) {
     const v = pick(row)
-    const s = v == null ? '' : String(v).trim()
+    let s = ''
+    if (v != null) {
+      const stringValue = String(v)
+      s = stringValue.trim()
+    }
     if (s) set.add(s)
   }
   return [...set].sort((a, b) => a.localeCompare(b))
@@ -17,7 +21,9 @@ export function uniqueDisplayFieldValues<T>(rows: T[], pick: (row: T) => unknown
   const values = new Set<string>()
   for (const row of rows) {
     const value = pick(row)
-    const normalized = String(value ?? '').trim()
+    const fallbackValue = value ?? ''
+    const stringValue = String(fallbackValue)
+    const normalized = stringValue.trim()
     if (normalized && normalized !== 'null' && normalized !== 'undefined') values.add(normalized)
   }
   return [...values].sort()

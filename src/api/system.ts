@@ -30,26 +30,6 @@ function camelizeRowKeys<T>(row: unknown): T {
   return out as T
 }
 
-export interface PipelineDefinitionRow {
-  id: number
-  tenantId: string
-  pipelineCode: string
-  pipelineName: string
-  pipelineType: string
-  enabled: boolean
-  description: string
-  updatedAt: string
-}
-
-export interface PipelineDefinitionForm {
-  tenantId: string
-  pipelineCode: string
-  pipelineName: string
-  pipelineType: string
-  enabled: boolean
-  description: string
-}
-
 /** 复用 OpenAPI 生成类型(create 超集,update 调用复用同体)。重新生成:`npm run gen:api`。 */
 export type FileTemplateSavePayload = components['schemas']['FileTemplateCreateRequest']
 
@@ -84,25 +64,13 @@ function readBoolean(row: RawObject, ...keys: string[]) {
     if (typeof value === 'boolean') return value
     if (typeof value === 'number') return value !== 0
     if (typeof value === 'string') {
-      const text = value.trim().toLowerCase()
+      const trimmedValue = value.trim()
+      const text = trimmedValue.toLowerCase()
       if (['true', '1', 'yes', 'enabled', 'on'].includes(text)) return true
       if (['false', '0', 'no', 'disabled', 'off'].includes(text)) return false
     }
   }
   return false
-}
-
-function normalizePipelineDefinition(row: RawObject): PipelineDefinitionRow {
-  return {
-    id: readNumber(row, 'id'),
-    tenantId: readString(row, 'tenantId', 'tenant_id'),
-    pipelineCode: readString(row, 'jobCode', 'pipelineCode', 'job_code'),
-    pipelineName: readString(row, 'pipelineName', 'pipeline_name', 'name'),
-    pipelineType: readString(row, 'pipelineType', 'pipeline_type'),
-    enabled: readBoolean(row, 'enabled'),
-    description: readString(row, 'description'),
-    updatedAt: readString(row, 'updatedAt', 'updated_at'),
-  }
 }
 
 export function queryCatchUpApprovals(tenantId: string, pageNo: number, pageSize: number) {
@@ -129,48 +97,6 @@ export function queryFileTemplateDetail(tenantId: string, templateCode: string) 
     `/api/console/queries/file-templates/${encodeURIComponent(templateCode)}`,
     { tenantId },
   )
-}
-
-export async function queryPipelineDefinitions(
-  tenantId: string,
-  pageNo: number,
-  pageSize: number,
-  filters?: { jobCode?: string; pipelineType?: string; enabled?: boolean },
-) {
-  const data = await get<
-    PageResponse<RawObject> | RawObject[] | { items?: RawObject[]; total?: number }
-  >('/api/console/pipeline-definitions', {
-    tenantId,
-    pageNo,
-    pageSize,
-    ...(filters?.jobCode ? { jobCode: filters.jobCode } : {}),
-    ...(filters?.pipelineType ? { pipelineType: filters.pipelineType } : {}),
-    ...(filters?.enabled != null ? { enabled: filters.enabled } : {}),
-  })
-  if (Array.isArray(data)) {
-    return { total: data.length, items: data.map(normalizePipelineDefinition) }
-  }
-  const items = Array.isArray(data.items) ? data.items : []
-  return {
-    total: Number(data.total ?? items.length),
-    items: items.map(normalizePipelineDefinition),
-  }
-}
-
-export function queryPipelineDefinitionDetail(tenantId: string, id: number) {
-  return get<RawObject>(`/api/console/pipeline-definitions/${id}`, { tenantId })
-}
-
-export function createPipelineDefinition(body: Record<string, unknown>) {
-  return post<number>('/api/console/pipeline-definitions', body)
-}
-
-export function updatePipelineDefinition(id: number, body: Record<string, unknown>) {
-  return put<string>(`/api/console/pipeline-definitions/${id}`, body)
-}
-
-export function togglePipelineDefinition(id: number, tenantId: string, enabled: boolean) {
-  return patch<string>(`/api/console/pipeline-definitions/${id}/enabled`, { tenantId, enabled })
 }
 
 /** GET /api/console/file-channels — 命令侧列表 */

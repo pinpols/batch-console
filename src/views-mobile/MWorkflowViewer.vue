@@ -89,10 +89,6 @@
               <span class="m-sheet__key">{{ t('mobile.workflowViewer.fldRelatedJob') }}</span>
               <code>{{ selectedNodeMeta.relatedJobCode }}</code>
             </div>
-            <div v-if="selectedNodeMeta.relatedPipelineCode" class="m-sheet__row">
-              <span class="m-sheet__key">{{ t('mobile.workflowViewer.fldRelatedPipeline') }}</span>
-              <code>{{ selectedNodeMeta.relatedPipelineCode }}</code>
-            </div>
             <div v-if="selectedNodeMeta.workerGroup" class="m-sheet__row">
               <span class="m-sheet__key">{{ t('mobile.workflowViewer.fldWorkerGroup') }}</span>
               <span>{{ selectedNodeMeta.workerGroup }}</span>
@@ -154,7 +150,8 @@
   const id = computed(() => Number(route.params.id))
   const runId = computed(() => {
     const raw = route.query.runId
-    const n = Number(Array.isArray(raw) ? raw[0] : raw)
+    const queryValue = Array.isArray(raw) ? raw[0] : raw
+    const n = Number(queryValue)
     return Number.isFinite(n) && n > 0 ? n : null
   })
 
@@ -168,8 +165,12 @@
   type NodeMeta = NonNullable<WorkflowDefinitionDetailResponse['nodes']>[number]
   const selectedNodeMeta = ref<NodeMeta | null>(null)
 
+  function normalizedRunStatus(): string {
+    return (runStatus.value || '').toUpperCase()
+  }
+
   const runChipClass = computed(() => {
-    const s = (runStatus.value || '').toUpperCase()
+    const s = normalizedRunStatus()
     if (s === 'RUNNING') return 'm-chip--running'
     if (s === 'SUCCESS' || s === 'COMPLETED') return 'm-chip--success'
     if (s === 'FAILED' || s === 'TERMINATED') return 'm-chip--failed'
@@ -178,8 +179,8 @@
 
   const pollingActive = computed(() => {
     if (!runId.value) return false
-    const s = (runStatus.value || '').toUpperCase()
-    return !TERMINAL.has(s)
+    const runStatusIsTerminal = TERMINAL.has(normalizedRunStatus())
+    return !runStatusIsTerminal
   })
 
   async function load() {
@@ -204,7 +205,8 @@
       mermaidText.value = mer.mermaid ?? ''
       runStatus.value = run?.runStatus ?? null
       buildNodeMap(d)
-      await renderMermaid(applyStateOverlay(mermaidText.value, nodeRuns))
+      const stateOverlayText = applyStateOverlay(mermaidText.value, nodeRuns)
+      await renderMermaid(stateOverlayText)
       attachNodeClicks()
     } catch (err: unknown) {
       errorMessage.value = userErrorMessage(err)
@@ -247,7 +249,8 @@
     for (const r of runs) {
       if (!r.nodeCode) continue
       const prior = latest.get(r.nodeCode)
-      if (!prior || (r.id ?? 0) > (prior.id ?? 0)) latest.set(r.nodeCode, r)
+      const currentRunIsNewer = !prior || (r.id ?? 0) > (prior.id ?? 0)
+      if (currentRunIsNewer) latest.set(r.nodeCode, r)
     }
     const classLines: string[] = []
     for (const [code, r] of latest) {
@@ -284,7 +287,9 @@
     }
     try {
       const mermaid = await loadMermaid()
-      const renderId = `m-wf-graph-${Date.now()}-${Math.floor(Math.random() * 1e4)}`
+      const renderTimestamp = Date.now()
+      const randomSuffix = Math.floor(Math.random() * 1e4)
+      const renderId = `m-wf-graph-${renderTimestamp}-${randomSuffix}`
       const { svg } = await mermaid.render(renderId, text)
       await nextTick()
       setTrustedMermaidSvg(graphRef.value, svg)

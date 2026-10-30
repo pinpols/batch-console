@@ -17,9 +17,14 @@ export interface AssetFreshnessPolicyQuery {
 }
 
 export function listAssetFreshnessPolicies(query: AssetFreshnessPolicyQuery) {
+  const tenantId = query.tenantId
+  const trimmedAssetCodeForCheck = query.assetCode?.trim()
+  const assetCodeParams = trimmedAssetCodeForCheck
+    ? { assetCode: query.assetCode!.trim() }
+    : {}
   return get<AssetFreshnessPolicyPage>('/api/console/asset-freshness-policies', {
-    tenantId: query.tenantId,
-    ...(query.assetCode?.trim() ? { assetCode: query.assetCode.trim() } : {}),
+    tenantId,
+    ...assetCodeParams,
     ...(query.enabled != null ? { enabled: query.enabled } : {}),
     pageNo: query.pageNo,
     pageSize: query.pageSize,

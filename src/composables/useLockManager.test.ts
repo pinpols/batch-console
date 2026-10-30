@@ -21,7 +21,6 @@ import { useDesignerStore } from '@/views/workflow/designer/store/useDesignerSto
 
 function inScope<T>(fn: () => T): { value: T; stop: () => void } {
   const scope = effectScope()
-  // @ts-expect-error scope.run returns T | undefined
   const value: T = scope.run(fn) as T
   return { value, stop: () => scope.stop() }
 }
@@ -127,5 +126,76 @@ describe('useLockManager', () => {
     expect(releaseMock).toHaveBeenCalledWith(1, 'tn1')
     expect(store.lock).toBeNull()
     stop()
+  })
+  it('旧工作流锁请求晚到时不覆盖新工作流锁', async () => {
+    let resolveA!: (value: unknown) => void
+    acquireMock
+      .mockReturnValueOnce(
+        new Promise((resolve) => {
+          resolveA = resolve
+        }),
+      )
+      .mockResolvedValueOnce({ lockedBy: 'B-owner', expiresAt: 'B-time' })
+    const { value: manager, stop } = inScope(() => useLockManager({ intervalMs: 0 }))
+    const pending = manager.acquire(1, 'tenant-a')
+    await manager.acquire(2, 'tenant-b')
+    resolveA({ lockedBy: 'A-owner', expiresAt: 'A-time' })
+    await pending
+    expect(useDesignerStore().lock?.lockedBy).toBe('B-owner')
+    stop()
+  })
+
+  it('释放之后迟到的续租不能恢复本地可编辑态', async () => {
+    let resolveRenew!: (value: unknown) => void
+    acquireMock.mockResolvedValueOnce({ lockedBy: 'A-owner', expiresAt: 'old' })
+    renewMock.mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveRenew = resolve
+      }),
+    )
+    releaseMock.mockResolvedValue(undefined)
+    const { value: manager, stop } = inScope(() => useLockManager({ intervalMs: 0 }))
+    await manager.acquire(1, 'tenant-a')
+    const pending = manager.renew()
+    await manager.release()
+    resolveRenew({ lockedBy: 'A-owner', expiresAt: 'new' })
+    await pending
+    expect(useDesignerStore().lock).toBeNull()
+    stop()
+  })
+
+  it('旧锁释放回包不能清空后来获取的新锁', async () => {
+    let resolveRelease!: () => void
+    acquireMock
+      .mockResolvedValueOnce({ lockedBy: 'A-owner', expiresAt: 'old' })
+      .mockResolvedValueOnce({ lockedBy: 'B-owner', expiresAt: 'new' })
+    releaseMock.mockReturnValueOnce(
+      new Promise<void>((resolve) => {
+        resolveRelease = resolve
+      }),
+    )
+    const { value: manager, stop } = inScope(() => useLockManager({ intervalMs: 0 }))
+    await manager.acquire(1, 'tenant-a')
+    const pending = manager.release()
+    await manager.acquire(2, 'tenant-b')
+    resolveRelease()
+    await pending
+    expect(useDesignerStore().lock?.lockedBy).toBe('B-owner')
+    stop()
+  })
+
+  it('组件作用域结束后不再接收迟到的获取结果', async () => {
+    let resolveAcquire!: (value: unknown) => void
+    acquireMock.mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveAcquire = resolve
+      }),
+    )
+    const { value: manager, stop } = inScope(() => useLockManager({ intervalMs: 0 }))
+    const pending = manager.acquire(1, 'tenant-a')
+    stop()
+    resolveAcquire({ lockedBy: 'A-owner', expiresAt: 'old' })
+    await pending
+    expect(useDesignerStore().lock).toBeNull()
   })
 })

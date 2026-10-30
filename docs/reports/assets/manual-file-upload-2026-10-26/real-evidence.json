@@ -1,0 +1,41 @@
+{
+  "date": "2026-10-26",
+  "branch": "fix/wdi-current",
+  "test": {
+    "file": "e2e/manual-file-upload-real.spec.ts",
+    "browser": "Chromium",
+    "passed": 1,
+    "failed": 0,
+    "retries": 0
+  },
+  "upload": {
+    "contentBytes": 37,
+    "objectContentMatchesUploadedBytes": true,
+    "persistedFileStatus": "RECEIVED",
+    "arrivalConfirmed": true,
+    "auditOperations": ["UPLOAD_SESSION_CREATED", "CONFIRM_ARRIVAL"],
+    "auditResults": "SUCCESS",
+    "downstreamWorkflowLinked": false
+  },
+  "access": {
+    "adminUpload": 200,
+    "tenantAdminUploadActionVisible": true,
+    "auditorUploadActionVisible": false,
+    "auditorUploadApi": 403,
+    "tenantUserUploadActionVisible": false,
+    "tenantUserUploadApi": 403,
+    "anonymousUploadPost": 403,
+    "anonymousStatusNote": "CSRF filtering; not interpreted as authentication status"
+  },
+  "cleanup": {
+    "fileRowsRemaining": 0,
+    "fileAuditsRemaining": 0,
+    "channelsRemaining": 0,
+    "roleAccountsRemaining": 0,
+    "objectRemoved": true
+  },
+  "limits": [
+    "Confirms upload bytes, arrival metadata and audit only.",
+    "Current upload contract does not associate the file with a bundle Workflow or Pipeline."
+  ]
+}

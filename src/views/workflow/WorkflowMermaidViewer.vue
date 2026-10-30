@@ -2,15 +2,16 @@
   <PageContainer :style="workflowRunVisualCssVars">
     <PageHeader :title="title" :description="description" back-to="/workflow/definitions">
       <template #actions>
-        <el-button :icon="DocumentCopy" :disabled="!mermaidText" @click="copyText">
+        <el-button v-if="!runId" :icon="DocumentCopy" :disabled="!mermaidText" @click="copyText">
           {{ t('workflowMermaidViewer.btnCopyMermaid') }}
         </el-button>
       </template>
     </PageHeader>
 
+    <WorkflowExecutionPanel v-if="runId" :run-id="runId" />
     <!-- DAG 主体:工具栏 + chip Legend + 画布,所有控件收进 header 一行;
          点击节点时右侧伸出 inspector panel(Dagster 风) -->
-    <SectionCard ref="dagCardRef" class="dag-card">
+    <SectionCard v-if="!runId" ref="dagCardRef" class="dag-card">
       <template #header>
         <div class="dag-header">
           <div class="dag-header__left">
@@ -253,18 +254,6 @@
                 </el-link>
               </el-descriptions-item>
               <el-descriptions-item
-                v-if="selectedNodeMeta.relatedPipelineCode"
-                :label="t('workflowMermaidViewer.fldRelatedPipeline')"
-              >
-                <el-link
-                  type="primary"
-                  underline="never"
-                  @click="goToPipeline(selectedNodeMeta.relatedPipelineCode)"
-                >
-                  {{ selectedNodeMeta.relatedPipelineCode }}
-                </el-link>
-              </el-descriptions-item>
-              <el-descriptions-item
                 v-if="selectedNodeMeta.workerGroup"
                 :label="t('workflowMermaidViewer.fldWorkerGroup')"
               >
@@ -322,7 +311,7 @@
     </SectionCard>
 
     <!-- mermaid 源默认折叠,大多数用户不关心;需要时点开复制即可 -->
-    <SectionCard v-if="mermaidText">
+    <SectionCard v-if="!runId && mermaidText">
       <template #header>
         <span>{{ t('workflowMermaidViewer.mermaidSrcHeader') }}</span>
         <el-button text size="small" class="mermaid-toggle" @click="showSource = !showSource">
@@ -335,92 +324,13 @@
       </template>
       <pre v-if="showSource" class="workflow-mermaid-source">{{ mermaidText }}</pre>
     </SectionCard>
-
-    <!-- 节点详情已迁到 DAG card 内嵌 inspector(上方),此 drawer 保留为空壳兼容; -->
-    <el-drawer
-      v-if="false"
-      v-model="detailDrawerVisible"
-      :title="''"
-      direction="rtl"
-      size="420px"
-      :append-to-body="true"
-    >
-      <el-descriptions v-if="selectedNodeMeta" :column="1" border>
-        <el-descriptions-item :label="t('workflowMermaidViewer.fldNodeCode')">
-          <code>{{ selectedNodeMeta.nodeCode }}</code>
-        </el-descriptions-item>
-        <el-descriptions-item :label="t('workflowMermaidViewer.fldNodeName')">
-          {{ selectedNodeMeta.nodeName || '—' }}
-        </el-descriptions-item>
-        <el-descriptions-item :label="t('workflowMermaidViewer.fldNodeType')">
-          <el-tag size="small" effect="plain">{{ selectedNodeMeta.nodeType || '?' }}</el-tag>
-        </el-descriptions-item>
-        <el-descriptions-item
-          v-if="selectedNodeMeta.relatedJobCode"
-          :label="t('workflowMermaidViewer.fldRelatedJob')"
-        >
-          <el-link
-            type="primary"
-            underline="never"
-            @click="goToJobDef(selectedNodeMeta.relatedJobCode)"
-          >
-            {{ selectedNodeMeta.relatedJobCode }}
-          </el-link>
-        </el-descriptions-item>
-        <el-descriptions-item
-          v-if="selectedNodeMeta.relatedPipelineCode"
-          :label="t('workflowMermaidViewer.fldRelatedPipeline')"
-        >
-          <el-link
-            type="primary"
-            underline="never"
-            @click="goToPipeline(selectedNodeMeta.relatedPipelineCode)"
-          >
-            {{ selectedNodeMeta.relatedPipelineCode }}
-          </el-link>
-        </el-descriptions-item>
-        <el-descriptions-item
-          v-if="selectedNodeMeta.workerGroup"
-          :label="t('workflowMermaidViewer.fldWorkerGroup')"
-        >
-          {{ selectedNodeMeta.workerGroup }}
-        </el-descriptions-item>
-        <el-descriptions-item
-          v-if="selectedNodeMeta.retryPolicy"
-          :label="t('workflowMermaidViewer.fldRetryPolicy')"
-        >
-          {{ selectedNodeMeta.retryPolicy }}
-          <span v-if="selectedNodeMeta.retryMaxCount != null" class="cell-mute">
-            × {{ selectedNodeMeta.retryMaxCount }}
-          </span>
-        </el-descriptions-item>
-        <el-descriptions-item
-          v-if="selectedNodeMeta.timeoutSeconds != null"
-          :label="t('workflowMermaidViewer.fldTimeout')"
-        >
-          {{ selectedNodeMeta.timeoutSeconds }} s
-        </el-descriptions-item>
-        <el-descriptions-item
-          v-if="selectedNodeDescription"
-          :label="t('workflowMermaidViewer.fldDescription')"
-        >
-          {{ selectedNodeDescription }}
-        </el-descriptions-item>
-        <el-descriptions-item
-          v-if="selectedNodeMeta.nodeParams"
-          :label="t('workflowMermaidViewer.fldParams')"
-        >
-          <JsonPreview :data="selectedNodeMeta.nodeParams" />
-        </el-descriptions-item>
-      </el-descriptions>
-    </el-drawer>
   </PageContainer>
 </template>
 
 <script setup lang="ts">
+  import WorkflowExecutionPanel from '@/components/workflow/WorkflowExecutionPanel.vue'
   import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
-  import { useDrawerAutoClose } from '@/composables/useDrawerAutoClose'
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
 
@@ -496,9 +406,6 @@
   const pollingActive = ref(false)
   /** mermaid 源码默认折叠,大多数用户不关心 */
   const showSource = ref(false)
-  /** 旧 drawer 保留壳 (template v-if=false),实际节点详情走 inspector */
-  const detailDrawerVisible = ref(false)
-  useDrawerAutoClose(detailDrawerVisible)
   /** 内嵌 inspector 是否展开;关闭后 DAG 占满宽度 */
   const inspectorOpen = ref(false)
   type NodeMeta = NonNullable<WorkflowDefinitionDetailResponse['nodes']>[number]
@@ -520,12 +427,13 @@
         : null
       void prevIdMatch
       // 取该 nodeCode 最新 run(id 最大)
-      const prevRun = nodeRunsCache.value
-        .filter((x) => x.nodeCode === code && latest.has(code))
-        .reduce<ConsoleWorkflowNodeRunResponse | null>(
-          (a, b) => ((a?.id ?? 0) > (b.id ?? 0) ? a : b),
-          null,
-        )
+      const nodeRunsForLatestSelection = nodeRunsCache.value.filter(
+        (x) => x.nodeCode === code && latest.has(code),
+      )
+      const prevRun = nodeRunsForLatestSelection.reduce<ConsoleWorkflowNodeRunResponse | null>(
+        (a, b) => ((a?.id ?? 0) > (b.id ?? 0) ? a : b),
+        null,
+      )
       if (prevRun && (prevRun.id ?? 0) > (r.id ?? 0)) continue
       latest.set(code, r.nodeStatus ?? '')
     }
@@ -586,6 +494,8 @@
   })
 
   async function reload() {
+    stopPoll()
+    if (runId.value) return
     if (!Number.isFinite(id.value) || id.value <= 0) {
       errorMessage.value = t('workflowMermaidViewer.invalidRouteParam')
       return
@@ -646,8 +556,12 @@
       rendererText.value = applyStateOverlay(enrichedMermaid, nodeRuns)
       await renderMermaid(rendererText.value)
       attachNodeClicks()
-      if (run?.runStatus && terminalStatuses.has(run.runStatus.toUpperCase())) {
-        stopPoll()
+      if (run?.runStatus) {
+        const currentRunStatus = run.runStatus.toUpperCase()
+        const runStatusIsTerminal = terminalStatuses.has(currentRunStatus)
+        if (runStatusIsTerminal) {
+          stopPoll()
+        }
       }
     } catch {
       // 轮询失败不打扰用户,等下次 tick 或手动刷新
@@ -791,14 +705,8 @@
   }
 
   function goToJobDef(jobCode: string) {
-    detailDrawerVisible.value = false
     void router.push({ path: '/jobs/definitions', query: { jobCode } })
   }
-  function goToPipeline(pipelineCode: string) {
-    detailDrawerVisible.value = false
-    void router.push({ path: '/jobs/pipelines', query: { pipelineCode } })
-  }
-
   async function renderMermaid(text: string) {
     if (!text.trim()) {
       clearGraph()
@@ -909,8 +817,10 @@
     // 重置 viewport transform,导出干净的 SVG
     const viewport = clone.querySelector('.svg-pan-zoom_viewport')
     if (viewport) viewport.removeAttribute('transform')
-    const xml = new XMLSerializer().serializeToString(clone)
-    const blob = new Blob([`<?xml version="1.0" encoding="UTF-8"?>\n${xml}`], {
+    const serializer = new XMLSerializer()
+    const xml = serializer.serializeToString(clone)
+    const svgDocument = `<?xml version="1.0" encoding="UTF-8"?>\n${xml}`
+    const blob = new Blob([svgDocument], {
       type: 'image/svg+xml;charset=utf-8',
     })
     const url = URL.createObjectURL(blob)

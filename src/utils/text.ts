@@ -32,9 +32,14 @@ export function decodeBasicEntities(input: unknown): string {
     if (s.includes(entity)) s = s.split(entity).join(char)
   }
   // 数字实体 &#8594; / &#x2192;
-  s = s
-    .replace(/&#(\d+);/g, (_, dec) => safeFromCodePoint(Number(dec)))
-    .replace(/&#x([0-9a-fA-F]+);/g, (_, hex) => safeFromCodePoint(parseInt(hex, 16)))
+  s = s.replace(/&#(\d+);/g, (_, dec) => {
+    const codePoint = Number(dec)
+    return safeFromCodePoint(codePoint)
+  })
+  s = s.replace(/&#x([0-9a-fA-F]+);/g, (_, hex) => {
+    const codePoint = parseInt(hex, 16)
+    return safeFromCodePoint(codePoint)
+  })
   // &amp; 最后
   return s.split('&amp;').join('&')
 }
@@ -48,7 +53,9 @@ export function truncateDisplayText(input: unknown, maxCharacters: number): stri
   if (!Number.isFinite(maxCharacters) || maxCharacters < 2) return value
   const characters = Array.from(value)
   if (characters.length <= maxCharacters) return value
-  return `${characters.slice(0, maxCharacters - 1).join('')}…`
+  const visibleCharacters = characters.slice(0, maxCharacters - 1)
+  const truncatedText = visibleCharacters.join('')
+  return `${truncatedText}…`
 }
 
 function safeFromCodePoint(cp: number): string {

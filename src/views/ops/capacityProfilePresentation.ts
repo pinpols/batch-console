@@ -19,7 +19,8 @@ export interface CapacityTrendPoint {
 }
 
 function toIso(value: number): string {
-  return new Date(value).toISOString()
+  const date = new Date(value)
+  return date.toISOString()
 }
 
 function bucketLabel(from: number, to: number, zone: string): string {
@@ -32,7 +33,9 @@ function bucketLabel(from: number, to: number, zone: string): string {
     hour12: false,
   }
   const format = new Intl.DateTimeFormat(undefined, options)
-  if (fmtDate(from, zone) === fmtDate(to, zone)) return format.format(from)
+  const fromDate = fmtDate(from, zone)
+  const toDate = fmtDate(to, zone)
+  if (fromDate === toDate) return format.format(from)
   return `${format.format(from)} - ${format.format(to)}`
 }
 
@@ -43,7 +46,8 @@ export function buildCapacityBuckets(
 ): CapacityBucket[] {
   const from = Date.parse(range[0])
   const to = Date.parse(range[1])
-  if (!Number.isFinite(from) || !Number.isFinite(to) || to <= from || maxBuckets < 1) return []
+  const hasInvalidTimeRange = !Number.isFinite(from) || !Number.isFinite(to) || to <= from
+  if (hasInvalidTimeRange || maxBuckets < 1) return []
 
   const hours = Math.max(1, Math.ceil((to - from) / 3_600_000))
   const count = Math.min(maxBuckets, hours)
@@ -74,11 +78,16 @@ export function buildCapacityTrend(
   reports: Array<CapacityProfileReport | null>,
   zone = readDisplayTimezone(),
 ): CapacityTrendPoint[] {
-  return buckets.map((bucket, index) => ({
-    label: bucketLabel(Date.parse(bucket.from), Date.parse(bucket.to), zone),
-    instanceCount: Number(reports[index]?.totals?.instanceCount ?? 0),
-    taskCount: Number(reports[index]?.totals?.taskCount ?? 0),
-  }))
+  return buckets.map((bucket, index) => {
+    const fromTimestamp = Date.parse(bucket.from)
+    const toTimestamp = Date.parse(bucket.to)
+    const label = bucketLabel(fromTimestamp, toTimestamp, zone)
+    return {
+      label,
+      instanceCount: Number(reports[index]?.totals?.instanceCount ?? 0),
+      taskCount: Number(reports[index]?.totals?.taskCount ?? 0),
+    }
+  })
 }
 
 export function buildThroughputRanking(
@@ -99,7 +108,11 @@ export function buildLatencyComparison(
   limit = 10,
 ) {
   const selected = [...rows]
-    .sort((a, b) => Number(b.p95DurationMs ?? 0) - Number(a.p95DurationMs ?? 0))
+    .sort((a, b) => {
+      const rightP95Duration = Number(b.p95DurationMs ?? 0)
+      const leftP95Duration = Number(a.p95DurationMs ?? 0)
+      return rightP95Duration - leftP95Duration
+    })
     .slice(0, limit)
   return {
     labels: selected.map((row) => capacityDimensionValue(row, groupBy, fallbackTenant)),

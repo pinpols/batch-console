@@ -73,6 +73,7 @@ export function useInfiniteList<T>(opts: UseInfiniteListOptions<T>) {
     hasMore.value = true
     error.value = null
     lastReqId++ // 让进行中的请求作废
+    loading.value = false
     if (loadFirst) await loadMore()
   }
 

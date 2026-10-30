@@ -27,3 +27,7 @@
 4. **收窄或删除守卫**：等价配置仅因格式被拦，或者两个 job 在同一运行时重复执行、没有独立失效模式时，先用历史耗时和正反例证明收益，再改 workflow；不要为提速牺牲必需验收。
 
 审查记录须写明两仓基线提交、范围、样本、证据层级、未执行项和整改归属。结论区分确认缺陷、待验证风险、设计决定与抽样未发现问题。2026-10-12 的前后端静态复核快照见配对后端 `docs/audit/cross-repo-governance-drift-review-2026-10-12.md`；其中的缺陷状态不随本文自动更新。
+
+## UI、交互与视觉的专项承接
+
+[frontend-ui-ia-review](../../.agents/skills/frontend-ui-ia-review/SKILL.md)统一维护[常见问题与反例](../../.agents/skills/frontend-ui-ia-review/references/common-ui-checks.md)，综合质量Skill复用其证据。重点复查运行token与CSS覆盖、错误伪装为空态、弹窗旧目标/迟到响应、危险/重复提交、图表缺失数据、长文案/窄屏溢出和焦点/可访问名称；页面/角色/状态分母和未验证项明确记录。检查表覆盖完整不等于当前全站页面已通过。

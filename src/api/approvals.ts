@@ -31,10 +31,10 @@ export function queryApprovalsPage(
 export interface CatchUpQueryFilters {
   /** 业务日期精确过滤(ISO yyyy-MM-dd) */
   bizDate?: string
-  /** 大小写不敏感模糊匹配 requestId/jobCode/traceId 任一 */
+  /** 大小写不敏感模糊匹配 requestId/workflowCode/traceId 任一 */
   keyword?: string
-  /** Job 编码精确过滤 */
-  jobCode?: string
+  /** Workflow 编码精确过滤 */
+  workflowCode?: string
   /** 调度请求 ID 精确过滤 */
   requestId?: string
 }
@@ -54,7 +54,7 @@ export function queryCatchUpApprovalsPage(
       pageSize,
       ...(filters?.bizDate ? { bizDate: filters.bizDate } : {}),
       ...(filters?.keyword ? { keyword: filters.keyword } : {}),
-      ...(filters?.jobCode ? { jobCode: filters.jobCode } : {}),
+      ...(filters?.workflowCode ? { workflowCode: filters.workflowCode } : {}),
       ...(filters?.requestId ? { requestId: filters.requestId } : {}),
     },
   )

@@ -69,11 +69,11 @@
   function commit() {
     if (props.readonly) return
     const current = readAttrs(props.edge)
-    if (
+    const edgeAttributesAreUnchanged =
       current.edgeType === local.value.edgeType &&
       current.conditionExpr === local.value.conditionExpr &&
       current.enabled === local.value.enabled
-    ) {
+    if (edgeAttributesAreUnchanged) {
       return
     }
     store.updateEdge(props.edge.id, {
@@ -93,7 +93,8 @@
     commit()
   }
 
-  function rewire(endpoint: 'source' | 'target', nodeId: string) {
+  function rewire(endpoint: 'source' | 'target', rawNodeId: unknown) {
+    const nodeId = String(rawNodeId)
     if (props.readonly) return
     const source = endpoint === 'source' ? nodeId : props.edge.source
     const target = endpoint === 'target' ? nodeId : props.edge.target
@@ -122,7 +123,7 @@
         :model-value="props.edge.source"
         :disabled="props.readonly"
         filterable
-        @change="rewire('source', String($event))"
+        @change="rewire('source', $event)"
       >
         <el-option
           v-for="node in sourceOptions"
@@ -137,7 +138,7 @@
         :model-value="props.edge.target"
         :disabled="props.readonly"
         filterable
-        @change="rewire('target', String($event))"
+        @change="rewire('target', $event)"
       >
         <el-option
           v-for="node in targetOptions"

@@ -3,7 +3,8 @@ import type { ConsoleFileArrivalGroupResponse } from '@/types/console-api'
 export function summarizeArrivalGroups(rows: ConsoleFileArrivalGroupResponse[]) {
   const result = rows.reduce(
     (summary, row) => {
-      const state = String(row.arrivalState ?? '').toUpperCase()
+      const arrivalStateText = String(row.arrivalState ?? '')
+      const state = arrivalStateText.toUpperCase()
       if (state === 'COMPLETE' || state === 'TRIGGERED') summary.readyGroups += 1
       if (state === 'WAITING' || state === 'PARTIAL') summary.waitingGroups += 1
       if (state === 'TIMEOUT') summary.timeoutGroups += 1

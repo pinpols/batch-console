@@ -1,0 +1,4 @@
+interface:
+  display_name: "前端界面与交互审查"
+  short_description: "审查控制台页面布局、信息密度、表格表单、视觉一致性及移动适配"
+  default_prompt: "使用 $frontend-ui-ia-review 审查指定控制台页面，给出有证据的交互、信息架构和视觉建议。"

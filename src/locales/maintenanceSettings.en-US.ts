@@ -18,7 +18,7 @@ export default {
   messageLabel: 'Announcement',
   messagePlaceholder: 'Explain the reason or information users need',
   etaLabel: 'Estimated recovery time',
-  etaPlaceholder: 'Optional; select in your local time zone',
+  etaPlaceholder: 'Optional; notification window defaults to 2 hours, capped at 24 hours',
   startsAtLabel: 'Scheduled start time',
   startsAtPlaceholder: 'Leave blank to start immediately when saved',
   startsAtHint:
@@ -26,7 +26,7 @@ export default {
   affectedServicesLabel: 'Affected service labels',
   affectedServicesPlaceholder: 'One service code per line, such as trigger',
   affectedServicesHint:
-    'These labels are informational only; they do not route traffic or enable per-service maintenance.',
+    'Labels also scope planned downtime notifications: use console-api, trigger, orchestrator, or worker-import/export/process/dispatch/atomic, optionally prefixed with batch-. Empty means Console only; unknown labels are not muted. Requires deployed Alertmanager integration. Services and business routing are unchanged.',
   affectedServicesTooMany: 'Enter no more than 50 affected services.',
   affectedServiceTooLong: 'Each service code must be 64 characters or fewer.',
   reload: 'Reload',

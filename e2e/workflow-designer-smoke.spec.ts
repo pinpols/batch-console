@@ -96,7 +96,7 @@ test.describe('@workflow-designer-smoke 工作流设计器主路径', () => {
     // ── Step 3: 从 palette 补齐 START / JOB / END ─────────────────
     // 选中既有 START → END 依赖，新节点将自动插入其中。
     const baselineEdge = page.locator('.dag-canvas__graph .x6-edge').first()
-    await expect(baselineEdge).toBeVisible({ timeout: 5_000 })
+    expect(baseline.edges, '新建的 START → END 依赖必须进入主画布').toBeGreaterThan(0)
     await baselineEdge.click({ force: true })
     await addPaletteNode(page, 'JOB')
 
@@ -190,7 +190,7 @@ async function readGraphCounts(page: import('@playwright/test').Page) {
  */
 async function addPaletteNode(
   page: import('@playwright/test').Page,
-  type: 'START' | 'END' | 'JOB' | 'GATEWAY' | 'FILE_STEP',
+  type: 'START' | 'END' | 'JOB' | 'GATEWAY',
 ) {
   const before = (await readGraphCounts(page)).nodes
   const paletteItem = page.getByRole('button', { name: type, exact: true }).first()

@@ -1,127 +1,44 @@
-# 前端 CD 方案与统一发布待办
+# 前端持续交付架构与剩余路线
 
-> 状态：规划 / 待实施
-> 当前路线：Docker Compose + GitHub Actions + GHCR + SSH
-> 后续路线：Kubernetes + Helm + GitOps
+> 文档职责：持续维护的发布架构与路线。2026-10-25 按 WDI 源码复核配置，未执行部署、生产审批或 staging 验收。已有脚本连接与目标环境通过分别记录。
 
-## 1. 定位
+## 当前已实现的连接
 
-前端不单独维护另一套发布体系，而是加入 File Batch System 的统一 release set。平台级路线由配对后端 docs/runbook/compose-cd-roadmap.md 维护。
+前端加入平台统一 release set，平台编排权威位于配对后端[Compose CD 路线](../../../file-batch-system/docs/runbook/compose-cd-roadmap.md)。
 
-当前已有：
+| 能力 | 当前实现 | 证据边界 |
+|---|---|---|
+| 固定双仓提交 | 后端 `compose-cd.yml` 固定可从 main 到达的后端/前端完整 SHA | 配置存在，不代表本地 WDI 未提交改动已发布 |
+| 前端镜像 digest | `.github/workflows/build-image.yml` 的 `workflow_call` 接收 `source_ref/backend_ref` 并返回 `image_digest` | 构建与文档源固定；实际成功取决于 CI |
+| 统一 Release Manifest | 后端组装前端及后端镜像集合，校验 digest 并生成 release bundle | 不用浮动 tag 猜测制品 |
+| staging SSH / Compose | 后端可选 `deploy_staging`，使用严格主机指纹与站点配置部署 | 需要实际 secrets、网络、环境及授权 |
+| 健康/版本/制品校验 | 平台脚本核对健康与 manifest 镜像；staging workflow 核对前端 `version.json`、提交与公网安全头 | 运行态必须提供真实证据 |
+| 浏览器与性能连接 | 后端 workflow 已接 staging E2E、视觉、跨浏览器 smoke 与 Lighthouse；前端自身保留 `staging-gate` | 接线存在不证明环境变量、账号与每一场景均已通过 |
+| 失败取证与恢复 | 平台部署脚本保存失败快照、审计和上一稳定 manifest，验证失败可恢复前一 set | 后续浏览器门禁失败后的晋级阻断与恢复策略仍需联合演练 |
+| 并发、摘要与留存 | workflow concurrency、部署锁、Actions Summary、release bundle artifact 与 manifest 留存 | 实际保留策略以当前脚本和环境配置为准 |
 
-- docker-compose.deploy.yml：从 GHCR 拉部署镜像；
-- /healthz：健康检查；
-- /version.json：Git SHA 校验；
-- staging-gate.yml：真实 staging Playwright、视觉回归、Lighthouse；
-- release-promotion / rollback 文档：同一制品晋级与回滚原则。
+前端 `docker-compose.deploy.yml` 只拉取显式标签、要求可达的后端地址，并加入站点受控网络。统一部署由额外生成的 manifest overlay 固定 digest；服务主机不安装 Node 或重建源码。
 
-缺口是把这些能力串成自动 CD，并与后端 digest 绑定为同一 release set。
+## 目标环境待验收
 
-## 2. 目标链路
+- [ ] 配置 staging 的 SSH、已知主机、env 文件、共享网络、URL 与测试账号，实际运行完整 release set。
+- [ ] 核对前端/API origin、四角色准备、真实业务必验与跨浏览器配置，保存 PASS/FAIL/SKIP 明细。
+- [ ] 演练 Nginx 启动失败、后端不可达、错误 digest、SSH 中断和浏览器门禁失败；确认恢复目标与晋级阻断。
+- [ ] 验证前后端回滚兼容窗口、数据库迁移约束及业务副作用恢复。
+- [ ] 核对 manifest、日志和制品留存满足该环境恢复窗口。
 
-    main
-      -> build batch-console image
-      -> push GHCR + capture digest
-      -> 与后端 digests 组成 release manifest
-      -> staging 自动 SSH + Compose
-      -> /healthz + /version.json + RepoDigest
-      -> Playwright + visual + Lighthouse
-      -> production approval
-      -> SSH + Compose 晋级同一 digest
-      -> 失败恢复上一稳定 release set
+这些项目是实际环境证据缺口，不能重新记作全部代码尚待实施，也不能因存在 YAML 就关闭验收。
 
-production 不重新 build，不部署 latest。
+## 后续实施边界
 
-## 3. 与后端的统一契约
+- production 审批与仅允许晋级 staging 已通过 manifest 的完整平台链仍由后端路线推进；不宣称本仓已有生产自动发布。
+- GitOps / Kubernetes / Helm / Argo CD 是后续平台路线，不能把规划图当作已部署架构。
+- 部署基线为 Linux；Windows 本地开发使用 WSL2 / Docker Desktop。历史 Windows 原生部署试验只留归档。
 
-一次 release 至少记录 frontend Git SHA + digest、后端 console-api / trigger / orchestrator / 五类 worker digest、staging 验收状态、production 状态和上一稳定 release set。
+## 前端所在边界
 
-sha-<full> 标签继续用于可读性；环境事实以 digest 为准。
+当前 Compose 阶段，浏览器经 Nginx 访问 SPA、统一文档站和 Console API；Trigger、Orchestrator、Worker、Kafka、PostgreSQL、Valkey 与对象存储的拓扑和规格以后端方案为准。浏览器不直接访问这些内部数据服务。
 
-## 4. 前端待办
+未来部署执行器从 SSH / Compose 切到 GitOps 时，保留固定 SHA/digest、`/healthz`、`/version.json`、目标环境验收和同一 release set 的契约。
 
-### P0
-
-- [ ] build-image 输出 ghcr.io/pinpols/batch-console@sha256:...。
-- [ ] 接入统一 release manifest。
-- [ ] Linux SSH Compose 部署入口复用 docker-compose.deploy.yml。
-- [ ] staging 自动部署后检查 /healthz。
-- [ ] /version.json.gitSha 与 manifest 一致。
-- [ ] 运行容器 RepoDigest 与 manifest 一致。
-- [ ] 自动触发现有 Playwright / visual / Lighthouse。
-- [ ] gate 失败恢复上一 frontend digest，并阻断整个平台 release set 晋级。
-- [ ] production 使用 GitHub Environment 人工审批。
-- [ ] production 只接受 staging 已通过 manifest。
-- [ ] production 再次执行 health/version/digest 校验。
-
-### P1
-
-- [ ] Actions summary 记录 release ID / Git SHA / digest。
-- [ ] deployment concurrency lock。
-- [ ] 失败上传 Compose 状态、容器日志和版本信息。
-- [ ] 保留最近 N 个 staging-verified release set。
-- [ ] 验证前端回滚与后端版本兼容窗口。
-- [ ] 演练 Nginx 启动失败、后端不可达、错误 digest、SSH 中断和 E2E 失败。
-- [ ] 清理 Windows 原生部署入口；部署基线统一 Linux，Windows 开发机走 WSL2/Docker Desktop。
-
-### P2
-
-- [ ] 独立 deployment/ops repo 管理 frontend digest。
-- [ ] Argo CD 先接 staging，再迁 production。
-- [ ] GitOps 继续复用 /healthz、/version.json 和 staging E2E。
-- [ ] GitOps 稳定前保留 Compose CD 回滚路径。
-
-## 5. 与 release-promotion 的关系
-
-现有 release-promotion 的“同一制品从 staging 晋级 production”原则保留。本方案把“同一前端制品”扩展为“同一前后端 release set”，并把 tag 校验提升为 digest 校验。
-
-实施完成后，release-promotion 负责操作步骤，本文件负责 CD 架构和路线，避免两个权威来源重复。
-
-## 6. 当前不做
-
-- 不直接把 production 切到 Argo CD。
-- 不维护与后端不同的审批/回滚语义。
-- 不在部署机 npm ci / npm run build。
-- 不用 latest 作为 staging → production 晋级凭据。
-- 不把已有 Helm/Argo 规划描述成 GitOps 已落地。
-
-
-## 7. 当前与最终生产架构中的前端位置
-
-前端服务器规格、数据平面和平台最终拓扑以配对后端的 `docs/runbook/compose-cd-roadmap.md` 为唯一事实源，本仓不复制第二份硬件表。
-
-当前 Compose 生产基线：
-
-```mermaid
-flowchart LR
-  USER["Browser"] --> NGINX["Nginx / batch-console\nApp Node"]
-  NGINX --> API["console-api\nApp Node"]
-  API --> PLATFORM["Trigger / Orchestrator / Workers"]
-  PLATFORM --> DATA["PostgreSQL / Kafka / Valkey / MinIO\nInfra Node"]
-```
-
-最终 Kubernetes / GitOps 目标：
-
-```mermaid
-flowchart LR
-  USER["Browser"] --> ING["Ingress / TLS"]
-  ING --> FE["batch-console × N"]
-  ING --> API["console-api × N"]
-  API --> CTRL["Trigger / Orchestrator × N"]
-  CTRL --> WK["Worker Pools × N"]
-  WK --> DATA["HA Data Plane"]
-  ARGO["Argo CD"] --> FE
-  ARGO --> API
-  GHCR["GHCR immutable digest"] --> ARGO
-```
-
-前端在两个阶段保持相同发布契约：immutable image digest、`/healthz`、`/version.json`、staging E2E、与后端共同组成 release manifest。部署执行器从 SSH + Compose 切到 Argo CD 时，不改变这些契约。
-
-## 8. 前端生产边界
-
-- Nginx / batch-console 是 Web 入口，不承载数据库、Kafka 或对象存储职责。
-- 浏览器只访问公开 Web/API；不得直接访问 PostgreSQL、Kafka、Valkey、MinIO。
-- production 不在服务器执行 npm build；只运行 CI 已构建并通过 staging 的镜像 digest。
-- 多副本阶段前端保持无状态；配置通过构建/运行时受控入口提供。
-- 前端回滚必须与平台 release set 一起判断兼容性，不能只看前端单镜像是否可启动。
+操作步骤见[发布晋级](./release-promotion.md)、[Docker / Nginx 部署](../deploy/docker-nginx.md)和[回滚](./rollback.md)。

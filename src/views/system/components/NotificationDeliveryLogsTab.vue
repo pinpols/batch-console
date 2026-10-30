@@ -48,11 +48,11 @@
       <template #default="{ row }">{{ row.id ?? '—' }}</template>
     </el-table-column>
     <el-table-column
-      prop="channelId"
-      :label="t('notificationDeliveryLogsTab.colChannelId')"
-      width="100"
+      prop="channelCode"
+      :label="t('notificationDeliveryLogsTab.colChannelCode')"
+      width="140"
     >
-      <template #default="{ row }">{{ row.channelId ?? '—' }}</template>
+      <template #default="{ row }">{{ row.channelCode ?? '—' }}</template>
     </el-table-column>
     <el-table-column
       prop="eventType"
@@ -75,16 +75,20 @@
         <span v-else class="cell-empty">—</span>
       </template>
     </el-table-column>
-    <el-table-column prop="httpStatus" :label="t('notificationDeliveryLogsTab.colHttp')" width="80">
-      <template #default="{ row }">{{ row.httpStatus ?? '—' }}</template>
+    <el-table-column
+      prop="attempt"
+      :label="t('notificationDeliveryLogsTab.colAttempts')"
+      width="100"
+    >
+      <template #default="{ row }">{{ row.attempt ?? '—' }}</template>
     </el-table-column>
     <el-table-column
-      prop="responseBody"
-      :label="t('notificationDeliveryLogsTab.colResponse')"
+      prop="errorMessage"
+      :label="t('notificationDeliveryLogsTab.colError')"
       min-width="200"
       show-overflow-tooltip
     >
-      <template #default="{ row }">{{ row.responseBody || '—' }}</template>
+      <template #default="{ row }">{{ row.errorMessage || '—' }}</template>
     </el-table-column>
     <DatetimeColumn
       prop="createdAt"
@@ -95,7 +99,7 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, reactive, computed } from 'vue'
+  import { ref, reactive, computed, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { listNotificationDeliveryLogs } from '@/api/notifications'
 
@@ -103,6 +107,7 @@
   import { toPageResult } from '@/api/adapters'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
+  import { useTenantRequestScope } from '@/composables/useTenantRequestScope'
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
   import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
   import ProTable from '@/components/table/ProTable.vue'
@@ -129,11 +134,19 @@
     () => !!logFilterApplied.keyword.trim() || !!logFilterApplied.status.trim(),
   )
 
+  const loadScope = useTenantRequestScope()
   async function loadDeliveryLogs() {
-    await runLoadLogs(async () => {
-      const data = await listNotificationDeliveryLogs(tenant.tenantId)
-      deliveryLogs.value = Array.isArray(data) ? (data as Record<string, unknown>[]) : []
-    }).catch(() => {
+    const request = loadScope.begin()
+    if (!request.tenantId) return
+    await runLoadLogs(
+      async () => {
+        const data = await listNotificationDeliveryLogs(request.tenantId)
+        if (!loadScope.isCurrent(request)) return
+        deliveryLogs.value = Array.isArray(data) ? (data as Record<string, unknown>[]) : []
+      },
+      () => loadScope.isCurrent(request),
+    ).catch(() => {
+      if (!loadScope.isCurrent(request)) return
       deliveryLogs.value = []
     })
   }
@@ -151,7 +164,7 @@
       const okStatus = !s ? true : normalize(row.deliveryStatus) === s
       if (!okStatus) return false
       if (!k) return true
-      const hay = `${row.eventType ?? ''} ${row.channelId ?? ''}`.toLowerCase()
+      const hay = `${row.eventType ?? ''} ${row.channelCode ?? ''}`.toLowerCase()
       return hay.includes(k)
     })
   })
@@ -178,6 +191,15 @@
     })
   }
 
+  watch(
+    () => tenant.tenantId,
+    () => {
+      deliveryLogs.value = []
+      loadingLogs.value = false
+      loadLogsError.value = null
+    },
+    { flush: 'sync' },
+  )
   useTenantReload(() => {
     logPage.value = 1
     void loadDeliveryLogs()

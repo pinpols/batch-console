@@ -185,11 +185,15 @@ export function queryLogs(filter?: {
   }
   if (filter?.keyword) {
     const kw = filter.keyword.toLowerCase()
-    result = result.filter(
-      (e) =>
-        e.name.toLowerCase().includes(kw) ||
-        (e.props != null && JSON.stringify(e.props).toLowerCase().includes(kw)),
-    )
+    result = result.filter((entry) => {
+      const matchesName = entry.name.toLowerCase().includes(kw)
+      if (matchesName) return true
+      if (entry.props == null) return false
+
+      const serializedProps = JSON.stringify(entry.props)
+      const normalizedPropsText = serializedProps.toLowerCase()
+      return normalizedPropsText.includes(kw)
+    })
   }
   if (filter?.since) {
     result = result.filter((e) => e.ts >= filter.since!)
@@ -344,13 +348,16 @@ function flushUploadOnUnload(): void {
   const chunk = pending.slice(0, UPLOAD_BATCH_SIZE)
   try {
     // D7 Stage B: cookie 自动带；不再注入 Authorization header
+    const headers = {
+      'Content-Type': 'application/json',
+      ...(currentTenantId() ? { 'X-Tenant-Id': currentTenantId()! } : {}),
+    }
+    const payload = buildPayload(chunk)
+    const body = JSON.stringify(payload)
     fetch(TELEMETRY_ENDPOINT, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(currentTenantId() ? { 'X-Tenant-Id': currentTenantId()! } : {}),
-      },
-      body: JSON.stringify(buildPayload(chunk)),
+      headers,
+      body,
       credentials: 'same-origin',
       keepalive: true,
     })

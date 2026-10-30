@@ -32,7 +32,6 @@ test.describe('分片目录 shard-catalog (ADMIN)', () => {
 
   test('新增分片抽屉打开 + 字段齐 + 可取消', async ({ page }) => {
     await page.getByRole('button', { name: '新建' }).first().click()
-    await page.waitForTimeout(400)
     const drawer = page.locator('.el-drawer:visible').filter({ hasText: '新增分片' })
     await expect(drawer).toBeVisible()
     for (const label of ['分片 key', '主机', '端口', '数据库', '凭据引用', '描述']) {

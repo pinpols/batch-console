@@ -13,7 +13,7 @@
         clearable
         :placeholder="keywordPlaceholder"
         class="governance-query__search"
-        @update:model-value="(v) => emit('update:keyword', v)"
+        @update:model-value="(v: string) => emit('update:keyword', v)"
         @keyup.enter="emit('search')"
       />
     </el-form-item>
@@ -23,7 +23,7 @@
         clearable
         :placeholder="t('governanceFilter.allPlaceholder')"
         class="governance-query__select"
-        @update:model-value="(v) => emit('update:enabled', v as boolean | undefined)"
+        @update:model-value="(v: unknown) => emit('update:enabled', v as boolean | undefined)"
       >
         <el-option :label="t('governanceFilter.optEnabled')" :value="true" />
         <el-option :label="t('governanceFilter.optDisabled')" :value="false" />

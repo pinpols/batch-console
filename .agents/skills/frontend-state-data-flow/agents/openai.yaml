@@ -1,0 +1,4 @@
+interface:
+  display_name: "前端状态与数据流治理"
+  short_description: "核查租户切换、分页缓存、异步竞争、全快照推送及页面数据加载"
+  default_prompt: "使用 $frontend-state-data-flow 处理指定页面数据流，验证租户隔离、异步顺序和适用推送行为。"

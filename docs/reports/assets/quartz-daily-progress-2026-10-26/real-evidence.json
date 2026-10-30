@@ -1,0 +1,92 @@
+{
+  "acceptanceStatus": "PASS",
+  "scope": "single scheduled CRON Workflow and tenant daily-progress push",
+  "frontendBranch": "fix/wdi-current",
+  "frontendHead": "662d254e2f8b97f93021de548815470d2291c997",
+  "backendBranch": "fix/wdi-current",
+  "backendHead": "f3d5e400d3b5bd737124b57cf0a38e685432aab2",
+  "environment": {
+    "isolatedConsolePort": 18181,
+    "isolatedOrchestratorPort": 18182,
+    "isolatedTriggerPort": 18183,
+    "isolatedVitePort": 5181,
+    "sharedServicesRestarted": false
+  },
+  "playwright": {
+    "browser": "Chromium",
+    "passed": 1,
+    "failed": 0,
+    "retries": 0
+  },
+  "plannedOccurrence": {
+    "countBeforeFire": 1,
+    "scheduleVersionCovered": true,
+    "ledgerStatusAfterRun": "REQUESTED"
+  },
+  "workflow": {
+    "runStatus": "SUCCESS"
+  },
+  "dailyProgress": {
+    "initialCoverage": {
+      "scheduledDefinitions": 1,
+      "uncoveredDefinitions": 0
+    },
+    "finalCoverage": {
+      "scheduledDefinitions": 1,
+      "uncoveredDefinitions": 0
+    },
+    "aggregatedScheduledOccurrenceStatus": "RUN_SUCCESS",
+    "pushedSnapshotReflectedSuccess": true,
+    "renderedRows": {
+      "scheduledOccurrence": {
+        "total": 1,
+        "ended": 1,
+        "succeeded": 1,
+        "percentage": 100
+      },
+      "workflowRun": {
+        "total": 1,
+        "ended": 1,
+        "succeeded": 1,
+        "percentage": 100
+      }
+    },
+    "periodicGetsDuringIdleWindow": 0,
+    "idleWindowMillis": 4500
+  },
+  "cleanup": {
+    "definitions": 0,
+    "nodes": 0,
+    "edges": 0,
+    "versions": 0,
+    "runs": 0,
+    "nodeRuns": 0,
+    "requests": 0,
+    "jobInstances": 0,
+    "terminalEvents": 0,
+    "terminalReceipts": 0,
+    "terminalDedupKeys": 0,
+    "calendars": 0,
+    "batchDays": 0,
+    "dayCursors": 0,
+    "dayAudits": 0,
+    "catchupControls": 0,
+    "catchupEvents": 0,
+    "tenants": 0,
+    "configurationRevisions": 0,
+    "operationAudits": 0,
+    "catchUpAuditRemaining": 0,
+    "supersessionHistoryRemaining": 0,
+    "scheduledOccurrencesRemaining": 0,
+    "coverageRowsRemaining": 0,
+    "credentialAccounts": 0,
+    "isolatedDatabasesRemaining": 0,
+    "temporaryPortListenersRemaining": 0
+  },
+  "notCovered": [
+    "FIXED_RATE schedule type",
+    "multi-definition or multi-calendar schedule coverage",
+    "real file Pipeline Worker execution and recovery",
+    "production release acceptance"
+  ]
+}

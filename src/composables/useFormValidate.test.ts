@@ -11,7 +11,7 @@ vi.mock('element-plus', () => ({
 import { rules, useFormValidate } from './useFormValidate'
 
 beforeEach(() => {
-  elMessageWarningMock.mockClear()
+  elMessageWarningMock.mockReset()
 })
 
 describe('useFormValidate rules', () => {

@@ -76,7 +76,10 @@
         />
         <div v-for="row in rows" :key="row.id" class="cr-item">
           <div class="cr-rail">
-            <span class="cr-rail__dot" :class="`cr-tone-border--${statusTone(row.configStatus)}`" />
+            <span
+              class="cr-rail__dot"
+              :class="`cr-tone-border--${configReleaseStatusTone(row.configStatus)}`"
+            />
             <span class="cr-rail__line" />
           </div>
           <div
@@ -89,7 +92,10 @@
           >
             <div class="cr-card__head">
               <span class="cr-card__key">{{ row.configKey }}</span>
-              <span class="cr-pill" :class="`cr-tone--${statusTone(row.configStatus)}`">
+              <span
+                class="cr-pill"
+                :class="`cr-tone--${configReleaseStatusTone(row.configStatus)}`"
+              >
                 {{ statusLabel(row.configStatus) }}
               </span>
               <span class="cr-card__spacer" />
@@ -129,7 +135,10 @@
       <aside v-if="selectedRow" class="cr-panel">
         <div class="cr-panel__head">
           <span class="cr-panel__key">{{ selectedRow.configKey }}</span>
-          <span class="cr-pill" :class="`cr-tone--${statusTone(selectedRow.configStatus)}`">
+          <span
+            class="cr-pill"
+            :class="`cr-tone--${configReleaseStatusTone(selectedRow.configStatus)}`"
+          >
             {{ statusLabel(selectedRow.configStatus) }}
           </span>
         </div>
@@ -236,6 +245,7 @@
         ref="createFormRef"
         :model="createForm"
         :rules="createRules"
+        :disabled="createSaving"
         label-width="120px"
         @submit.prevent="submitCreate"
       >
@@ -408,11 +418,17 @@
     listConfigGovernance,
   } from '@/api/configReleases'
   import { useTenantStore } from '@/stores/tenant'
+  import { useAuthStore } from '@/stores/auth'
+  import { useTenantRequestScope } from '@/composables/useTenantRequestScope'
   import { useTenantReload } from '@/composables/useTenantReload'
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
   import { toPageResult } from '@/api/adapters'
   import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
   import { fmtDatetime } from '@/utils/datetime'
+  import {
+    configReleaseStatusTone,
+    createConfigReleaseStatusLabel,
+  } from './configReleasePresentation'
   import PageContainer from '@/components/common/PageContainer.vue'
   import MetaSelect from '@/components/common/MetaSelect.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
@@ -426,10 +442,18 @@
   } from '@/types/console-api'
 
   const { t, te } = useI18n({ useScope: 'global' })
+  const statusLabel = createConfigReleaseStatusLabel(t, te)
   const { canManageSystem } = usePermission()
   const { writesFrozen } = useWriteAvailability()
 
   const tenant = useTenantStore()
+  const auth = useAuthStore()
+  const listScope = useTenantRequestScope()
+  const detailScope = useTenantRequestScope()
+  const depsScope = useTenantRequestScope()
+  const diffScope = useTenantRequestScope()
+  const actionScope = useTenantRequestScope()
+  const createScope = useTenantRequestScope()
   const loading = ref(false)
   const loadError = ref<unknown>(null)
   const {
@@ -478,12 +502,16 @@
           try {
             const parsed = JSON.parse(value)
             if (!parsed || Array.isArray(parsed) || typeof parsed !== 'object') {
-              callback(new Error(t('configReleaseList.ruleCreatePayloadObject')))
+              const errorMessage = t('configReleaseList.ruleCreatePayloadObject')
+              const validationError = new Error(errorMessage)
+              callback(validationError)
               return
             }
             callback()
           } catch {
-            callback(new Error(t('configReleaseList.ruleCreatePayloadJson')))
+            const errorMessage = t('configReleaseList.ruleCreatePayloadJson')
+            const validationError = new Error(errorMessage)
+            callback(validationError)
           }
         },
         trigger: 'blur',
@@ -515,7 +543,14 @@
     const n = filters.name.trim()
     if (n) r = r.filter((x) => String(x.configName ?? '').includes(n))
     const s = filters.status.trim()
-    if (s) r = r.filter((x) => String(x.configStatus ?? '').toUpperCase() === s.toUpperCase())
+    if (s) {
+      r = r.filter((x) => {
+        const rowStatusText = String(x.configStatus ?? '')
+        const rowStatus = rowStatusText.toUpperCase()
+        const filterStatus = s.toUpperCase()
+        return rowStatus === filterStatus
+      })
+    }
     return r
   })
 
@@ -540,21 +575,6 @@
 
   function selectRelease(row: ConsoleConfigReleaseResponse) {
     selectedId.value = row.id
-  }
-
-  /** 状态→语义色调(时间线圆点描边 + 状态 pill 共用) */
-  function statusTone(status?: string | null): 'success' | 'warning' | 'muted' {
-    const s = String(status ?? '').toUpperCase()
-    if (s === 'PUBLISHED') return 'success'
-    if (s === 'DRAFT' || s === 'GRAY' || s === 'ROLLING_BACK') return 'warning'
-    return 'muted'
-  }
-
-  function statusLabel(status?: string | null): string {
-    const s = String(status ?? '')
-    if (!s) return '—'
-    const key = `enum.configStatus.${s}`
-    return te(key) ? t(key) : s
   }
 
   function enumLabel(group: string, value?: string | null): string {
@@ -599,17 +619,22 @@
   })
 
   async function load() {
+    const scope = listScope.begin()
+    if (!scope.tenantId) return
     loading.value = true
     loadError.value = null
     try {
-      allRows.value = await listConfigReleases(tenant.tenantId)
+      const result = await listConfigReleases(scope.tenantId)
+      if (!listScope.isCurrent(scope)) return
+      allRows.value = result
       page.value = 1
       slicePage()
     } catch (err) {
+      if (!listScope.isCurrent(scope)) return
       loadError.value = err
       throw err
     } finally {
-      loading.value = false
+      if (listScope.isCurrent(scope)) loading.value = false
     }
   }
 
@@ -648,6 +673,9 @@
   useFormFocus(createFormRef, () => createVisible.value)
 
   function openCreate() {
+    if (!canManageSystem.value || writesFrozen.value || !tenant.tenantId) return
+    createScope.begin()
+    createSaving.value = false
     resetCreateForm()
     createVisible.value = true
     void createFormRef.value?.clearValidate()
@@ -666,29 +694,49 @@
   }
 
   async function submitCreate() {
-    const valid = await createFormRef.value?.validate().catch(() => false)
-    if (!valid) return
+    if (createSaving.value || !createVisible.value || !canManageSystem.value || writesFrozen.value)
+      return
+    const scope = createScope.begin()
+    if (!scope.tenantId) return
+    const body = {
+      tenantId: scope.tenantId,
+      configType: createForm.configType.trim(),
+      configKey: createForm.configKey.trim(),
+      configName: createForm.configName.trim(),
+      configPayloadJson: createForm.configPayloadJson.trim(),
+      reason: createForm.releaseNote.trim() || undefined,
+    }
     createSaving.value = true
     try {
-      await createConfigRelease({
-        tenantId: tenant.tenantId,
-        configType: createForm.configType.trim(),
-        configKey: createForm.configKey.trim(),
-        configName: createForm.configName.trim(),
-        configPayloadJson: createForm.configPayloadJson.trim(),
-        reason: createForm.releaseNote.trim() || undefined,
-      })
-      ElMessage.success(t('configReleaseList.createSuccess', { key: createForm.configKey }))
+      const valid = await createFormRef.value?.validate().catch(() => false)
+      if (!valid || !createScope.isCurrent(scope)) return
+      await createConfigRelease(body)
+      if (!createScope.isCurrent(scope)) return
+      ElMessage.success(t('configReleaseList.createSuccess', { key: body.configKey }))
       createDirty.markPristine()
       createVisible.value = false
-      filters.key = createForm.configKey.trim()
+      filters.key = body.configKey
       await load()
     } finally {
-      createSaving.value = false
+      if (createScope.isCurrent(scope)) createSaving.value = false
     }
   }
 
+  /** 确认与原因输入共享同一操作代次，租户、主体或写权限变化后旧操作失效。 */
+  function captureReleaseAction(row: ConsoleConfigReleaseResponse) {
+    const scope = actionScope.begin()
+    const isCurrent = () =>
+      actionScope.isCurrent(scope) &&
+      canManageSystem.value &&
+      !writesFrozen.value &&
+      (!row.tenantId || row.tenantId === scope.tenantId) &&
+      allRows.value.some((current) => current.id === row.id && current.versionNo === row.versionNo)
+    return { tenantId: scope.tenantId, isCurrent }
+  }
+
   async function doRollback(row: ConsoleConfigReleaseResponse) {
+    const context = captureReleaseAction(row)
+    if (!context.isCurrent()) return
     try {
       await confirmDanger({
         verb: t('configReleaseList.rollbackConfirmVerb'),
@@ -696,6 +744,7 @@
         consequence: t('configReleaseList.rollbackConfirmConsequence'),
         confirmButtonText: t('configReleaseList.rollbackConfirmButton'),
       })
+      if (!context.isCurrent()) return
       const { value: reason } = await ElMessageBox.prompt(
         t('configReleaseList.rollbackPrompt'),
         t('configReleaseList.rollbackTitle'),
@@ -704,11 +753,13 @@
           cancelButtonText: t('common.cancel'),
         },
       )
+      if (!context.isCurrent()) return
       await rollbackRelease(row.id, {
-        tenantId: row.tenantId ?? tenant.tenantId,
+        tenantId: context.tenantId,
         expectedVersionNo: row.versionNo,
         reason: reason || undefined,
       })
+      if (!context.isCurrent()) return
       ElMessage.success(t('configReleaseList.rollbackSuccess', { key: row.configKey }))
       await load()
     } catch {
@@ -720,14 +771,19 @@
   const detail = ref<Record<string, unknown> | null>(null)
 
   async function viewDetail(row: ConsoleConfigReleaseResponse) {
-    detail.value = (await getConfigRelease(
-      row.id,
-      row.tenantId ?? tenant.tenantId,
-    )) as unknown as Record<string, unknown>
+    const scope = detailScope.begin()
+    if (!scope.tenantId || (row.tenantId && row.tenantId !== scope.tenantId)) return
+    detail.value = null
+    detailVisible.value = false
+    const result = await getConfigRelease(row.id, scope.tenantId)
+    if (!detailScope.isCurrent(scope)) return
+    detail.value = result as unknown as Record<string, unknown>
     detailVisible.value = true
   }
 
   async function doSubmitApproval(row: ConsoleConfigReleaseResponse) {
+    const context = captureReleaseAction(row)
+    if (!context.isCurrent()) return
     try {
       const { value: reason } = await ElMessageBox.prompt(
         t('configReleaseList.submitPrompt'),
@@ -737,10 +793,12 @@
           cancelButtonText: t('common.cancel'),
         },
       )
+      if (!context.isCurrent()) return
       await submitReleaseApproval(row.id, {
-        tenantId: row.tenantId ?? tenant.tenantId,
+        tenantId: context.tenantId,
         reason: reason || undefined,
       })
+      if (!context.isCurrent()) return
       ElMessage.success(t('configReleaseList.submitSuccess', { key: row.configKey }))
       await load()
     } catch {
@@ -754,17 +812,20 @@
   const depsData = ref<unknown>(null)
 
   async function doDeps(row: ConsoleConfigReleaseResponse) {
+    const scope = depsScope.begin()
+    if (!scope.tenantId || (row.tenantId && row.tenantId !== scope.tenantId)) return
     depsData.value = null
     depsVisible.value = true
     depsLoading.value = true
     try {
-      depsData.value = await listConfigDependencies(
-        row.tenantId ?? tenant.tenantId,
+      const result = await listConfigDependencies(
+        scope.tenantId,
         String(row.configType ?? ''),
         String(row.configKey ?? ''),
       )
+      if (depsScope.isCurrent(scope)) depsData.value = result
     } finally {
-      depsLoading.value = false
+      if (depsScope.isCurrent(scope)) depsLoading.value = false
     }
   }
 
@@ -782,329 +843,81 @@
   }
 
   async function doDiff() {
+    const scope = diffScope.begin()
+    const { releaseIdA, releaseIdB } = diffForm
+    if (!scope.tenantId || !releaseIdA || !releaseIdB || releaseIdA === releaseIdB) return
+    if (![releaseIdA, releaseIdB].every((id) => allRows.value.some((row) => row.id === id))) return
+    diffData.value = null
     diffLoading.value = true
     try {
-      diffData.value = await diffConfigReleases(
-        tenant.tenantId,
-        diffForm.releaseIdA,
-        diffForm.releaseIdB,
-      )
+      const result = await diffConfigReleases(scope.tenantId, releaseIdA, releaseIdB)
+      if (diffScope.isCurrent(scope)) diffData.value = result
     } finally {
-      diffLoading.value = false
+      if (diffScope.isCurrent(scope)) diffLoading.value = false
     }
   }
+
+  watch(
+    [() => diffForm.releaseIdA, () => diffForm.releaseIdB, diffVisible],
+    () => {
+      diffScope.begin()
+      diffData.value = null
+      diffLoading.value = false
+    },
+    { flush: 'sync' },
+  )
+  watch(
+    createVisible,
+    () => {
+      createScope.begin()
+      createSaving.value = false
+    },
+    { flush: 'sync' },
+  )
+  watch(
+    [() => auth.userInfo?.username ?? auth.userInfo?.userId, canManageSystem, writesFrozen],
+    () => {
+      actionScope.begin()
+      createScope.begin()
+      createSaving.value = false
+    },
+    { flush: 'sync' },
+  )
+  watch(
+    () => tenant.tenantId,
+    () => {
+      listScope.begin()
+      detailScope.begin()
+      depsScope.begin()
+      diffScope.begin()
+      actionScope.begin()
+      createScope.begin()
+      allRows.value = []
+      rows.value = []
+      total.value = 0
+      page.value = 1
+      selectedId.value = null
+      loading.value = false
+      loadError.value = null
+      createVisible.value = false
+      resetCreateForm()
+      createDirty.markPristine()
+      createSaving.value = false
+      detailVisible.value = false
+      detail.value = null
+      depsVisible.value = false
+      depsData.value = null
+      depsLoading.value = false
+      diffVisible.value = false
+      diffData.value = null
+      diffLoading.value = false
+      diffForm.releaseIdA = 0
+      diffForm.releaseIdB = 0
+    },
+    { flush: 'sync' },
+  )
 
   useTenantReload(load)
 </script>
 
-<style scoped>
-  /* ── 照设计 proto-nav-发布管理 dump 1:1(数值取 dump 内联值) ── */
-
-  .cr-query {
-    margin-bottom: 14px;
-  }
-
-  .cr-load-error {
-    margin-bottom: 14px;
-  }
-
-  /* 双栏:左时间线 flex:1 + 右 352px sticky 面板 */
-  .cr-layout {
-    display: flex;
-    gap: 24px;
-    align-items: flex-start;
-  }
-
-  .cr-timeline {
-    flex: 1 1 0%;
-    min-width: 0;
-    padding-left: 6px;
-  }
-
-  .cr-item {
-    display: flex;
-    gap: 16px;
-  }
-
-  /* 时间线轨道:13px 圆点(3px 语义色描边)+ 2px 竖线 */
-  .cr-rail {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    width: 14px;
-    flex-shrink: 0;
-  }
-
-  .cr-rail__dot {
-    width: 13px;
-    height: 13px;
-    border-radius: 50%;
-    background: var(--color-bg-page, var(--color-bg-card));
-    border: 3px solid var(--color-border);
-    margin-top: 6px;
-    z-index: 1;
-  }
-
-  .cr-tone-border--success {
-    border-color: var(--color-success);
-  }
-
-  .cr-tone-border--warning {
-    border-color: var(--color-warning);
-  }
-
-  .cr-tone-border--muted {
-    border-color: var(--color-text-tertiary);
-  }
-
-  .cr-rail__line {
-    flex: 1 1 0%;
-    width: 2px;
-    background: var(--color-border);
-    margin: 2px 0;
-  }
-
-  /* 发布卡片 */
-  .cr-card {
-    flex: 1 1 0%;
-    margin-bottom: 14px;
-    background: var(--color-bg-card);
-    border: 1px solid var(--color-border);
-    border-radius: 12px;
-    box-shadow: var(--shadow-card);
-    padding: 15px 18px;
-    cursor: pointer;
-  }
-
-  .cr-card.is-active {
-    background: color-mix(in srgb, var(--color-primary) 8%, transparent);
-    border-color: var(--color-primary);
-  }
-
-  .cr-card__head {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-
-  .cr-card__key {
-    font-size: 13px;
-    font-weight: 600;
-    font-family: var(--font-mono, monospace);
-    color: var(--color-primary);
-  }
-
-  .cr-card__spacer {
-    flex: 1 1 0%;
-  }
-
-  .cr-card__time {
-    font-size: 11px;
-    color: var(--color-text-tertiary);
-    font-family: var(--font-mono, monospace);
-  }
-
-  .cr-card__name {
-    margin-top: 9px;
-    font-size: 14px;
-    color: var(--color-text-primary);
-  }
-
-  .cr-card__meta {
-    margin-top: 10px;
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    font-size: 12px;
-    color: var(--color-text-secondary);
-  }
-
-  .cr-card__meta-num {
-    font-family: var(--font-mono, monospace);
-    color: var(--color-text-primary);
-  }
-
-  .cr-card__meta-val {
-    color: var(--color-text-primary);
-  }
-
-  /* 状态 pill(11px / 2px 8px / r6,语义软底) */
-  .cr-pill {
-    font-size: 11px;
-    padding: 2px 8px;
-    border-radius: 6px;
-    white-space: nowrap;
-  }
-
-  .cr-tone--success {
-    color: var(--color-success);
-    background: color-mix(in srgb, var(--color-success) 14%, transparent);
-  }
-
-  .cr-tone--warning {
-    color: var(--color-warning);
-    background: color-mix(in srgb, var(--color-warning) 14%, transparent);
-  }
-
-  .cr-tone--muted {
-    color: var(--color-text-tertiary);
-    background: var(--color-bg-elevated);
-  }
-
-  .cr-pagination {
-    display: flex;
-    justify-content: flex-end;
-    padding: 4px 0 8px;
-  }
-
-  .cr-governance__class {
-    font-family: var(--font-mono, monospace);
-    font-size: 12px;
-    word-break: break-all;
-  }
-
-  /* 右侧 sticky 详情面板(352px / r14 / p20) */
-  .cr-panel {
-    width: 352px;
-    flex-shrink: 0;
-    background: var(--color-bg-card);
-    border: 1px solid var(--color-border);
-    border-radius: 14px;
-    box-shadow: var(--shadow-card);
-    padding: 20px;
-    position: sticky;
-    top: 12px;
-  }
-
-  .cr-panel__head {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-
-  .cr-panel__key {
-    font-size: 14px;
-    font-weight: 600;
-    font-family: var(--font-mono, monospace);
-    color: var(--color-primary);
-  }
-
-  .cr-panel__name {
-    margin-top: 8px;
-    font-size: 14px;
-    color: var(--color-text-primary);
-  }
-
-  .cr-panel__grid {
-    margin-top: 14px;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-  }
-
-  .cr-panel__stat {
-    padding: 10px 12px;
-    border: 1px solid var(--color-border);
-    border-radius: 9px;
-  }
-
-  .cr-panel__stat-label {
-    font-size: 11px;
-    color: var(--color-text-tertiary);
-  }
-
-  .cr-panel__stat-num {
-    font-size: 16px;
-    font-weight: 600;
-    font-family: var(--font-mono, monospace);
-    margin-top: 3px;
-    color: var(--color-text-primary);
-  }
-
-  .cr-panel__stat-text {
-    font-size: 14px;
-    margin-top: 5px;
-    color: var(--color-text-primary);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .cr-panel__section {
-    margin-top: 18px;
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    color: var(--color-text-tertiary);
-  }
-
-  .cr-panel__list {
-    margin-top: 10px;
-    display: flex;
-    flex-direction: column;
-    gap: 7px;
-  }
-
-  .cr-panel__list-item {
-    display: flex;
-    gap: 8px;
-    align-items: flex-start;
-    font-size: 12.5px;
-    color: var(--color-text-secondary);
-    font-family: var(--font-mono, monospace);
-  }
-
-  .cr-panel__list-dot {
-    color: var(--color-text-tertiary);
-  }
-
-  .cr-panel__list-text {
-    min-width: 0;
-    word-break: break-all;
-  }
-
-  .cr-panel__actions {
-    margin-top: 20px;
-    display: flex;
-    gap: 8px;
-  }
-
-  .cr-panel__actions .cr-panel__btn {
-    flex: 1 1 0%;
-    height: 34px;
-    border-radius: 9px;
-    margin-left: 0;
-  }
-
-  .cr-panel__actions--secondary {
-    margin-top: 10px;
-    flex-wrap: wrap;
-  }
-
-  .cr-panel__actions--secondary .el-button {
-    margin-left: 0;
-  }
-
-  .release-json {
-    margin: 0;
-    padding: var(--card-inner-padding);
-    max-height: 400px;
-    overflow: auto;
-    white-space: pre-wrap;
-    word-break: break-word;
-    font-family: var(--font-family-mono, monospace);
-    font-size: 12px;
-    line-height: 1.5;
-    border-radius: var(--radius-input, 4px);
-    background: var(--el-fill-color-light);
-    border: 1px solid var(--color-border-light);
-  }
-
-  .diff-form {
-    margin-bottom: var(--card-inner-padding);
-  }
-
-  .diff-result {
-    margin-top: var(--card-inner-padding);
-  }
-</style>
+<style scoped src="./ConfigReleaseList.css"></style>

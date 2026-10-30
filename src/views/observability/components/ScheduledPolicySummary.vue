@@ -13,11 +13,11 @@
         {{ t('jobMonitoringPolicy.completionDeadline') }}
       </span>
       <PolicyValue
-        v-if="isDependent"
+        v-if="(job.dependencyCompletionWindowSeconds ?? 0) > 0"
         :seconds="job.dependencyCompletionWindowSeconds"
         :severity="job.completionDeadlineSeverity"
       />
-      <span v-else-if="isCron && deadlineLabel" class="scheduled-policy__deadline">
+      <span v-else-if="deadlineLabel" class="scheduled-policy__deadline">
         {{ deadlineLabel }}
         <el-tag effect="plain" size="small" :type="severityType">
           {{ job.completionDeadlineSeverity ?? 'WARN' }}
@@ -45,11 +45,15 @@
 
   const isDependent = computed(() => Boolean(props.job.dependsOnJobCode?.trim()))
   const supportsStartDeadline = computed(
-    () => props.job.scheduleType === 'CRON' || isDependent.value,
+    () =>
+      props.job.scheduleType === 'CRON' ||
+      isDependent.value ||
+      (props.job.startGraceSeconds ?? 0) > 0 ||
+      (props.job.dependencyCompletionWindowSeconds ?? 0) > 0 ||
+      Boolean(props.job.completionDeadlineLocalTime),
   )
-  const isCron = computed(() => props.job.scheduleType === 'CRON' && !isDependent.value)
   const deadlineLabel = computed(() => {
-    if (!isCron.value || !props.job.completionDeadlineLocalTime) return ''
+    if (!props.job.completionDeadlineLocalTime) return ''
     const localTime = props.job.completionDeadlineLocalTime.slice(0, 5)
     const dayLabel =
       props.job.completionDeadlineDayOffset === 1

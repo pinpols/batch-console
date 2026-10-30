@@ -10,7 +10,6 @@ vi.mock('@/api/client', () => ({
 
 import { patch } from '@/api/client'
 import { governanceApi } from '@/api/governance'
-import { togglePipelineDefinition } from '@/api/system'
 
 const mockedPatch = vi.mocked(patch)
 
@@ -26,11 +25,6 @@ describe('enabled state API', () => {
     ['calendar', governanceApi.toggleCalendar, '/api/console/calendars/11/enabled'],
     ['quota policy', governanceApi.toggleQuotaPolicy, '/api/console/quota-policies/11/enabled'],
     ['alert routing', governanceApi.toggleAlertRouting, '/api/console/alert-routings/11/enabled'],
-    [
-      'pipeline definition',
-      togglePipelineDefinition,
-      '/api/console/pipeline-definitions/11/enabled',
-    ],
   ])('sets %s with explicit PATCH body', async (_name, setEnabled, path) => {
     await setEnabled(11, 'ta', false)
 

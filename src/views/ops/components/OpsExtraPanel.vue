@@ -15,7 +15,7 @@
         <h4 class="extra-title">{{ t('opsExtraPanel.slaReport') }}</h4>
         <p class="extra-subtitle">{{ t('opsExtraPanel.slaReportSummary', { days: slaPeriod }) }}</p>
         <VChart
-          v-if="slaRows.length"
+          v-if="attainmentRows.length"
           class="chart"
           :option="slaReportOption"
           :theme="chartTheme"
@@ -128,6 +128,7 @@
   import type { ConsoleJobInstanceResponse } from '@/types/console-api'
   import { useTenantStore } from '@/stores/tenant'
   import { buildGroupedBarOption, OPS_CHART_COLORS } from '../composables/useChartOptions'
+  import { slaAttainmentRows } from './slaAttainment'
   import { ElMessage } from 'element-plus'
 
   type SlaJob = {
@@ -138,6 +139,7 @@
     failedCount?: number
     slaBreached?: number
     slaOnTime?: number
+    slaTotalWithSla?: number
   }
   const props = defineProps<{
     extraLoading: boolean
@@ -161,29 +163,24 @@
 
   const slaData = computed(() => asRecord(props.slaReport))
   const slaRows = computed<SlaJob[]>(() => asArray<SlaJob>(slaData.value.jobs))
+  const attainmentRows = computed(() => slaAttainmentRows(slaRows.value))
   const slaPeriod = computed(() => Number(slaData.value.periodDays) || 7)
   const usageData = computed(() => asRecord(props.tenantUsage))
   const usagePeriod = computed(() => Number(usageData.value.periodDays) || 7)
 
   const slaReportOption = computed(() => {
-    const rows = [...slaRows.value]
-      .map((row) => {
-        const denominator = (Number(row.slaOnTime) || 0) + (Number(row.slaBreached) || 0)
-        return {
-          name: row.jobName || row.jobCode || '-',
-          value: denominator
-            ? Math.round(((Number(row.slaOnTime) || 0) / denominator) * 1000) / 10
-            : 0,
-        }
-      })
+    const lowestAttainmentRows = [...attainmentRows.value]
       .sort((a, b) => a.value - b.value)
       .slice(0, 8)
+    const jobNames = lowestAttainmentRows.map((row) => row.name)
+    const seriesName = t('opsExtraPanel.attainment')
+    const attainmentValues = lowestAttainmentRows.map((row) => row.value)
     return buildGroupedBarOption({
-      x: rows.map((row) => row.name),
+      x: jobNames,
       series: [
         {
-          name: t('opsExtraPanel.attainment'),
-          data: rows.map((row) => row.value),
+          name: seriesName,
+          data: attainmentValues,
           color: OPS_CHART_COLORS.success,
         },
       ],
@@ -222,7 +219,9 @@
     const counts = new Map<string, number>()
     for (const instance of recentInstances.value) {
       const status = instance.instanceStatus || 'UNKNOWN'
-      counts.set(status, (counts.get(status) ?? 0) + 1)
+      const currentCount = counts.get(status) ?? 0
+      const nextCount = currentCount + 1
+      counts.set(status, nextCount)
     }
     return [...counts.entries()].map(([status, count]) => ({
       name: t(`enum.instanceStatus.${status}`, status),

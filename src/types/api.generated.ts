@@ -360,23 +360,6 @@ export interface paths {
     patch?: never
     trace?: never
   }
-  '/api/console/pipeline-definitions/events': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** Subscribe to pipeline definition realtime events */
-    get: operations['streamPipelineDefinitionEvents']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
   '/api/console/workflow-definitions/events': {
     parameters: {
       query?: never
@@ -758,23 +741,6 @@ export interface paths {
     patch?: never
     trace?: never
   }
-  '/api/console/jobs/trigger': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    /** Trigger a job */
-    post: operations['triggerJob']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
   '/api/console/jobs/compensations': {
     parameters: {
       query?: never
@@ -792,6 +758,57 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/console/jobs/workflow-node/replay-preview': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Preview an exact failed Workflow JOB node replay before approval */
+    post: operations['previewFailedWorkflowJobNodeReplay']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/jobs/workflow-run/replay-preview': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Preview replay of an entire frozen Workflow run before approval */
+    post: operations['previewWholeWorkflowReplay']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/jobs/workflow-run/replay-operations': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Submit an entire Workflow replay operation for approval */
+    post: operations['submitWholeWorkflowReplayForApproval']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/console/jobs/compensate': {
     parameters: {
       query?: never
@@ -801,7 +818,7 @@ export interface paths {
     }
     get?: never
     put?: never
-    /** Compensate a job instance */
+    /** Compensate a job instance or replay an exact failed Workflow JOB node */
     post: operations['compensateJob']
     delete?: never
     options?: never
@@ -869,8 +886,91 @@ export interface paths {
     }
     get?: never
     put?: never
-    /** Launch batch-day catch-up */
+    /**
+     * Launch batch-day catch-up
+     * @description 日历策略为 NONE 时拒绝补跑，不创建审批或触发请求。
+     */
     post: operations['batchDayCatchUp']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/jobs/batch-days/catchup/requests/status': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * 按原请求键查询批量日补跑状态
+     * @description 仅管理员可用。只读取原批次状态；found=false 表示当前未观察到记录，不能推断未执行或换键重发。IN_FLIGHT 和 UNKNOWN 均为未确定结果。
+     */
+    get: operations['getBatchDayCatchUpRequestStatus']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/jobs/batch-days/catchup/requests/abandon': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * 为尚未建档的原批次设置放弃围栏
+     * @description 仅管理员可用。若原键尚未冻结，持久记录 ABANDONED 并阻止该键后续建档；若已有批次则返回已有状态，不改变或取消该批次。
+     */
+    post: operations['abandonUnpreparedBatchDayCatchUp']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/jobs/batch-days/catchup/requests/continue': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * 接续原批次中尚未提交的项目
+     * @description 仅管理员可用。按首次冻结的目标与载荷接续 PENDING 项；存在 UNKNOWN 或 IN_FLIGHT 时拒绝接续，不重发结果未确定的项目。
+     */
+    post: operations['continueBatchDayCatchUpRequest']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/jobs/batch-days/catchup/requests/reconcile': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * 对账原批次中未确定的审批或触发
+     * @description 仅管理员可用。按原请求键和作业编码回查并核验 UNKNOWN 或 IN_FLIGHT 项的原审批或触发回执，不重新提交或接续补跑；找不到或不匹配时保留原状态。
+     */
+    post: operations['reconcileBatchDayCatchUpRequest']
     delete?: never
     options?: never
     head?: never
@@ -966,6 +1066,125 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/console/ops/batch-day-replay/operations/date-range/preview': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** ADR-049 预览日期区间重放 operation */
+    post: operations['previewBatchDayReplayRange']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/ops/batch-day-replay/operations/date-range': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** ADR-049 原子受理日期区间重放 operation */
+    post: operations['submitBatchDayReplayRange']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/ops/batch-day-replay/operations/{operationId}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** 查询日期区间 replay operation */
+    get: operations['getBatchDayReplayOperation']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/ops/batch-day-replay/operations/{operationId}/sessions': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** 查询日期区间 replay operation 的每日子 session */
+    get: operations['listBatchDayReplayOperationSessions']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/ops/batch-day-replay/operations': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** 查询租户最近的日期区间重放操作及聚合进度 */
+    get: operations['listBatchDayReplayOperations']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/ops/batch-day-replay/operations/{operationId}/approve': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** 审批日期区间 replay operation 的全部子 session */
+    post: operations['approveBatchDayReplayOperation']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/ops/batch-day-replay/operations/{operationId}/cancel': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** 取消日期区间 replay operation 尚未终结的子 session */
+    post: operations['cancelBatchDayReplayOperation']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/console/ops/batch-day-replay/sessions/{sessionId}/approve': {
     parameters: {
       query?: never
@@ -1031,6 +1250,23 @@ export interface paths {
     get: operations['listBatchDayReplayEntries']
     put?: never
     post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/ops/batch-day-replay/sessions/{sessionId}/entries/{entryId}/retry-submission': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** 对尚未创建子运行的失败重放条目执行一次提交重试 */
+    post: operations['retryBatchDayReplaySubmission']
     delete?: never
     options?: never
     head?: never
@@ -1173,7 +1409,8 @@ export interface paths {
      * BFS lineage 最小证据链（按 result_version id）
      * @description Console BFF 转发到 orchestrator `GET /internal/orchestrator/lineage/result-versions/{id}`。
      *     返回 `resultVersion/jobInstance/pipelineInstances/fileRecords/dispatchRecords/coverage`。
-     *     范围限定为 BFS hot tables forensic 查询，不做字段级/记录级 lineage 或外部 catalog。
+     *     查询 BFS 热表和归档证据，不做字段级/记录级 lineage 或外部 catalog。
+     *     文件路径、投递目标、错误消息和元数据中的已识别凭据在响应中脱敏。
      */
     get: operations['getLineageEvidenceByResultVersion']
     put?: never
@@ -1194,7 +1431,8 @@ export interface paths {
     /**
      * BFS lineage 最小证据链（按当前 EFFECTIVE businessKey）
      * @description Console BFF 转发到 orchestrator `GET /internal/orchestrator/lineage/effective`。
-     *     先按 `businessKey` 解析当前 EFFECTIVE result_version，再返回 BFS hot-table 证据链。
+     *     先按 `businessKey` 解析当前 EFFECTIVE result_version，再返回 BFS 热表和归档证据链。
+     *     文件路径、投递目标、错误消息和元数据中的已识别凭据在响应中脱敏。
      */
     get: operations['getLineageEvidenceByEffectiveBusinessKey']
     put?: never
@@ -1288,8 +1526,11 @@ export interface paths {
     /**
      * ADR-026 演练计划（L1 CONFIG_VALIDATE / L2 SCHEDULE_PLAN / L3 EXECUTION_PLAN）
      * @description 转发到 orchestrator `POST /internal/orchestrator/dry-run/plan`。
-     *     L1 解析 cron / DAG / 参数；L2 复用 SchedulePlanBuilder 输出 partition / worker route；
-     *     L3 在 L2 基础上叠加 SQL EXPLAIN / MinIO bucketExists / HTTP HEAD reachability。
+     *     目标由 tenantId + jobCode 确定。L1 只校验所选 Job 的启用定义及必需参数，
+     *     不按 Job 编码推断 Workflow，也不校验 Workflow 日程或 DAG；
+     *     L1 summary 明确 validationScope=JOB、workflowValidated=false。
+     *     L2 复用 SchedulePlanBuilder 输出该 Job 的 partition / worker route；
+     *     L3 在 L2 基础上叠加 SQL 静态检查 / MinIO bucketExists / HTTP HEAD reachability。SQL 计划执行已停用，合法 SQL 返回 EXEC_SQL_PLAN_UNAVAILABLE。
      *     响应含 findings (PASS/WARN/ERROR) + summary。**不写 instance / 不调外部投递**（priority-scope §ADR-026 §5）。
      *
      *     **2026-06-04 wire 修复**：BFF 此前把 orchestrator 整层 `CommonResponse<T>` envelope
@@ -1298,6 +1539,66 @@ export interface paths {
      *     响应 schema 仍为单层 `CommonResponseObject`，**外层结构不变**，仅修复 nesting bug。
      */
     post: operations['dryRunPlan']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/batch-days/catch-up-preview': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Preview the next bounded raw-date catch-up scan
+     * @description Read-only cursor preview. It never creates batch days or advances the cursor; history before the chosen cursor anchor is not checked.
+     */
+    get: operations['previewBatchDayCatchup']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/batch-days/catch-up-control': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Pause or resume automatic batch-day catch-up for one calendar
+     * @description Requires ROLE_ADMIN. The action and reason are recorded in an immutable tenant-scoped audit history. Pausing catch-up does not stop current-day opens or dependency-wait reconciliation.
+     */
+    post: operations['changeBatchDayCatchupControl']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/batch-days/historical-gap-candidates': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * List historical dates without batch-day records
+     * @description Read-only, inclusive range limited to 90 days. Missing records are candidates only; historical calendar rules are not reconstructed and no records are created.
+     */
+    get: operations['listBatchDayHistoricalGapCandidates']
+    put?: never
+    post?: never
     delete?: never
     options?: never
     head?: never
@@ -1314,7 +1615,7 @@ export interface paths {
     get?: never
     put?: never
     /**
-     * Operate on a batch_day_instance (FREEZE / RELEASE / SKIP / REOPEN / CLOSE)
+     * Operate on a batch_day_instance (FREEZE / RELEASE / SKIP / REOPEN / CLOSE / SETTLE_EMPTY)
      * @description 转发到 orchestrator 内部接口 `POST /internal/batch-days/operate`，由
      *     `BatchDayOperationService` 执行状态机推进。同事务双写 `job_execution_log`
      *     + `batch_day_operation_audit`（V105）。RELEASE 触发 `batch_day_waiting_launch`
@@ -1327,7 +1628,61 @@ export interface paths {
     patch?: never
     trace?: never
   }
-  '/api/console/jobs/batch-trigger': {
+  '/api/console/calendar-dependency-waits': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** List persisted cross-calendar dependency waits */
+    get: operations['listCalendarDependencyWaits']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/job-dependency-waits': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** List persisted waits for upstream job results */
+    get: operations['listJobDependencyWaits']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/ops/persistent-waits': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * List persisted readiness and Workflow capacity waits
+     * @description Returns tenant-scoped safe wait projections. Workflow launch payloads are never included.
+     */
+    get: operations['listConsolePersistentWaits']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/calendar-dependency-waits/manual-action': {
     parameters: {
       query?: never
       header?: never
@@ -1336,8 +1691,8 @@ export interface paths {
     }
     get?: never
     put?: never
-    /** Batch trigger up to 50 jobs */
-    post: operations['batchTriggerJobs']
+    /** Request an audited RELEASE or SKIP for a waiting calendar dependency */
+    post: operations['requestCalendarDependencyWaitAction']
     delete?: never
     options?: never
     head?: never
@@ -2198,7 +2553,10 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** List claimed tasks of a worker */
+    /**
+     * List safe summaries of a worker's claimed tasks
+     * @description Returns task status metadata only; excludes task payload, execution parameters, heartbeat details, result summary, and error message.
+     */
     get: operations['listClaimedTasks']
     put?: never
     post?: never
@@ -2251,7 +2609,12 @@ export interface paths {
     }
     get?: never
     put?: never
-    /** Redispatch a file */
+    /**
+     * Redispatch a file
+     * @description 仅失败的关联 DISPATCH 任务可重派；父作业或 Workflow 不可派发、任务状态变化，
+     *     或外部投递结果未知时返回状态冲突。结果未知须先按既有核对流程处理。
+     *     DISPATCH 任务须有完整文件关联，并按文件和渠道确定唯一任务；关联缺失、目标不一致或存在多个匹配任务时返回状态冲突。
+     */
     post: operations['redispatchFile']
     delete?: never
     options?: never
@@ -2907,23 +3270,6 @@ export interface paths {
     patch?: never
     trace?: never
   }
-  '/api/console/queries/pipeline-definitions/codes': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** Active pipeline definition (code, name) options for workflow designer dropdown (FILE_STEP cross-domain ref) */
-    get: operations['queryPipelineDefinitionCodes']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
   '/api/console/queries/outbox-retries': {
     parameters: {
       query?: never
@@ -2984,46 +3330,6 @@ export interface paths {
     }
     /** Query file pipeline detail */
     get: operations['queryFilePipelineDetail']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/console/queries/pipeline-definitions': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * Query pipeline definitions compatibility alias
-     * @description Compatibility alias that returns the same file pipeline list as `/api/console/queries/file-pipelines`.
-     */
-    get: operations['queryPipelineDefinitionsCompatibility']
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/console/queries/pipeline-definitions/{id}': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /**
-     * Query pipeline definition compatibility alias detail
-     * @description Compatibility alias that returns the same file pipeline detail as `/api/console/queries/file-pipelines/{id}`.
-     */
-    get: operations['queryPipelineDefinitionCompatibilityDetail']
     put?: never
     post?: never
     delete?: never
@@ -3096,7 +3402,10 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** Query file dispatch records */
+    /**
+     * Query file dispatch records
+     * @description 投递目标与错误消息中的已识别凭据在只读响应中脱敏。
+     */
     get: operations['queryFileDispatches']
     put?: never
     post?: never
@@ -3116,6 +3425,7 @@ export interface paths {
     /**
      * Query channel receipt records
      * @description Receipt-focused alias of file dispatch records. Use the same filter set and response shape as `/api/console/queries/file-dispatches`.
+     *     投递目标与错误消息中的已识别凭据在只读响应中脱敏。
      */
     get: operations['queryChannelReceipts']
     put?: never
@@ -3292,7 +3602,7 @@ export interface paths {
     }
     /**
      * Query job partitions by instance
-     * @description 按作业实例分页查询分区（`job_partition`）。服务端分页 + `partitionStatus` 过滤；按 `partition_no` 升序返回。
+     * @description 按作业实例分页查询分区（`job_partition`）。支持 `partitionStatus` 过滤；普通分页按 `partition_no`、ID 升序，游标分页按 ID 降序。
      */
     get: operations['queryJobPartitions']
     put?: never
@@ -3395,7 +3705,10 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** Query workflow node runs */
+    /**
+     * Query workflow node runs
+     * @description 普通分页按 `run_seq`、ID 降序，游标分页按 ID 降序。
+     */
     get: operations['queryWorkflowNodeRuns']
     put?: never
     post?: never
@@ -3497,7 +3810,10 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** Query catch-up approvals */
+    /**
+     * Query catch-up approvals
+     * @description 每个补跑请求返回一行；同一请求有多张审批单时显示按审批 ID 最新创建的一张。
+     */
     get: operations['queryCatchUpApprovals']
     put?: never
     post?: never
@@ -3668,11 +3984,8 @@ export interface paths {
     put?: never
     /**
      * Create job bundle
-     * @description Creates one job definition and optional related workflow/file/alert/resource config in
-     *     a single backend transaction. **Strict all-or-nothing**: if any spec fails to apply
-     *     the whole transaction is rolled back (no partial commits). The shared
-     *     `TenantConfigBatchInitRequest.strict` flag is forced to true on this path; the
-     *     unrelated ConfigSync path keeps `strict=false` and tolerates partial success.
+     * @description 仅ROLE_ADMIN可用。在单个目标租户事务中创建作业及关联Workflow、文件、告警或资源配置；
+     *     强制strict=true，任一条目失败均回滚该租户事务，不能将其视为普通单作业创建接口。
      */
     post: operations['createJobBundle']
     delete?: never
@@ -3690,7 +4003,7 @@ export interface paths {
     }
     /**
      * Export job bundle
-     * @description Exports one job definition and directly related config as a reusable bundle payload.
+     * @description 仅ROLE_ADMIN可用；导出一个作业及其直接依赖的可移植配置包。
      */
     get: operations['exportJobBundle']
     put?: never
@@ -3712,11 +4025,8 @@ export interface paths {
     put?: never
     /**
      * Import job bundle
-     * @description Imports one job bundle into one or more target tenants. Each target tenant runs in
-     *     its own backend transaction with **strict all-or-nothing** semantics — any spec
-     *     failure within a tenant rolls back that tenant's transaction. Other tenants are
-     *     independent (no cross-tenant rollback). The `TenantConfigBatchInitRequest.strict`
-     *     flag is forced to true on this path.
+     * @description 仅ROLE_ADMIN可用。先校验所有目标身份，再按目标租户独立事务导入配置包；每个目标强制strict=true，
+     *     任一条目失败回滚该目标，合法目标之间不建立跨租户事务。未知提交结果须另行核对，不得据响应丢失重做整批。
      */
     post: operations['importJobBundle']
     delete?: never
@@ -3754,17 +4064,131 @@ export interface paths {
     }
     /** Get workflow definition detail with DAG */
     get: operations['getWorkflowDefinition']
-    /**
-     * Update workflow definition
-     * @description 租户管理员不能更改工作流节点的物理 Worker 分组；省略该字段时保留现有平台分配。
-     */
-    put: operations['updateWorkflowDefinition']
+    put?: never
     post?: never
     delete?: never
     options?: never
     head?: never
     /** Enable or disable workflow definition */
     patch: operations['patchWorkflowDefinition']
+    trace?: never
+  }
+  '/api/console/workflow-definitions/{id}/trigger': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Launch a Workflow as a top-level run */
+    post: operations['triggerWorkflowDefinition']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/workflow-definitions/{id}/trigger-status': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Reconcile a Workflow trigger using its original idempotency key
+     * @description Read-only lookup scoped to the authenticated tenant and exact Workflow. A missing receipt does not prove that an in-flight request was never executed. A recorded request is not proof of successful business execution.
+     */
+    get: operations['workflowTriggerStatus']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/workflow-definitions/{id}/scheduled-occurrences/catch-up': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Request catch-up for one rejected scheduled occurrence
+     * @description Requires a reason and follows the calendar catch-up policy. Trigger records the authenticated Console operator.
+     */
+    post: operations['catchUpRejectedScheduledOccurrence']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/workflow-definitions/{id}/schedule-enabled': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    /**
+     * Pause or resume scheduled workflow fires
+     * @description Changes schedule_enabled only; manual and API launches remain available.
+     */
+    patch: operations['patchWorkflowScheduleEnabled']
+    trace?: never
+  }
+  '/api/console/workflow-definitions/{id}/schedule': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    /**
+     * Update Workflow schedule configuration
+     * @description Updates schedule fields only, preserves the workflow graph, and requires the current definition version.
+     */
+    put: operations['updateWorkflowSchedule']
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/workflow-definitions/{id}/monitoring-policy': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** 查询 Workflow 根级时限告警策略 */
+    get: operations['getWorkflowMonitoringPolicy']
+    /**
+     * 保存 Workflow 根级时限告警策略
+     * @description 仅管理员或租户管理员可写；完整替换根级软策略，不影响图、调度和子 Job 策略。
+     */
+    put: operations['saveWorkflowMonitoringPolicy']
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
     trace?: never
   }
   '/api/console/workflow-definitions/{id}/validate': {
@@ -3994,7 +4418,7 @@ export interface paths {
     patch?: never
     trace?: never
   }
-  '/api/console/ops/triggers/{jobCode}/register': {
+  '/api/console/ops/triggers/{workflowCode}/register': {
     parameters: {
       query?: never
       header?: never
@@ -4003,7 +4427,7 @@ export interface paths {
     }
     get?: never
     put?: never
-    /** Register a Quartz trigger for a job */
+    /** Register a Quartz trigger for a Workflow */
     post: operations['registerTrigger']
     delete?: never
     options?: never
@@ -4011,7 +4435,7 @@ export interface paths {
     patch?: never
     trace?: never
   }
-  '/api/console/ops/triggers/{jobCode}/unregister': {
+  '/api/console/ops/triggers/{workflowCode}/unregister': {
     parameters: {
       query?: never
       header?: never
@@ -4020,7 +4444,7 @@ export interface paths {
     }
     get?: never
     put?: never
-    /** Unregister a Quartz trigger for a job */
+    /** Unregister a Quartz trigger for a Workflow */
     post: operations['unregisterTrigger']
     delete?: never
     options?: never
@@ -4028,7 +4452,7 @@ export interface paths {
     patch?: never
     trace?: never
   }
-  '/api/console/ops/triggers/{jobCode}/pause': {
+  '/api/console/ops/triggers/{workflowCode}/pause': {
     parameters: {
       query?: never
       header?: never
@@ -4037,7 +4461,7 @@ export interface paths {
     }
     get?: never
     put?: never
-    /** Pause a Quartz trigger for a job */
+    /** Pause a Quartz trigger for a Workflow */
     post: operations['pauseTrigger']
     delete?: never
     options?: never
@@ -4045,7 +4469,7 @@ export interface paths {
     patch?: never
     trace?: never
   }
-  '/api/console/ops/triggers/{jobCode}/resume': {
+  '/api/console/ops/triggers/{workflowCode}/resume': {
     parameters: {
       query?: never
       header?: never
@@ -4054,7 +4478,7 @@ export interface paths {
     }
     get?: never
     put?: never
-    /** Resume a paused Quartz trigger for a job */
+    /** Resume a paused Quartz trigger for a Workflow */
     post: operations['resumeTrigger']
     delete?: never
     options?: never
@@ -4562,7 +4986,10 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** Get file record detail by id */
+    /**
+     * Get file record detail by id
+     * @description 文件存储路径和 JSON 元数据中的已识别凭据在只读响应中脱敏。
+     */
     get: operations['queryFileDetail']
     put?: never
     post?: never
@@ -4725,6 +5152,26 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/console/config/sync/requests/status': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * 按原请求身份核对配置同步审计
+     * @description 仅管理员可用。使用原导入请求的幂等键查找审计，不重新执行导入；found=false 仅表示尚未观察到审计，不能推断未执行或允许换键重做。
+     */
+    get: operations['getConfigSyncRequestStatus']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/console/config/sync/logs': {
     parameters: {
       query?: never
@@ -4736,6 +5183,26 @@ export interface paths {
     get: operations['listConfigSyncLogs']
     put?: never
     post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/config/sync/logs/{logId}/reconcile': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Reconcile an import audit from its persisted target receipts
+     * @description Admin only. Reads the original target receipts without importing configuration again. Missing receipts keep the outcome RUNNING; repeated reconciliation is idempotent.
+     */
+    post: operations['reconcileConfigSyncLog']
     delete?: never
     options?: never
     head?: never
@@ -4880,65 +5347,6 @@ export interface paths {
     patch: operations['setAlertRoutingEnabled']
     trace?: never
   }
-  '/api/console/pipeline-definitions': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** List pipeline definitions */
-    get: operations['listPipelineDefinitions']
-    put?: never
-    /**
-     * Create pipeline definition
-     * @description 租户管理员不能设置物理 Worker 分组；该路由由平台运维管理。
-     */
-    post: operations['createPipelineDefinition']
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/console/pipeline-definitions/{id}': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** Get pipeline definition detail with steps */
-    get: operations['getPipelineDefinition']
-    /**
-     * Update pipeline definition
-     * @description 租户管理员不能修改平台管理的物理 Worker 分组。
-     */
-    put: operations['updatePipelineDefinition']
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  '/api/console/pipeline-definitions/{id}/enabled': {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    /** Set pipeline definition enabled state */
-    patch: operations['setPipelineDefinitionEnabled']
-    trace?: never
-  }
   '/api/console/instances/{id}/partitions/retry-failed': {
     parameters: {
       query?: never
@@ -4984,6 +5392,111 @@ export interface paths {
     put?: never
     /** Retry a failed job instance partition */
     post: operations['retryJobInstancePartition']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/pipeline-progress': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Read complete tenant-scoped Pipeline execution snapshots */
+    get: operations['queryPipelineProgressSnapshots']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/pipeline-progress/events': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Subscribe to complete tenant-scoped Pipeline execution snapshots */
+    get: operations['streamPipelineProgressSnapshots']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/job-instances/{id}/execution-progress': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Read job execution stages and separate partition/task counts */
+    get: operations['queryJobExecutionProgress']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/job-instances/{id}/execution-progress/events': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Subscribe to complete job execution snapshots */
+    get: operations['streamJobExecutionProgress']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/workflow-runs/{id}/execution-progress': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Query the immutable run DAG and current execution progress */
+    get: operations['workflowExecutionProgress']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/workflow-runs/{id}/execution-progress/events': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Push full execution snapshots when the subscribed run changes
+     * @description Initial snapshot and changed snapshots via workflow-execution-progress; reconnect obtains a new stream ticket and a fresh complete snapshot. Shared server sampling is subscription-bound (2 seconds), not one frontend query timer per view. workflow-execution-error indicates stale/unavailable state.
+     */
+    get: operations['workflowExecutionProgressEvents']
+    put?: never
+    post?: never
     delete?: never
     options?: never
     head?: never
@@ -5069,6 +5582,46 @@ export interface paths {
     put?: never
     /** Skip a node in a workflow run */
     post: operations['skipWorkflowRunNode']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/dashboard/daily-progress': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Query tenant business-day planned and actual progress
+     * @description Separates scheduled occurrences, root workflow trigger requests, workflow runs, job instances and already created tasks. Excludes dry runs and superseded plans. Plan completeness requires current schedule-version coverage through batch-day cutoff and current configuration revision. A missing cutoff or coverage is incomplete. Counts are not additive across scopes. Uses hot runtime tables, excluding archived history. Scheduled occurrences without a resolved business date are outside a business-date query.
+     */
+    get: operations['dailyProgress']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/dashboard/daily-progress/events': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Push full business-day progress snapshots
+     * @description Separates scheduled occurrences, root workflow trigger requests, workflow runs, job instances and already created tasks. Excludes dry runs and superseded plans. Plan completeness requires current schedule-version coverage through batch-day cutoff and current configuration revision. A missing cutoff or coverage is incomplete. Counts are not additive across scopes. Uses hot runtime tables, excluding archived history. Scheduled occurrences without a resolved business date are outside a business-date query.
+     */
+    get: operations['dailyProgressEvents']
+    put?: never
+    post?: never
     delete?: never
     options?: never
     head?: never
@@ -6074,6 +6627,23 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/console/files/manual-upload-targets': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** List enabled file-group Workflow targets for manual upload */
+    get: operations['listManualUploadTargets']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/console/files/{fileId}/content': {
     parameters: {
       query?: never
@@ -6149,7 +6719,10 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** List subscribable event types */
+    /**
+     * List subscribable event types
+     * @description Business event subscriptions exclude Job SLA alerts, which use the alert centre and its enabled Alertmanager channel.
+     */
     get: operations['listEventTypes']
     put?: never
     post?: never
@@ -6200,7 +6773,10 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** Export file error records as CSV */
+    /**
+     * Export file error records as CSV
+     * @description Fields containing commas, quotes, carriage returns, or line feeds are quoted; embedded quotes are doubled.
+     */
     get: operations['exportFileErrors']
     put?: never
     post?: never
@@ -6237,7 +6813,10 @@ export interface paths {
     /** List notification channels */
     get: operations['listNotificationChannels']
     put?: never
-    /** Create notification channel */
+    /**
+     * Create notification channel
+     * @description 编码经NFKC规范化、去除控制字符及首尾空白后用于查重和写入；活动渠道（包括并发创建）冲突返回409，软删除渠道可按原主键恢复。
+     */
     post: operations['createNotificationChannel']
     delete?: never
     options?: never
@@ -6275,7 +6854,7 @@ export interface paths {
     put?: never
     /**
      * Test notification channel
-     * @description 真正按渠道类型发一条测试消息(WEBHOOK 走带 SSRF 防护+超时的投递路径,其余渠道走对应 NotificationSender),如实反映投递结果并落一条 notification_delivery_log。 data 为无类型 map:{channelCode, channelType, success(boolean), status("OK"|"FAILED"), message, httpStatus(nullable), errorSummary(nullable)};失败时 errorSummary 透传发送器错误。
+     * @description 真正按渠道类型发一条测试消息(WEBHOOK 走带 SSRF 防护+超时的投递路径,其余渠道走对应 NotificationSender),如实反映投递结果并落一条 notification_delivery_log。 data 为无类型 map:{channelCode, channelType, success(boolean), status("OK"|"FAILED"), message, httpStatus(nullable), errorSummary(nullable)};失败时 errorSummary 返回经凭据遮蔽的发送器错误摘要。
      */
     post: operations['testNotificationChannel']
     delete?: never
@@ -6338,6 +6917,46 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/console/notifications/terminal-deliveries': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * List tenant Job and Workflow terminal delivery recovery metadata
+     * @description Lists original durable recipients only. Any Console role may read its permitted tenant; payloads and channel credentials are excluded.
+     */
+    get: operations['listTerminalNotificationDeliveries']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/notifications/terminal-deliveries/{source}/{id}/retry': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Retry an exhausted terminal delivery after receiver reconciliation
+     * @description Requires ROLE_ADMIN or ROLE_TENANT_ADMIN. Only EXHAUSTED records without automatic retry or active claim qualify. Atomically records operator reconciliation and starts one bounded retry cycle against the frozen event and original recipient. Same requestId and evidence is a persistent no-op; changed evidence conflicts. Success means queued, not externally delivered. Cookie authentication requires CSRF.
+     */
+    post: operations['retryTerminalNotificationDelivery']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/console/config/tenant-package/excel/export': {
     parameters: {
       query?: never
@@ -6345,7 +6964,7 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** Export current tenant config package as 12-sheet Excel (importable) */
+    /** Export current tenant config package as 11-sheet Excel (importable) */
     get: operations['exportTenantConfigPackageExcel']
     put?: never
     post?: never
@@ -6362,7 +6981,7 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** Download blank tenant config package Excel template (12 sheets) */
+    /** Download blank tenant config package Excel template (11 sheets) */
     get: operations['downloadTenantConfigPackageExcelTemplate']
     put?: never
     post?: never
@@ -6413,7 +7032,7 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** Return 12-sheet tenant config package field guide */
+    /** Return 11-sheet tenant config package field guide */
     get: operations['getTenantConfigPackageExcelGuide']
     put?: never
     post?: never
@@ -6432,7 +7051,7 @@ export interface paths {
     }
     get?: never
     put?: never
-    /** Upload tenant config package Excel (12 sheets) */
+    /** Upload tenant config package Excel (retired tenant Pipeline sheets are rejected) */
     post: operations['uploadTenantConfigPackageExcel']
     delete?: never
     options?: never
@@ -6711,7 +7330,31 @@ export interface components {
       code: string
       /** @description Human-readable status message. */
       message: string
+      /** @description Present and true only when an idempotency key was already completed and the request was rejected as a replay. */
+      idempotentReplay?: boolean
       meta: components['schemas']['CommonMeta']
+    }
+    /** @description Tenant-scoped saved parameters for a built-in atomic task type. */
+    AtomicTaskConfigResponse: {
+      /** Format: int64 */
+      id: number
+      tenantId: string
+      /** @enum {string} */
+      taskType: 'sql' | 'stored_proc' | 'shell' | 'http'
+      name: string
+      /** @description Serialized JSON object containing schema-validated parameters. */
+      parameters: string
+      createdBy?: string | null
+      /** Format: date-time */
+      createdAt: string
+      /** Format: date-time */
+      updatedAt: string
+    }
+    CommonResponseAtomicTaskConfigList: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['AtomicTaskConfigResponse'][]
+    }
+    CommonResponseAtomicTaskConfig: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['AtomicTaskConfigResponse']
     }
     CommonResponseVoid: components['schemas']['CommonResponseBase'] & {
       /** @description Always null for void responses. */
@@ -6777,23 +7420,9 @@ export interface components {
       pageSize: number
       items: unknown[]
     }
-    DryRunTriggerResult: {
-      /** @enum {boolean} */
-      dryRun: true
-      tenantId: string
-      jobCode: string
-      /** Format: date */
-      bizDate: string
-      valid: boolean
-      errors: string[]
-    }
-    CommonResponseJobTrigger: components['schemas']['CommonResponseBase'] & {
-      /** @description 普通触发返回实例号；dryRun 返回校验结果。保留既有 JSON 形态。 */
-      data?: string | components['schemas']['DryRunTriggerResult']
-    }
     ConsoleTriggerStatusResponse: {
       tenantId?: string | null
-      jobCode?: string | null
+      workflowCode?: string | null
       scheduleType?: string | null
       scheduleExpression?: string | null
       timezone?: string | null
@@ -6809,6 +7438,12 @@ export interface components {
     }
     CommonResponseString: components['schemas']['CommonResponseBase'] & {
       data?: string
+    }
+    CommonResponseWorkflowTriggerStatus: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['WorkflowTriggerStatusResponse']
+    }
+    CommonResponseScheduledOccurrenceCatchUpResponse: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['ScheduledOccurrenceCatchUpResponse']
     }
     CommonResponseLong: components['schemas']['CommonResponseBase'] & {
       /** Format: int64 */
@@ -6846,8 +7481,8 @@ export interface components {
       /** @description ISO-8601 estimated recovery timestamp; null when unknown */
       etaAt?: string | null
       /**
-       * @description Service codes that are down during this maintenance (empty list = whole site).
-       *     FE renders a per-service availability badge so users see what's still usable.
+       * @description 公告受影响服务标记；识别的固定应用编码同时限定计划停机通知抑制范围。
+       *     空列表保留整站公告，但通知范围缺省仅为 Console；未知标记不静默，不控制服务启停或业务路由。
        */
       affectedServices?: string[]
       /**
@@ -6894,6 +7529,7 @@ export interface components {
        * @description Planned start timestamp; omit for immediate activation
        */
       startsAt?: string
+      /** @description 公告标记及固定应用编码的维护通知范围；空列表仅缺省到 Console，未知标记不抑制通知。 */
       affectedServices?: string[]
     }
     CommonResponseMaintenanceStatus: components['schemas']['CommonResponseBase'] & {
@@ -7129,11 +7765,19 @@ export interface components {
       /** Format: int32 */
       workflowDefinitions: number
       /** Format: int32 */
-      pipelineDefinitions: number
-      /** Format: int32 */
       fileChannels: number
       /** Format: int32 */
       fileTemplates: number
+      /** Format: int32 */
+      resourceQueues: number
+      /** Format: int32 */
+      batchWindows: number
+      /** Format: int32 */
+      businessCalendars: number
+      /** Format: int32 */
+      quotaPolicies: number
+      /** Format: int32 */
+      alertRoutings: number
     }
     ConfigSyncExportResponse: {
       sourceTenantId: string
@@ -7185,6 +7829,16 @@ export interface components {
     }
     CommonResponseConfigSyncImport: components['schemas']['CommonResponseBase'] & {
       data?: components['schemas']['ConfigSyncImportResponse']
+    }
+    ConfigSyncRequestStatusResponse: {
+      found: boolean
+      audit?: components['schemas']['ConfigSyncLogResponse'] | null
+    }
+    CommonResponseConfigSyncRequestStatus: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['ConfigSyncRequestStatusResponse']
+    }
+    CommonResponseConfigSyncLog: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['ConfigSyncLogResponse']
     }
     CommonResponseConfigSyncLogList: components['schemas']['CommonResponseBase'] & {
       data?: components['schemas']['ConfigSyncLogResponse'][]
@@ -7305,8 +7959,6 @@ export interface components {
       /** Format: int64 */
       id?: number | null
       tenant_id?: string | null
-      /** Format: int64 */
-      pipeline_definition_id?: number | null
       job_code?: string | null
       pipeline_type?: string | null
       /** Format: int64 */
@@ -7598,8 +8250,8 @@ export interface components {
     }
     WorkflowDefinitionFullUpdateRequest: {
       definition: components['schemas']['WorkflowDefinitionSaveRequest']
-      /** @description 客户端最近 GET 拿到的 version,用于乐观锁;不传则跳过版本冲突校验。 */
-      expectedVersion?: number
+      /** @description 客户端最近 GET 拿到的 version，必须参与版本比较；缺失时拒绝写入。 */
+      expectedVersion: number
       /** @description 预留 lockToken;Spike 阶段以 SecurityContext.username 为权威。 */
       lockToken?: string
     }
@@ -7700,22 +8352,137 @@ export interface components {
     CommonResponseWorkflowDefinitionList: components['schemas']['CommonResponseBase'] & {
       data?: components['schemas']['PageResponse']
     }
+    WorkflowTriggerStatusResponse: {
+      tenantId: string
+      /** Format: int64 */
+      workflowDefinitionId: number
+      /** Format: date */
+      bizDate: string
+      requestId: string
+      traceId?: string | null
+      /** @enum {string} */
+      requestStatus:
+        | 'PENDING'
+        | 'PROCESSING'
+        | 'ACCEPTED'
+        | 'WAITING'
+        | 'LAUNCHED'
+        | 'REJECTED'
+        | 'DUPLICATE'
+        | 'FORWARD_FAILED'
+        | 'GIVE_UP'
+      /** Format: date-time */
+      updatedAt: string
+    }
+    WorkflowTriggerRequest: {
+      tenantId: string
+      /** Format: date */
+      bizDate: string
+      triggerType?: string
+      payload?: string
+    }
+    ScheduledOccurrenceCatchUpRequest: {
+      tenantId: string
+      /** Format: date-time */
+      scheduledFireTime: string
+      /** Format: date */
+      bizDate: string
+      reason: string
+    }
+    ScheduledOccurrenceCatchUpResponse: {
+      requestId: string
+      /** @enum {string} */
+      status: 'ACCEPTED' | 'PENDING_APPROVAL'
+      /** @description Approval ticket when status is PENDING_APPROVAL */
+      approvalId?: string | null
+    }
+    CommonResponseWorkflowMonitoringPolicyResponse: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['WorkflowMonitoringPolicyResponse']
+    }
+    WorkflowMonitoringPolicyRequest: {
+      tenantId: string
+      /**
+       * Format: int32
+       * @description 根运行开始后的总耗时阈值，包含编排等待；零为关闭，不影响硬超时
+       * @default 0
+       */
+      softRuntimeSeconds: number
+      /**
+       * @default WARN
+       * @enum {string}
+       */
+      softRuntimeSeverity: 'WARN' | 'ERROR' | 'CRITICAL'
+      /**
+       * Format: int32
+       * @description 从真实计划或输入预期资格起算的启动宽限；零为关闭
+       * @default 0
+       */
+      startGraceSeconds: number
+      /**
+       * @default WARN
+       * @enum {string}
+       */
+      startGraceSeverity: 'WARN' | 'ERROR' | 'CRITICAL'
+      /**
+       * Format: time
+       * @description 按 Workflow 时区解释的完成截止钟点；空为关闭
+       */
+      completionDeadlineLocalTime?: string | null
+      /**
+       * Format: int32
+       * @default 0
+       */
+      completionDeadlineDayOffset: number
+      /**
+       * @default WARN
+       * @enum {string}
+       */
+      completionDeadlineSeverity: 'WARN' | 'ERROR' | 'CRITICAL'
+    }
+    WorkflowMonitoringPolicyResponse: components['schemas']['WorkflowMonitoringPolicyRequest'] & {
+      /** Format: int64 */
+      workflowDefinitionId?: number
+      /** Format: date-time */
+      policyEffectiveAt?: string | null
+      /** Format: date-time */
+      updatedAt?: string | null
+    }
+    WorkflowScheduleUpdateRequest: {
+      tenantId: string
+      /** Format: int32 */
+      expectedVersion: number
+      /** @enum {string} */
+      scheduleType: 'CRON' | 'FIXED_RATE' | 'MANUAL' | 'EVENT'
+      scheduleExpr?: string | null
+      timezone?: string | null
+      /** @enum {string|null} */
+      triggerMode?: 'SCHEDULED' | 'API' | 'MANUAL' | 'EVENT' | 'MIXED' | null
+      calendarCode?: string | null
+      dependsOnJobCode?: string | null
+    }
     WorkflowDefinitionSaveRequest: {
       tenantId: string
       workflowCode: string
       workflowName?: string
       workflowType?: string
       enabled?: boolean
+      /** @enum {string|null} */
+      scheduleType?: 'CRON' | 'FIXED_RATE' | 'MANUAL' | 'EVENT' | 'ONE_TIME' | null
+      scheduleExpr?: string | null
+      timezone?: string | null
+      /** @enum {string|null} */
+      triggerMode?: 'SCHEDULED' | 'API' | 'MANUAL' | 'EVENT' | 'MIXED' | null
+      calendarCode?: string | null
+      dependsOnJobCode?: string | null
       description?: string
       nodes?: components['schemas']['WorkflowDefinitionSaveNodeItem'][]
       edges?: components['schemas']['WorkflowDefinitionSaveEdgeItem'][]
     }
     WorkflowDefinitionSaveNodeItem: {
       nodeCode: string
-      nodeName?: string
+      nodeName: string
       nodeType: string
       relatedJobCode?: string
-      relatedPipelineCode?: string
       /** @description Platform-owned physical worker group. Tenant administrators cannot assign or change it. */
       workerGroup?: string
       windowCode?: string
@@ -7767,6 +8534,15 @@ export interface components {
     CommonResponseConsoleWorkflowNodeRunResponse: components['schemas']['CommonResponseBase'] & {
       data?: components['schemas']['ConsoleWorkflowNodeRunResponse']
     }
+    CommonResponseConsoleWorkflowNodeReplayPreviewResponse: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['ConsoleWorkflowNodeReplayPreviewResponse']
+    }
+    CommonResponseConsoleWorkflowRunReplayPreviewResponse: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['ConsoleWorkflowRunReplayPreviewResponse']
+    }
+    CommonResponseConsoleWorkflowRunReplaySubmissionResponse: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['ConsoleWorkflowRunReplaySubmissionResponse']
+    }
     CommonResponseConsoleWorkflowTopologyResponse: components['schemas']['CommonResponseBase'] & {
       data?: components['schemas']['ConsoleWorkflowTopologyResponse']
     }
@@ -7782,11 +8558,32 @@ export interface components {
     CommonResponseConsoleBatchDayList: components['schemas']['CommonResponseBase'] & {
       data?: components['schemas']['PageResponse']
     }
+    CommonResponseConsoleCalendarDependencyWaitList: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['ConsoleCalendarDependencyWaitResponse'][]
+    }
+    CommonResponseConsoleJobDependencyWaitList: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['ConsoleJobDependencyWaitResponse'][]
+    }
+    CommonResponseConsolePersistentWaitPage: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['ConsolePersistentWaitPageResponse']
+    }
+    CommonResponseConsoleCalendarDependencyWait: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['ConsoleCalendarDependencyWaitResponse']
+    }
     CommonResponseConsoleBatchDayWindowResponse: components['schemas']['CommonResponseBase'] & {
       data?: components['schemas']['ConsoleBatchDayWindowResponse']
     }
+    CommonResponseConsoleBatchDayCatchupPreviewResponse: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['ConsoleBatchDayCatchupPreviewResponse']
+    }
+    CommonResponseConsoleBatchDayHistoricalGapInventoryResponse: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['ConsoleBatchDayHistoricalGapInventoryResponse']
+    }
     CommonResponseConsoleBatchDayCatchUpResponse: components['schemas']['CommonResponseBase'] & {
       data?: components['schemas']['ConsoleBatchDayCatchUpResponse']
+    }
+    CommonResponseBatchDayCatchUpRequestStatus: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['BatchDayCatchUpRequestStatusResponse']
     }
     CommonResponseWorkerRegistryList: components['schemas']['CommonResponseBase'] & {
       data?: components['schemas']['PageResponse']
@@ -7923,20 +8720,6 @@ export interface components {
     CommonResponseFileErrorRecordList: components['schemas']['CommonResponseBase'] & {
       data?: components['schemas']['PageResponse']
     }
-    TriggerRequest: {
-      tenantId: string
-      jobCode: string
-      /** Format: date */
-      bizDate: string
-      /** @enum {string} */
-      triggerType?: 'MANUAL' | 'API' | 'SCHEDULE' | 'CATCH_UP'
-      payload?: string
-      /**
-       * @description When true, validates the trigger request without executing. Idempotency-Key not required.
-       * @default false
-       */
-      dryRun: boolean
-    }
     BatchDayQueryRequest: {
       tenantId?: string
       calendarCode: string
@@ -8022,6 +8805,112 @@ export interface components {
       autoApprove?: boolean
       traceId?: string
     }
+    /** @description ADR-049 closed date interval; operationKey and previewToken are required only on submit. */
+    BatchDayReplayRangeRequest: {
+      tenantId?: string
+      calendarCode: string
+      /** Format: date */
+      fromDate: string
+      /** Format: date */
+      throughDate: string
+      /** @enum {string} */
+      scope: 'ALL' | 'ALL_FAILED' | 'SUBSET_JOB_CODES' | 'OUTPUTS_ONLY'
+      jobCodes?: string[]
+      versionIds?: number[]
+      resultPolicy?: string
+      configVersionPolicy?: string
+      /** Format: int32 */
+      configVersion?: number
+      reason: string
+      requestedBy: string
+      /** @default false */
+      autoApprove: boolean
+      traceId?: string
+      /**
+       * @default REPLAY
+       * @enum {string}
+       */
+      executionMode: 'REPLAY' | 'DRY_RUN'
+      /**
+       * @default EXISTING_INSTANCES
+       * @enum {string}
+       */
+      candidateSource: 'EXISTING_INSTANCES' | 'SCHEDULE_PLAN'
+      /** Format: uuid */
+      operationKey?: string
+      previewToken?: string
+    }
+    ReplayOperationPreview: {
+      tenantId: string
+      /** Format: uuid */
+      operationKey: string
+      /** @enum {string} */
+      operationType: 'BATCH_DAY_RANGE'
+      calendarCode: string
+      /** Format: date */
+      fromDate: string
+      /** Format: date */
+      throughDate: string
+      scope: string
+      /** Format: int32 */
+      totalCandidateCount: number
+      previewToken: string
+      /** Format: date-time */
+      expiresAt: string
+      days: {
+        /** Format: date */
+        bizDate?: string
+        /** @enum {string} */
+        disposition?: 'READY' | 'NO_CANDIDATES' | 'CALENDAR_BLOCKED'
+        /** Format: int32 */
+        candidateCount?: number
+        entries?: components['schemas']['BatchDayReplayPreviewEntry'][]
+        resultVersionImpacts?: components['schemas']['BatchDayReplayResultVersionImpact'][]
+        assetPartitionImpacts?: components['schemas']['BatchDayReplayAssetPartitionImpact'][]
+        dispatchImpacts?: components['schemas']['BatchDayReplayDispatchImpact'][]
+        warnings?: string[]
+      }[]
+    }
+    ReplayOperation: {
+      /** Format: int64 */
+      id: number
+      tenantId: string
+      operationKey: string
+      operationType: string
+      status: string
+      calendarCode?: string
+      /** Format: date */
+      fromDate?: string | null
+      /** Format: date */
+      throughDate?: string | null
+      scope?: string
+      executionMode?: string
+      candidateSource?: string
+      resultPolicy?: string
+      configVersionPolicy?: string
+      /** Format: int32 */
+      configVersion?: number | null
+      reason?: string
+      requestedBy?: string
+      approvedBy?: string | null
+      /** Format: int32 */
+      totalCount: number
+      /** Format: int32 */
+      succeededCount: number
+      /** Format: int32 */
+      failedCount: number
+      /** Format: int32 */
+      inFlightCount: number
+      /** Format: date-time */
+      startedAt?: string | null
+      /** Format: date-time */
+      completedAt?: string | null
+      traceId?: string | null
+      /** Format: date-time */
+      createdAt?: string
+      /** Format: date-time */
+      updatedAt?: string
+    }
     /** @description ADR-020 批次日重放影响预览；解析候选并签发短时一次性凭证，不创建 session。 */
     BatchDayReplayPreview: {
       tenantId: string
@@ -8051,6 +8940,24 @@ export interface components {
       assetPartitionImpacts: components['schemas']['BatchDayReplayAssetPartitionImpact'][]
       dispatchImpacts: components['schemas']['BatchDayReplayDispatchImpact'][]
       warnings: string[]
+    }
+    CommonResponseReplayOperationPreview: {
+      success: boolean
+      code: string
+      message: string
+      data: components['schemas']['ReplayOperationPreview']
+    }
+    CommonResponseReplayOperation: {
+      success: boolean
+      code: string
+      message: string
+      data: components['schemas']['ReplayOperation']
+    }
+    CommonResponseReplayOperationList: {
+      success: boolean
+      code: string
+      message: string
+      data: components['schemas']['ReplayOperation'][]
     }
     BatchDayReplayPreviewEntry: {
       jobCode: string
@@ -8116,7 +9023,7 @@ export interface components {
       level?: 'CONFIG_VALIDATE' | 'SCHEDULE_PLAN' | 'EXECUTION_PLAN'
       /**
        * @description 可选 effectiveParams；L3 EXECUTION_PLAN 中识别以下 key 触发探测：
-       *     - sql / querySql / sourceQuery / validationSql / selectSql → JdbcTemplate EXPLAIN
+       *     - sql / querySql / sourceQuery / validationSql / selectSql → SQL 静态检查；不执行数据库计划，返回 EXEC_SQL_PLAN_UNAVAILABLE
        *     - s3Bucket → S3Client.headBucket（命名 DNS-style 校验）
        *     - endpointUrl / callbackUrl / channelEndpoint / dispatchTarget → HTTP HEAD（5s timeout）
        */
@@ -8145,11 +9052,11 @@ export interface components {
       /** @default true */
       enabled: boolean
     }
-    /** @description 订阅规则创建/更新请求（2026-07-09 写路径类型化，字段名与既有 Map 消费键一致） */
+    /** @description 订阅规则创建/更新请求；规则名称和事件类型经 NFKC 规范化、控制字符清洗及首尾空白处理后必须非空，否则返回 400。 */
     SubscriptionRuleUpsertRequest: {
       ruleName?: string
       channelCode?: string
-      /** @description 逗号分隔事件类型，如 JOB_FAILED,JOB_TIMEOUT */
+      /** @description 逗号分隔业务事件类型，如 JOB_FAILED,WORKFLOW_FAILED；SLA 告警使用告警中心通道，JOB_SLA_BREACH、JOB_SLA_VIOLATION 及其 ESCALATED 编码拒绝保存。 */
       eventTypes?: string
       severityFilter?: string
       jobCodeFilter?: string
@@ -8162,11 +9069,13 @@ export interface components {
       /** Format: date */
       bizDate: string
       /**
-       * @description 批量日治理动作；状态机由 BatchDayOperationService 推进
+       * @description SKIP、REOPEN、SETTLE_EMPTY 必须填写 reason；SKIP 是人工豁免，不代表成功。REOPEN 保留旧义务终态并重建未履行义务。SETTLE_EMPTY 仅允许 cutoff 后、零作业实例、无跨日历或作业依赖等待时结算；实际操作者从认证上下文读取。
        * @enum {string}
        */
-      action: 'FREEZE' | 'RELEASE' | 'SKIP' | 'REOPEN' | 'CLOSE'
+      action: 'FREEZE' | 'RELEASE' | 'SKIP' | 'REOPEN' | 'CLOSE' | 'SETTLE_EMPTY'
+      /** @description 兼容字段；服务端忽略请求值，审计操作者取认证上下文。 */
       operatorId?: string
+      /** @description SKIP、REOPEN、SETTLE_EMPTY 操作必填，并写入审计记录。 */
       reason?: string
     }
     CompensationCommandRequest: {
@@ -8174,7 +9083,7 @@ export interface components {
       compensationType: string
       /** Format: int64 */
       targetId?: number
-      jobCode?: string
+      workflowCode?: string
       /** Format: date */
       bizDate?: string
       batchNo?: string
@@ -8187,6 +9096,142 @@ export interface components {
       reason?: string
       strategy?: string
       traceId?: string
+      /** Format: int64 */
+      sourceWorkflowRunId?: number
+      /** Format: int64 */
+      sourceWorkflowNodeRunId?: number
+      /** Format: int64 */
+      replayOperationId?: number
+      /** Format: uuid */
+      operationKey?: string
+      previewToken?: string
+      /** @enum {string} */
+      resultPolicy?: 'CREATE_NEW_VERSION' | 'KEEP_BOTH' | 'MANUAL_CONFIRM_EFFECTIVE'
+      /** @enum {string} */
+      configVersionPolicy?: 'USE_ORIGINAL_CONFIG' | 'USE_LATEST_CONFIG' | 'USE_SPECIFIED_VERSION'
+      /** Format: int32 */
+      configVersion?: number
+    }
+    WorkflowNodeReplayPreviewRequest: {
+      tenantId: string
+      /** Format: int64 */
+      workflowRunId: number
+      /** Format: int64 */
+      workflowNodeRunId: number
+      reason?: string
+    }
+    ConsoleWorkflowNodeReplayPreviewResponse: {
+      tenantId: string
+      /** Format: uuid */
+      operationKey: string
+      /** Format: int64 */
+      sourceWorkflowRunId: number
+      /** Format: int64 */
+      sourceWorkflowNodeRunId: number
+      sourceNodeCode: string
+      /** Format: int32 */
+      sourceNodeRunSeq?: number
+      /** Format: int64 */
+      sourceJobInstanceId: number
+      jobCode: string
+      /** Format: date */
+      bizDate: string
+      /** Format: int32 */
+      sourceConfigVersion?: number | null
+      resultPolicy: string
+      configVersionPolicy: string
+      /** Format: int32 */
+      configVersion?: number | null
+      previewToken: string
+      /** Format: date-time */
+      expiresAt: string
+      warnings: string[]
+    }
+    /** @description operationKey and previewToken are required when submitting for approval. */
+    WorkflowRunReplayRequest: {
+      tenantId: string
+      /** Format: int64 */
+      workflowRunId: number
+      reason: string
+      /** @enum {string} */
+      resultPolicy?: 'CREATE_NEW_VERSION' | 'KEEP_BOTH' | 'MANUAL_CONFIRM_EFFECTIVE'
+      /** @enum {string} */
+      configVersionPolicy?: 'USE_ORIGINAL_CONFIG' | 'USE_LATEST_CONFIG' | 'USE_SPECIFIED_VERSION'
+      /** Format: int32 */
+      configVersion?: number
+      /** Format: uuid */
+      operationKey?: string
+      previewToken?: string
+    }
+    ConsoleWorkflowReplayCapabilityAssessment: {
+      status?: string
+      declaration?: components['schemas']['ReplayCapabilityDeclaration'] | null
+      /** Format: int32 */
+      workerCount?: number
+    }
+    ReplayCapabilityDeclaration: {
+      pluginId: string
+      pluginVersion: string
+      externalEffectCategories: string[]
+      /** @enum {string} */
+      idempotencyCapability:
+        'IDEMPOTENT_BY_UNIQUE_CONSTRAINT' | 'IDEMPOTENT_BY_PLUGIN_LOGIC' | 'NONE' | 'UNKNOWN'
+      idempotencyKeyScope: string
+      recoveryProtocolId?: string
+      /** Format: int32 */
+      contractVersion: number
+    }
+    ConsoleWorkflowRunReplayPreviewResponse: {
+      tenantId: string
+      /** Format: int64 */
+      sourceWorkflowRunId: number
+      /** Format: int64 */
+      workflowDefinitionId: number
+      /** Format: int32 */
+      workflowVersion: number
+      /** Format: date */
+      bizDate: string
+      calendarCode: string
+      /** Format: date-time */
+      dataIntervalStart?: string | null
+      /** Format: date-time */
+      dataIntervalEnd?: string | null
+      resultPolicy: string
+      configVersionPolicy: string
+      /** Format: int32 */
+      configVersion?: number | null
+      /** Format: uuid */
+      operationKey: string
+      previewToken: string
+      /** Format: date-time */
+      expiresAt: string
+      nodes: components['schemas']['ConsoleWorkflowRunReplayNodePreview'][]
+      edges: components['schemas']['ConsoleWorkflowRunReplayEdgePreview'][]
+    }
+    ConsoleWorkflowRunReplayNodePreview: {
+      nodeCode: string
+      nodeType: string
+      enabled?: boolean
+      jobCode?: string | null
+      /** Format: int64 */
+      jobDefinitionId?: number | null
+      /** Format: int32 */
+      jobDefinitionVersion?: number | null
+      workerGroup?: string | null
+      pluginId?: string | null
+      capability?: components['schemas']['ConsoleWorkflowReplayCapabilityAssessment'] | null
+      blockers: string[]
+    }
+    ConsoleWorkflowRunReplayEdgePreview: {
+      fromNodeCode: string
+      toNodeCode: string
+      edgeType: string
+      enabled: boolean
+    }
+    ConsoleWorkflowRunReplaySubmissionResponse: {
+      /** Format: int64 */
+      replayOperationId: number
+      approvalNo: string
     }
     /** @description 与 BE Java DTO `CompensateRequest` 对齐。 */
     CompensateRequest: {
@@ -8195,7 +9240,10 @@ export interface components {
       /** Format: date */
       bizDate: string
       compensationType?: string
-      /** Format: int64 */
+      /**
+       * Format: int64
+       * @description For WORKFLOW_NODE, the exact source WorkflowNodeRun ID.
+       */
       targetId?: number
       targetInstanceNo?: string
       batchNo?: string
@@ -8206,6 +9254,30 @@ export interface components {
       operatorId?: string
       approvalId?: string
       strategy?: string
+      /** @description Frozen replay result policy from the approved preview. */
+      resultPolicy?: string
+      /** @description Frozen replay configuration policy from the approved preview. */
+      configVersionPolicy?: string
+      /**
+       * Format: int32
+       * @description Selected configuration version when configVersionPolicy is USE_SPECIFIED_VERSION.
+       */
+      configVersion?: number
+      /**
+       * Format: int64
+       * @description Exact failed Workflow run identity for WORKFLOW_NODE replay.
+       */
+      sourceWorkflowRunId?: number
+      /**
+       * Format: int64
+       * @description Exact failed JOB node run identity; must equal targetId for WORKFLOW_NODE replay.
+       */
+      sourceWorkflowNodeRunId?: number
+      /**
+       * Format: int64
+       * @description Frozen ADR-049 replay operation identity attached to the approved node replay.
+       */
+      replayOperationId?: number
     }
     RerunRequest: {
       tenantId: string
@@ -8247,6 +9319,10 @@ export interface components {
       operatorId?: string
       approvalId?: string
       strategy?: string
+      /** @description 操作员已核实外部动作未执行；仅对 EXTERNAL_OUTCOME_UNKNOWN 的死信有效，且只允许一次。 */
+      externalActionVerifiedNotExecuted?: boolean
+      /** @description 核实外部动作未执行的证据引用；确认时必填。 */
+      externalOutcomeEvidenceReference?: string
     }
     /**
      * @description Catch-up 双流程语义:
@@ -8258,9 +9334,16 @@ export interface components {
       tenantId: string
       /** @description 用于幂等关联的业务 requestId(必填) */
       requestId: string
+      /**
+       * Format: int64
+       * @description Workflow catch-up target; present for scheduled occurrence recovery
+       */
+      workflowDefinitionId?: number
       jobCode: string
       /** Format: date */
       bizDate: string
+      /** @description 批量日发起的补跑审批使用的日历身份，普通补跑可不传；批准后必须保持与审批载荷一致。 */
+      batchDayCalendarCode?: string
       /** @description 可选,计划补跑时间 */
       scheduledAt?: string
       reason?: string
@@ -8739,13 +9822,15 @@ export interface components {
       enabled?: boolean
       description?: string
     }
-    /** @description 创建批次窗口。与 BE Java DTO `BatchWindowCreateRequest` 对齐。 */
+    /** @description 创建批次窗口。实际写入前校验合法时区和ISO本地时间；非跨日窗口开始时间必须早于结束时间，不接受数据库动态时间字面量。 */
     BatchWindowCreateRequest: {
       tenantId?: string
       windowCode?: string
       windowName?: string
       timezone?: string
+      /** @description ISO本地时间，例如01:00或01:00:00；不能使用now等动态时间字面量。 */
       startTime?: string
+      /** @description ISO本地时间；非跨日窗口必须晚于开始时间。 */
       endTime?: string
       endStrategy?: string
       outOfWindowAction?: string
@@ -8753,24 +9838,29 @@ export interface components {
       enabled?: boolean
       description?: string
     }
-    /** @description 更新批次窗口(字段可选)。与 BE Java DTO `BatchWindowUpdateRequest` 对齐。 */
+    /** @description 更新批次窗口，可更新配置字段省略或为null时沿用已有值。合并后时区与时间必须合法；非跨日窗口要求开始时间早于结束时间，否则返回400 INVALID_ARGUMENT且不写库。 */
     BatchWindowUpdateRequest: {
       tenantId?: string
-      windowName?: string
-      timezone?: string
-      startTime?: string
-      endTime?: string
-      endStrategy?: string
-      outOfWindowAction?: string
-      allowCrossDay?: boolean
-      enabled?: boolean
-      description?: string
+      windowName?: string | null
+      /** @description 合法时区ID，例如UTC或Asia/Shanghai；不能更新为空白或未知时区。 */
+      timezone?: string | null
+      /** @description ISO本地时间，例如01:00或01:00:00；部分更新后仍须满足窗口区间约束。 */
+      startTime?: string | null
+      /** @description ISO本地时间；非跨日窗口的合并后结束时间必须晚于开始时间。 */
+      endTime?: string | null
+      endStrategy?: string | null
+      outOfWindowAction?: string | null
+      /** @description false要求合并后开始时间早于结束时间；true保留跨日及相等时间的全天窗口语义。 */
+      allowCrossDay?: boolean | null
+      enabled?: boolean | null
+      description?: string | null
     }
     /** @description 创建/更新业务日历。与 BE Java DTO `CalendarSaveRequest` 对齐(create 与 update 同体)。 */
     CalendarSaveRequest: {
       tenantId?: string
       calendarCode?: string
       calendarName?: string
+      /** @description 必须是 Java ZoneId 可识别的有效时区。 */
       timezone?: string
       holidayRollRule?: string
       catchUpPolicy?: string
@@ -8820,6 +9910,7 @@ export interface components {
       compressType?: string
       encryptType?: string
       namingRule?: string
+      /** @description IMPORT FIXED_WIDTH 已启用模板的非空映射须为数组，每项 target 非空、start 为非负 32 位整数、length 为正 32 位整数。空骨架及禁用草稿允许保存。 */
       fieldMappingsJson?: string
       validationRuleSetJson?: string
       defaultQueryCode?: string
@@ -8872,6 +9963,7 @@ export interface components {
       compressType?: string
       encryptType?: string
       namingRule?: string
+      /** @description IMPORT FIXED_WIDTH 已启用模板的非空映射须为数组，每项 target 非空、start 为非负 32 位整数、length 为正 32 位整数。空骨架及禁用草稿允许保存。 */
       fieldMappingsJson?: string
       validationRuleSetJson?: string
       defaultQueryCode?: string
@@ -8979,14 +10071,18 @@ export interface components {
     JobDefinitionCreateRequest: {
       tenantId?: string
       jobCode: string
-      /** @description 作业类型。当前支持 GENERAL、IMPORT、EXPORT、PROCESS、DISPATCH、ATOMIC、WORKFLOW、 BUNDLE_IMPORT、BUNDLE_EXPORT、BUNDLE_DISPATCH；服务端按公共 JobType 词表校验。 */
+      /** @description 作业类型。当前支持 GENERAL、IMPORT、EXPORT、PROCESS、DISPATCH、ATOMIC、 BUNDLE_IMPORT、BUNDLE_EXPORT、BUNDLE_DISPATCH；服务端按公共 JobType 词表校验。 */
       jobType: string
       scheduleType: string
       jobName?: string
       bizType?: string
       scheduleExpr?: string
-      /** @description 单个同租户上游作业编码；scheduled fire 等待同一 bizDate 上游成功就绪，不支持可配置的依赖结果条件。 */
+      /** @description 上游作业编码；填写后 scheduled fire 前等待同 bizDate 上游就绪。 */
       dependsOnJobCode?: string
+      /** @description 兼容字段，多个上游均按 SAME_DAY 检查；逐边对齐请使用 jobDependencyRules。 */
+      dependsOnJobCodes?: string[]
+      /** @description 逐上游指定业务日对齐；提供时优先于仅包含作业编码的兼容字段。 */
+      jobDependencyRules?: components['schemas']['JobDependencyRuleRequest'][]
       timezone?: string
       /** @description 作业定义声明的触发入口分类（SCHEDULED / API / MANUAL / EVENT / MIXED）； 服务端按公共 TriggerMode 词表校验。该字段不代表某次实例的实际触发来源，后者见 triggerType。 */
       triggerMode?: string
@@ -9022,7 +10118,7 @@ export interface components {
       softRuntimeSeverity?: 'WARN' | 'ERROR' | 'CRITICAL'
       /**
        * Format: int32
-       * @description Cron 独立作业从计划触发时刻、依赖作业从计划触发与上游就绪时刻中的较晚者起算启动宽限秒数；超过宽限期仍未启动时告警，创建时未指定采用平台默认，0 表示关闭
+       * @description 实际执行资格后的启动宽限秒数；Workflow 子作业按节点激活与捕获依赖生效的较晚时刻计，旧 Cron/依赖作业保留计划口径。可预先配置，独立手工运行无资格依据时不判断迟到；0 关闭。
        */
       startGraceSeconds?: number
       /**
@@ -9030,25 +10126,25 @@ export interface components {
        * @enum {string}
        */
       startGraceSeverity?: 'WARN' | 'ERROR' | 'CRITICAL'
-      /** @description 完成过晚监控是否启用；无依赖 Cron 以 completionDeadlineLocalTime 启用，依赖作业以 dependencyCompletionWindowSeconds 启用 */
+      /** @description 完成规则是否已配置；由本地完成钟点或相对窗口启用，实际运行仍需具备真实计划或就绪资格。 */
       completionDeadlineEnabled?: boolean
       /**
        * Format: time
-       * @description 仅无依赖 CRON：完成截止钟点（HH:mm），按作业时区解释；到期仍未结束则告警，留空关闭
+       * @description 绝对完成钟点（HH:mm），按作业时区解释；Cron 使用计划日期，Workflow 子作业使用业务日期。与相对完成窗口互斥，留空关闭。
        */
       completionDeadlineLocalTime?: string
       /**
        * Format: int32
-       * @description 仅无依赖 CRON：截止日期相对计划触发日的偏移；0 当日，1 次日
+       * @description 完成钟点相对计划日期或 Workflow 子作业业务日期的偏移；0 当日，1 次日。
        */
       completionDeadlineDayOffset?: number
       /**
        * Format: int32
-       * @description 仅依赖作业：从下游满足执行资格时起算的完成窗口秒数；到期仍未结束则告警，0 关闭
+       * @description 从真实执行资格起算的相对完成窗口秒数，适用于依赖作业及 Workflow 子作业；与本地完成钟点互斥，0 关闭。
        */
       dependencyCompletionWindowSeconds?: number
       /**
-       * @description 完成过晚告警级别；Cron 独立作业或声明上游依赖的作业适用，缺省 WARN
+       * @description 完成过晚告警级别，适用于已配置且运行资格明确的完成规则；缺省 WARN。
        * @enum {string}
        */
       completionDeadlineSeverity?: 'WARN' | 'ERROR' | 'CRITICAL'
@@ -9070,8 +10166,12 @@ export interface components {
       bizType?: string
       scheduleType?: string
       scheduleExpr?: string
-      /** @description 单个同租户上游作业编码；scheduled fire 等待同一 bizDate 上游成功就绪，不支持可配置的依赖结果条件。 */
+      /** @description 上游作业编码；填写后 scheduled fire 前等待同 bizDate 上游就绪。 */
       dependsOnJobCode?: string
+      /** @description 替换完整上游集合且按 SAME_DAY 对齐；空数组清除依赖，缺省保持不变。逐边规则请使用 jobDependencyRules。 */
+      dependsOnJobCodes?: string[]
+      /** @description 替换完整依赖边集合及业务日对齐规则；空数组清除依赖，缺省保持不变。 */
+      jobDependencyRules?: components['schemas']['JobDependencyRuleRequest'][]
       timezone?: string
       /** @description 作业定义声明的触发入口分类（SCHEDULED / API / MANUAL / EVENT / MIXED）； 服务端按公共 TriggerMode 词表校验。该字段不代表某次实例的实际触发来源，后者见 triggerType。 */
       triggerMode?: string
@@ -9103,7 +10203,7 @@ export interface components {
       softRuntimeSeverity?: 'WARN' | 'ERROR' | 'CRITICAL'
       /**
        * Format: int32
-       * @description Cron 独立作业从计划触发时刻、依赖作业从计划触发与上游就绪时刻中的较晚者起算启动宽限秒数；超过宽限期仍未启动时告警，0 表示关闭
+       * @description 实际执行资格后的启动宽限秒数；Workflow 子作业按节点激活与捕获依赖生效的较晚时刻计，旧 Cron/依赖作业保留计划口径。可预先配置，独立手工运行无资格依据时不判断迟到；0 关闭。
        */
       startGraceSeconds?: number
       /**
@@ -9111,25 +10211,25 @@ export interface components {
        * @enum {string}
        */
       startGraceSeverity?: 'WARN' | 'ERROR' | 'CRITICAL'
-      /** @description 完成过晚监控是否启用；无依赖 Cron 以 completionDeadlineLocalTime 启用，依赖作业以 dependencyCompletionWindowSeconds 启用 */
+      /** @description 完成规则是否已配置；由本地完成钟点或相对窗口启用，实际运行仍需具备真实计划或就绪资格。 */
       completionDeadlineEnabled?: boolean
       /**
        * Format: time
-       * @description 仅无依赖 CRON：完成截止钟点（HH:mm），按作业时区解释；到期仍未结束则告警，留空关闭
+       * @description 绝对完成钟点（HH:mm），按作业时区解释；Cron 使用计划日期，Workflow 子作业使用业务日期。与相对完成窗口互斥，留空关闭。
        */
       completionDeadlineLocalTime?: string
       /**
        * Format: int32
-       * @description 仅无依赖 CRON：截止日期相对计划触发日的偏移；0 当日，1 次日
+       * @description 完成钟点相对计划日期或 Workflow 子作业业务日期的偏移；0 当日，1 次日。
        */
       completionDeadlineDayOffset?: number
       /**
        * Format: int32
-       * @description 仅依赖作业：从下游满足执行资格时起算的完成窗口秒数；到期仍未结束则告警，0 关闭
+       * @description 从真实执行资格起算的相对完成窗口秒数，适用于依赖作业及 Workflow 子作业；与本地完成钟点互斥，0 关闭。
        */
       dependencyCompletionWindowSeconds?: number
       /**
-       * @description 完成过晚告警级别；Cron 独立作业或声明上游依赖的作业适用，缺省 WARN
+       * @description 完成过晚告警级别，适用于已配置且运行资格明确的完成规则；缺省 WARN。
        * @enum {string}
        */
       completionDeadlineSeverity?: 'WARN' | 'ERROR' | 'CRITICAL'
@@ -9141,13 +10241,24 @@ export interface components {
       enabled?: boolean
       description?: string
     }
+    JobDependencyRuleRequest: {
+      upstreamJobCode: string
+      /**
+       * @description PREVIOUS_BIZ_DAY 按下游作业绑定的业务日历解析，跳过 HOLIDAY 并接受 WORKDAY_OVERRIDE；未配置业务日历时按周一至周五计算。
+       * @enum {string}
+       */
+      bizDateAlignment: 'SAME_DAY' | 'PREVIOUS_BIZ_DAY'
+    }
+    JobDependencyRuleResponse: components['schemas']['JobDependencyRuleRequest']
     ConsoleJobDefinitionResponse: {
       /** Format: int64 */
       id: number
       tenantId: string
       jobCode: string
-      /** @description 单个同租户上游作业编码；scheduled fire 等待同一 bizDate 上游成功就绪，不支持可配置的依赖结果条件。 */
+      /** @description 兼容单上游投影；完整数据依赖规则见 jobDependencyRules。 */
       dependsOnJobCode: string
+      dependsOnJobCodes?: string[]
+      jobDependencyRules?: components['schemas']['JobDependencyRuleResponse'][]
       jobName: string
       jobType: string
       queueCode: string
@@ -9180,7 +10291,7 @@ export interface components {
       softRuntimeSeverity?: 'WARN' | 'ERROR' | 'CRITICAL'
       /**
        * Format: int32
-       * @description Cron 独立作业按计划触发时刻、依赖作业按计划触发与上游就绪时刻中的较晚者起算允许的启动延迟时长（秒）；超过宽限期仍未启动时告警，0 表示关闭
+       * @description 实际执行资格后的启动宽限秒数；Workflow 子作业按节点激活与捕获依赖生效的较晚时刻计，旧 Cron/依赖作业保留计划口径。可预先配置，独立手工运行无资格依据时不判断迟到；0 关闭。
        */
       startGraceSeconds?: number
       /**
@@ -9188,25 +10299,25 @@ export interface components {
        * @enum {string}
        */
       startGraceSeverity?: 'WARN' | 'ERROR' | 'CRITICAL'
-      /** @description 完成过晚监控是否启用；无依赖 Cron 使用钟点规则，依赖作业使用相对完成窗口 */
+      /** @description 完成规则是否已配置；由本地完成钟点或相对窗口启用，实际运行仍需具备真实计划或就绪资格。 */
       completionDeadlineEnabled?: boolean
       /**
        * Format: time
-       * @description 仅无依赖 CRON：完成截止钟点（HH:mm），按作业时区解释；到期仍未结束则告警，留空关闭
+       * @description 绝对完成钟点（HH:mm），按作业时区解释；Cron 使用计划日期，Workflow 子作业使用业务日期。与相对完成窗口互斥，留空关闭。
        */
       completionDeadlineLocalTime?: string
       /**
        * Format: int32
-       * @description 仅无依赖 CRON：截止日期相对计划触发日的偏移；0 当日，1 次日
+       * @description 完成钟点相对计划日期或 Workflow 子作业业务日期的偏移；0 当日，1 次日。
        */
       completionDeadlineDayOffset?: number
       /**
        * Format: int32
-       * @description 仅依赖作业：从下游满足执行资格时起算的完成窗口秒数；到期仍未结束则告警，0 关闭
+       * @description 从真实执行资格起算的相对完成窗口秒数，适用于依赖作业及 Workflow 子作业；与本地完成钟点互斥，0 关闭。
        */
       dependencyCompletionWindowSeconds?: number
       /**
-       * @description 完成过晚告警级别；Cron 独立作业或声明上游依赖的作业适用，缺省 WARN
+       * @description 完成过晚告警级别，适用于已配置且运行资格明确的完成规则；缺省 WARN。
        * @enum {string}
        */
       completionDeadlineSeverity?: 'WARN' | 'ERROR' | 'CRITICAL'
@@ -9223,6 +10334,8 @@ export interface components {
       createdAt: string
       /** Format: date-time */
       updatedAt: string
+      /** Format: int64 */
+      defaultWorkflowDefinitionId?: number | null
     }
     ConsoleJobInstanceResponse: {
       /** Format: int64 */
@@ -9302,6 +10415,10 @@ export interface components {
       resultSummary: string
       errorCode: string
       errorMessage: string
+      /** @description Stable reason category when the node status is SKIPPED. */
+      skipReasonCode?: string
+      /** @description Operator-supplied explanation for a manual skip, when present. */
+      skipReason?: string
       /**
        * Format: int64
        * @description 反查 pipeline_instance.related_job_instance_id 得到的 pipeline 观测入口 id;文件类 job 才有值,普通 job 为 null,供作业详情跳转 pipeline 观测
@@ -9346,14 +10463,24 @@ export interface components {
       workflowCode: string
       workflowName: string
       workflowType: string
+      scheduleType?: string | null
+      scheduleExpr?: string | null
+      timezone?: string | null
+      triggerMode?: string | null
+      calendarCode?: string | null
+      dependsOnJobCode?: string | null
       /** Format: int32 */
       version: number
       enabled: boolean
+      /** @description Whether scheduled fires are enabled, independent from workflow enabled state. */
+      scheduleEnabled?: boolean | null
       description: string
       /** Format: date-time */
       createdAt: string
       /** Format: date-time */
       updatedAt: string
+      /** Format: int64 */
+      singleJobDefinitionId?: number | null
     }
     ConsoleWorkflowNodeResponse: {
       /** Format: int64 */
@@ -9364,7 +10491,6 @@ export interface components {
       nodeName: string
       nodeType: string
       relatedJobCode: string
-      relatedPipelineCode: string
       workerGroup: string
       windowCode: string
       /** Format: int32 */
@@ -9403,6 +10529,181 @@ export interface components {
       /** Format: date-time */
       updatedAt: string
     }
+    DailyProgress: {
+      tenantId: string
+      /** Format: date */
+      bizDate: string
+      /** Format: date-time */
+      generatedAt: string
+      counts: components['schemas']['DailyProgressStatusCount'][]
+      coverage: components['schemas']['DailyProgressCoverage']
+    }
+    DailyProgressStatusCount: {
+      /** @enum {string} */
+      scope:
+        'SCHEDULED_OCCURRENCE' | 'TRIGGER_REQUEST' | 'WORKFLOW_RUN' | 'JOB_INSTANCE' | 'JOB_TASK'
+      status: string
+      /** Format: int64 */
+      count: number
+    }
+    DailyProgressCoverage: {
+      /** Format: int64 */
+      scheduledDefinitions: number
+      /** Format: int64 */
+      uncoveredDefinitions: number
+    }
+    CommonResponseDailyProgress: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['DailyProgress']
+    }
+    PipelineProgressSnapshot: {
+      tenantId: string
+      /** Format: date-time */
+      generatedAt: string
+      pipelines: components['schemas']['PipelineExecutionProgress'][]
+    }
+    PipelineExecutionProgress: {
+      /** Format: int64 */
+      pipelineInstanceId: number
+      /** Format: int64 */
+      fileId?: number | null
+      fileName?: string | null
+      runStatus: string
+      currentStage?: string | null
+      systemPipelineCode?: string | null
+      systemPipelineVersion?: number | null
+      stageGraphAvailable: boolean
+      stageCodes: string[]
+      /** @description Latest attempt per stage; historical attempts stay in the paginated step query. */
+      steps: components['schemas']['PipelineExecutionStepProgress'][]
+    }
+    PipelineExecutionStepProgress: {
+      /** Format: int64 */
+      stepId: number
+      /** Format: int64 */
+      pipelineInstanceId: number
+      stepCode: string
+      stageCode: string
+      stepStatus: string
+      runSeq?: number | null
+      errorCode?: string | null
+      /** Format: int64 */
+      rowsProcessed?: number | null
+      /** Format: int64 */
+      totalRowsHint?: number | null
+      /** Format: int64 */
+      lastHeartbeatAt?: number | null
+    }
+    JobExecutionProgress: {
+      tenantId: string
+      /** Format: int64 */
+      jobInstanceId: number
+      jobCode: string
+      instanceStatus: string
+      /** Format: date-time */
+      generatedAt: string
+      /** Format: date-time */
+      startedAt?: string | null
+      /** Format: date-time */
+      finishedAt?: string | null
+      expectedPartitions?: number | null
+      /** Format: int64 */
+      workflowRunId?: number | null
+      nodeCode?: string | null
+      /** Format: int64 */
+      pipelineInstanceId?: number | null
+      pipelineStatus?: string | null
+      currentStage?: string | null
+      systemPipelineCode?: string | null
+      systemPipelineVersion?: number | null
+      /** @description Stage order known from the persisted or frozen immutable system pipeline version. No mutable job definition lookup. */
+      stageGraphAvailable: boolean
+      counts: {
+        /** @enum {string} */
+        scope: 'PARTITION' | 'TASK'
+        status: string
+        /** Format: int64 */
+        count: number
+      }[]
+      stages: components['schemas']['JobExecutionStage'][]
+    }
+    JobExecutionStage: {
+      stageCode: string
+      /** @description Missing attempts stay PENDING while active */
+      stageStatus: string
+      /** Format: int64 */
+      stepRunId?: number | null
+      runSeq?: number | null
+      /** Format: int64 */
+      rowsProcessed?: number | null
+      /** Format: date-time */
+      lastHeartbeatAt?: string | null
+      errorCode?: string | null
+    }
+    WorkflowExecutionProgress: {
+      /** Format: int64 */
+      workflowRunId: number
+      tenantId: string
+      /** Format: int64 */
+      workflowDefinitionId: number
+      workflowVersion?: number | null
+      runStatus: string
+      /**
+       * Format: date-time
+       * @description Persisted root run start time; null if unknown.
+       */
+      startedAt?: string | null
+      /**
+       * Format: date-time
+       * @description Persisted root run finish time; never inferred from generatedAt or node counters.
+       */
+      finishedAt?: string | null
+      /** Format: date */
+      bizDate?: string | null
+      snapshotAvailable: boolean
+      /** Format: date-time */
+      generatedAt: string
+      nodes: components['schemas']['WorkflowExecutionNodeProgress'][]
+      edges: components['schemas']['WorkflowExecutionEdge'][]
+    }
+    WorkflowExecutionNodeProgress: {
+      nodeCode: string
+      nodeName?: string | null
+      nodeType: string
+      relatedJobCode?: string | null
+      /** @description NOT_EXECUTED is a projection for a terminal root with no persisted node attempt; it is not a successful execution claim. Active roots retain PENDING for nodes without attempts. */
+      nodeStatus: string
+      /** Format: int64 */
+      nodeRunId?: number | null
+      runSeq?: number | null
+      /** Format: int64 */
+      jobInstanceId?: number | null
+      /** @description Status of the linked Job instance; it can advance while nodeStatus remains READY until the child Job result closes the Workflow node. */
+      jobInstanceStatus?: string | null
+      expectedPartitions?: number | null
+      completedPartitions?: number | null
+      /**
+       * Format: int64
+       * @description Tasks already created; not a promise of all future tasks
+       */
+      createdTasks?: number | null
+      /** Format: int64 */
+      finishedTasks?: number | null
+      activeSteps: string[]
+      errorCode?: string | null
+      skipReasonCode?: string | null
+      /** Format: date-time */
+      startedAt?: string | null
+      /** Format: date-time */
+      finishedAt?: string | null
+    }
+    WorkflowExecutionEdge: {
+      fromNodeCode: string
+      toNodeCode: string
+      edgeType?: string | null
+    }
+    CommonResponseWorkflowExecutionProgress: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['WorkflowExecutionProgress']
+    }
     ConsoleWorkflowRunResponse: {
       /** Format: int64 */
       id: number
@@ -9430,6 +10731,8 @@ export interface components {
       id: number
       /** Format: int64 */
       workflowRunId: number
+      /** Format: int64 */
+      jobInstanceId?: number
       nodeCode: string
       nodeType: string
       /** Format: int32 */
@@ -9439,6 +10742,10 @@ export interface components {
       retryCount: number
       errorCode: string
       errorMessage: string
+      /** @description 节点跳过原因码；未跳过或未记录原因时为空。 */
+      skipReasonCode?: string | null
+      /** @description 节点跳过原因说明。 */
+      skipReason?: string | null
       /** Format: date-time */
       startedAt: string
       /** Format: date-time */
@@ -9488,6 +10795,14 @@ export interface components {
       workflowCode: string
       workflowName: string
       workflowType: string
+      /** Format: int64 */
+      singleJobDefinitionId?: number | null
+      scheduleType?: string | null
+      scheduleExpr?: string | null
+      timezone?: string | null
+      triggerMode?: string | null
+      calendarCode?: string | null
+      dependsOnJobCode?: string | null
       /** Format: int32 */
       version: number
       enabled: boolean
@@ -9507,6 +10822,7 @@ export interface components {
       /** Format: int64 */
       sourceId: number
       deadLetterReason: string
+      errorClass?: string
       payloadRef: string
       replayStatus: string
       /** Format: int32 */
@@ -9548,7 +10864,7 @@ export interface components {
       id: number
       tenantId: string
       requestId: string
-      jobCode: string
+      workflowCode: string
       /** Format: date */
       bizDate: string
       requestStatus: string
@@ -9557,9 +10873,9 @@ export interface components {
       createdAt: string
       /** Format: date-time */
       updatedAt: string
-      /** @description 关联 approval_command.approval_no(LEFT JOIN target_id=request_id + approval_type=CATCH_UP);用于走统一审批接口 /api/console/approvals/{approvalNo}/approve|reject。未走统一审批的旧记录可为 null。 */
+      /** @description 关联同租户、同请求的最新 CATCH_UP 审批单号（按审批 ID 降序）；未关联审批单时为 null。 */
       approvalNo?: string | null
-      /** @description 关联 approval_command.approval_status(PENDING/APPROVED/REJECTED/EXECUTED)。可空。 */
+      /** @description 与 approvalNo 对应的审批状态（PENDING/APPROVED/REJECTED/EXECUTED）；无审批单时为 null。 */
       approvalStatus?: string | null
     }
     ConsoleFileArrivalGroupResponse: {
@@ -9597,10 +10913,12 @@ export interface components {
       /** Format: int64 */
       recordNo: number
       errorCode: string
+      /** @description 展示时遮蔽可识别的凭据形式。 */
       errorMessage: string
       errorStage: string
       skipped: boolean
       skipAction: string
+      /** @description 原始记录按文件模板配置的内容脱敏策略展示。 */
       rawRecord: string
       /** Format: date-time */
       createdAt: string
@@ -9754,6 +11072,118 @@ export interface components {
       /** Format: int32 */
       catchupCount: number
     }
+    CalendarDependencyWaitManualActionRequest: {
+      tenantId: string
+      calendarCode: string
+      /** Format: date */
+      bizDate: string
+      /** @enum {string} */
+      action: 'RELEASE' | 'SKIP'
+      reason: string
+    }
+    ConsoleCalendarDependencyWaitResponse: {
+      /** Format: int64 */
+      id: number
+      tenantId: string
+      calendarCode: string
+      /** Format: date */
+      bizDate: string
+      /** @enum {string} */
+      waitStatus: 'WAITING' | 'OPENED' | 'SKIPPED'
+      blockedReason?: string | null
+      /** Format: date-time */
+      firstWaitingAt: string
+      /** Format: date-time */
+      lastCheckedAt: string
+      /** Format: int32 */
+      attemptCount: number
+      /** Format: date-time */
+      cutoffAt?: string | null
+      /** Format: date-time */
+      slaDeadlineAt?: string | null
+      timezoneSnapshot?: string
+      dstPolicySnapshot?: string
+      /** Format: date-time */
+      openedAt?: string | null
+      /** Format: date-time */
+      timeoutAlertedAt?: string | null
+      dependencySnapshot?: string | null
+      /** @enum {string|null} */
+      manualAction?: 'RELEASE' | 'SKIP' | null
+      manualOperatorId?: string | null
+      manualReason?: string | null
+      /** Format: date-time */
+      manualRequestedAt?: string | null
+    }
+    ConsoleJobDependencyWaitResponse: {
+      tenantId: string
+      requestId: string
+      jobCode: string
+      /** Format: date */
+      bizDate: string
+      /** @description JSON array of upstream job codes */
+      dependencySnapshot?: string
+      /** @enum {string} */
+      waitStatus: 'WAITING' | 'RELEASED' | 'CANCELLED'
+      /** Format: int32 */
+      attemptCount: number
+      lastNotReadyReason?: string | null
+      /** Format: date-time */
+      lastCheckedAt?: string | null
+      /** Format: date-time */
+      createdAt: string
+      /** Format: date-time */
+      updatedAt: string
+      /** Format: date-time */
+      timeoutAlertedAt?: string | null
+    }
+    ConsolePersistentWaitPageResponse: {
+      items: components['schemas']['ConsolePersistentWaitResponse'][]
+      pageNo: number
+      pageSize: number
+      /** Format: int64 */
+      total: number
+    }
+    /** @description Safe projection that excludes workflow_launch_wait.launch_payload. */
+    ConsolePersistentWaitResponse: {
+      /** Format: int64 */
+      id: number
+      /** @enum {string} */
+      waitType: 'READINESS' | 'CAPACITY_ADMISSION'
+      tenantId: string
+      /** Format: int64 */
+      workflowDefinitionId: number
+      workflowCode: string
+      calendarCode?: string | null
+      /** Format: date */
+      bizDate: string
+      /** @enum {string} */
+      waitStatus:
+        'PENDING' | 'RELEASED' | 'TIMED_OUT' | 'CANCELLED' | 'WAITING' | 'RESUMED' | 'REJECTED'
+      /** @description Comma-separated upstream job codes for readiness waits */
+      dependencyJobCodes?: string | null
+      reasonCode?: string | null
+      /** Format: int32 */
+      attemptCount?: number | null
+      /** Format: date-time */
+      nextAttemptAt?: string | null
+      /** Format: date-time */
+      deadline?: string | null
+      /** Format: date-time */
+      scheduledFireTime?: string | null
+      /** Format: date-time */
+      deferredSince: string
+      /** Format: date-time */
+      createdAt: string
+      /** Format: date-time */
+      updatedAt: string
+      requestId?: string | null
+      traceId?: string | null
+      lastErrorCode?: string | null
+      /** Format: int64 */
+      workflowRunId?: number | null
+      dryRun?: boolean | null
+    }
     ConsoleBatchDayResponse: {
       /** Format: date */
       bizDate: string
@@ -9784,6 +11214,8 @@ export interface components {
     ConsoleBatchDayWindowResponse: {
       /** Format: date */
       bizDate: string
+      /** @description Persisted batch day freeze flag; null when the batch day record does not exist. */
+      frozen?: boolean | null
       dayStatus: string
       /** Format: date-time */
       cutoffAt?: string | null
@@ -9796,6 +11228,21 @@ export interface components {
       /** Format: date-time */
       lateArrivalWindowClosesAt?: string | null
       jobs: components['schemas']['ConsoleBatchDaySummaryResponse'][]
+      scheduledOccurrences: components['schemas']['ConsoleScheduledOccurrenceResponse'][]
+    }
+    ConsoleScheduledOccurrenceResponse: {
+      /** Format: int64 */
+      workflowDefinitionId: number
+      workflowCode: string
+      catchUpPolicy: string
+      scheduleVersion: number
+      /** Format: date-time */
+      scheduledFireTime: string
+      /** Format: date */
+      bizDate: string
+      occurrenceStatus: string
+      requestId?: string | null
+      lastRejectionReason?: string | null
     }
     ConsoleBatchDayCatchUpItemResponse: {
       jobCode: string
@@ -9811,6 +11258,93 @@ export interface components {
       bizDate: string
       catchUpPolicy: string
       items: components['schemas']['ConsoleBatchDayCatchUpItemResponse'][]
+    }
+    BatchDayCatchUpRequestStatusItem: {
+      jobCode: string
+      /** @enum {string} */
+      status: 'PENDING' | 'IN_FLIGHT' | 'UNKNOWN' | 'ACCEPTED'
+      referenceNo?: string | null
+    }
+    BatchDayCatchUpRequestStatusResponse: {
+      found: boolean
+      tenantId: string
+      /** Format: date */
+      bizDate?: string | null
+      calendarCode?: string | null
+      catchUpPolicy?: string | null
+      /** @enum {string|null} */
+      operationStatus?: 'PREPARED' | 'RUNNING' | 'COMPLETE' | 'UNKNOWN' | 'ABANDONED' | null
+      items: components['schemas']['BatchDayCatchUpRequestStatusItem'][]
+    }
+    AtomicRuntimeStatus: {
+      available: boolean
+      unavailableReason?: string | null
+      workerCode?: string | null
+      workerType?: string | null
+      shell?: {
+        enabled?: boolean
+        commandWhitelistSize?: number
+      } | null
+      sql?: {
+        enabled?: boolean
+        dialect?: string | null
+      } | null
+      http?: {
+        enabled?: boolean
+        enforceAllowlist?: boolean
+        /** @enum {string} */
+        enforceAllowlistSource?: 'explicit' | 'prod-default' | 'dev-default' | 'absent'
+        allowlistHostsSize?: number
+      } | null
+      storedProc?: {
+        enabled?: boolean
+        allowedSchemasSize?: number
+      } | null
+    }
+    CommonResponseAtomicRuntimeStatus: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['AtomicRuntimeStatus']
+    }
+    ConsoleBatchDayCatchupPreviewResponse: {
+      tenantId: string
+      calendarCode: string
+      /** Format: date */
+      currentBizDate: string
+      /** Format: date */
+      lastScannedBizDate: string
+      /** @enum {string} */
+      cursorSource: 'PERSISTED_CURSOR' | 'LATEST_BATCH_DAY_BASELINE' | 'CURRENT_DATE_BASELINE'
+      /** Format: date */
+      nextRawBizDate?: string | null
+      /** Format: date */
+      plannedThroughRawBizDate?: string | null
+      /** Format: int64 */
+      remainingRawDateCount: number
+      maxDatesPerScan: number
+      nextScanRawBizDates: string[]
+      historicalGapsBeforeAnchorAreChecked: boolean
+      catchupPaused: boolean
+      /** Format: date-time */
+      catchupPausedAt?: string | null
+      catchupPausedBy?: string | null
+      catchupPauseReason?: string | null
+    }
+    ConsoleBatchDayHistoricalGapInventoryResponse: {
+      tenantId: string
+      calendarCode: string
+      /** Format: date */
+      fromDate: string
+      /** Format: date */
+      throughDate: string
+      inspectedDateCount: number
+      missingRecordCandidates: string[]
+      interpretation: string
+    }
+    BatchDayCatchupControlRequest: {
+      tenantId: string
+      calendarCode: string
+      /** @enum {string} */
+      action: 'PAUSE' | 'RESUME'
+      reason: string
     }
     ConfigGovernanceItemResponse: {
       id: string
@@ -9938,7 +11472,6 @@ export interface components {
     ConsoleWorkerClaimedTaskResponse: {
       /** Format: int64 */
       id: number
-      tenantId: string
       /** Format: int64 */
       jobInstanceId: number
       /** Format: int64 */
@@ -9948,10 +11481,7 @@ export interface components {
       taskSeq: number
       taskStatus: string
       assignedWorkerCode: string
-      taskPayload: string
-      resultSummary: string
       errorCode: string
-      errorMessage: string
       /** Format: date-time */
       startedAt: string
       /** Format: date-time */
@@ -10225,9 +11755,12 @@ export interface components {
       /** Format: int32 */
       runSeq: number
       stepStatus: string
+      /** @description JSON 文本；展示时遮蔽可识别的敏感字段和凭据形式。 */
       inputSummary: string
+      /** @description JSON 文本；展示时遮蔽可识别的敏感字段和凭据形式。 */
       outputSummary: string
       errorCode: string
+      /** @description 展示时遮蔽可识别的凭据形式。 */
       errorMessage: string
       /** Format: int32 */
       retryCount: number
@@ -10344,7 +11877,7 @@ export interface components {
       /** Format: date-time */
       updatedAt?: string
     }
-    /** @description 固定存储投影；metadata_json 为文件处理链路可扩展的原始 JSONB 载荷。 */
+    /** @description 固定存储投影；metadata_json 为文件处理链路可扩展的 JSONB 载荷，响应遮蔽已识别凭据。 */
     ConsoleFileRecordDetailResponse: {
       /** Format: int64 */
       id?: number
@@ -10354,7 +11887,7 @@ export interface components {
       storage_type?: string | null
       storage_path?: string | null
       storage_bucket?: string | null
-      /** @description 原始 JSONB 扩展元数据。 */
+      /** @description JSONB 扩展元数据，响应遮蔽已识别凭据。 */
       metadata_json?: unknown
     }
     ConsoleExcelRowIssueResponse: components['schemas']['ExcelRowIssue']
@@ -10545,7 +12078,6 @@ export interface components {
       dryRun: boolean
       jobDefinitions?: components['schemas']['JobDefinitionSpec'][]
       workflowDefinitions?: components['schemas']['WorkflowDefinitionSpec'][]
-      pipelineDefinitions?: components['schemas']['PipelineDefinitionSpec'][]
       fileChannels?: components['schemas']['FileChannelSpec'][]
       fileTemplates?: components['schemas']['FileTemplateSpec'][]
       resourceQueues?: components['schemas']['ResourceQueueSpec'][]
@@ -10556,14 +12088,15 @@ export interface components {
     }
     /**
      * @description 跨租户配置复制请求。从源租户读取配置，推送到目标租户列表。
-     *     configTypes 为空表示复制全部 10 类。
+     *     源租户不得同时出现在目标列表，重合时返回400且不读写配置。
+     *     configTypes 为空表示复制全部支持的配置类型；集合元素不得为null，租户/作业元素不得为空白。
      */
     TenantConfigCopyRequest: {
       sourceTenantId: string
       targetTenantIds: string[]
-      /** @description 空表示复制全部 10 类 */
+      /** @description 空表示复制全部支持的配置类型；元素不得为null。 */
       configTypes?: components['schemas']['TenantConfigCopyType'][]
-      /** @description 非空时按 jobCode 构建 dependency-aware 最小配置包，而不是复制整类配置。 */
+      /** @description 非空时按作业编码构建最小依赖配置包；省略或空数组表示不按作业筛选，元素不得为null或空白。 */
       jobCodes?: string[]
       /**
        * @default SKIP_EXISTING
@@ -10574,8 +12107,8 @@ export interface components {
       dryRun: boolean
     }
     /**
-     * @description Read-only config diff request. `jobCodes` narrows the source to dependency-aware job bundles;
-     *     omitted `configTypes` means all tenant config types.
+     * @description 只读配置差异请求；jobCodes非空时按作业依赖缩小范围，configTypes省略或空集合表示全部配置类型。
+     *     类型集合元素不得为null，租户/作业集合元素不得为null或空白。
      */
     TenantConfigPreviewRequest: {
       sourceTenantId: string
@@ -10587,9 +12120,11 @@ export interface components {
       /** @default false */
       includeDeleteCandidates: boolean
     }
+    /** @description 作业配置矩阵；tenantIds和jobCodes的元素不得为null或空白。 */
     TenantConfigMatrixRequest: {
       tenantIds: string[]
       jobCodes: string[]
+      /** @description 比较基准租户；省略时使用首个 tenantIds，可显式指定展示范围外的基准，响应行仍仅包含 tenantIds。 */
       baselineTenantId?: string | null
     }
     TenantConfigDiffPreviewResponse: {
@@ -10651,7 +12186,6 @@ export interface components {
       calendarCode?: string | null
       windowCode?: string | null
       workerGroup?: string | null
-      pipelineJobCodes?: string[]
       workflowCodes?: string[]
       templateCodes?: string[]
       channelCodes?: string[]
@@ -10660,14 +12194,13 @@ export interface components {
     /**
      * @description 配置类型枚举。后端 @JsonCreator 兼容简写：
      *     "JOB" → JOB_DEFINITION / "WORKFLOW" → WORKFLOW_DEFINITION /
-     *     "PIPELINE" → PIPELINE_DEFINITION（仅 *_DEFINITION 三类支持简写）。
+     *     仅 JOB_DEFINITION 与 WORKFLOW_DEFINITION 支持简写。
      *     其余类型必须传完整名称。
      * @enum {string}
      */
     TenantConfigCopyType:
       | 'JOB_DEFINITION'
       | 'WORKFLOW_DEFINITION'
-      | 'PIPELINE_DEFINITION'
       | 'FILE_CHANNEL'
       | 'FILE_TEMPLATE'
       | 'RESOURCE_QUEUE'
@@ -10679,7 +12212,6 @@ export interface components {
     ConfigSyncBundlePayload: {
       jobDefinitions?: components['schemas']['JobDefinitionSpec'][]
       workflowDefinitions?: components['schemas']['WorkflowDefinitionSpec'][]
-      pipelineDefinitions?: components['schemas']['PipelineDefinitionSpec'][]
       fileChannels?: components['schemas']['FileChannelSpec'][]
       fileTemplates?: components['schemas']['FileTemplateSpec'][]
       resourceQueues?: components['schemas']['ResourceQueueSpec'][]
@@ -10701,6 +12233,7 @@ export interface components {
     }
     JobBundleImportRequest: {
       tenantId: string
+      /** @description 所有目标元素须为非空白身份；整组校验通过后才开始逐租户事务。 */
       targetTenantIds: string[]
       /**
        * @default UPSERT
@@ -10718,7 +12251,9 @@ export interface components {
       bizType?: string
       scheduleType?: string
       scheduleExpr?: string
+      /** @description 单上游简写；完整依赖及逐边业务日对齐由 dependencyRules 提供。两者同时指定时必须与首条规则一致。 */
       dependsOnJobCode?: string
+      dependencyRules?: components['schemas']['JobDependencyRuleRequest'][]
       timezone?: string
       triggerMode?: string
       workerGroup?: string
@@ -10732,6 +12267,7 @@ export interface components {
       timeoutSeconds?: number | null
       executionHandler?: string
       paramSchema?: string
+      /** @description JSON 默认参数。实际应用时，UPSERT 将敏感字段的 **** 掩码恢复为目标租户同一字段的已有值； 新建或无法恢复掩码时，该条目以 error.config.masked_secret_requires_value 失败。 更新时省略此字段保留已有参数；dryRun 仍只预判，不执行写入校验。 */
       defaultParams?: string
       priority?: number | null
       enabled?: boolean | null
@@ -10745,6 +12281,19 @@ export interface components {
       workflowName?: string
       workflowType?: string
       enabled?: boolean | null
+      /** @description Portable Job code for the managed single-Job Workflow; resolved to the destination tenant's Job id. */
+      singleJobCode?: string
+      scheduleEnabled?: boolean | null
+      /** @description Workflow-owned schedule type; defaults to MANUAL for older bundles. */
+      scheduleType?: string
+      scheduleExpr?: string | null
+      /** @description Workflow-owned schedule timezone. */
+      timezone?: string
+      /** @description Workflow-owned trigger mode. */
+      triggerMode?: string
+      calendarCode?: string | null
+      /** @description Workflow-owned schedule dependency, resolved within the destination tenant. */
+      dependsOnJobCode?: string | null
       nodes?: components['schemas']['WorkflowNodeSpec'][]
       edges?: components['schemas']['WorkflowEdgeSpec'][]
     }
@@ -10753,14 +12302,18 @@ export interface components {
       nodeName?: string
       nodeType?: string
       relatedJobCode?: string
-      relatedPipelineCode?: string
       workerGroup?: string
       windowCode?: string
       nodeOrder?: number | null
       retryPolicy?: string
       retryMaxCount?: number | null
       timeoutSeconds?: number | null
+      /** @description JSON 节点参数。实际 UPSERT 替换图时，敏感字段中的 **** 只恢复目标租户同一定义、同一节点和字段的已有值； 新节点或新定义无法恢复时，该条目以 error.config.masked_secret_requires_value 失败。 节点列表未提交时保留原图；列表中节点省略 nodeParams 时仍按完整图替换语义清空该节点参数。 dryRun 只预判，不执行此写入校验。 */
       nodeParams?: string
+      /** @description ADR-018 跨日依赖 JSON 数组字符串；配置包导出和导入保留节点声明。 */
+      crossDayDependencies?: string
+      /** @description 跨日依赖等待上限秒数；0 表示永久等待，未传取数据库默认 86400。 */
+      crossDayDependencyTimeoutSeconds?: number | null
       enabled?: boolean | null
     }
     WorkflowEdgeSpec: {
@@ -10768,28 +12321,6 @@ export interface components {
       toNodeCode?: string
       edgeType?: string
       conditionExpr?: string
-      enabled?: boolean | null
-    }
-    PipelineDefinitionSpec: {
-      jobCode?: string
-      pipelineName?: string
-      pipelineType?: string
-      bizType?: string
-      workerGroup?: string
-      enabled?: boolean | null
-      description?: string
-      steps?: components['schemas']['PipelineStepSpec'][]
-    }
-    PipelineStepSpec: {
-      stepCode?: string
-      stepName?: string
-      stageCode?: string
-      stepOrder?: number | null
-      implCode?: string
-      stepParams?: string
-      timeoutSeconds?: number | null
-      retryPolicy?: string
-      retryMaxCount?: number | null
       enabled?: boolean | null
     }
     FileChannelSpec: {
@@ -10859,6 +12390,7 @@ export interface components {
       enabled?: boolean | null
       description?: string
     }
+    /** @description 窗口实际导入写入前校验时区和HH:mm或HH:mm:ss时间，非跨日开始必须早于结束。时区省略按原初始化默认Asia/Shanghai，跨日标志省略按false；SKIP_EXISTING不执行未使用的输入。 */
     BatchWindowSpec: {
       windowCode?: string
       windowName?: string
@@ -10874,6 +12406,7 @@ export interface components {
     BusinessCalendarSpec: {
       calendarCode?: string
       calendarName?: string
+      /** @description 省略时使用系统默认时区；提供时必须是 Java ZoneId 可识别的有效时区。 */
       timezone?: string
       holidayRollRule?: string
       catchUpPolicy?: string
@@ -10916,7 +12449,6 @@ export interface components {
         errorMessage?: string | null
         jobDefinitions?: components['schemas']['TenantConfigInitItemStats']
         workflowDefinitions?: components['schemas']['TenantConfigInitItemStats']
-        pipelineDefinitions?: components['schemas']['TenantConfigInitItemStats']
         fileChannels?: components['schemas']['TenantConfigInitItemStats']
         fileTemplates?: components['schemas']['TenantConfigInitItemStats']
         resourceQueues?: components['schemas']['TenantConfigInitItemStats']
@@ -10931,10 +12463,11 @@ export interface components {
       updated: number
       skipped: number
       failed: number
+      migrated: number
       details?: {
         code?: string | null
         /** @enum {string} */
-        action?: 'CREATED' | 'UPDATED' | 'SKIPPED' | 'FAILED'
+        action?: 'CREATED' | 'UPDATED' | 'SKIPPED' | 'FAILED' | 'MIGRATED'
         errorMessage?: string | null
       }[]
     }
@@ -11105,14 +12638,11 @@ export interface components {
       /** Format: int32 */
       fileTemplateUpdated: number
       /** Format: int32 */
-      pipelineInserted: number
-      /** Format: int32 */
-      pipelineUpdated: number
-      /** Format: int32 */
       workflowInserted: number
       /** Format: int32 */
       workflowUpdated: number
     }
+    /** @description Business event subscription. Job SLA alert type codes are rejected with INVALID_ARGUMENT; use the alert centre channel. */
     CreateWebhookRequest: {
       name: string
       callbackUrl: string
@@ -11122,6 +12652,7 @@ export interface components {
       /** @default true */
       enabled: boolean | null
     }
+    /** @description Business event subscription. Job SLA alert type codes are rejected with INVALID_ARGUMENT; use the alert centre channel. */
     UpdateWebhookRequest: {
       callbackUrl: string
       eventTypes: string[]
@@ -11292,6 +12823,8 @@ export interface components {
       /** Format: int64 */
       id: number
       tenantId: string
+      /** Format: int64 */
+      replayOperationId?: number | null
       calendarCode: string
       /** Format: date */
       bizDate: string
@@ -11365,7 +12898,7 @@ export interface components {
     CommonResponseBatchDayReplayEntryList: components['schemas']['CommonResponseBase'] & {
       data?: components['schemas']['BatchDayReplayEntry'][]
     }
-    /** @description ADR-017 结果版本投影（console 透传 orchestrator 实体）。 */
+    /** @description ADR-017 结果版本元数据投影；原始结果载荷和内部存储引用不通过 Console API 暴露。 */
     ResultVersion: {
       /** Format: int64 */
       id: number
@@ -11381,8 +12914,6 @@ export interface components {
       /** Format: date-time */
       deactivatedAt?: string | null
       payloadStorage?: string | null
-      payloadJson?: string | null
-      payloadRef?: string | null
       /** Format: date-time */
       generatedAt?: string | null
       generatedBy?: string | null
@@ -11480,7 +13011,7 @@ export interface components {
     }
     TriggerActionResponse: {
       tenantId: string
-      jobCode: string
+      workflowCode: string
       status: string
     }
     CommonResponseTriggerAction: components['schemas']['CommonResponseBase'] & {
@@ -11497,8 +13028,6 @@ export interface components {
       jobDefinitions: number
       /** Format: int32 */
       workflowDefinitions: number
-      /** Format: int32 */
-      pipelineDefinitions: number
       /** Format: int32 */
       fileChannels: number
       /** Format: int32 */
@@ -11567,29 +13096,6 @@ export interface components {
     }
     CommonResponseBatchWindowPage: components['schemas']['CommonResponseBase'] & {
       data?: components['schemas']['BatchWindowPageResponse']
-    }
-    /** @description 手工触发 dry-run 校验结果；errors 仅在存在校验错误时出现。 */
-    DryRunResultResponse: {
-      tenantId: string
-      jobCode: string
-      bizDate?: string | null
-      valid: boolean
-      errors?: string[] | null
-    }
-    /** @description 批量触发单条结果；dryRun/result/instanceNo/error 依分支存在。 */
-    BatchTriggerEntryResponse: {
-      /** Format: int32 */
-      index: number
-      jobCode: string
-      bizDate?: string | null
-      dryRun?: boolean | null
-      status: string
-      result?: components['schemas']['DryRunResultResponse']
-      instanceNo?: string | null
-      error?: string | null
-    }
-    CommonResponseBatchTriggerList: components['schemas']['CommonResponseBase'] & {
-      data?: components['schemas']['BatchTriggerEntryResponse'][]
     }
     JobStatsDailyTrendEntry: {
       /** @description LocalDate ISO 或占位符 UNKNOWN。 */
@@ -11702,6 +13208,8 @@ export interface components {
       slaBreached: number
       /** Format: int64 */
       slaOnTime: number
+      /** Format: int64 */
+      slaTotalWithSla: number
       avgDurationSeconds?: number | null
       maxDurationSeconds?: number | null
       /** Format: int64 */
@@ -11779,7 +13287,10 @@ export interface components {
     ShedLockStatusResponse: {
       /** Format: int32 */
       totalLocks: number
-      /** Format: int64 */
+      /**
+       * Format: int64
+       * @description batch.shedlock 中到期时间晚于数据库查询时刻的租约数；诊断结果可能缓存 10 秒。
+       */
       activeLocks: number
       locks: components['schemas']['ShedLockEntry'][]
     }
@@ -11898,8 +13409,11 @@ export interface components {
       partitionStatusCounts: components['schemas']['DiagnosisStatusCount'][]
       taskStatusCounts: components['schemas']['DiagnosisStatusCount'][]
       outboxStatusCounts: components['schemas']['DiagnosisOutboxStatusCount'][]
-      /** Format: int64 */
-      onlineWorkersForGroup: number
+      /**
+       * Format: int64
+       * @description 实例未指定工作组时为 null，不能据此推断可调度 Worker 数量。
+       */
+      onlineWorkersForGroup: number | null
     }
     DiagnosisFinding: {
       severity: string
@@ -12115,7 +13629,7 @@ export interface components {
     CommonResponseConsoleSubscriptionRuleList: components['schemas']['CommonResponseBase'] & {
       data?: components['schemas']['ConsoleSubscriptionRuleResponse'][]
     }
-    /** @description 通知投递日志行（mapper 显式列，snake_case 键；payload_json/error_args 为 jsonb 原样透传）。 */
+    /** @description 通知投递日志行（snake_case 键；payload_json/error_args 按 JSON 值返回并遮罩敏感字段）。 */
     ConsoleNotificationDeliveryLogResponse: {
       /** Format: int64 */
       id: number
@@ -12126,12 +13640,12 @@ export interface components {
       event_type?: string | null
       /** Format: int64 */
       alert_event_id?: number | null
-      /** @description jsonb 投递负载原样透传 */
+      /** @description JSON 投递负载，敏感字段已遮罩 */
       payload_json?: unknown
       delivery_status?: string | null
       error_message?: string | null
       error_key?: string | null
-      /** @description jsonb i18n 占位参数原样透传 */
+      /** @description JSON 错误参数，敏感字段已遮罩 */
       error_args?: unknown
       /** Format: int32 */
       attempt?: number | null
@@ -12140,6 +13654,36 @@ export interface components {
     }
     CommonResponseConsoleNotificationDeliveryLogList: components['schemas']['CommonResponseBase'] & {
       data?: components['schemas']['ConsoleNotificationDeliveryLogResponse'][]
+    }
+    TerminalDeliveryRetryRequest: {
+      /** Format: uuid */
+      requestId: string
+      expectedAttempt: number
+      reason: string
+      reconciliationReference: string
+      /** @enum {boolean} */
+      confirmedNotDelivered: true
+    }
+    TerminalDeliveryRecoveryResponse: {
+      /** @enum {string} */
+      source: 'WEBHOOK' | 'RULE' | 'PUSH'
+      /** Format: int64 */
+      id: number
+      terminalEventKey: string
+      eventType: string
+      /** @description PUSH ACCEPTED is provider acceptance only; DECISION rows retain the first intake decision and cannot be retried. */
+      deliveryStatus: string
+      attempt: number
+      /** Format: date-time */
+      nextRetryAt?: string | null
+      /** Format: date-time */
+      claimUntil?: string | null
+      errorMessage?: string | null
+      /** Format: date-time */
+      createdAt: string
+    }
+    CommonResponseTerminalDeliveryRecoveryList: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['TerminalDeliveryRecoveryResponse'][]
     }
     /** @description 通知渠道测试结果（camelCase；httpStatus/errorSummary 键恒存在，值可空）。 */
     ConsoleNotificationTestResultResponse: {
@@ -12233,37 +13777,6 @@ export interface components {
     CommonResponseConsoleWorkflowRunSkipNode: components['schemas']['CommonResponseBase'] & {
       data?: components['schemas']['ConsoleWorkflowRunSkipNodeResponse']
     }
-    /** @description 流水线定义列表项（mapper 显式列，snake_case 键，全列标量）。 */
-    ConsolePipelineDefinitionListItemResponse: {
-      /** Format: int64 */
-      id: number
-      tenant_id?: string | null
-      job_code?: string | null
-      pipeline_name?: string | null
-      pipeline_type?: string | null
-      biz_type?: string | null
-      worker_group?: string | null
-      /** Format: int32 */
-      version?: number | null
-      enabled?: boolean | null
-      description?: string | null
-      /** Format: date-time */
-      created_at?: string | null
-      /** Format: date-time */
-      updated_at?: string | null
-    }
-    ConsolePipelineDefinitionListPageResponse: {
-      /** Format: int64 */
-      total: number
-      /** Format: int32 */
-      pageNo: number
-      /** Format: int32 */
-      pageSize: number
-      items: components['schemas']['ConsolePipelineDefinitionListItemResponse'][]
-    }
-    CommonResponseConsolePipelineDefinitionListPage: components['schemas']['CommonResponseBase'] & {
-      data?: components['schemas']['ConsolePipelineDefinitionListPageResponse']
-    }
     /** @description 托管上传会话（camelCase，9 固定字段均恒存在）。 */
     ConsoleFilePresignUploadResponse: {
       /** Format: int64 */
@@ -12276,6 +13789,28 @@ export interface components {
       storageBucket: string
       storagePath: string
       fileName: string
+    }
+    ConsoleFileUploadBindingRequest: {
+      calendarCode: string
+      /** Format: int64 */
+      workflowDefinitionId: number
+      fileGroupCode: string
+      /** Format: date */
+      bizDate: string
+      requiredFileNames: string[]
+      bundleTemplateCode: string
+    }
+    ConsoleFileUploadTargetResponse: {
+      tenantId: string
+      calendarCode: string
+      /** Format: int64 */
+      workflowDefinitionId: number
+      workflowCode: string
+      workflowName: string
+      fileGroupCode: string
+    }
+    CommonResponseConsoleFileUploadTargetList: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['ConsoleFileUploadTargetResponse'][]
     }
     CommonResponseConsoleFilePresignUpload: components['schemas']['CommonResponseBase'] & {
       data?: components['schemas']['ConsoleFilePresignUploadResponse']
@@ -12331,7 +13866,7 @@ export interface components {
     RetryStatusFilter: string
     /** @description Filter by delivery status (exact match) */
     DeliveryStatusFilter: string
-    /** @description Filter by target topic (partial match) */
+    /** @description Filter by target topic (case-insensitive literal substring match) */
     TargetTopicFilter: string
     /** @description Filter by workflow definition ID */
     WorkflowDefinitionIdFilter: number
@@ -12792,31 +14327,6 @@ export interface operations {
       }
     }
   }
-  streamPipelineDefinitionEvents: {
-    parameters: {
-      query: {
-        tenantId: string
-        eventType?: string
-        cursor?: string
-        heartbeatMillis?: number
-      }
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description SSE event stream of pipeline definition realtime changes */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'text/event-stream': components['schemas']['ConsoleSseEventResponse']
-        }
-      }
-    }
-  }
   streamWorkflowDefinitionEvents: {
     parameters: {
       query: {
@@ -12896,7 +14406,7 @@ export interface operations {
     parameters: {
       query: {
         tenantId: string
-        jobCode: string
+        workflowCode: string
       }
       header?: never
       path?: never
@@ -13066,7 +14576,7 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseObject']
+          'application/json': components['schemas']['CommonResponseAtomicRuntimeStatus']
         }
       }
     }
@@ -13313,35 +14823,6 @@ export interface operations {
       }
     }
   }
-  triggerJob: {
-    parameters: {
-      query?: never
-      header: {
-        'Idempotency-Key': components['parameters']['IdempotencyKeyHeader']
-        'X-Request-Id'?: components['parameters']['RequestIdHeader']
-        'X-Trace-Id'?: components['parameters']['TraceIdHeader']
-        'X-Operator-Id'?: components['parameters']['OperatorIdHeader']
-      }
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['TriggerRequest']
-      }
-    }
-    responses: {
-      /** @description Trigger result */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['CommonResponseJobTrigger']
-        }
-      }
-    }
-  }
   createCompensationCommand: {
     parameters: {
       query?: never
@@ -13364,6 +14845,82 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['CommonResponseString']
+        }
+      }
+    }
+  }
+  previewFailedWorkflowJobNodeReplay: {
+    parameters: {
+      query?: never
+      header: {
+        'Idempotency-Key': components['parameters']['IdempotencyKeyHeader']
+      }
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['WorkflowNodeReplayPreviewRequest']
+      }
+    }
+    responses: {
+      /** @description Frozen source and policy preview with a short-lived one-use token */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseConsoleWorkflowNodeReplayPreviewResponse']
+        }
+      }
+    }
+  }
+  previewWholeWorkflowReplay: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['WorkflowRunReplayRequest']
+      }
+    }
+    responses: {
+      /** @description Frozen source graph and per-node replay safety preview */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseConsoleWorkflowRunReplayPreviewResponse']
+        }
+      }
+    }
+  }
+  submitWholeWorkflowReplayForApproval: {
+    parameters: {
+      query?: never
+      header: {
+        'Idempotency-Key': components['parameters']['IdempotencyKeyHeader']
+      }
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['WorkflowRunReplayRequest']
+      }
+    }
+    responses: {
+      /** @description Durable replay operation and Console approval number */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseConsoleWorkflowRunReplaySubmissionResponse']
         }
       }
     }
@@ -13500,6 +15057,163 @@ export interface operations {
       }
     }
   }
+  getBatchDayCatchUpRequestStatus: {
+    parameters: {
+      query: {
+        tenantId: string
+      }
+      header: {
+        'Idempotency-Key': components['parameters']['IdempotencyKeyHeader']
+      }
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description 原批次状态或尚未观察到记录 */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseBatchDayCatchUpRequestStatus']
+        }
+      }
+      /** @description 管理员权限或租户访问被拒绝 */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+    }
+  }
+  abandonUnpreparedBatchDayCatchUp: {
+    parameters: {
+      query?: never
+      header: {
+        'Idempotency-Key': components['parameters']['IdempotencyKeyHeader']
+        'X-Original-Idempotency-Key': string
+      }
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': {
+          tenantId: string
+          /** Format: date */
+          bizDate: string
+          calendarCode: string
+        }
+      }
+    }
+    responses: {
+      /** @description 围栏结果或已存在的原批次状态 */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseBatchDayCatchUpRequestStatus']
+        }
+      }
+      /** @description 管理员权限或租户访问被拒绝 */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+    }
+  }
+  continueBatchDayCatchUpRequest: {
+    parameters: {
+      query?: never
+      header: {
+        'Idempotency-Key': components['parameters']['IdempotencyKeyHeader']
+        'X-Original-Idempotency-Key': string
+      }
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': {
+          tenantId: string
+        }
+      }
+    }
+    responses: {
+      /** @description 接续后的原批次状态 */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseBatchDayCatchUpRequestStatus']
+        }
+      }
+      /** @description 管理员权限或租户访问被拒绝 */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description 状态冲突或仍有未确定项目 */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+    }
+  }
+  reconcileBatchDayCatchUpRequest: {
+    parameters: {
+      query?: never
+      header: {
+        'Idempotency-Key': components['parameters']['IdempotencyKeyHeader']
+        'X-Original-Idempotency-Key': string
+      }
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': {
+          tenantId: string
+          jobCode: string
+        }
+      }
+    }
+    responses: {
+      /** @description 对账后的原请求状态 */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseBatchDayCatchUpRequestStatus']
+        }
+      }
+      /** @description 管理员权限或租户访问被拒绝 */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description 状态冲突或回执未核实 */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+    }
+  }
   requestForensicExport: {
     parameters: {
       query?: never
@@ -13625,6 +15339,180 @@ export interface operations {
       }
     }
   }
+  previewBatchDayReplayRange: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['BatchDayReplayRangeRequest']
+      }
+    }
+    responses: {
+      /** @description 按日期展示候选、结果版本和外部派发影响，并签发单次提交凭证 */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseReplayOperationPreview']
+        }
+      }
+    }
+  }
+  submitBatchDayReplayRange: {
+    parameters: {
+      query?: never
+      header: {
+        'Idempotency-Key': string
+      }
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['BatchDayReplayRangeRequest']
+      }
+    }
+    responses: {
+      /** @description 返回持久化父 operation；每日 session 为独立执行单元 */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseReplayOperation']
+        }
+      }
+    }
+  }
+  getBatchDayReplayOperation: {
+    parameters: {
+      query?: {
+        tenantId?: string
+      }
+      header?: never
+      path: {
+        operationId: number
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description operation 状态与聚合进度 */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseReplayOperation']
+        }
+      }
+    }
+  }
+  listBatchDayReplayOperationSessions: {
+    parameters: {
+      query?: {
+        tenantId?: string
+      }
+      header?: never
+      path: {
+        operationId: number
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description 按业务日期排序的子 session 及每日进度 */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseBatchDayReplaySessionList']
+        }
+      }
+    }
+  }
+  listBatchDayReplayOperations: {
+    parameters: {
+      query?: {
+        tenantId?: string
+        limit?: number
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description 最近创建的 Replay Operation */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseReplayOperationList']
+        }
+      }
+    }
+  }
+  approveBatchDayReplayOperation: {
+    parameters: {
+      query: {
+        tenantId?: string
+        approver: string
+      }
+      header: {
+        'Idempotency-Key': string
+      }
+      path: {
+        operationId: number
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description operation 及所有子 session 原子审批 */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseReplayOperation']
+        }
+      }
+    }
+  }
+  cancelBatchDayReplayOperation: {
+    parameters: {
+      query?: {
+        tenantId?: string
+      }
+      header: {
+        'Idempotency-Key': string
+      }
+      path: {
+        operationId: number
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description 返回 operation 聚合状态 */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseReplayOperation']
+        }
+      }
+    }
+  }
   approveBatchDayReplay: {
     parameters: {
       query: {
@@ -13719,6 +15607,34 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['CommonResponseBatchDayReplayEntryList']
+        }
+      }
+    }
+  }
+  retryBatchDayReplaySubmission: {
+    parameters: {
+      query: {
+        tenantId?: string
+        reason: string
+      }
+      header: {
+        'Idempotency-Key': string
+      }
+      path: {
+        sessionId: number
+        entryId: number
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description 更新后的重放会话 */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseBatchDayReplaySession']
         }
       }
     }
@@ -14098,6 +16014,80 @@ export interface operations {
       }
     }
   }
+  previewBatchDayCatchup: {
+    parameters: {
+      query: {
+        tenantId: string
+        calendarCode: string
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Next raw-date scan preview */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseConsoleBatchDayCatchupPreviewResponse']
+        }
+      }
+    }
+  }
+  changeBatchDayCatchupControl: {
+    parameters: {
+      query?: never
+      header: {
+        'Idempotency-Key': components['parameters']['IdempotencyKeyHeader']
+      }
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['BatchDayCatchupControlRequest']
+      }
+    }
+    responses: {
+      /** @description Updated catch-up preview and control state */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseConsoleBatchDayCatchupPreviewResponse']
+        }
+      }
+    }
+  }
+  listBatchDayHistoricalGapCandidates: {
+    parameters: {
+      query: {
+        tenantId: string
+        calendarCode: string
+        fromDate: string
+        throughDate: string
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Read-only candidate inventory */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseConsoleBatchDayHistoricalGapInventoryResponse']
+        }
+      }
+    }
+  }
   operateBatchDay: {
     parameters: {
       query?: never
@@ -14124,7 +16114,87 @@ export interface operations {
       }
     }
   }
-  batchTriggerJobs: {
+  listCalendarDependencyWaits: {
+    parameters: {
+      query: {
+        tenantId: string
+        calendarCode?: string
+        waitStatus?: 'WAITING' | 'OPENED' | 'SKIPPED'
+        limit?: number
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Dependency waits */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseConsoleCalendarDependencyWaitList']
+        }
+      }
+    }
+  }
+  listJobDependencyWaits: {
+    parameters: {
+      query: {
+        tenantId: string
+        waitStatus?: 'WAITING' | 'RELEASED' | 'CANCELLED'
+        jobCode?: string
+        limit?: number
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Job dependency waits without launch parameters */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseConsoleJobDependencyWaitList']
+        }
+      }
+    }
+  }
+  listConsolePersistentWaits: {
+    parameters: {
+      query: {
+        tenantId: string
+        waitType?: 'READINESS' | 'CAPACITY_ADMISSION'
+        waitStatus?:
+          'PENDING' | 'RELEASED' | 'TIMED_OUT' | 'CANCELLED' | 'WAITING' | 'RESUMED' | 'REJECTED'
+        workflowDefinitionId?: number
+        bizDateFrom?: string
+        bizDateTo?: string
+        pageNo?: number
+        pageSize?: number
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Safe readiness and Workflow capacity wait page */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseConsolePersistentWaitPage']
+        }
+      }
+    }
+  }
+  requestCalendarDependencyWaitAction: {
     parameters: {
       query?: never
       header: {
@@ -14135,17 +16205,17 @@ export interface operations {
     }
     requestBody: {
       content: {
-        'application/json': components['schemas']['TriggerRequest'][]
+        'application/json': components['schemas']['CalendarDependencyWaitManualActionRequest']
       }
     }
     responses: {
-      /** @description Batch trigger results */
+      /** @description Decision request recorded; the orchestrator reconciler applies it */
       200: {
         headers: {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['CommonResponseBatchTriggerList']
+          'application/json': components['schemas']['CommonResponseConsoleCalendarDependencyWait']
         }
       }
     }
@@ -15315,9 +17385,7 @@ export interface operations {
           'application/json': {
             code?: string
             message?: string
-            data?: {
-              [key: string]: unknown
-            }[]
+            data?: components['schemas']['AtomicTaskConfigResponse'][]
           }
         }
       }
@@ -15553,9 +17621,7 @@ export interface operations {
           'application/json': {
             code?: string
             message?: string
-            data?: {
-              [key: string]: unknown
-            }
+            data?: components['schemas']['AtomicTaskConfigResponse']
           }
         }
       }
@@ -16520,6 +18586,8 @@ export interface operations {
         /** @description 深翻页上限 10000;超深页请改用 cursor 分页(ADR-031) */
         pageNo?: components['parameters']['PageNoQuery']
         pageSize?: components['parameters']['PageSizeQuery']
+        /** @description 不透明分页游标，应原样回传服务端返回值；传空字符串进入游标首页，按 ID 降序翻页，损坏或 ID 非整数、越界时返回 400。不传游标时按创建时间倒序使用普通分页。 */
+        cursor?: string
         /** @description alert / approval / job_instance / worker / auth / api_key / outbox 等 */
         aggregateType?: string
         aggregateId?: string
@@ -16544,6 +18612,15 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['CommonResponseConsoleOperationAuditList']
+        }
+      }
+      /** @description Invalid query or cursor */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseObject']
         }
       }
     }
@@ -16646,6 +18723,9 @@ export interface operations {
                 totalRowsHint?: number | null
                 /** Format: int64 */
                 lastHeartbeatAt?: number | null
+                stepStatus?: string | null
+                runSeq?: number | null
+                errorCode?: string | null
               }[]
             }
           }
@@ -16672,6 +18752,8 @@ export interface operations {
         /** @description 深翻页上限 10000;超深页请改用 cursor 分页(ADR-031) */
         pageNo?: components['parameters']['PageNoQuery']
         pageSize?: components['parameters']['PageSizeQuery']
+        /** @description 不透明分页游标；空字符串表示游标首页，各页按 ID 降序。省略时使用普通分页及原有排序。 */
+        cursor?: string
       }
       header?: never
       path?: never
@@ -16686,6 +18768,15 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['CommonResponseAlertEventList']
+        }
+      }
+      /** @description Invalid query or cursor */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseObject']
         }
       }
     }
@@ -16744,10 +18835,20 @@ export interface operations {
         traceId?: components['parameters']['TraceIdFilter']
         /** @description Filter by file ID */
         fileId?: components['parameters']['FileIdFilter']
-        /** @description Filter start date (ISO date, inclusive) */
-        startDate?: components['parameters']['StartDateFilter']
-        /** @description Filter end date (ISO date, inclusive) */
-        endDate?: components['parameters']['EndDateFilter']
+        /** @description 按作业编码筛选热表中的流水线、作业实例或文件型分区关联文件。 */
+        jobCode?: string
+        /** @description 业务日期起点（含当日）。 */
+        startDate?: string
+        /** @description 业务日期终点（含当日）。 */
+        endDate?: string
+        /** @description 为 true 时按服务端业务时区的自然日筛选创建时间，并与其他时间条件取交集。 */
+        arrivalToday?: boolean
+        /** @description 创建时间起点（含），ISO-8601 Instant。 */
+        fromTime?: string
+        /** @description 创建时间终点（含），ISO-8601 Instant。 */
+        toTime?: string
+        /** @description 不透明分页游标；空字符串表示游标首页，省略时使用普通分页。 */
+        cursor?: string
       }
       header?: never
       path?: never
@@ -16762,6 +18863,15 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['CommonResponseFileRecordList']
+        }
+      }
+      /** @description Invalid query or cursor */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseObject']
         }
       }
     }
@@ -16853,28 +18963,6 @@ export interface operations {
       }
     }
   }
-  queryPipelineDefinitionCodes: {
-    parameters: {
-      query?: {
-        tenantId?: components['parameters']['TenantIdQuery']
-      }
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Active pipeline (code, name) list */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['CommonResponseCodeNameOptionList']
-        }
-      }
-    }
-  }
   queryOutboxRetries: {
     parameters: {
       query?: {
@@ -16882,6 +18970,8 @@ export interface operations {
         /** @description 深翻页上限 10000;超深页请改用 cursor 分页(ADR-031) */
         pageNo?: components['parameters']['PageNoQuery']
         pageSize?: components['parameters']['PageSizeQuery']
+        /** @description 不透明分页游标；空字符串表示游标首页，省略时使用普通分页。 */
+        cursor?: string
         /** @description Filter by event type (exact match) */
         eventType?: components['parameters']['EventTypeFilter']
         /** @description Filter by event key (exact match) */
@@ -16904,6 +18994,15 @@ export interface operations {
           'application/json': components['schemas']['CommonResponseConsoleOutboxRetryLogList']
         }
       }
+      /** @description Invalid query or cursor */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseObject']
+        }
+      }
     }
   }
   queryOutboxDeliveries: {
@@ -16913,13 +19012,15 @@ export interface operations {
         /** @description 深翻页上限 10000;超深页请改用 cursor 分页(ADR-031) */
         pageNo?: components['parameters']['PageNoQuery']
         pageSize?: components['parameters']['PageSizeQuery']
+        /** @description 不透明分页游标；空字符串表示游标首页，省略时使用普通分页。 */
+        cursor?: string
         /** @description Filter by event type (exact match) */
         eventType?: components['parameters']['EventTypeFilter']
         /** @description Filter by event key (exact match) */
         eventKey?: components['parameters']['EventKeyFilter']
         /** @description Filter by delivery status (exact match) */
         deliveryStatus?: components['parameters']['DeliveryStatusFilter']
-        /** @description Filter by target topic (partial match) */
+        /** @description Filter by target topic (case-insensitive literal substring match) */
         targetTopic?: components['parameters']['TargetTopicFilter']
         traceId?: string
       }
@@ -16936,6 +19037,15 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['CommonResponseConsoleOutboxDeliveryLogList']
+        }
+      }
+      /** @description Invalid query or cursor */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseObject']
         }
       }
     }
@@ -16968,57 +19078,6 @@ export interface operations {
     }
   }
   queryFilePipelineDetail: {
-    parameters: {
-      query?: {
-        tenantId?: components['parameters']['TenantIdQuery']
-      }
-      header?: never
-      path: {
-        id: number
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description File pipeline detail */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['CommonResponseObject']
-        }
-      }
-    }
-  }
-  queryPipelineDefinitionsCompatibility: {
-    parameters: {
-      query?: {
-        tenantId?: components['parameters']['TenantIdQuery']
-        /** @description 深翻页上限 10000;超深页请改用 cursor 分页(ADR-031) */
-        pageNo?: components['parameters']['PageNoQuery']
-        pageSize?: components['parameters']['PageSizeQuery']
-        /** @description Literal case-insensitive keyword search across the list's visible identity and status fields. */
-        keyword?: components['parameters']['KeywordQuery']
-      }
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description File pipeline list */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['CommonResponseConsoleFilePipelineList']
-        }
-      }
-    }
-  }
-  queryPipelineDefinitionCompatibilityDetail: {
     parameters: {
       query?: {
         tenantId?: components['parameters']['TenantIdQuery']
@@ -17449,6 +19508,8 @@ export interface operations {
         /** @description 深翻页上限 10000;超深页请改用 cursor 分页(ADR-031) */
         pageNo?: components['parameters']['PageNoQuery']
         pageSize?: components['parameters']['PageSizeQuery']
+        /** @description 不透明分页游标；空字符串表示游标首页，各页按 ID 降序。省略时使用普通分页及原有排序。 */
+        cursor?: string
         /** @description Filter by job instance ID */
         jobInstanceId?: components['parameters']['JobInstanceIdFilter']
         /** @description Filter by partition status (e.g. WAITING / READY / RUNNING / SUCCESS / FAILED) */
@@ -17469,6 +19530,15 @@ export interface operations {
           'application/json': components['schemas']['CommonResponseJobPartitionList']
         }
       }
+      /** @description Invalid query or cursor */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseObject']
+        }
+      }
     }
   }
   queryWorkflowDefinitions: {
@@ -17483,6 +19553,10 @@ export interface operations {
         /** @description Filter by workflow name (partial match) */
         workflowName?: string
         workflowType?: string
+        /** @description Return workflows that contain this tenant-scoped Job Definition. */
+        relatedJobCode?: string
+        /** @description Filter managed single-job workflows versus composed workflows. */
+        singleJobWorkflow?: boolean
         version?: number
         /** @description Filter by enabled status. Defaults to true (only enabled records returned unless overridden). */
         enabled?: boolean
@@ -17620,6 +19694,8 @@ export interface operations {
         /** @description 深翻页上限 10000;超深页请改用 cursor 分页(ADR-031) */
         pageNo?: components['parameters']['PageNoQuery']
         pageSize?: components['parameters']['PageSizeQuery']
+        /** @description 不透明分页游标；空字符串表示游标首页，各页按 ID 降序。省略时使用普通分页及原有排序。 */
+        cursor?: string
         /** @description Filter by workflow run ID */
         workflowRunId?: components['parameters']['WorkflowRunIdFilter']
       }
@@ -17636,6 +19712,15 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['CommonResponseWorkflowNodeRunList']
+        }
+      }
+      /** @description Invalid query or cursor */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseObject']
         }
       }
     }
@@ -17743,6 +19828,8 @@ export interface operations {
         /** @description 深翻页上限 10000;超深页请改用 cursor 分页(ADR-031) */
         pageNo?: components['parameters']['PageNoQuery']
         pageSize?: components['parameters']['PageSizeQuery']
+        /** @description 不透明分页游标；空字符串表示游标首页，各页按 ID 降序。省略时使用普通分页及原有排序。 */
+        cursor?: string
       }
       header?: never
       path?: never
@@ -17759,21 +19846,30 @@ export interface operations {
           'application/json': components['schemas']['CommonResponseRetryScheduleList']
         }
       }
+      /** @description Invalid query or cursor */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseObject']
+        }
+      }
     }
   }
   queryCatchUpApprovals: {
     parameters: {
       query?: {
         tenantId?: components['parameters']['TenantIdQuery']
-        /** @description 可选,按 Job 编码精确过滤。 */
-        jobCode?: string
+        /** @description 可选,按 Workflow 编码精确过滤。 */
+        workflowCode?: string
         /** @description 可选,按调度请求 ID 精确过滤。 */
         requestId?: string
         /** @description 可选,按业务日期(ISO yyyy-MM-dd)精确过滤。 */
         bizDate?: string
-        /** @description 可选,大小写不敏感模糊匹配 requestId / jobCode / traceId 任一。 */
+        /** @description 可选,大小写不敏感模糊匹配 requestId / workflowCode / traceId 任一。 */
         keyword?: string
-        /** @description cursor 分页 token(ADR-031),非空时走 cursor 模式。 */
+        /** @description 不透明分页游标；空字符串表示游标首页，省略时使用普通分页。 */
         cursor?: string
         /** @description 深翻页上限 10000;超深页请改用 cursor 分页(ADR-031) */
         pageNo?: components['parameters']['PageNoQuery']
@@ -17792,6 +19888,15 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['CommonResponsePendingCatchUpList']
+        }
+      }
+      /** @description Invalid query or cursor */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseObject']
         }
       }
     }
@@ -18180,34 +20285,6 @@ export interface operations {
       }
     }
   }
-  updateWorkflowDefinition: {
-    parameters: {
-      query?: never
-      header: {
-        'Idempotency-Key': components['parameters']['IdempotencyKeyHeader']
-      }
-      path: {
-        id: number
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['WorkflowDefinitionSaveRequest']
-      }
-    }
-    responses: {
-      /** @description Updated workflow definition detail */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['CommonResponseWorkflowDefinitionDetailResponse']
-        }
-      }
-    }
-  }
   patchWorkflowDefinition: {
     parameters: {
       query?: never
@@ -18230,6 +20307,199 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['CommonResponseVoid']
+        }
+      }
+    }
+  }
+  triggerWorkflowDefinition: {
+    parameters: {
+      query?: never
+      header: {
+        'Idempotency-Key': components['parameters']['IdempotencyKeyHeader']
+      }
+      path: {
+        id: number
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['WorkflowTriggerRequest']
+      }
+    }
+    responses: {
+      /** @description Workflow run accepted */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseString']
+        }
+      }
+    }
+  }
+  workflowTriggerStatus: {
+    parameters: {
+      query: {
+        tenantId: string
+      }
+      header: {
+        'Idempotency-Key': components['parameters']['IdempotencyKeyHeader']
+      }
+      path: {
+        id: number
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Persisted original trigger receipt */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseWorkflowTriggerStatus']
+        }
+      }
+      /** @description No receipt currently visible for this exact identity; keep the client outcome unknown */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+    }
+  }
+  catchUpRejectedScheduledOccurrence: {
+    parameters: {
+      query?: never
+      header: {
+        'Idempotency-Key': components['parameters']['IdempotencyKeyHeader']
+      }
+      path: {
+        id: number
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['ScheduledOccurrenceCatchUpRequest']
+      }
+    }
+    responses: {
+      /** @description Catch-up accepted or submitted to the configured approval workflow */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseScheduledOccurrenceCatchUpResponse']
+        }
+      }
+    }
+  }
+  patchWorkflowScheduleEnabled: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: number
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['EnabledPatchRequest']
+      }
+    }
+    responses: {
+      /** @description Success */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseVoid']
+        }
+      }
+    }
+  }
+  updateWorkflowSchedule: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: number
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['WorkflowScheduleUpdateRequest']
+      }
+    }
+    responses: {
+      /** @description Updated Workflow schedule and definition detail */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseWorkflowDefinitionDetailResponse']
+        }
+      }
+    }
+  }
+  getWorkflowMonitoringPolicy: {
+    parameters: {
+      query: {
+        tenantId: string
+      }
+      header?: never
+      path: {
+        id: number
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description 根级策略；尚未配置时三类均关闭 */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseWorkflowMonitoringPolicyResponse']
+        }
+      }
+    }
+  }
+  saveWorkflowMonitoringPolicy: {
+    parameters: {
+      query?: never
+      header: {
+        'Idempotency-Key': components['parameters']['IdempotencyKeyHeader']
+      }
+      path: {
+        id: number
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['WorkflowMonitoringPolicyRequest']
+      }
+    }
+    responses: {
+      /** @description 已持久化策略及生效时刻 */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseWorkflowMonitoringPolicyResponse']
         }
       }
     }
@@ -18585,7 +20855,7 @@ export interface operations {
         'Idempotency-Key': components['parameters']['IdempotencyKeyHeader']
       }
       path: {
-        jobCode: string
+        workflowCode: string
       }
       cookie?: never
     }
@@ -18611,7 +20881,7 @@ export interface operations {
         'Idempotency-Key': components['parameters']['IdempotencyKeyHeader']
       }
       path: {
-        jobCode: string
+        workflowCode: string
       }
       cookie?: never
     }
@@ -18637,7 +20907,7 @@ export interface operations {
         'Idempotency-Key': components['parameters']['IdempotencyKeyHeader']
       }
       path: {
-        jobCode: string
+        workflowCode: string
       }
       cookie?: never
     }
@@ -18663,7 +20933,7 @@ export interface operations {
         'Idempotency-Key': components['parameters']['IdempotencyKeyHeader']
       }
       path: {
-        jobCode: string
+        workflowCode: string
       }
       cookie?: never
     }
@@ -19013,6 +21283,15 @@ export interface operations {
           'application/json': components['schemas']['CommonResponseBatchWindow']
         }
       }
+      /** @description VALIDATION_ERROR或INVALID_ARGUMENT；时区、ISO本地时间或非跨日区间不合法。 */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseVoid']
+        }
+      }
     }
   }
   updateBatchWindow: {
@@ -19039,6 +21318,15 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['CommonResponseBatchWindow']
+        }
+      }
+      /** @description INVALID_ARGUMENT；合并后的时区、时间格式或非跨日区间不合法，原窗口不变。 */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseVoid']
         }
       }
     }
@@ -19122,6 +21410,15 @@ export interface operations {
           'application/json': components['schemas']['CommonResponseCalendar']
         }
       }
+      /** @description Invalid calendar timezone or request */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseObject']
+        }
+      }
     }
   }
   updateCalendar: {
@@ -19148,6 +21445,15 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['CommonResponseCalendar']
+        }
+      }
+      /** @description Invalid calendar timezone or request */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseObject']
         }
       }
     }
@@ -19657,6 +21963,37 @@ export interface operations {
       }
     }
   }
+  getConfigSyncRequestStatus: {
+    parameters: {
+      query: {
+        tenantId: string
+      }
+      header: {
+        'Idempotency-Key': components['parameters']['IdempotencyKeyHeader']
+      }
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description 已找到原审计或仍待确认 */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseConfigSyncRequestStatus']
+        }
+      }
+      /** @description 管理员权限或租户访问被拒绝 */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+    }
+  }
   listConfigSyncLogs: {
     parameters: {
       query: {
@@ -19678,6 +22015,46 @@ export interface operations {
         content: {
           'application/json': components['schemas']['CommonResponseConfigSyncLogPage']
         }
+      }
+    }
+  }
+  reconcileConfigSyncLog: {
+    parameters: {
+      query: {
+        tenantId: string
+      }
+      header: {
+        'Idempotency-Key': components['parameters']['IdempotencyKeyHeader']
+      }
+      path: {
+        logId: number
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Original import audit with the confirmed outcome or RUNNING if incomplete */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseConfigSyncLog']
+        }
+      }
+      /** @description Administrator permission or tenant access denied */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description Audit log does not exist in the requested tenant */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
       }
     }
   }
@@ -19950,140 +22327,6 @@ export interface operations {
       }
     }
   }
-  listPipelineDefinitions: {
-    parameters: {
-      query: {
-        tenantId: string
-        jobCode?: string
-        pipelineType?: string
-        enabled?: boolean
-        /** @description 深翻页上限 10000;超深页请改用 cursor 分页(ADR-031) */
-        pageNo?: components['parameters']['PageNoQuery']
-        pageSize?: components['parameters']['PageSizeQuery']
-      }
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Pipeline definition list */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['CommonResponseConsolePipelineDefinitionListPage']
-        }
-      }
-    }
-  }
-  createPipelineDefinition: {
-    parameters: {
-      query?: never
-      header: {
-        'Idempotency-Key': components['parameters']['IdempotencyKeyHeader']
-      }
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': Record<string, never>
-      }
-    }
-    responses: {
-      /** @description Created pipeline definition id */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['CommonResponseObject']
-        }
-      }
-    }
-  }
-  getPipelineDefinition: {
-    parameters: {
-      query: {
-        tenantId: string
-      }
-      header?: never
-      path: {
-        id: number
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Pipeline definition detail */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['CommonResponseObject']
-        }
-      }
-    }
-  }
-  updatePipelineDefinition: {
-    parameters: {
-      query?: never
-      header: {
-        'Idempotency-Key': components['parameters']['IdempotencyKeyHeader']
-      }
-      path: {
-        id: number
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': Record<string, never>
-      }
-    }
-    responses: {
-      /** @description Success */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['CommonResponseObject']
-        }
-      }
-    }
-  }
-  setPipelineDefinitionEnabled: {
-    parameters: {
-      query?: never
-      header: {
-        'Idempotency-Key': components['parameters']['IdempotencyKeyHeader']
-      }
-      path: {
-        id: number
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['EnabledPatchRequest']
-      }
-    }
-    responses: {
-      /** @description Success */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          'application/json': components['schemas']['CommonResponseString']
-        }
-      }
-    }
-  }
   retryFailedJobInstancePartitions: {
     parameters: {
       query: {
@@ -20158,6 +22401,153 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['CommonResponsePartitionAction']
+        }
+      }
+    }
+  }
+  queryPipelineProgressSnapshots: {
+    parameters: {
+      query: {
+        tenantId: string
+        pipelineInstanceIds: number[]
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Complete selected range; latest stage attempts and immutable runtime version; missing objects fail closed */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseBase'] & {
+            data?: components['schemas']['PipelineProgressSnapshot']
+          }
+        }
+      }
+    }
+  }
+  streamPipelineProgressSnapshots: {
+    parameters: {
+      query: {
+        tenantId: string
+        pipelineInstanceIds: number[]
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description SSE pipeline-progress-snapshot full snapshots; errors use pipeline-progress-snapshot-error */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'text/event-stream': string
+        }
+      }
+    }
+  }
+  queryJobExecutionProgress: {
+    parameters: {
+      query: {
+        tenantId: string
+      }
+      header?: never
+      path: {
+        id: number
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Frozen pipeline version with observed execution and unknown totals preserved */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseBase'] & {
+            data?: components['schemas']['JobExecutionProgress']
+          }
+        }
+      }
+    }
+  }
+  streamJobExecutionProgress: {
+    parameters: {
+      query: {
+        tenantId: string
+      }
+      header?: never
+      path: {
+        id: number
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description SSE full snapshots; cookie-authenticated one-use ticket; job-execution-progress event */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'text/event-stream': string
+        }
+      }
+    }
+  }
+  workflowExecutionProgress: {
+    parameters: {
+      query: {
+        tenantId: string
+      }
+      header?: never
+      path: {
+        id: number
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Frozen graph with latest node attempts; never mutable current definitions or secret payloads */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseWorkflowExecutionProgress']
+        }
+      }
+    }
+  }
+  workflowExecutionProgressEvents: {
+    parameters: {
+      query: {
+        tenantId: string
+        ticket?: string
+      }
+      header?: never
+      path: {
+        id: number
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Tenant-isolated server-sent events with safe WorkflowExecutionProgress data */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'text/event-stream': string
         }
       }
     }
@@ -20271,6 +22661,8 @@ export interface operations {
       query: {
         tenantId: string
         nodeCode: string
+        /** @description Human reason for skipping this node; the authenticated operator is recorded by the server. */
+        reason: string
       }
       header: {
         'Idempotency-Key': components['parameters']['IdempotencyKeyHeader']
@@ -20289,6 +22681,53 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['CommonResponseConsoleWorkflowRunSkipNode']
+        }
+      }
+    }
+  }
+  dailyProgress: {
+    parameters: {
+      query: {
+        tenantId: string
+        bizDate: string
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Tenant-isolated progress snapshot */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseDailyProgress']
+        }
+      }
+    }
+  }
+  dailyProgressEvents: {
+    parameters: {
+      query: {
+        tenantId: string
+        bizDate: string
+        ticket?: string
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Tenant-isolated progress snapshot */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'text/event-stream': string
         }
       }
     }
@@ -22076,7 +24515,11 @@ export interface operations {
       path?: never
       cookie?: never
     }
-    requestBody?: never
+    requestBody?: {
+      content: {
+        'application/json': components['schemas']['ConsoleFileUploadBindingRequest']
+      }
+    }
     responses: {
       /** @description Upload session info */
       200: {
@@ -22085,6 +24528,28 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['CommonResponseConsoleFilePresignUpload']
+        }
+      }
+    }
+  }
+  listManualUploadTargets: {
+    parameters: {
+      query: {
+        tenantId: string
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Tenant-scoped enabled upload targets */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseConsoleFileUploadTargetList']
         }
       }
     }
@@ -22195,8 +24660,12 @@ export interface operations {
           tenantId: string
           jobCode: string
           bizDate: string
-          compensationType?: string
-          targetInstanceNo?: string
+          /**
+           * @description This self-service endpoint currently supports job-instance compensation only.
+           * @enum {string}
+           */
+          compensationType: 'JOB'
+          targetInstanceNo: string
           reason?: string
         }
       }
@@ -22390,6 +24859,24 @@ export interface operations {
           'application/json': components['schemas']['CommonResponseVoid']
         }
       }
+      /** @description Invalid input, including a channel code that becomes empty after normalization */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseObject']
+        }
+      }
+      /** @description An active channel already uses the normalized code in this tenant */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseObject']
+        }
+      }
     }
   }
   getNotificationChannel: {
@@ -22538,6 +25025,15 @@ export interface operations {
           'application/json': components['schemas']['CommonResponseVoid']
         }
       }
+      /** @description Rule name or event types are blank after normalization */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseObject']
+        }
+      }
     }
   }
   getNotificationRule: {
@@ -22590,6 +25086,15 @@ export interface operations {
           'application/json': components['schemas']['CommonResponseVoid']
         }
       }
+      /** @description Rule name or event types are blank after normalization */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseObject']
+        }
+      }
     }
   }
   deleteNotificationRule: {
@@ -22639,6 +25144,84 @@ export interface operations {
       }
     }
   }
+  listTerminalNotificationDeliveries: {
+    parameters: {
+      query: {
+        tenantId: string
+        limit?: number
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Terminal delivery metadata */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseTerminalDeliveryRecoveryList']
+        }
+      }
+    }
+  }
+  retryTerminalNotificationDelivery: {
+    parameters: {
+      query: {
+        tenantId: string
+      }
+      header?: never
+      path: {
+        source: 'WEBHOOK' | 'RULE' | 'PUSH'
+        id: number
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['TerminalDeliveryRetryRequest']
+      }
+    }
+    responses: {
+      /** @description Queued with committed audit */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description Missing reconciliation or invalid request */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description Role or tenant scope denied */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description No terminal delivery in the permitted tenant */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description Stale attempt */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+    }
+  }
   exportTenantConfigPackageExcel: {
     parameters: {
       query?: {
@@ -22650,7 +25233,7 @@ export interface operations {
     }
     requestBody?: never
     responses: {
-      /** @description 12-sheet Excel workbook containing all config data for the tenant; job monitoring settings are isolated in job_monitoring_policy */
+      /** @description 11-sheet Excel workbook containing active tenant config data; Job and Workflow monitoring settings are isolated in job_monitoring_policy and workflow_monitoring_policy, and retired tenant Pipeline sheets are excluded */
       200: {
         headers: {
           [name: string]: unknown
@@ -22670,7 +25253,7 @@ export interface operations {
     }
     requestBody?: never
     responses: {
-      /** @description Empty Excel template with 12 data sheets */
+      /** @description Empty Excel template with 11 active data sheets */
       200: {
         headers: {
           [name: string]: unknown
@@ -22723,7 +25306,7 @@ export interface operations {
     }
     requestBody?: never
     responses: {
-      /** @description Scenario sample Excel template with 12 data sheets */
+      /** @description Scenario sample Excel template with 11 active data sheets */
       200: {
         headers: {
           [name: string]: unknown

@@ -1,4 +1,4 @@
-import type { Directive } from 'vue'
+import type { ObjectDirective } from 'vue'
 import { purifyHtml } from '@/utils/safeHtml'
 
 /**
@@ -9,7 +9,7 @@ import { purifyHtml } from '@/utils/safeHtml'
  *
  *   <div v-safe-html="content" />
  */
-export const safeHtmlDirective: Directive<HTMLElement, unknown> = {
+export const safeHtmlDirective: ObjectDirective<HTMLElement, unknown> = {
   mounted(el, binding) {
     el.innerHTML = purifyHtml(binding.value)
   },

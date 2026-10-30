@@ -121,6 +121,7 @@
 
         <template #toolbar>
           <BulkActionBar
+            v-if="canManageSystem"
             :count="bulk.count.value"
             :running="bulk.running.value"
             @clear="bulk.clear"
@@ -131,7 +132,7 @@
                 type="warning"
                 plain
                 :loading="running"
-                :disabled="writesFrozen"
+                :disabled="!canWriteSystem"
                 @click="onBulkRetry"
               >
                 {{ t('jobInstanceList.bulkRetry') }}
@@ -141,7 +142,7 @@
                 type="danger"
                 plain
                 :loading="running"
-                :disabled="writesFrozen"
+                :disabled="!canWriteSystem"
                 @click="onBulkCancel"
               >
                 {{ t('jobInstanceList.bulkCancel') }}
@@ -151,7 +152,12 @@
         </template>
 
         <template #default="{ isColVisible }">
-          <el-table-column type="selection" width="44" :selectable="isBulkSelectable" />
+          <el-table-column
+            v-if="canManageSystem"
+            type="selection"
+            width="44"
+            :selectable="isBulkSelectable"
+          />
           <!-- 列序照设计 #instances:JOB CODE 首列,状态第三,TRACE 短码,操作=文字链 -->
           <el-table-column
             v-if="isColVisible('jobCode')"
@@ -208,7 +214,7 @@
           >
             <template #default="{ row }">
               <span class="jr-mono">{{
-                formatDurationMs(calcDurationMs(row.startedAt, row.finishedAt))
+                formatJobInstanceDuration(row.startedAt, row.finishedAt)
               }}</span>
             </template>
           </el-table-column>
@@ -317,10 +323,10 @@
         :title="
           t('jobInstanceList.bulkResultSummary', {
             ok: bulkResultOk,
-            fail: bulkResultRows.filter((row) => !row.succeeded).length,
+            fail: bulkResultFailureCount,
           })
         "
-        :type="bulkResultRows.some((row) => !row.succeeded) ? 'warning' : 'success'"
+        :type="bulkResultFailureCount > 0 ? 'warning' : 'success'"
         :closable="false"
         show-icon
       />
@@ -358,15 +364,17 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, reactive, computed, onMounted } from 'vue'
+  import { ref, reactive, computed, onMounted, watch } from 'vue'
   import { useRouter, useRoute } from 'vue-router'
   import { useI18n } from 'vue-i18n'
   import { useWriteAvailability } from '@/composables/useWriteAvailability'
+  import { usePermission } from '@/composables/usePermission'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import { confirmDanger } from '@/composables/useDangerConfirm'
 
   const { t, te } = useI18n({ useScope: 'global' })
-  const { writesFrozen, ensureWriteAvailable } = useWriteAvailability()
+  const { ensureWriteAvailable } = useWriteAvailability()
+  const { canManageSystem, canWriteSystem } = usePermission()
 
   function resolveTriggerType(value?: string | null): string {
     if (!value) return '—'
@@ -395,6 +403,7 @@
   import { useSseAutoReload } from '@/composables/useSseAutoReload'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
+  import { useTenantRequestScope } from '@/composables/useTenantRequestScope'
   import PageContainer from '@/components/common/PageContainer.vue'
   import TraceIdInput from '@/components/common/TraceIdInput.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
@@ -422,6 +431,10 @@
   const router = useRouter()
   const route = useRoute()
   const tenant = useTenantStore()
+  const listScope = useTenantRequestScope()
+  const countScope = useTenantRequestScope()
+  const codeScope = useTenantRequestScope()
+  const bulkScope = useTenantRequestScope()
   const loading = ref(false)
   const { filterBusy, tableBlocking, runSearch, runReset, runRefresh } =
     useListFilterFeedback(loading)
@@ -443,6 +456,10 @@
       message: string
     }>
   >([])
+  const bulkResultFailureCount = computed(() => {
+    const failedRows = bulkResultRows.value.filter((row) => !row.succeeded)
+    return failedRows.length
+  })
   onMounted(() => bulk.bindTable(proTableRef.value))
   const isBulkSelectable = canSelectJobInstanceForBulk
 
@@ -450,9 +467,14 @@
     items: ConsoleJobInstanceResponse[],
     action: (item: ConsoleJobInstanceResponse) => Promise<unknown>,
     actionLabel: string,
+    isCurrent: () => boolean,
   ) {
-    const result = await bulk.runBulk(items, action, { actionLabel, clearOnDone: false })
-    const failedItems = new Map(result.failed.map(({ item, error }) => [item, error]))
+    const result = await bulk.runBulk(items, action, { actionLabel, clearOnDone: false, isCurrent })
+    if (!isCurrent()) return result
+    const failedEntries: Array<[ConsoleJobInstanceResponse, unknown]> = result.failed.map(
+      ({ item, error }) => [item, error],
+    )
+    const failedItems = new Map(failedEntries)
     bulkResultOk.value = result.ok
     bulkResultRows.value = items.map((item) => {
       const error = failedItems.get(item)
@@ -470,11 +492,19 @@
   }
 
   function errorMessage(error: unknown): string {
-    return userErrorMessage(error).slice(0, 400)
+    const message = userErrorMessage(error)
+    return message.slice(0, 400)
   }
 
   async function onBulkRetry() {
-    if (!ensureWriteAvailable()) return
+    if (!canWriteSystem.value || !ensureWriteAvailable()) return
+    if (bulk.running.value) return
+    const scope = bulkScope.begin()
+    const sourceTenantId = scope.tenantId
+    const operator = auth.userInfo?.username
+    const isCurrent = () =>
+      bulkScope.isCurrent(scope) && canWriteSystem.value && auth.userInfo?.username === operator
+    if (!isCurrent()) return
     const eligible = bulk.selected.value.filter((r) => r.instanceStatus === 'FAILED')
     if (!eligible.length) {
       ElMessage.warning(t('jobInstanceList.bulkRetryNone'))
@@ -487,16 +517,31 @@
       { type: 'warning', confirmButtonText: t('common.ok'), cancelButtonText: t('common.cancel') },
     ).catch(() => false)
     if (confirmed === false) return
+    if (!isCurrent()) return
     await runInstanceBulk(
       eligible,
-      (r) => instanceApi.retry(r.instanceNo, tenant.tenantId, r.jobCode, r.bizDate),
+      (r) => {
+        if (!isCurrent()) {
+          const message = t('common.cancel')
+          return Promise.reject(new Error(message))
+        }
+        return instanceApi.retry(r.instanceNo, sourceTenantId, r.jobCode, r.bizDate)
+      },
       label,
+      isCurrent,
     )
-    void loadData()
+    if (isCurrent()) void loadData()
   }
 
   async function onBulkCancel() {
-    if (!ensureWriteAvailable()) return
+    if (!canWriteSystem.value || !ensureWriteAvailable()) return
+    if (bulk.running.value) return
+    const scope = bulkScope.begin()
+    const sourceTenantId = scope.tenantId
+    const operator = auth.userInfo?.username
+    const isCurrent = () =>
+      bulkScope.isCurrent(scope) && canWriteSystem.value && auth.userInfo?.username === operator
+    if (!isCurrent()) return
     const eligible = bulk.selected.value.filter(
       (r) => !TERMINAL_INSTANCE_STATUSES.includes(r.instanceStatus),
     )
@@ -515,13 +560,23 @@
     } catch {
       return
     }
-    await runInstanceBulk(eligible, (r) => instanceApi.cancel(r.id, tenant.tenantId), label)
-    void loadData()
+    if (!isCurrent()) return
+    await runInstanceBulk(
+      eligible,
+      (r) => {
+        if (!isCurrent()) {
+          const message = t('common.cancel')
+          return Promise.reject(new Error(message))
+        }
+        return instanceApi.cancel(r.id, sourceTenantId)
+      },
+      label,
+      isCurrent,
+    )
+    if (isCurrent()) void loadData()
   }
 
-  // 列表筛选默认锚到「近 7 天」:批量作业的 biz_date 多为 T-1 及更早,默认只看"今天单日"
-  // 常常空屏(尤其当天尚无业务日数据),近 7 天更贴合运维"看最近一批运行"的真实诉求;
-  // URL query 会在下面覆盖。需要精确单日时用户自行收窄即可。
+  // 按作业开始时间默认查看近7天；业务日期在行中独立展示，URL可覆盖日期范围。
   function recentRange(days = 7): [string, string] {
     return recentBusinessDateRange(days)
   }
@@ -608,26 +663,33 @@
     ])
     if (sig === lastCountSig) return
     lastCountSig = sig
+    const scope = countScope.begin()
+    const filters = { ...query, tenantId: scope.tenantId }
+    let failed = false
     await Promise.all(
       TAB_DEFS.map(async (tab) => {
         try {
           const pr = await instanceApi.list({
-            tenantId: query.tenantId || tenant.tenantId,
-            jobCode: query.jobCode,
+            tenantId: filters.tenantId,
+            jobCode: filters.jobCode,
             instanceStatus: tab.key,
-            startDate: query.startDate,
-            endDate: query.endDate,
-            traceId: query.traceId,
-            slaBreached: query.slaBreached,
+            startDate: filters.startDate,
+            endDate: filters.endDate,
+            traceId: filters.traceId,
+            slaBreached: filters.slaBreached,
             page: 1,
             pageSize: 1,
           })
-          statusCounts[tab.key] = pr.total ?? 0
+          if (countScope.isCurrent(scope)) statusCounts[tab.key] = pr.total ?? 0
         } catch {
-          statusCounts[tab.key] = null
+          if (countScope.isCurrent(scope)) {
+            statusCounts[tab.key] = null
+            failed = true
+          }
         }
       }),
     )
+    if (failed && countScope.isCurrent(scope)) lastCountSig = ''
   }
 
   const statusTabs = computed(() =>
@@ -672,19 +734,22 @@
   })
 
   async function loadJobCodes() {
+    const scope = codeScope.begin()
     // 仅用于下拉"常用 jobCode"提示，取前 500 条即可；超过 500 的租户让用户手输或搜索
     // （旧实现走 fetchAllPageItems，大租户会拉回万级数据，浪费带宽）
     try {
       const paged = await jobApi.listDefinitionsPaged({
-        tenantId: tenant.tenantId,
+        tenantId: scope.tenantId,
         pageNo: 1,
         pageSize: 500,
       })
-      jobCodeOptions.value = [...new Set(paged.records.map((d) => d.jobCode).filter(Boolean))].sort(
-        (a, b) => a.localeCompare(b),
-      )
+      if (!codeScope.isCurrent(scope)) return
+      const jobCodes = paged.records.map((definition) => definition.jobCode)
+      const nonEmptyJobCodes = jobCodes.filter(Boolean)
+      const uniqueJobCodes = new Set(nonEmptyJobCodes)
+      jobCodeOptions.value = [...uniqueJobCodes].sort((left, right) => left.localeCompare(right))
     } catch {
-      jobCodeOptions.value = []
+      if (codeScope.isCurrent(scope)) jobCodeOptions.value = []
     }
   }
 
@@ -731,19 +796,23 @@
 
   const loadError = ref<unknown>(null)
   async function loadData() {
+    const scope = listScope.begin()
+    if (!scope.tenantId) return
+    const filters = { ...query, tenantId: scope.tenantId }
     loading.value = true
     loadError.value = null
     try {
-      const result = await instanceApi.list(query)
+      const result = await instanceApi.list(filters)
+      if (!listScope.isCurrent(scope)) return
       rows.value = result.records
       total.value = result.total
       void loadStatusCounts()
+      live.markRefreshed()
     } catch (err) {
-      loadError.value = err
+      if (listScope.isCurrent(scope)) loadError.value = err
       throw err
     } finally {
-      loading.value = false
-      live.markRefreshed()
+      if (listScope.isCurrent(scope)) loading.value = false
     }
   }
 
@@ -779,12 +848,13 @@
   }
 
   // 多状态深链回显:把 CSV 各码映射到枚举 label(映射不到则原样显示码)
-  const multiStatusLabel = computed(() =>
-    query.instanceStatuses
-      .split(',')
-      .map((c) => statusOptions.value.find((o) => o.value === c)?.label ?? c)
-      .join(' / '),
-  )
+  const multiStatusLabel = computed(() => {
+    const statusCodes = query.instanceStatuses.split(',')
+    const statusLabels = statusCodes.map(
+      (code) => statusOptions.value.find((option) => option.value === code)?.label ?? code,
+    )
+    return statusLabels.join(' / ')
+  })
 
   // 关闭多状态 tag = 清掉 CSV 过滤,回到普通单值筛选
   function clearMultiStatus() {
@@ -815,9 +885,15 @@
   function calcDurationMs(startedAt: unknown, finishedAt: unknown): number | null {
     const start = toEpochMs(startedAt)
     if (start == null) return null
-    const end = toEpochMs(finishedAt) ?? Date.now()
+    const parsedFinishedAt = toEpochMs(finishedAt)
+    const end = parsedFinishedAt ?? Date.now()
     const d = end - start
     return d >= 0 ? d : null
+  }
+
+  function formatJobInstanceDuration(startedAt: unknown, finishedAt: unknown): string {
+    const durationMs = calcDurationMs(startedAt, finishedAt)
+    return formatDurationMs(durationMs)
   }
 
   function formatDurationMs(ms: number | null): string {
@@ -826,8 +902,16 @@
     const h = Math.floor(sec / 3600)
     const m = Math.floor((sec % 3600) / 60)
     const s = sec % 60
-    if (h > 0) return `${h}h ${String(m).padStart(2, '0')}m`
-    if (m > 0) return `${m}m ${String(s).padStart(2, '0')}s`
+    if (h > 0) {
+      const minuteText = String(m)
+      const paddedMinutes = minuteText.padStart(2, '0')
+      return `${h}h ${paddedMinutes}m`
+    }
+    if (m > 0) {
+      const secondText = String(s)
+      const paddedSeconds = secondText.padStart(2, '0')
+      return `${m}m ${paddedSeconds}s`
+    }
     return `${s}s`
   }
 
@@ -863,11 +947,30 @@
     }
   }
 
-  useTenantReload(() => {
+  watch(
+    () => tenant.tenantId,
+    () => {
+      query.tenantId = tenant.tenantId
+      query.page = 1
+      rows.value = []
+      total.value = 0
+      jobCodeOptions.value = []
+      loading.value = false
+      loadError.value = null
+      lastCountSig = ''
+      for (const key of Object.keys(statusCounts)) statusCounts[key] = null
+      bulk.clear()
+      bulkResultVisible.value = false
+      bulkResultRows.value = []
+      bulkResultOk.value = 0
+    },
+    { flush: 'sync' },
+  )
+
+  useTenantReload(async () => {
     query.tenantId = tenant.tenantId
     query.page = 1
-    void loadJobCodes()
-    void loadData()
+    await Promise.all([loadJobCodes(), loadData()])
   })
 </script>
 

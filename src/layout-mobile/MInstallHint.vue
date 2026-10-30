@@ -76,7 +76,9 @@
   function dismiss() {
     visible.value = false
     try {
-      localStorage.setItem(DISMISS_KEY, String(Date.now()))
+      const dismissedAt = Date.now()
+      const dismissedAtValue = String(dismissedAt)
+      localStorage.setItem(DISMISS_KEY, dismissedAtValue)
     } catch {
       /* private mode / quota */
     }
@@ -85,7 +87,9 @@
   onMounted(() => {
     // 等 SW 注册稳定再判断;不阻塞首屏
     setTimeout(() => {
-      if (isIosSafari() && !isInStandalone() && !recentlyDismissed()) {
+      const shouldShowInstallHint =
+        isIosSafari() && !isInStandalone() && !recentlyDismissed()
+      if (shouldShowInstallHint) {
         visible.value = true
       }
     }, 1500)

@@ -120,7 +120,7 @@
                 :inactive-text="t('fileTemplateList.switchOff')"
                 :loading="togglingTemplateId === row.id"
                 :disabled="!canMutateConfig"
-                @change="toggleTemplate(row)"
+              @change="toggleTemplate(row as ConsoleFileTemplateResponse)"
               />
             </template>
           </el-table-column>
@@ -131,7 +131,7 @@
           />
           <el-table-column :label="t('fileTemplateList.colActions')" width="180" fixed="right">
             <template #default="{ row }">
-              <RowActions :actions="templateRowActions(row)" :inline-limit="2" />
+              <RowActions :actions="templateRowActions(row as ConsoleFileTemplateResponse)" :inline-limit="2" />
             </template>
           </el-table-column>
         </ProTable>
@@ -611,9 +611,9 @@
       tone: 'muted',
     },
   ])
-  const templateEnabledSegment = computed({
-    get: () => (enabled.value === true ? 'ENABLED' : enabled.value === false ? 'DISABLED' : 'ALL'),
-  })
+  const templateEnabledSegment = computed(() =>
+    enabled.value === true ? 'ENABLED' : enabled.value === false ? 'DISABLED' : 'ALL',
+  )
   const channelEnabledSegment = computed(() =>
     channelEnabled.value === true ? 'ENABLED' : channelEnabled.value === false ? 'DISABLED' : 'ALL',
   )
@@ -690,11 +690,11 @@
   const templateTypeOptions = computed(() => {
     const fromEnum = pickMetaEnumGroup(metaEnums.value, 'fileTemplateType')
     if (fromEnum.length > 0) return fromEnum
-    return Array.from(
-      new Set(
-        allRows.value.map((row) => row.templateType).filter((item): item is string => !!item),
-      ),
-    ).map((v) => ({ value: v, label: v }))
+    const configuredTemplateTypes = allRows.value
+      .map((row) => row.templateType)
+      .filter((item): item is string => !!item)
+    const uniqueTemplateTypes = Array.from(new Set(configuredTemplateTypes))
+    return uniqueTemplateTypes.map((templateType) => ({ value: templateType, label: templateType }))
   })
   // bizType 是租户级业务字典(独立 API),进页面 + 切租户时拉
   const bizTypeOptions = ref<MetaOption[]>([])
@@ -707,18 +707,20 @@
   }
 
   const filtered = computed(() => {
-    const k = keyword.value.trim().toLowerCase()
+    const trimmedKeyword = keyword.value.trim()
+    const k = trimmedKeyword.toLowerCase()
+    const selectedTemplateType = templateType.value.trim()
+    const selectedBizType = bizType.value.trim()
     return allRows.value.filter((row) => {
-      if (
-        k &&
-        !`${row.templateCode} ${row.templateName} ${row.templateType}`.toLowerCase().includes(k)
-      ) {
+      if (k) {
+        const searchableTemplateText =
+          `${row.templateCode} ${row.templateName} ${row.templateType}`.toLowerCase()
+        if (!searchableTemplateText.includes(k)) return false
+      }
+      if (selectedTemplateType && !row.templateType?.includes(selectedTemplateType)) {
         return false
       }
-      if (templateType.value.trim() && !row.templateType?.includes(templateType.value.trim())) {
-        return false
-      }
-      if (bizType.value.trim() && !row.bizType?.includes(bizType.value.trim())) {
+      if (selectedBizType && !row.bizType?.includes(selectedBizType)) {
         return false
       }
       if (enabled.value != null && row.enabled !== enabled.value) return false
@@ -747,15 +749,14 @@
   }
 
   function syncChannelRows() {
-    const k = channelKeyword.value.trim().toLowerCase()
+    const trimmedChannelKeyword = channelKeyword.value.trim()
+    const k = trimmedChannelKeyword.toLowerCase()
     channelRows.value = allChannelRows.value.filter((row) => {
-      if (
-        k &&
-        !`${row.channelCode ?? ''} ${row.channelName ?? ''} ${row.channelType ?? ''}`
-          .toLowerCase()
-          .includes(k)
-      ) {
-        return false
+      if (k) {
+        const searchableChannelText =
+          `${row.channelCode ?? ''} ${row.channelName ?? ''} ${row.channelType ?? ''}`
+            .toLowerCase()
+        if (!searchableChannelText.includes(k)) return false
       }
       if (channelEnabled.value != null && row.enabled !== channelEnabled.value) return false
       return true
@@ -917,6 +918,7 @@
   }
 
   function openChannelEdit(row: ConsoleFileChannelResponse) {
+    if (row.id == null) return
     channelEditingId.value = row.id
     Object.assign(channelForm, {
       channelCode: row.channelCode ?? '',
@@ -967,6 +969,7 @@
 
   async function toggleChannel(row: ConsoleFileChannelResponse) {
     if (!canMutateConfig.value) return
+    if (row.id == null) return
     togglingChannelId.value = row.id
     try {
       await toggleFileChannel(row.id, row.tenantId ?? tenant.tenantId, !row.enabled)

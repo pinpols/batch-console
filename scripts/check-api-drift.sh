@@ -8,11 +8,11 @@
 #   ./scripts/check-api-drift.sh --quiet         # 安静模式,只在漂移时输出
 #
 # 退出码:
-#   0 — 一致 或 yaml 不可达(本地无 sibling、未设 BE_OPENAPI_URL → 跳过不阻塞)
+#   0 — 已成功生成并比较，契约一致
 #   1 — 检测到漂移(需跑 `npm run gen:api` 提交)
-#   2 — 工具链 / curl 错误
+#   2 — 契约源缺失、下载失败或工具链错误；不是 SKIP
 #
-# CI 推荐配置(.github/workflows/ci.yml):
+# CI 使用 .github/workflows/pr-gate.yml、full-ci-gate.yml 等当前入口；示例:
 #   - name: 检查 OpenAPI 漂移
 #     env:
 #       BE_OPENAPI_URL: https://raw.githubusercontent.com/<org>/file-batch-system/main/docs/api/console-api.openapi.yaml

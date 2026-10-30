@@ -96,7 +96,7 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, computed } from 'vue'
+  import { ref, computed, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { listConfigChangeLogs } from '@/api/configReleases'
 
@@ -104,6 +104,7 @@
   import { toPageResult } from '@/api/adapters'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
+  import { useTenantRequestScope } from '@/composables/useTenantRequestScope'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import TablePagerBar from '@/components/table/TablePagerBar.vue'
   import DataState from '@/components/common/DataState.vue'
@@ -128,14 +129,32 @@
     return decodeHtmlEntities(value)
   }
 
+  const loadScope = useTenantRequestScope()
   async function loadLogs() {
-    await runLoadLogs(async () => {
-      logRows.value = await listConfigChangeLogs(tenant.tenantId)
-    }).catch(() => {
+    const request = loadScope.begin()
+    if (!request.tenantId) return
+    await runLoadLogs(
+      async () => {
+        const data = await listConfigChangeLogs(request.tenantId)
+        if (!loadScope.isCurrent(request)) return
+        logRows.value = data
+      },
+      () => loadScope.isCurrent(request),
+    ).catch(() => {
+      if (!loadScope.isCurrent(request)) return
       logRows.value = []
     })
   }
 
+  watch(
+    () => tenant.tenantId,
+    () => {
+      logRows.value = []
+      loadingLogs.value = false
+      loadLogsError.value = null
+    },
+    { flush: 'sync' },
+  )
   useTenantReload(() => {
     logPage.value = 1
     void loadLogs()

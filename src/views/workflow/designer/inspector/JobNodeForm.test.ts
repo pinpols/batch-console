@@ -90,6 +90,11 @@ vi.mock('@/composables/useJobDefinitionDependencies', async () => {
   }
 })
 
+vi.mock('@/composables/queries/useConsoleMeta', async () => {
+  const { ref } = await import('vue')
+  return { useMetaWindowsQuery: () => ({ data: ref([{ value: 'NIGHT', label: 'Night' }]) }) }
+})
+
 import JobNodeForm from './JobNodeForm.vue'
 import { useDesignerStore } from '../store/useDesignerStore'
 import type { DesignerNode } from '../types'
@@ -125,6 +130,8 @@ const i18n = createI18n({
           nodeName: '节点名称',
           jobCode: '关联 Job',
           jobCodePlaceholder: '选择或输入',
+          windowCode: '批次窗口',
+          windowCodePlaceholder: '选择窗口',
           maxRetries: '失败重试',
           timeoutSeconds: '超时',
           skipExpression: '跳过条件',
@@ -168,6 +175,7 @@ function factory(node: DesignerNode, readonly = false) {
 
 describe('JobNodeForm', () => {
   beforeEach(() => {
+    vi.resetAllMocks()
     setActivePinia(createPinia())
   })
 
@@ -177,7 +185,7 @@ describe('JobNodeForm', () => {
     expect(inputs.some((i) => (i.element as HTMLInputElement).value === 'job-1')).toBe(true)
     expect(inputs.some((i) => (i.element as HTMLInputElement).value === 'My Job')).toBe(true)
     // jobCode 下拉默认选项渲染出 2 条
-    expect(wrapper.findAll('option')).toHaveLength(2)
+    expect(wrapper.findAll('select')[0].findAll('option')).toHaveLength(2)
     expect(wrapper.text()).toContain('当前流程（可编辑）')
     expect(wrapper.text()).toContain('作业定义依赖')
   })
@@ -188,6 +196,16 @@ describe('JobNodeForm', () => {
     ;(select.element as HTMLSelectElement).value = 'job-b'
     await select.trigger('change')
     expect(store.nodes[0].attrs?.jobCode).toBe('job-b')
+    expect(store.dirty).toBe(true)
+  })
+
+  it('修改窗口 → 将执行窗口写入 Job 节点属性', async () => {
+    const { wrapper, store } = factory(mkNode({ jobCode: 'job-a' }))
+    const selects = wrapper.findAll('select')
+    expect(selects).toHaveLength(2)
+    ;(selects[1].element as HTMLSelectElement).value = 'NIGHT'
+    await selects[1].trigger('change')
+    expect(store.nodes[0].attrs?.windowCode).toBe('NIGHT')
     expect(store.dirty).toBe(true)
   })
 

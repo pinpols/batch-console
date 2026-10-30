@@ -8,6 +8,9 @@
         <el-button type="primary" :icon="Plus" :disabled="writesFrozen" @click="openSubmitDrawer">
           {{ t('batchDayReplay.submitBtn') }}
         </el-button>
+        <el-button :disabled="writesFrozen" @click="openRangeDrawer">
+          {{ t('batchDayReplay.rangeSubmitBtn') }}
+        </el-button>
       </template>
     </PageHeader>
 
@@ -40,70 +43,196 @@
         <template #title>{{ t('batchDayReplay.historyUnavailableTitle') }}</template>
         <template #default>{{ t('batchDayReplay.historyUnavailableBody') }}</template>
       </el-alert>
-      <el-table
-        class="replay-sessions-table"
-        :data="sessions"
-        v-loading="loadingSessions"
-        :empty-text="t('batchDayReplay.noSessions')"
-        row-key="id"
-        @row-click="openDetail"
-        table-layout="fixed"
-      >
-        <template #empty>
-          <EmptyState
-            variant="empty"
-            :title="t('batchDayReplay.emptyTitle')"
-            :description="
-              historyUnavailable
-                ? t('batchDayReplay.emptyLegacyDesc')
-                : t('batchDayReplay.emptyDesc')
-            "
-          >
-            <template #action>
-              <el-button
-                type="primary"
-                :icon="Plus"
-                :disabled="writesFrozen"
-                @click.stop="openSubmitDrawer"
-              >
-                {{ t('batchDayReplay.submitBtn') }}
-              </el-button>
-            </template>
-          </EmptyState>
-        </template>
+      <BatchDayReplaySessionsTable
+        :sessions="sessions"
+        :loading="loadingSessions"
+        :history-unavailable="historyUnavailable"
+        :writes-frozen="writesFrozen"
+        :scope-tag-type="scopeTagType"
+        :status-tag-type="statusTagType"
+        :progress-pct="progressPct"
+        :progress-status="progressStatus"
+        @open-detail="openDetail"
+        @submit="openSubmitDrawer"
+      />
+    </SectionCard>
+
+    <ResultVersionGovernancePanel />
+
+    <SectionCard class="replay-card">
+      <template #header>{{ t('batchDayReplay.operationsHeader') }}</template>
+      <el-table :data="operations" v-loading="loadingOperations" row-key="id" table-layout="fixed">
         <el-table-column :label="t('batchDayReplay.colId')" prop="id" width="80" />
-        <el-table-column :label="t('batchDayReplay.colBizDate')" prop="bizDate" width="120" />
-        <el-table-column :label="t('batchDayReplay.colMode')" width="110">
-          <template #default="{ row }">
-            <el-tag size="small" :type="row.executionMode === 'DRY_RUN' ? 'warning' : 'info'">
-              {{ row.executionMode }}
-            </el-tag>
-          </template>
+        <el-table-column :label="t('batchDayReplay.operationRange')" min-width="210">
+          <template #default="{ row }">{{ row.fromDate }} – {{ row.throughDate }}</template>
         </el-table-column>
-        <el-table-column :label="t('batchDayReplay.colScope')" width="160">
-          <template #default="{ row }">
-            <el-tag size="small" :type="scopeTagType(row.scope)" effect="plain">
-              {{ row.scope }}
-            </el-tag>
-          </template>
-        </el-table-column>
+        <el-table-column :label="t('batchDayReplay.colScope')" prop="scope" width="140" />
         <el-table-column :label="t('batchDayReplay.colStatus')" width="160">
           <template #default="{ row }">
             <el-tag :type="statusTagType(row.status)">{{ row.status }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column :label="t('batchDayReplay.colProgress')" width="200">
+        <el-table-column :label="t('batchDayReplay.colProgress')" width="210">
           <template #default="{ row }">
-            <el-progress :percentage="progressPct(row)" :status="progressStatus(row)" />
-            <span class="cell-mute">
-              {{ row.succeededCount ?? 0 }} / {{ row.totalCount ?? 0 }}
-            </span>
+            <el-progress :percentage="operationProgressPct(row as ReplayOperation)" />
+            <span class="cell-mute">{{ row.succeededCount }} / {{ row.totalCount }}</span>
           </template>
         </el-table-column>
         <el-table-column :label="t('batchDayReplay.colRequestedBy')" prop="requestedBy" />
-        <DatetimeColumn :label="t('batchDayReplay.colCreatedAt')" prop="createdAt" width="180" />
+        <el-table-column :label="t('batchDayReplay.colCreatedAt')" prop="createdAt" width="180" />
+        <el-table-column :label="t('batchDayReplay.colActions')" width="110" fixed="right">
+          <template #default="{ row }">
+            <el-button link type="primary" @click="openOperation(row as ReplayOperation)">
+              {{ t('common.detail') }}
+            </el-button>
+          </template>
+        </el-table-column>
       </el-table>
     </SectionCard>
+
+    <el-drawer v-model="rangeDrawerOpen" :title="t('batchDayReplay.rangeSubmitTitle')" direction="rtl" size="560px">
+      <el-form label-width="120px">
+        <el-form-item :label="t('batchDayReplay.fieldMode')" required>
+          <el-segmented
+            v-model="rangeForm.executionMode"
+            :options="[
+              { label: t('batchDayReplay.modeReplay'), value: 'REPLAY' },
+              { label: t('batchDayReplay.modeDryRun'), value: 'DRY_RUN' },
+            ]"
+          />
+        </el-form-item>
+        <el-form-item v-if="rangeForm.executionMode === 'DRY_RUN'" :label="t('batchDayReplay.fieldCandidateSource')" required>
+          <el-radio-group v-model="rangeForm.candidateSource">
+            <el-radio-button value="EXISTING_INSTANCES">{{ t('batchDayReplay.sourceExisting') }}</el-radio-button>
+            <el-radio-button value="SCHEDULE_PLAN">{{ t('batchDayReplay.sourcePlan') }}</el-radio-button>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item :label="t('batchDayReplay.fieldCalendar')" required>
+          <el-input v-model="rangeForm.calendarCode" />
+        </el-form-item>
+        <el-form-item :label="t('batchDayReplay.fieldDateRange')" required>
+          <el-date-picker
+            v-model="rangeDates"
+            type="daterange"
+            value-format="YYYY-MM-DD"
+            class="query-w-full"
+          />
+        </el-form-item>
+        <el-form-item :label="t('batchDayReplay.fieldScope')" required>
+          <el-radio-group v-model="rangeForm.scope">
+            <el-radio value="ALL">{{ t('batchDayReplay.scopeAll') }}</el-radio>
+            <el-radio v-if="rangeForm.candidateSource !== 'SCHEDULE_PLAN'" value="ALL_FAILED">
+              {{ t('batchDayReplay.scopeAllFailed') }}
+            </el-radio>
+          <el-radio value="SUBSET_JOB_CODES">{{ t('batchDayReplay.scopeSubsetJobCodes') }}</el-radio>
+          <el-radio v-if="rangeForm.executionMode !== 'DRY_RUN'" value="OUTPUTS_ONLY">
+            {{ t('batchDayReplay.scopeOutputsOnly') }}
+          </el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item v-if="rangeForm.scope === 'SUBSET_JOB_CODES'" :label="t('batchDayReplay.fieldJobCodes')" required>
+          <el-select
+            v-model="selectedRangeJobCodes"
+            class="query-w-full"
+            multiple
+            filterable
+            collapse-tags
+            :loading="loadingJobCodes"
+            :placeholder="t('batchDayReplay.jobCodePickerPlaceholder')"
+          >
+            <el-option v-for="code in jobCodeOptions" :key="code" :label="code" :value="code" />
+          </el-select>
+        </el-form-item>
+        <el-form-item v-if="rangeForm.scope === 'OUTPUTS_ONLY'" :label="t('batchDayReplay.fieldVersionIds')" required>
+          <el-input
+            v-model="rangeVersionIdsText"
+            type="textarea"
+            :rows="3"
+            :placeholder="t('batchDayReplay.rangeVersionIdsHint')"
+          />
+        </el-form-item>
+        <el-form-item :label="t('batchDayReplay.fieldResultPolicy')">
+          <el-select v-model="rangeForm.resultPolicy" class="query-w-full">
+            <el-option label="CREATE_NEW_VERSION" value="CREATE_NEW_VERSION" />
+            <el-option label="KEEP_BOTH" value="KEEP_BOTH" />
+            <el-option label="MANUAL_CONFIRM_EFFECTIVE" value="MANUAL_CONFIRM_EFFECTIVE" />
+          </el-select>
+        </el-form-item>
+        <el-form-item :label="t('batchDayReplay.fieldConfigPolicy')">
+          <el-select v-model="rangeForm.configVersionPolicy" class="query-w-full">
+            <el-option :label="t('batchDayReplay.configPolicyUseOriginal')" value="USE_ORIGINAL_CONFIG" />
+            <el-option :label="t('batchDayReplay.configPolicyUseLatest')" value="USE_LATEST_CONFIG" />
+            <el-option :label="t('batchDayReplay.configPolicyUseSpecified')" value="USE_SPECIFIED_VERSION" />
+          </el-select>
+        </el-form-item>
+        <el-form-item v-if="rangeForm.configVersionPolicy === 'USE_SPECIFIED_VERSION'" :label="t('batchDayReplay.fieldConfigVersion')" required>
+          <el-input-number v-model="rangeForm.configVersion" :min="1" />
+        </el-form-item>
+        <el-form-item :label="t('batchDayReplay.fieldReason')" required>
+          <el-input v-model="rangeForm.reason" type="textarea" :rows="3" />
+        </el-form-item>
+        <el-form-item :label="t('batchDayReplay.fieldAutoApprove')">
+          <el-switch v-model="rangeForm.autoApprove" />
+        </el-form-item>
+      </el-form>
+      <el-alert v-if="rangePreview" type="info" :closable="false" class="preview-panel">
+        <template #title>{{ t('batchDayReplay.rangePreviewSummary', { days: rangePreview.days.length, candidates: rangePreview.totalCandidateCount }) }}</template>
+        <el-table :data="rangePreview.days" size="small" max-height="300">
+          <el-table-column prop="bizDate" :label="t('batchDayReplay.colBizDate')" width="120" />
+          <el-table-column prop="disposition" :label="t('batchDayReplay.colStatus')" width="170" />
+          <el-table-column prop="candidateCount" :label="t('batchDayReplay.colProgress')" />
+        </el-table>
+      </el-alert>
+      <template #footer>
+        <el-button :loading="rangePreviewing" :disabled="rangeSubmitting" @click="previewRange">{{ t('batchDayReplay.previewBtn') }}</el-button>
+        <el-button
+          type="primary"
+          :disabled="!isCurrentRangePreview || !rangePreview?.totalCandidateCount"
+          :loading="rangeSubmitting"
+          @click="submitRange"
+        >
+          {{ t('batchDayReplay.submitConfirm') }}
+        </el-button>
+      </template>
+    </el-drawer>
+
+    <el-drawer v-model="operationDrawerOpen" :title="t('batchDayReplay.operationDetailTitle')" direction="rtl" size="520px">
+      <el-descriptions v-if="currentOperation" :column="1" border>
+        <el-descriptions-item :label="t('batchDayReplay.colId')">{{ currentOperation.id }}</el-descriptions-item>
+        <el-descriptions-item :label="t('batchDayReplay.operationRange')">{{ currentOperation.fromDate }} – {{ currentOperation.throughDate }}</el-descriptions-item>
+        <el-descriptions-item :label="t('batchDayReplay.colStatus')">{{ currentOperation.status }}</el-descriptions-item>
+        <el-descriptions-item :label="t('batchDayReplay.colProgress')">{{ currentOperation.succeededCount }} / {{ currentOperation.totalCount }} ({{ currentOperation.failedCount }} {{ t('batchDayReplay.colFailed') }})</el-descriptions-item>
+        <el-descriptions-item :label="t('batchDayReplay.colRequestedBy')">{{ currentOperation.requestedBy }}</el-descriptions-item>
+        <el-descriptions-item :label="t('batchDayReplay.fieldApprovedBy')">{{ currentOperation.approvedBy || '—' }}</el-descriptions-item>
+      </el-descriptions>
+      <h4>{{ t('batchDayReplay.operationDays') }}</h4>
+      <el-table :data="operationSessions" v-loading="loadingOperationSessions" row-key="id" size="small">
+        <el-table-column :label="t('batchDayReplay.colDate')" prop="bizDate" width="120" />
+        <el-table-column :label="t('batchDayReplay.colStatus')" prop="status" width="150" />
+        <el-table-column :label="t('batchDayReplay.colProgress')" min-width="160">
+          <template #default="{ row }">
+            {{ row.succeededCount ?? 0 }} / {{ row.totalCount ?? 0 }}
+            <span class="cell-mute">({{ row.failedCount ?? 0 }} {{ t('batchDayReplay.colFailed') }})</span>
+          </template>
+        </el-table-column>
+        <el-table-column :label="t('common.actions')" width="100" fixed="right">
+          <template #default="{ row }">
+            <el-button link type="primary" @click="openChildSession(row as BatchDayReplaySession)">
+              {{ t('batchDayReplay.viewDaySession') }}
+            </el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+      <template #footer>
+        <el-button @click="refreshOperation">{{ t('common.refresh') }}</el-button>
+        <el-button v-if="canApproveOperation" type="success" :loading="operationActing" @click="approveOperation">
+          {{ t('batchDayReplay.approveBtn') }}
+        </el-button>
+        <el-button v-if="canCancelOperation" type="danger" :loading="operationActing" @click="cancelOperation">
+          {{ t('batchDayReplay.cancelBtn') }}
+        </el-button>
+      </template>
+    </el-drawer>
 
     <!-- 提交抽屉 -->
     <el-drawer
@@ -513,6 +642,20 @@
             prop="failureReason"
             show-overflow-tooltip
           />
+          <el-table-column :label="t('common.actions')" width="150" fixed="right">
+            <template #default="{ row }">
+              <el-button
+                v-if="row.status === 'FAILED' && row.rerunInstanceId == null"
+                link
+                type="primary"
+                :disabled="writesFrozen || retryingEntryId === row.id"
+                :loading="retryingEntryId === row.id"
+                @click="retryFailedSubmission(row as BatchDayReplayEntry)"
+              >
+                {{ t('batchDayReplay.retrySubmission') }}
+              </el-button>
+            </template>
+          </el-table-column>
         </el-table>
       </div>
       <template #footer>
@@ -541,497 +684,96 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, reactive, computed, watch } from 'vue'
-  import { useI18n } from 'vue-i18n'
-  import { ElMessage } from 'element-plus'
-  import { confirmDanger } from '@/composables/useDangerConfirm'
-  import { userErrorMessage } from '@/utils/userErrorMessage'
   import { RefreshCw as Refresh, Plus } from '@lucide/vue'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
-  import StatusSegment, { type StatusSegmentItem } from '@/components/table/StatusSegment.vue'
-  import EmptyState from '@/components/common/EmptyState.vue'
-  import DatetimeColumn from '@/components/common/DatetimeColumn.vue'
-  import { todayBusinessDate } from '@/utils/datetime'
-  import { batchDayReplayRequestKey, isReplayPreviewCurrent } from '@/utils/batchDayReplayForm'
-  import {
-    batchDayReplayApi,
-    type BatchDayReplaySession,
-    type BatchDayReplayEntry,
-    type BatchDayReplaySubmitRequest,
-    type BatchDayReplayPreview,
-  } from '@/api/batchDayReplay'
-  import { useTenantStore } from '@/stores/tenant'
-  import { useTenantReload } from '@/composables/useTenantReload'
-  import { useAuthStore } from '@/stores/auth'
-  import { useWriteAvailability } from '@/composables/useWriteAvailability'
-  import { buildBatchDayReplayRequest } from '@/utils/batchDayReplayForm'
-  import { jobApi } from '@/api/job'
+  import StatusSegment from '@/components/table/StatusSegment.vue'
+  import ResultVersionGovernancePanel from './components/ResultVersionGovernancePanel.vue'
+  import BatchDayReplaySessionsTable from './components/BatchDayReplaySessionsTable.vue'
+  import type { BatchDayReplaySession, BatchDayReplayEntry, ReplayOperation } from '@/api/batchDayReplay'
+  import { useBatchDayReplay } from './composables/useBatchDayReplay'
 
-  const { t } = useI18n({ useScope: 'global' })
-  const tenant = useTenantStore()
-  const auth = useAuthStore()
-  const { writesFrozen, ensureWriteAvailable } = useWriteAvailability()
-
-  const sessions = ref<BatchDayReplaySession[]>([])
-  const loadingSessions = ref(false)
-  const loadingDetail = ref(false)
-  const historyUnavailable = ref(false)
-
-  const submitDrawerOpen = ref(false)
-  const submitting = ref(false)
-  const submissionOutcomeUnknown = ref<BatchDayReplaySubmitRequest | null>(null)
-  const submitForm = reactive<BatchDayReplaySubmitRequest>({
-    tenantId: tenant.tenantId,
-    calendarCode: 'default',
-    bizDate: todayBusinessDate(),
-    scope: 'ALL',
-    executionMode: 'REPLAY',
-    candidateSource: 'EXISTING_INSTANCES',
-    resultPolicy: 'CREATE_NEW_VERSION',
-    configVersionPolicy: 'USE_ORIGINAL_CONFIG',
-    reason: '',
-    requestedBy: auth.userInfo?.username ?? '',
-    autoApprove: false,
-  })
-  const selectedJobCodes = ref<string[]>([])
-  const selectedOutputJobCodes = ref<string[]>([])
-  const selectedVersionIds = ref<number[]>([])
-  const jobCodeOptions = ref<string[]>([])
-  const loadingJobCodes = ref(false)
-  const loadingOutputVersions = ref(false)
-  const outputVersionOptions = ref<Array<{ id: number; label: string }>>([])
-  let versionLookupGeneration = 0
-  const versionIdsText = ref('')
-  const preview = ref<BatchDayReplayPreview | null>(null)
-  const previewing = ref(false)
-  const previewRequestKey = ref<string | null>(null)
-  const previewPage = ref(1)
-  const previewPageSize = 20
-  const replayScopeLabel = (scope: string) => {
-    const labels: Record<string, string> = {
-      ALL: t('batchDayReplay.scopeAll'),
-      ALL_FAILED: t('batchDayReplay.scopeAllFailed'),
-      SUBSET_JOB_CODES: t('batchDayReplay.scopeSubsetJobCodes'),
-      OUTPUTS_ONLY: t('batchDayReplay.scopeOutputsOnly'),
-    }
-    return labels[scope] ?? scope
-  }
-  const replayActionLabel = (action: string) => {
-    const labels: Record<string, string> = {
-      RERUN_INSTANCE: t('batchDayReplay.previewActionRerun'),
-      LAUNCH_SCHEDULE_PLAN: t('batchDayReplay.previewActionLaunch'),
-      PROMOTE_RESULT_VERSION: t('batchDayReplay.previewActionPromote'),
-    }
-    return labels[action] ?? action
-  }
-  const previewPageEntries = computed(() => {
-    const start = (previewPage.value - 1) * previewPageSize
-    return preview.value?.entries.slice(start, start + previewPageSize) ?? []
-  })
-
-  watch(
-    () => [
-      submitForm.calendarCode,
-      submitForm.bizDate,
-      submitForm.scope,
-      submitForm.executionMode,
-      submitForm.candidateSource,
-      submitForm.resultPolicy,
-      submitForm.configVersionPolicy,
-      submitForm.configVersion,
-      submitForm.reason,
-      submitForm.autoApprove,
-      selectedJobCodes.value.join(','),
-      selectedOutputJobCodes.value.join(','),
-      [...selectedVersionIds.value.map(String), versionIdsText.value].filter(Boolean).join(','),
-    ],
-    () => {
-      preview.value = null
-      previewRequestKey.value = null
-      previewPage.value = 1
-    },
-  )
-
-  watch(
-    () => submitForm.executionMode,
-    (mode) => {
-      if (mode === 'DRY_RUN') {
-        submitForm.resultPolicy = 'DRY_RUN_ONLY'
-        if (submitForm.scope === 'OUTPUTS_ONLY') {
-          submitForm.scope = 'ALL'
-        }
-      } else {
-        submitForm.candidateSource = 'EXISTING_INSTANCES'
-        submitForm.resultPolicy = 'CREATE_NEW_VERSION'
-      }
-    },
-  )
-
-  watch(
-    () => submitForm.candidateSource,
-    (source) => {
-      if (source === 'SCHEDULE_PLAN' && submitForm.scope === 'ALL_FAILED') {
-        submitForm.scope = 'ALL'
-      }
-    },
-  )
-
-  watch(
-    () => [submitForm.scope, submitForm.bizDate, tenant.tenantId, ...selectedOutputJobCodes.value],
-    async ([scope, bizDate, tenantId]) => {
-      const generation = ++versionLookupGeneration
-      loadingOutputVersions.value = false
-      selectedVersionIds.value = []
-      outputVersionOptions.value = []
-      if (scope !== 'OUTPUTS_ONLY' || !bizDate || !selectedOutputJobCodes.value.length) return
-
-      loadingOutputVersions.value = true
-      try {
-        const versionsByJob = await Promise.all(
-          selectedOutputJobCodes.value.map(async (jobCode) => {
-            const versions = await batchDayReplayApi.resultVersions(
-              tenantId,
-              `job:${jobCode}:${bizDate}`,
-            )
-            return versions
-              .filter((version) => version.status === 'PENDING')
-              .map((version) => ({
-                id: version.id,
-                label: `${jobCode} · v${version.versionNo} · ${version.status} · #${version.id}`,
-              }))
-          }),
-        )
-        if (generation === versionLookupGeneration)
-          outputVersionOptions.value = versionsByJob.flat()
-      } catch (error) {
-        if (generation === versionLookupGeneration) {
-          ElMessage.error(userErrorMessage(error))
-        }
-      } finally {
-        if (generation === versionLookupGeneration) loadingOutputVersions.value = false
-      }
-    },
-  )
-
-  const detailDrawerOpen = ref(false)
-  const currentSession = ref<BatchDayReplaySession | null>(null)
-  const entries = ref<BatchDayReplayEntry[]>([])
-  const loadingEntries = ref(false)
-  const entriesStatusFilter = ref<'' | 'PENDING' | 'SUCCEEDED' | 'FAILED'>('')
-  const entriesStatusItems = computed<StatusSegmentItem[]>(() => [
-    { value: '', label: t('batchDayReplay.allEntries'), tone: 'neutral' },
-    { value: 'PENDING', label: t('batchDayReplay.entryStatusPending'), tone: 'warning' },
-    { value: 'SUCCEEDED', label: t('batchDayReplay.entryStatusSucceeded'), tone: 'success' },
-    { value: 'FAILED', label: t('batchDayReplay.entryStatusFailed'), tone: 'danger' },
-  ])
-  const approving = ref(false)
-  const cancelling = ref(false)
-
-  const isPlatformAdmin = computed(() => auth.hasPermission('ROLE_ADMIN'))
-
-  /** 仅 PENDING_APPROVAL 状态 + ADMIN 角色可以审批 */
-  const canApprove = computed(
-    () =>
-      !writesFrozen.value &&
-      currentSession.value?.status === 'PENDING_APPROVAL' &&
-      isPlatformAdmin.value,
-  )
-  /** RUNNING / PENDING_APPROVAL 都可取消;ADMIN 或 提交人本人 */
-  const canCancel = computed(() => {
-    const s = currentSession.value
-    if (!s || writesFrozen.value) return false
-    if (s.status !== 'RUNNING' && s.status !== 'PENDING_APPROVAL') return false
-    return isPlatformAdmin.value || s.requestedBy === auth.userInfo?.username
-  })
-
-  function scopeTagType(scope: string): 'primary' | 'warning' | 'success' | 'info' {
-    if (scope === 'ALL') return 'primary'
-    if (scope === 'ALL_FAILED') return 'warning'
-    if (scope === 'OUTPUTS_ONLY') return 'success'
-    return 'info'
-  }
-  function statusTagType(s: string): 'primary' | 'success' | 'danger' | 'warning' | 'info' {
-    if (s === 'RUNNING') return 'primary'
-    if (s === 'SUCCEEDED') return 'success'
-    if (s === 'FAILED') return 'danger'
-    if (s === 'PENDING_APPROVAL') return 'warning'
-    return 'info'
-  }
-  function entryStatusTagType(s: string): 'success' | 'danger' | 'info' {
-    if (s === 'SUCCEEDED') return 'success'
-    if (s === 'FAILED') return 'danger'
-    return 'info'
-  }
-  function progressPct(s: BatchDayReplaySession): number {
-    const total = s.totalCount ?? 0
-    if (total === 0) return 0
-    const done = (s.succeededCount ?? 0) + (s.failedCount ?? 0)
-    return Math.round((done / total) * 100)
-  }
-  function progressStatus(s: BatchDayReplaySession): 'success' | 'exception' | undefined {
-    if (s.status === 'SUCCEEDED') return 'success'
-    if (s.status === 'FAILED') return 'exception'
-    return undefined
-  }
-
-  function buildSubmitRequest(): BatchDayReplaySubmitRequest | null {
-    const result = buildBatchDayReplayRequest(
-      submitForm,
-      tenant.tenantId,
-      selectedJobCodes.value.join(','),
-      [...selectedVersionIds.value.map(String), versionIdsText.value].filter(Boolean).join(','),
-    )
-    if (result.error) {
-      ElMessage.warning(t(`batchDayReplay.${result.error}`))
-      return null
-    }
-    return result.request
-  }
-
-  async function doPreview() {
-    const req = buildSubmitRequest()
-    if (!req) return
-    preview.value = null
-    previewRequestKey.value = null
-    previewing.value = true
-    try {
-      preview.value = await batchDayReplayApi.preview(req)
-      previewRequestKey.value = batchDayReplayRequestKey(req)
-      previewPage.value = 1
-      ElMessage.success(t('batchDayReplay.previewOk'))
-    } catch (err) {
-      ElMessage.error(userErrorMessage(err))
-    } finally {
-      previewing.value = false
-    }
-  }
-
-  async function doSubmit() {
-    if (!ensureWriteAvailable()) return
-    if (submissionOutcomeUnknown.value) {
-      await resolveUnknownSubmitOutcome()
-      return
-    }
-    const req = buildSubmitRequest()
-    if (!req) return
-    if (!preview.value || !isReplayPreviewCurrent(req, previewRequestKey.value)) {
-      preview.value = null
-      previewRequestKey.value = null
-      ElMessage.warning(t('batchDayReplay.previewRequired'))
-      return
-    }
-    if (!preview.value.previewToken || Date.parse(preview.value.expiresAt) <= Date.now()) {
-      preview.value = null
-      previewRequestKey.value = null
-      ElMessage.warning(t('batchDayReplay.previewExpired'))
-      return
-    }
-    const submissionRequest = { ...req, previewToken: preview.value.previewToken }
-    submitting.value = true
-    try {
-      await showSubmittedSession(await batchDayReplayApi.submit(submissionRequest))
-    } catch (err) {
-      if (isUnknownNetworkOutcome(err)) {
-        submissionOutcomeUnknown.value = submissionRequest
-        ElMessage.warning(t('batchDayReplay.submitOutcomeUnknownTitle'))
-      } else {
-        // 内层业务错误不会触发 Axios 全局 envelope toast，需在此展示。
-        ElMessage.error(userErrorMessage(err))
-      }
-    } finally {
-      submitting.value = false
-    }
-  }
-
-  async function resolveUnknownSubmitOutcome() {
-    const request = submissionOutcomeUnknown.value
-    if (!request) return
-    submitting.value = true
-    try {
-      const session = await batchDayReplayApi.resolveSubmitOutcome(request)
-      submissionOutcomeUnknown.value = null
-      await showSubmittedSession(session)
-    } catch (err) {
-      if (isUnknownNetworkOutcome(err)) {
-        ElMessage.warning(t('batchDayReplay.submitOutcomeStillUnknown'))
-      } else {
-        ElMessage.error(userErrorMessage(err))
-      }
-    } finally {
-      submitting.value = false
-    }
-  }
-
-  async function showSubmittedSession(session: BatchDayReplaySession) {
-    upsertSession(session)
-    ElMessage.success(t('batchDayReplay.submitOk'))
-    submitDrawerOpen.value = false
-    currentSession.value = session
-    detailDrawerOpen.value = true
-    try {
-      await loadEntries()
-    } catch (err) {
-      ElMessage.error(userErrorMessage(err))
-    }
-  }
-
-  function isUnknownNetworkOutcome(error: unknown): boolean {
-    if (!(error instanceof Error) || !('isAxiosError' in error) || error.isAxiosError !== true) {
-      return false
-    }
-    return !('response' in error) || error.response == null
-  }
-
-  function onSubmitClose(done: () => void) {
-    if (submissionOutcomeUnknown.value) return
-    submitDrawerOpen.value = false
-    preview.value = null
-    previewRequestKey.value = null
-    done()
-  }
-
-  async function openSubmitDrawer() {
-    if (!ensureWriteAvailable()) return
-    submitDrawerOpen.value = true
-    if (!jobCodeOptions.value.length) await loadJobCodeOptions()
-  }
-
-  async function loadJobCodeOptions() {
-    loadingJobCodes.value = true
-    try {
-      jobCodeOptions.value = await jobApi.listCodes(tenant.tenantId)
-    } catch (error) {
-      jobCodeOptions.value = []
-      ElMessage.error(userErrorMessage(error))
-    } finally {
-      loadingJobCodes.value = false
-    }
-  }
-
-  async function openDetail(row: BatchDayReplaySession) {
-    detailDrawerOpen.value = true
-    currentSession.value = row
-    entries.value = []
-    entriesStatusFilter.value = ''
-    await Promise.all([reloadCurrent(), loadEntries()])
-  }
-
-  async function reloadCurrent() {
-    if (!currentSession.value) return
-    loadingDetail.value = true
-    try {
-      const fresh = await batchDayReplayApi.detail(currentSession.value.id, tenant.tenantId)
-      currentSession.value = fresh
-      upsertSession(fresh)
-    } finally {
-      loadingDetail.value = false
-    }
-  }
-
-  async function loadEntries() {
-    if (!currentSession.value) return
-    loadingEntries.value = true
-    try {
-      entries.value = await batchDayReplayApi.entries(currentSession.value.id, {
-        status: entriesStatusFilter.value || undefined,
-        tenantId: tenant.tenantId,
-      })
-    } finally {
-      loadingEntries.value = false
-    }
-  }
-
-  async function doApprove() {
-    if (!ensureWriteAvailable()) return
-    if (!currentSession.value) return
-    try {
-      await confirmDanger({
-        verb: t('batchDayReplay.approveBtn'),
-        target: '',
-        consequence: t('batchDayReplay.approveConfirmHint'),
-        irreversible: true,
-      })
-    } catch {
-      // 用户点取消 → early return,不执行高危 ops
-      return
-    }
-    approving.value = true
-    try {
-      const fresh = await batchDayReplayApi.approve(
-        currentSession.value.id,
-        auth.userInfo?.username ?? 'unknown',
-        tenant.tenantId,
-      )
-      currentSession.value = fresh
-      upsertSession(fresh)
-      ElMessage.success(t('batchDayReplay.approveOk'))
-    } catch (err) {
-      ElMessage.error(userErrorMessage(err))
-    } finally {
-      approving.value = false
-    }
-  }
-
-  async function doCancel() {
-    if (!ensureWriteAvailable()) return
-    if (!currentSession.value) return
-    try {
-      await confirmDanger({
-        verb: t('batchDayReplay.cancelBtn'),
-        target: '',
-        consequence: t('batchDayReplay.cancelConfirmHint'),
-      })
-    } catch {
-      // 用户点取消 → early return,不执行高危 ops
-      return
-    }
-    cancelling.value = true
-    try {
-      const fresh = await batchDayReplayApi.cancel(currentSession.value.id, tenant.tenantId)
-      currentSession.value = fresh
-      upsertSession(fresh)
-      ElMessage.success(t('batchDayReplay.cancelOk'))
-    } catch (err) {
-      ElMessage.error(userErrorMessage(err))
-    } finally {
-      cancelling.value = false
-    }
-  }
-
-  function upsertSession(session: BatchDayReplaySession) {
-    const idx = sessions.value.findIndex((s) => s.id === session.id)
-    if (idx >= 0) sessions.value.splice(idx, 1, session)
-    else sessions.value.unshift(session)
-  }
-
-  async function loadSessions() {
-    loadingSessions.value = true
-    try {
-      sessions.value = await batchDayReplayApi.list({ tenantId: tenant.tenantId, limit: 50 })
-      historyUnavailable.value = false
-    } catch (err) {
-      const status = (err as { response?: { status?: number } })?.response?.status
-      historyUnavailable.value = status === 404 || status === 405
-      sessions.value = []
-    } finally {
-      loadingSessions.value = false
-    }
-  }
-
-  useTenantReload(() => {
-    submitForm.tenantId = tenant.tenantId
-    jobCodeOptions.value = []
-    selectedJobCodes.value = []
-    selectedOutputJobCodes.value = []
-    selectedVersionIds.value = []
-    sessions.value = []
-    currentSession.value = null
-    entries.value = []
-    historyUnavailable.value = false
-    return loadSessions()
-  })
+  const {
+    t,
+    writesFrozen,
+    sessions,
+    operations,
+    operationSessions,
+    loadingOperationSessions,
+    loadingOperations,
+    loadingSessions,
+    loadingDetail,
+    historyUnavailable,
+    rangeDrawerOpen,
+    rangeDates,
+    rangePreview,
+    rangePreviewing,
+    rangeSubmitting,
+    selectedRangeJobCodes,
+    rangeVersionIdsText,
+    rangeForm,
+    isCurrentRangePreview,
+    operationDrawerOpen,
+    currentOperation,
+    operationActing,
+    canApproveOperation,
+    canCancelOperation,
+    submitDrawerOpen,
+    submitting,
+    submissionOutcomeUnknown,
+    submitForm,
+    selectedJobCodes,
+    selectedOutputJobCodes,
+    selectedVersionIds,
+    jobCodeOptions,
+    loadingJobCodes,
+    loadingOutputVersions,
+    outputVersionOptions,
+    versionIdsText,
+    preview,
+    previewing,
+    previewPage,
+    previewPageSize,
+    replayScopeLabel,
+    replayActionLabel,
+    previewPageEntries,
+    detailDrawerOpen,
+    currentSession,
+    entries,
+    retryingEntryId,
+    loadingEntries,
+    entriesStatusFilter,
+    entriesStatusItems,
+    approving,
+    cancelling,
+    canApprove,
+    canCancel,
+    scopeTagType,
+    statusTagType,
+    operationProgressPct,
+    entryStatusTagType,
+    progressPct,
+    progressStatus,
+    openRangeDrawer,
+    previewRange,
+    submitRange,
+    openOperation,
+    refreshOperation,
+    approveOperation,
+    cancelOperation,
+    doPreview,
+    doSubmit,
+    onSubmitClose,
+    openSubmitDrawer,
+    openDetail,
+    openChildSession,
+    reloadCurrent,
+    loadEntries,
+    retryFailedSubmission,
+    doApprove,
+    doCancel,
+  } = useBatchDayReplay()
 </script>
 
 <style scoped>
@@ -1068,7 +810,7 @@
   .entries-toolbar {
     margin: 8px 0;
   }
-  .cell-mute {
+  :deep(.cell-mute) {
     color: var(--color-text-secondary);
     font-size: 12px;
     margin-left: 8px;

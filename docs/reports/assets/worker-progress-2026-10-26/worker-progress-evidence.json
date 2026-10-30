@@ -1,0 +1,122 @@
+{
+  "test": {
+    "spec": "e2e/worker-workflow-progress-real.spec.ts",
+    "browser": "Chromium",
+    "result": "passed",
+    "passed": 1,
+    "failed": 0,
+    "retries": 0
+  },
+  "baseline": {
+    "branch": "fix/wdi-current",
+    "frontendHead": "662d254e2f8b97f93021de548815470d2291c997",
+    "backendHead": "f3d5e400d3b5bd737124b57cf0a38e685432aab2"
+  },
+  "running": {
+    "workflowStatus": "RUNNING",
+    "workflowNodeStatus": "READY",
+    "linkedJobInstanceStatus": "RUNNING",
+    "dagDisplayStatus": "RUNNING",
+    "jobStatus": "RUNNING",
+    "partitionStatuses": [
+      "RUNNING"
+    ],
+    "taskStatuses": [
+      "RUNNING"
+    ],
+    "workflowJobInstanceIdMatched": true
+  },
+  "terminal": {
+    "workflowStatus": "SUCCESS",
+    "jobStatus": "SUCCESS",
+    "workflowNodes": {
+      "ATOMIC_JOB": "SUCCESS",
+      "END": "SUCCESS",
+      "START": "SUCCESS"
+    },
+    "partitionStatuses": [
+      "SUCCESS"
+    ],
+    "taskStatuses": [
+      "SUCCESS"
+    ]
+  },
+  "pushKinds": [
+    "daily",
+    "job",
+    "workflow"
+  ],
+  "onlinePollingWindow": {
+    "secondsPerPage": 4.5,
+    "jobExecutionProgressGETs": 0,
+    "tenantDailyProgressGETs": 0
+  },
+  "tenantDailyProgress": {
+    "page": "/ops/summary",
+    "chartVisible": true,
+    "businessDate": "2026-11-16",
+    "triggerMode": "MANUAL",
+    "counts": [
+      {
+        "scope": "JOB_INSTANCE",
+        "status": "SUCCESS",
+        "count": 1
+      },
+      {
+        "scope": "JOB_TASK",
+        "status": "SUCCESS",
+        "count": 1
+      },
+      {
+        "scope": "TRIGGER_REQUEST",
+        "status": "LAUNCHED",
+        "count": 1
+      },
+      {
+        "scope": "WORKFLOW_RUN",
+        "status": "SUCCESS",
+        "count": 1
+      }
+    ],
+    "planCoverage": {
+      "scheduledDefinitions": 0,
+      "uncoveredDefinitions": 0
+    },
+    "quartzScheduleVerified": false
+  },
+  "cleanup": {
+    "allCountsZero": true,
+    "counts": {
+      "definitions": 0,
+      "nodes": 0,
+      "edges": 0,
+      "versions": 0,
+      "runs": 0,
+      "nodeRuns": 0,
+      "requests": 0,
+      "jobInstances": 0,
+      "terminalEvents": 0,
+      "terminalReceipts": 0,
+      "terminalDedupKeys": 0,
+      "calendars": 0,
+      "batchDays": 0,
+      "dayCursors": 0,
+      "dayAudits": 0,
+      "catchupControls": 0,
+      "catchupEvents": 0,
+      "tenants": 0,
+      "configurationRevisions": 0,
+      "operationAudits": 0,
+      "credentialAccounts": 0,
+      "jobDefinitions": 0,
+      "instances": 0,
+      "partitions": 0,
+      "tasks": 0,
+      "stepInstances": 0,
+      "executionLogs": 0,
+      "workerReports": 0,
+      "jobEvents": 0,
+      "workerRegistry": 0
+    }
+  }
+}

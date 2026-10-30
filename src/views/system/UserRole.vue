@@ -258,11 +258,14 @@
     }),
   )
 
-  function filterAccessTreeNode(value: string, data: AccessTreeNode) {
+  function filterAccessTreeNode(value: string, data: unknown) {
     if (!value) return true
+    if (typeof data !== 'object' || data === null || !('label' in data)) return false
+    const node = data as { label: unknown; kind?: unknown; path?: unknown }
+    if (typeof node.label !== 'string') return false
     const query = value.toLocaleLowerCase()
-    if (data.label.toLocaleLowerCase().includes(query)) return true
-    return data.kind === 'item' && data.path.toLocaleLowerCase().includes(query)
+    if (node.label.toLocaleLowerCase().includes(query)) return true
+    return node.kind === 'item' && typeof node.path === 'string' && node.path.toLocaleLowerCase().includes(query)
   }
 
   watch(accessFilter, (value) => accessTreeRef.value?.filter(value))

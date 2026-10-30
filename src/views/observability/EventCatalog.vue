@@ -6,6 +6,14 @@
       </template>
     </PageHeader>
 
+    <el-alert
+      v-if="activeTab === 'eventTypes'"
+      :title="t('notificationCommon.slaAlertHint')"
+      type="info"
+      show-icon
+      :closable="false"
+    />
+
     <el-tabs v-model="activeTab" class="pill-tabs">
       <el-tab-pane :label="t('observability.eventCatalogTabEventTypes')" name="eventTypes" />
       <el-tab-pane :label="t('observability.eventCatalogTabTopics')" name="topics" />

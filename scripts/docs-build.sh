@@ -21,6 +21,8 @@ if [[ $# -ne 0 ]]; then
 fi
 
 NPM_BIN="${NPM:-npm}"
+echo "▶ 文档分卷完整性回归"
+"$NPM_BIN" run test:docs-publication
 echo "▶ docs:prepare(只读汇入前后端文档)"
 "$NPM_BIN" run docs:prepare
 echo "▶ 构建文档:$DOCS_DIR"

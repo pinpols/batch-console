@@ -17,14 +17,37 @@ function codeBlock(code: string, language: string, copyLabel: string): string {
   return `<div class="ai-markdown__code"><div class="ai-markdown__code-head"><span>${escapedLanguage}</span><button type="button" data-ai-copy-code aria-label="${escapedLabel}" title="${escapedLabel}">${escapedLabel}</button></div><pre><code>${escapedCode}</code></pre></div>`
 }
 
-markdown.renderer.rules.fence = (tokens, index, _options, env) => {
-  const token = tokens[index]
-  const language = token.info.trim().split(/\s+/, 1)[0] ?? ''
-  return codeBlock(token.content, language, env.copyLabel)
+function isRenderEnvWithCopyLabel(env: unknown): env is { copyLabel: string } {
+  return (
+    typeof env === 'object' &&
+    env !== null &&
+    'copyLabel' in env &&
+    typeof env.copyLabel === 'string'
+  )
 }
 
-markdown.renderer.rules.code_block = (tokens, index, _options, env) =>
-  codeBlock(tokens[index].content, '', env.copyLabel)
+function copyLabelFromRenderEnv(env: unknown): string {
+  if (!isRenderEnvWithCopyLabel(env)) {
+    throw new TypeError('Markdown render environment must include a string copyLabel')
+  }
+  return env.copyLabel
+}
+
+markdown.renderer.rules.fence = (tokens, index, _options, env) => {
+  const token = tokens[index]
+  const trimmedInfo = token.info.trim()
+  const infoSegments = trimmedInfo.split(/\s+/, 1)
+  const language = infoSegments[0] ?? ''
+  const code = token.content
+  const copyLabel = copyLabelFromRenderEnv(env)
+  return codeBlock(code, language, copyLabel)
+}
+
+markdown.renderer.rules.code_block = (tokens, index, _options, env) => {
+  const code = tokens[index].content
+  const copyLabel = copyLabelFromRenderEnv(env)
+  return codeBlock(code, '', copyLabel)
+}
 
 export function renderAiMarkdown(content: string, copyLabel: string): string {
   return markdown.render(content, { copyLabel })

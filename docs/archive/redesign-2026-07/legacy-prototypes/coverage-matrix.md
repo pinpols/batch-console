@@ -1,5 +1,7 @@
 # 设计 ↔ 实现 覆盖矩阵(穷尽式核查)
 
+> **历史归档**：本文是 2026-07-04 的设计覆盖核查，功能存在性和缺口标记只对当时基线有效。现行实现与权限见[用户指南](../../../user-guide/README.md)，原始视觉资料见[设计资料](../../../../design/README.md)。
+
 > 生成:2026-07-04。方法:Playwright 逐锚点(每锚点新 context)加载 `design/Batch Console 重设计-离线版.html`,遍历 28 个 hash 屏 + 侧栏 13 nav 项(含 2 个 nav-only 屏:流水线定义、租户实例)+ 抽屉三态锚点(#jobs/view|edit|create),逐屏点击 tab / 首行 / 行内操作 / 新增按钮,记录抽屉·弹窗·Toast。截图存 `/tmp/cov-*.png`(72 张)。实现端以 `src/router/index.ts` + `src/views/**` 粗查。design/ 目录未做任何修改。
 >
 > 状态标记:✅ 实现端存在对应功能;⚠️ 存在但形态/口径有差;❌ 实现端无。

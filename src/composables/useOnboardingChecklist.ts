@@ -38,7 +38,8 @@ function emptyEvidence(tenantId: string): OnboardingEvidence {
 
 function readPreferences(key: string): OnboardingPreferences {
   try {
-    const value = JSON.parse(localStorage.getItem(key) ?? '{}') as Partial<OnboardingPreferences>
+    const storedPreferences = localStorage.getItem(key) ?? '{}'
+    const value = JSON.parse(storedPreferences) as Partial<OnboardingPreferences>
     return {
       collapsed: value.collapsed === true,
       visitedStepIds: Array.isArray(value.visitedStepIds)

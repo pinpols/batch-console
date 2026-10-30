@@ -17,14 +17,13 @@
   const { t } = useI18n({ useScope: 'global' })
   const question = computed(() => {
     const last = props.messages.at(-1)
-    if (last?.role !== 'assistant' || last.status !== 'COMPLETE' || last.decision !== 'APPROVED')
-      return ''
-    return (
-      [...props.messages]
-        .reverse()
-        .find((item) => item.role === 'user')
-        ?.content.slice(0, 120) ?? ''
-    )
+    const lastAssistantTurnAllowsFollowUp =
+      last?.role === 'assistant' && last.status === 'COMPLETE' && last.decision === 'APPROVED'
+    if (!lastAssistantTurnAllowsFollowUp) return ''
+    const newestFirstMessages = [...props.messages].reverse()
+    const latestUserMessage = newestFirstMessages.find((item) => item.role === 'user')
+    const questionExcerpt = latestUserMessage?.content.slice(0, 120) ?? ''
+    return questionExcerpt
   })
 
   function choose(kind: 'next' | 'evidence') {

@@ -8,7 +8,9 @@ const ACTIONS_BY_STATUS: Record<string, readonly WorkerAction[]> = {
 }
 
 export function workerActionsForStatus(status: string | null | undefined): readonly WorkerAction[] {
-  return ACTIONS_BY_STATUS[String(status ?? '').toUpperCase()] ?? []
+  const statusText = String(status ?? '')
+  const normalizedStatus = statusText.toUpperCase()
+  return ACTIONS_BY_STATUS[normalizedStatus] ?? []
 }
 
 export function canWorkerAction(status: string | null | undefined, action: WorkerAction): boolean {

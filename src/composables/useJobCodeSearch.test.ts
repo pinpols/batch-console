@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 import { effectScope } from 'vue'
+import { useTenantStore } from '@/stores/tenant'
 import { stubLocalStorage } from '@/test-utils/localStorage'
 
 const listDefinitionsPagedMock = vi.fn()
@@ -21,6 +22,7 @@ beforeEach(() => {
   searchDefinitionsMock.mockReset()
   storage.clear()
   setActivePinia(createPinia())
+  useTenantStore().setTenantId('tenant-a')
 })
 
 function setup() {
@@ -88,6 +90,42 @@ describe('useJobCodeSearch', () => {
     await api.loadDefaultJobCodes()
     expect(api.jobCodeOptions.value).toEqual([])
     expect(api.jobCodeLoading.value).toBe(false)
+    dispose()
+  })
+  it('切换租户后丢弃旧租户的默认候选项，并允许新租户立即加载', async () => {
+    let resolveA!: (value: unknown) => void
+    listDefinitionsPagedMock
+      .mockReturnValueOnce(
+        new Promise((resolve) => {
+          resolveA = resolve
+        }),
+      )
+      .mockResolvedValueOnce({ records: [{ jobCode: 'B-job' }] })
+    const { api, dispose } = setup()
+    const pending = api.loadDefaultJobCodes()
+    useTenantStore().setTenantId('tenant-b')
+    await api.loadDefaultJobCodes()
+    resolveA({ records: [{ jobCode: 'A-job' }] })
+    await pending
+    expect(api.jobCodeOptions.value).toEqual(['B-job'])
+    dispose()
+  })
+
+  it('后发关键词结果优先于先发的迟到结果', async () => {
+    let resolveOld!: (value: unknown) => void
+    listDefinitionsPagedMock
+      .mockReturnValueOnce(
+        new Promise((resolve) => {
+          resolveOld = resolve
+        }),
+      )
+      .mockResolvedValueOnce({ records: [{ jobCode: 'latest-job' }] })
+    const { api, dispose } = setup()
+    const pending = api.queryJobCodes('old')
+    await api.queryJobCodes('latest')
+    resolveOld({ records: [{ jobCode: 'old-job' }] })
+    await pending
+    expect(api.jobCodeOptions.value).toEqual(['latest-job'])
     dispose()
   })
 })

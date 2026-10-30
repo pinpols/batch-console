@@ -2,59 +2,21 @@
   <PageContainer>
     <PageHeader>
       <template #actions>
+        <el-button v-if="canMutateConfig" type="primary" @click="openUploadDialog">
+          {{ t('fileList.uploadAction') }}
+        </el-button>
         <el-button @click="$router.push('/files/arrival-groups')">
           {{ t('fileList.arrivalGroupsAction') }}
         </el-button>
       </template>
     </PageHeader>
 
-    <!-- 照设计 #files:汇总卡右上「›」跳转箭头(proto dump: docs/redesign/proto-files.html) -->
-    <div class="file-summary">
-      <div class="file-summary__cell">
-        <MetricCard
-          :label="t('fileList.summaryArrivedToday')"
-          :value="summary?.arrivedToday ?? 0"
-          tone="info"
-          clickable
-          :active="activeSummaryKey === 'today'"
-          @click="applyTodayFilter"
-        />
-        <span class="file-summary__arrow" aria-hidden="true">›</span>
-      </div>
-      <div class="file-summary__cell">
-        <MetricCard
-          :label="t('fileList.summaryPending')"
-          :value="summary?.pending ?? 0"
-          tone="warning"
-          clickable
-          :active="activeSummaryKey === 'RECEIVED'"
-          @click="() => applyStatusFilter('RECEIVED')"
-        />
-        <span class="file-summary__arrow" aria-hidden="true">›</span>
-      </div>
-      <div class="file-summary__cell">
-        <MetricCard
-          :label="t('fileList.summaryProcessed')"
-          :value="summary?.processed ?? 0"
-          tone="success"
-          clickable
-          :active="activeSummaryKey === 'LOADED'"
-          @click="() => applyStatusFilter('LOADED')"
-        />
-        <span class="file-summary__arrow" aria-hidden="true">›</span>
-      </div>
-      <div class="file-summary__cell">
-        <MetricCard
-          :label="t('fileList.summaryFailed')"
-          :value="summary?.failed ?? 0"
-          tone="danger"
-          clickable
-          :active="activeSummaryKey === 'FAILED'"
-          @click="() => applyStatusFilter('FAILED')"
-        />
-        <span class="file-summary__arrow" aria-hidden="true">›</span>
-      </div>
-    </div>
+    <FileSummaryCards
+      :summary="summary"
+      :active-summary-key="activeSummaryKey"
+      @today="applyTodayFilter"
+      @status="applyStatusFilter"
+    />
 
     <SectionCard>
       <ProTable
@@ -165,8 +127,8 @@
                 class="cell-link file-name-link"
                 role="link"
                 tabindex="0"
-                @click="openDetail(row)"
-                @keydown.enter="openDetail(row)"
+                @click="openDetail(row as ConsoleFileRecordResponse)"
+                @keydown.enter="openDetail(row as ConsoleFileRecordResponse)"
               >
                 {{ row.fileName }}
               </span>
@@ -231,7 +193,10 @@
             fixed="right"
           >
             <template #default="{ row }">
-              <RowActions :actions="rowActions(row)" :inline-limit="1" />
+              <RowActions
+                :actions="rowActions(row as ConsoleFileRecordResponse)"
+                :inline-limit="1"
+              />
             </template>
           </el-table-column>
         </template>
@@ -332,6 +297,177 @@
         @update:page-size="onAuditPageSize"
       />
     </el-dialog>
+
+    <el-dialog
+      v-model="uploadDialogVisible"
+      :title="t('fileList.uploadTitle')"
+      width="620px"
+      :close-on-click-modal="!uploading"
+      :close-on-press-escape="!uploading"
+      :show-close="!uploading"
+    >
+      <el-alert
+        :title="t('fileList.uploadScope', { tenant: uploadTenantId || tenant.tenantId })"
+        type="info"
+        :closable="false"
+        show-icon
+      />
+      <el-form label-position="top" class="file-upload-form">
+        <el-form-item :label="t('fileList.uploadChannel')" required>
+          <el-select
+            v-model="uploadChannelCode"
+            filterable
+            :loading="uploadChannelsLoading"
+            :disabled="uploading || uploadTenantId !== tenant.tenantId"
+            :placeholder="t('fileList.uploadChannelPlaceholder')"
+          >
+            <el-option
+              v-for="channel in enabledUploadChannels"
+              :key="channel.channelCode"
+              :label="
+                channel.channelName
+                  ? `${channel.channelName} (${channel.channelCode})`
+                  : channel.channelCode
+              "
+              :value="channel.channelCode"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item :label="t('fileList.uploadTarget')">
+          <el-select
+            v-model="uploadTargetKey"
+            clearable
+            filterable
+            :loading="uploadTargetsLoading"
+            :disabled="uploading || uploadTenantId !== tenant.tenantId"
+            :placeholder="t('fileList.uploadTargetPlaceholder')"
+            @change="onUploadTargetChange"
+          >
+            <el-option
+              v-for="target in uploadTargets"
+              :key="uploadTargetKeyFor(target)"
+              :label="uploadTargetLabel(target)"
+              :value="uploadTargetKeyFor(target)"
+            />
+          </el-select>
+        </el-form-item>
+        <template v-if="selectedUploadTarget">
+          <el-form-item :label="t('fileList.uploadBizDate')" required>
+            <el-date-picker
+              v-model="uploadBizDate"
+              type="date"
+              value-format="YYYY-MM-DD"
+              :disabled="uploading || uploadTenantId !== tenant.tenantId"
+              :placeholder="t('fileList.uploadBizDatePlaceholder')"
+            />
+          </el-form-item>
+          <el-form-item :label="t('fileList.uploadRequiredFiles')" required>
+            <el-input
+              v-model="uploadRequiredFilesText"
+              type="textarea"
+              :rows="2"
+              :disabled="uploading || uploadTenantId !== tenant.tenantId"
+              :placeholder="t('fileList.uploadRequiredFilesPlaceholder')"
+            />
+          </el-form-item>
+          <el-form-item :label="t('fileList.uploadBundleTemplate')" required>
+            <el-select
+              v-model="uploadBundleTemplateCode"
+              filterable
+              :loading="uploadTargetsLoading"
+              :disabled="uploading || uploadTenantId !== tenant.tenantId"
+              :placeholder="t('fileList.uploadBundleTemplatePlaceholder')"
+            >
+              <el-option
+                v-for="template in enabledUploadTemplates"
+                :key="template.templateCode"
+                :label="
+                  template.templateName
+                    ? `${template.templateName} (${template.templateCode})`
+                    : template.templateCode
+                "
+                :value="template.templateCode"
+              />
+            </el-select>
+          </el-form-item>
+          <el-alert
+            class="file-upload-alert"
+            type="info"
+            :closable="false"
+            show-icon
+            :title="t('fileList.uploadGroupHint')"
+          />
+        </template>
+        <el-form-item :label="t('fileList.uploadFile')" required>
+          <el-upload
+            :auto-upload="false"
+            :limit="1"
+            :file-list="uploadFileList"
+            :disabled="uploading || uploadTenantId !== tenant.tenantId"
+            :on-change="onUploadFileChange"
+            :on-remove="onUploadFileRemove"
+          >
+            <el-button :disabled="uploading || uploadTenantId !== tenant.tenantId">
+              {{ t('fileList.uploadChooseFile') }}
+            </el-button>
+          </el-upload>
+        </el-form-item>
+      </el-form>
+      <el-alert
+        v-if="uploadChannelsError"
+        class="file-upload-alert"
+        type="error"
+        :closable="false"
+        show-icon
+        :title="t('fileList.uploadChannelsFailed')"
+      />
+      <el-alert
+        v-if="uploadTargetsError"
+        class="file-upload-alert"
+        type="error"
+        :closable="false"
+        show-icon
+        :title="t('fileList.uploadTargetsFailed')"
+      />
+      <el-alert
+        v-if="uploadErrorKey"
+        class="file-upload-alert"
+        type="error"
+        :closable="false"
+        show-icon
+        :title="t(`fileList.${uploadErrorKey}`, { id: uploadErrorFileId ?? '—' })"
+      />
+      <el-alert
+        v-if="uploadResult"
+        class="file-upload-alert"
+        type="success"
+        :closable="false"
+        show-icon
+        :title="
+          t('fileList.uploadVerified', {
+            id: uploadResult.id,
+            name: uploadResult.fileName,
+            status: uploadResult.fileStatus,
+          })
+        "
+      />
+      <p v-if="uploadStageKey" class="file-upload-stage" role="status">
+        {{ t(`fileList.${uploadStageKey}`) }}
+      </p>
+      <template #footer>
+        <el-button :disabled="uploading" @click="uploadDialogVisible = false">
+          {{ t('common.close') }}
+        </el-button>
+        <el-button
+          type="primary"
+          :loading="uploading"
+          :disabled="!canSubmitManualUpload"
+          @click="submitManualUpload"
+        >
+          {{ t('fileList.uploadSubmit') }}
+        </el-button>
+      </template>
+    </el-dialog>
   </PageContainer>
 </template>
 
@@ -339,12 +475,14 @@
   import { computed, reactive, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage, ElMessageBox } from 'element-plus'
+  import type { UploadFile, UploadUserFile } from 'element-plus'
 
   const { t } = useI18n({ useScope: 'global' })
   import { confirmDanger } from '@/composables/useDangerConfirm'
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
   import { toPageResult } from '@/api/adapters'
   import { fileApi } from '@/api/file'
+  import { queryFileChannels } from '@/api/fileChannelsQuery'
   import { useTenantStore } from '@/stores/tenant'
   import { useRoute } from 'vue-router'
   import { useTenantReload } from '@/composables/useTenantReload'
@@ -361,24 +499,317 @@
   import ProTable from '@/components/table/ProTable.vue'
   import TablePagerBar from '@/components/table/TablePagerBar.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
-  import MetricCard from '@/components/common/MetricCard.vue'
+  import FileSummaryCards from './components/FileSummaryCards.vue'
   import JsonPreview from '@/components/common/JsonPreview.vue'
   import JsonPreviewPopover from '@/components/common/JsonPreviewPopover.vue'
   import DateRangePresetPicker from '@/components/common/DateRangePresetPicker.vue'
   import RowActions, { type RowAction } from '@/components/common/RowActions.vue'
   import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
-  import { recentBusinessDateRange } from '@/utils/datetime'
+  import { recentBusinessDateRange, todayBusinessDate } from '@/utils/datetime'
+  import { createIdempotencyKey } from '@/utils/idempotency'
   import { getMetaBizTypes } from '@/api/meta'
+  import { listFileTemplates } from '@/api/system'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import type {
     ConsoleAuditLogResponse,
     ConsoleFileRecordDetailResponse,
     ConsoleFileRecordResponse,
+    ConsoleFileChannelResponse,
+    ConsoleFileTemplateResponse,
     ConsoleFileSummaryResponse,
+    ConsoleFileUploadBindingRequest,
+    ConsoleFileUploadTargetResponse,
   } from '@/types/console-api'
 
   const tenant = useTenantStore()
   const { canMutateConfig } = usePermission()
+  const uploadDialogVisible = ref(false)
+  const uploadChannelsLoading = ref(false)
+  const uploadTargetsLoading = ref(false)
+  const uploadChannelsError = ref(false)
+  const uploadTargetsError = ref(false)
+  const uploadTenantId = ref('')
+  const uploadChannels = ref<ConsoleFileChannelResponse[]>([])
+  const uploadTargets = ref<ConsoleFileUploadTargetResponse[]>([])
+  const uploadTemplates = ref<ConsoleFileTemplateResponse[]>([])
+  const uploadChannelCode = ref('')
+  const uploadTargetKey = ref('')
+  const uploadBizDate = ref('')
+  const uploadRequiredFilesText = ref('')
+  const uploadBundleTemplateCode = ref('')
+  const uploadFileList = ref<UploadUserFile[]>([])
+  const selectedUploadFile = ref<File | null>(null)
+  const uploading = ref(false)
+  const uploadStageKey = ref('')
+  const uploadErrorKey = ref('')
+  const uploadErrorFileId = ref<number | null>(null)
+  const uploadResult = ref<ConsoleFileRecordResponse | null>(null)
+  const enabledUploadChannels = computed(() =>
+    uploadChannels.value.filter(
+      (row): row is ConsoleFileChannelResponse & { channelCode: string } =>
+        row.enabled === true && typeof row.channelCode === 'string' && row.channelCode.length > 0,
+    ),
+  )
+  const enabledUploadTemplates = computed(() =>
+    uploadTemplates.value.filter(
+      (row): row is ConsoleFileTemplateResponse & { templateCode: string } =>
+        row.enabled === true &&
+        row.templateType === 'IMPORT' &&
+        typeof row.templateCode === 'string' &&
+        row.templateCode.length > 0,
+    ),
+  )
+  const selectedUploadTarget = computed(
+    () =>
+      uploadTargets.value.find((target) => uploadTargetKeyFor(target) === uploadTargetKey.value) ??
+      null,
+  )
+  const uploadRequiredFileNames = computed(() =>
+    uploadRequiredFilesText.value
+      .split(/[\n,]/)
+      .map((name) => name.trim())
+      .filter(Boolean),
+  )
+  const canSubmitManualUpload = computed(() => {
+    const baseReady =
+      canMutateConfig.value &&
+      Boolean(uploadChannelCode.value) &&
+      Boolean(selectedUploadFile.value) &&
+      uploadTenantId.value === tenant.tenantId
+    if (!baseReady) return false
+    if (!selectedUploadTarget.value) return true
+    return Boolean(
+      uploadBizDate.value &&
+      uploadRequiredFileNames.value.includes(selectedUploadFile.value?.name ?? '') &&
+      uploadBundleTemplateCode.value &&
+      enabledUploadTemplates.value.some(
+        (template) => template.templateCode === uploadBundleTemplateCode.value,
+      ),
+    )
+  })
+  let uploadChannelRequestSequence = 0
+
+  watch(
+    () => tenant.tenantId,
+    () => {
+      uploadChannelRequestSequence += 1
+      uploadChannels.value = []
+      uploadTargets.value = []
+      uploadTemplates.value = []
+      if (uploading.value) return
+      uploadDialogVisible.value = false
+      uploadTenantId.value = ''
+      uploadChannelCode.value = ''
+      uploadTargetKey.value = ''
+      uploadBizDate.value = ''
+      uploadRequiredFilesText.value = ''
+      uploadBundleTemplateCode.value = ''
+      selectedUploadFile.value = null
+      uploadFileList.value = []
+    },
+    { flush: 'sync' },
+  )
+
+  async function openUploadDialog() {
+    if (!canMutateConfig.value || !tenant.tenantId) return
+    uploadDialogVisible.value = true
+    uploadTenantId.value = tenant.tenantId
+    uploadChannelCode.value = ''
+    uploadTargetKey.value = ''
+    uploadBizDate.value = ''
+    uploadRequiredFilesText.value = ''
+    uploadBundleTemplateCode.value = ''
+    uploadFileList.value = []
+    selectedUploadFile.value = null
+    uploadErrorKey.value = ''
+    uploadErrorFileId.value = null
+    uploadResult.value = null
+    uploadStageKey.value = ''
+    uploadChannelsError.value = false
+    uploadTargetsError.value = false
+    const sequence = ++uploadChannelRequestSequence
+    uploadChannelsLoading.value = true
+    uploadTargetsLoading.value = true
+    try {
+      const [channelsResult, targetsResult, templatesResult] = await Promise.allSettled([
+        queryFileChannels(uploadTenantId.value),
+        fileApi.listManualUploadTargets(uploadTenantId.value),
+        listFileTemplates(uploadTenantId.value),
+      ])
+      if (sequence !== uploadChannelRequestSequence || uploadTenantId.value !== tenant.tenantId)
+        return
+      if (channelsResult.status === 'fulfilled') uploadChannels.value = channelsResult.value ?? []
+      else uploadChannelsError.value = true
+      if (targetsResult.status === 'fulfilled') uploadTargets.value = targetsResult.value ?? []
+      else uploadTargetsError.value = true
+      if (templatesResult.status === 'fulfilled')
+        uploadTemplates.value = templatesResult.value ?? []
+      else uploadTargetsError.value = true
+    } finally {
+      if (sequence === uploadChannelRequestSequence) {
+        uploadChannelsLoading.value = false
+        uploadTargetsLoading.value = false
+      }
+    }
+  }
+
+  function uploadTargetKeyFor(target: ConsoleFileUploadTargetResponse) {
+    return `${target.calendarCode}:${target.workflowDefinitionId}:${target.fileGroupCode}`
+  }
+
+  function uploadTargetLabel(target: ConsoleFileUploadTargetResponse) {
+    return `${target.fileGroupCode} · ${target.workflowCode} · ${target.workflowName}`
+  }
+
+  function onUploadTargetChange(targetKey: string | undefined) {
+    if (!targetKey) {
+      uploadBizDate.value = ''
+      uploadRequiredFilesText.value = ''
+      uploadBundleTemplateCode.value = ''
+      return
+    }
+    uploadBizDate.value = todayBusinessDate()
+    uploadRequiredFilesText.value = selectedUploadFile.value?.name ?? ''
+    uploadBundleTemplateCode.value = ''
+  }
+
+  function onUploadFileChange(file: UploadFile, files: UploadUserFile[]) {
+    uploadFileList.value = files.slice(-1)
+    selectedUploadFile.value = file.raw ?? null
+    if (selectedUploadTarget.value && !uploadRequiredFilesText.value.trim()) {
+      uploadRequiredFilesText.value = file.name
+    }
+    uploadErrorKey.value = ''
+    uploadResult.value = null
+  }
+
+  function onUploadFileRemove() {
+    uploadFileList.value = []
+    selectedUploadFile.value = null
+  }
+
+  function validateUploadSession(
+    session: import('@/types/console-api').ConsoleFilePresignUploadResponse,
+    tenantId: string,
+  ) {
+    if (
+      session.uploadMode !== 'APP_MANAGED' ||
+      session.uploadMethod !== 'PUT' ||
+      session.contentField !== 'file' ||
+      !Number.isSafeInteger(session.fileId) ||
+      session.fileId <= 0
+    ) {
+      return false
+    }
+    try {
+      const uploadUrl = new URL(session.uploadUrl, 'https://console.invalid')
+      return (
+        uploadUrl.origin === 'https://console.invalid' &&
+        uploadUrl.pathname === `/api/console/files/${session.fileId}/content` &&
+        uploadUrl.searchParams.get('tenantId') === tenantId
+      )
+    } catch {
+      return false
+    }
+  }
+
+  async function submitManualUpload() {
+    const selectedFile = selectedUploadFile.value
+    const channelCode = uploadChannelCode.value
+    const tenantId = uploadTenantId.value
+    const target = selectedUploadTarget.value
+    if (
+      !canSubmitManualUpload.value ||
+      !selectedFile ||
+      !channelCode ||
+      tenantId !== tenant.tenantId
+    )
+      return
+    const binding: ConsoleFileUploadBindingRequest | undefined = target
+      ? {
+          calendarCode: target.calendarCode,
+          workflowDefinitionId: target.workflowDefinitionId,
+          fileGroupCode: target.fileGroupCode,
+          bizDate: uploadBizDate.value,
+          requiredFileNames: uploadRequiredFileNames.value,
+          bundleTemplateCode: uploadBundleTemplateCode.value,
+        }
+      : undefined
+    const targetKey = uploadTargetKey.value
+    const confirmed = await ElMessageBox.confirm(
+      t('fileList.uploadConfirmText', {
+        name: selectedFile.name,
+        channel: channelCode,
+        target: target
+          ? `${target.fileGroupCode} / ${uploadBizDate.value}`
+          : t('fileList.uploadTargetNone'),
+      }),
+      t('fileList.uploadConfirmTitle'),
+      {
+        type: 'warning',
+        confirmButtonText: t('common.confirm'),
+        cancelButtonText: t('common.cancel'),
+      },
+    ).then(
+      () => true,
+      () => false,
+    )
+    if (
+      !confirmed ||
+      tenantId !== tenant.tenantId ||
+      selectedUploadFile.value !== selectedFile ||
+      uploadChannelCode.value !== channelCode ||
+      uploadTargetKey.value !== targetKey
+    )
+      return
+    uploading.value = true
+    uploadErrorKey.value = ''
+    uploadErrorFileId.value = null
+    uploadResult.value = null
+    uploadStageKey.value = 'uploadStageCreating'
+    let fileId: number | null = null
+    try {
+      const session = await fileApi.presignUpload(
+        tenantId,
+        channelCode,
+        selectedFile.name,
+        createIdempotencyKey(),
+        binding,
+      )
+      fileId = session.fileId
+      uploadErrorFileId.value = fileId
+      if (!validateUploadSession(session, tenantId)) throw new Error('invalid upload session')
+
+      uploadStageKey.value = 'uploadStageTransferring'
+      await fileApi.uploadContent(fileId, tenantId, selectedFile, createIdempotencyKey())
+
+      uploadStageKey.value = 'uploadStageConfirming'
+      await fileApi.confirmFileArrival(fileId, tenantId, createIdempotencyKey())
+
+      uploadStageKey.value = 'uploadStageVerifying'
+      const reread = await fileApi.list({
+        tenantId,
+        fileId: String(fileId),
+        page: 1,
+        pageSize: 15,
+      })
+      const persisted = reread.records.find((record) => record.id === fileId)
+      if (!persisted) throw new Error('uploaded file record was not visible after confirmation')
+      uploadResult.value = persisted
+      uploadStageKey.value = binding ? 'uploadStageGroupComplete' : 'uploadStageComplete'
+      if (tenantId === tenant.tenantId) {
+        void load().catch(() => undefined)
+        void loadSummary()
+      }
+    } catch {
+      uploadStageKey.value = ''
+      if (fileId == null) uploadErrorKey.value = 'uploadSessionUnknown'
+      else uploadErrorKey.value = 'uploadStepUnconfirmed'
+      uploadErrorFileId.value = fileId
+    } finally {
+      uploading.value = false
+    }
+  }
 
   // 列设置:状态/操作列始终显示;工程字段(ID/Trace)默认隐藏。
   // 到达时间(createdAt)照设计 dump 是主表列,默认显示。
@@ -429,6 +860,7 @@
     fileId: initialFileId,
     startDate: initialBizRange[0],
     endDate: initialBizRange[1],
+    arrivalToday: false,
   })
 
   // 行操作:1 主 + 4 次,折进"更多"避免一行 5 个 plain 按钮
@@ -490,8 +922,8 @@
     if (filters.fileStatus === 'RECEIVED') return 'RECEIVED'
     if (filters.fileStatus === 'LOADED') return 'LOADED'
     if (filters.fileStatus === 'FAILED') return 'FAILED'
-    const [today] = recentRange(1)
-    if (!filters.fileStatus && filters.startDate === today && filters.endDate === today) {
+    const todaySummaryIsActive = !filters.fileStatus && filters.arrivalToday
+    if (todaySummaryIsActive) {
       return 'today'
     }
     return ''
@@ -502,6 +934,7 @@
   function applyStatusFilter(status: string) {
     return runSearch(async () => {
       const active = filters.fileStatus === status
+      filters.arrivalToday = false
       filters.fileStatus = active ? '' : status
       if (active) {
         const r = recentRange()
@@ -519,20 +952,21 @@
     })
   }
 
-  // 点「今日到达」:锚到今天单日、清状态;再次点 = 取消,恢复默认近 7 天。
+  // 点「今日到达」:按服务端时区的到达日筛选并清业务日期;再次点恢复默认近 7 天。
   function applyTodayFilter() {
     return runSearch(async () => {
       if (activeSummaryKey.value === 'today') {
+        filters.arrivalToday = false
         const r = recentRange()
         filters.startDate = r[0]
         filters.endDate = r[1]
         bizDateRange.value = r
       } else {
-        const today = recentRange(1)
         filters.fileStatus = ''
-        filters.startDate = today[0]
-        filters.endDate = today[1]
-        bizDateRange.value = today
+        filters.startDate = ''
+        filters.endDate = ''
+        bizDateRange.value = null
+        filters.arrivalToday = true
       }
       page.value = 1
       resetFileCursor()
@@ -610,6 +1044,7 @@
       // traceId 是全局唯一键,搜它时清掉默认的今日日期锚定——否则别的业务日的文件被日期挡掉
       // 搜不到(与实例列表 JobInstanceList 同款修复)。
       if (filters.traceId?.trim()) {
+        filters.arrivalToday = false
         filters.startDate = ''
         filters.endDate = ''
         bizDateRange.value = null
@@ -629,6 +1064,7 @@
       filters.fileName = ''
       filters.traceId = ''
       filters.fileId = ''
+      filters.arrivalToday = false
       filters.startDate = t[0]
       filters.endDate = t[1]
       bizDateRange.value = t
@@ -707,6 +1143,7 @@
   }
 
   watch(bizDateRange, (value) => {
+    if (value) filters.arrivalToday = false
     filters.startDate = value?.[0] ?? ''
     filters.endDate = value?.[1] ?? ''
   })
@@ -720,32 +1157,21 @@
 </script>
 
 <style scoped>
-  .file-summary {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: var(--space-md);
-    margin-bottom: var(--space-md);
+  .file-upload-form {
+    margin-top: 16px;
   }
 
-  .file-summary__cell {
-    position: relative;
-    min-width: 0;
+  .file-upload-form :deep(.el-select) {
+    width: 100%;
   }
 
-  /* 照设计 dump:卡片标签行右端「›」(11px / text-3),提示卡片可点联动筛选 */
-  .file-summary__arrow {
-    position: absolute;
-    top: 16px;
-    right: 18px;
-    font-size: 11px;
-    line-height: 1;
-    color: var(--color-text-tertiary);
-    pointer-events: none;
+  .file-upload-alert {
+    margin-top: 12px;
   }
 
-  @media (max-width: 768px) {
-    .file-summary {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
+  .file-upload-stage {
+    margin: 12px 0 0;
+    color: var(--color-text-secondary);
+    font-size: 13px;
   }
 </style>

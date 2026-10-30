@@ -48,7 +48,6 @@ export const smokeRoutes: RouteCheck[] = [
   pageRoute('/files/pipeline-obs'),
   // 定义与编排
   pageRoute('/jobs/definitions'),
-  pageRoute('/jobs/pipelines'),
   pageRoute('/workflow/definitions'),
   pageRoute('/workflow/designer'),
   // Runs / 执行与观测
@@ -101,13 +100,16 @@ export async function enterDemoApp(page: Page, locale: E2eLocale = E2E_DEFAULT_L
   //   - STORAGE_KEYS.locale           见 src/constants/locale.ts:1
   //   - STORAGE_KEYS.onboardingDone  见 src/composables/useOnboardingTour.ts:14
   await installE2eLocale(page, locale)
-  await page.addInitScript(({ onboardingKey }) => {
-    try {
-      localStorage.setItem(onboardingKey, '1')
-    } catch {}
-  }, {
-    onboardingKey: STORAGE_KEYS.onboardingDone,
-  })
+  await page.addInitScript(
+    ({ onboardingKey }) => {
+      try {
+        localStorage.setItem(onboardingKey, '1')
+      } catch {}
+    },
+    {
+      onboardingKey: STORAGE_KEYS.onboardingDone,
+    },
+  )
 
   await page.goto('/ops/summary', { waitUntil: 'domcontentloaded' })
   // FE 启动期 router.beforeEach 异步调 /auth/me,domcontentloaded 可能早于此完成 →
@@ -201,7 +203,12 @@ function escapeForRegex(value: string) {
  * 用于避免重复书写 `.isVisible({ timeout }).catch(() => false)`。
  */
 export async function isVisible(locator: Locator, timeout = 3000): Promise<boolean> {
-  return locator.isVisible({ timeout }).catch(() => false)
+  try {
+    await locator.waitFor({ state: 'visible', timeout })
+    return true
+  } catch {
+    return false
+  }
 }
 
 /**

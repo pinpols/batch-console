@@ -8,7 +8,8 @@ export function useBriefActionLoading(minMs = 280) {
     busy.value = true
     const started = Date.now()
     try {
-      return await Promise.resolve(fn())
+      const actionResult = fn()
+      return await Promise.resolve(actionResult)
     } finally {
       const wait = minMs - (Date.now() - started)
       if (wait > 0) await new Promise((r) => setTimeout(r, wait))

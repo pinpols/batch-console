@@ -44,6 +44,7 @@ describe('usePipelineProgress', () => {
     step.rowsProcessed = 40
     await progress.refresh([1])
     expect(progress.estimateMinutes(step)).toBe(2)
+    expect(progress.estimateMinutes({ ...step, rowsProcessed: null })).toBeNull()
     expect(progress.estimateMinutes({ ...step, totalRowsHint: null })).toBeNull()
     expect(progress.estimateMinutes({ ...step, rowsProcessed: 100 })).toBeNull()
     vi.mocked(queryPipelineProgress).mockRejectedValue(new Error('offline'))

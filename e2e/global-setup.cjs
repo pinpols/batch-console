@@ -21,7 +21,7 @@ const IS_STAGING_TARGET = process.env.E2E_TARGET_ENV === 'staging'
  * 把 fetch 响应的 Set-Cookie 头解析成 Playwright storageState cookie 对象。
  * Playwright Cookie 结构：{ name, value, domain, path, expires, httpOnly, secure, sameSite }
  *
- * 我们的 BE 通常下发的 cookie 是 SESSION / accessToken,带 HttpOnly + Path=/。
+ * 认证 Cookie 由后端下发，名称与属性从响应读取，不在这里另造令牌。
  * 这里做最小解析:取 first kv 作为 name=value,后续 attribute 解析 Path/Domain/HttpOnly/Secure/SameSite。
  * Max-Age / Expires 暂不处理(测试场景内不会过期)。
  */
@@ -73,9 +73,8 @@ function sleep(ms) {
  * 新版 console-api 仅通过 HttpOnly Cookie 下发认证信息，因此初始化逻辑必须复用这些
  * Cookie，不能依赖响应体中的令牌。
  */
-function buildAuthHeaders(token, cookies) {
+function buildAuthHeaders(cookies) {
   const headers = {}
-  if (token) headers.Authorization = `Bearer ${token}`
   if (Array.isArray(cookies) && cookies.length > 0) {
     headers.Cookie = cookies.map((c) => `${c.name}=${c.value}`).join('; ')
     const csrfToken = csrfTokenFromCookies(cookies)
@@ -126,7 +125,6 @@ function roleStorageState(login, role, baseURL) {
         localStorage: [
           { name: storageKeys.tenantId, value: role.defaultTenant },
           { name: storageKeys.session, value: '1' },
-          { name: 'token', value: login.body?.data?.accessToken ?? '' },
           { name: storageKeys.locale, value: DEFAULT_LOCALE },
           { name: storageKeys.onboardingDone, value: '1' },
         ],
@@ -506,12 +504,12 @@ async function exportTenantPackageFixture(authHeaders) {
 /**
  * 租户配置包 seed xlsx 的源在后端仓库下，前端仅引用不再保存副本，
  * 防止两份文件漂移（权威源：
- * file-batch-system/docs/test-data/test-full-coverage-import-suite/README.md）。
+ * file-batch-system/test-data/tenant-config-packages/README.md）。
  * 相对路径规则：batch-console 与 file-batch-system 同级目录。
  */
 const SEED_SUITE_DIR = path.resolve(
   __dirname,
-  '../../file-batch-system/docs/test-data/test-full-coverage-import-suite',
+  '../../file-batch-system/test-data/tenant-config-packages',
 )
 
 const TENANT_EXCELS = [
@@ -522,8 +520,8 @@ const TENANT_EXCELS = [
 
 /**
  * 全局 Setup：
- *   1. 登录获取 JWT
- *   2. 为 ta / tb / tc 三个租户导入配置包 Excel（超时即跳过，不阻断测试）
+ *   1. 登录获取 HttpOnly Cookie 与 CSRF Cookie
+ *   2. 为 ta / tb / tc 三个租户导入配置包 Excel，失败按 REQUIRE_CONFIG_SEED/staging 策略处理
  *   3. 导出 fixture 文件供 UI 上传链路测试使用
  *   4. 写入 storageState（默认测试租户为 ta）
  *
@@ -534,13 +532,7 @@ async function globalSetup(config) {
   const readOnlyMonitoringRun = process.env.E2E_MONITORING_REAL === '1'
 
   // ── 登录 ────────────────────────────────────────────────────────
-  // D7 Stage B(commit 6405b5a):token 已迁到 HttpOnly cookie,localStorage 不再存。
-  // 2026-05-18 后续 BE 进一步把 accessToken 从响应 body 也移除 — 仅靠 Set-Cookie 下发。
-  // 所以 seed 路径若需要 Authorization header 应改用 cookie jar 调,不再走 Bearer。
-  // 当前 setup:
-  //   1) 解析响应 Set-Cookie,后面写进 storageState.cookies 让浏览器自动携带
-  //   2) 若 body 仍带 accessToken 兼容旧版,作为可选 seed token 使用
-  let token
+  // 认证只消费 Set-Cookie；后续 Node 请求携带 Cookie/CSRF，浏览器使用 storageState.cookies。
   let authCookies = []
   try {
     const loginRes = await fetchWithTimeout(`${API_BASE}/api/console/auth/login`, {
@@ -553,15 +545,14 @@ async function globalSetup(config) {
     })
     if (!loginRes.ok) throw new Error(`HTTP ${loginRes.status}`)
     const loginJson = await loginRes.json()
-    token = loginJson?.data?.accessToken // 可空(2026-05 后 BE 不再回写 body)
     // Node 18+: Headers.getSetCookie() 返回 string[];老节点 fallback 到 raw Set-Cookie
     const setCookies = getSetCookies(loginRes)
     authCookies = setCookies.map((raw) => parseSetCookieForStorageState(raw, baseURL))
     if (authCookies.length === 0) {
-      throw new Error('响应中既无 accessToken 也无 Set-Cookie,登录可能未成功')
+      throw new Error('响应中无 Set-Cookie，登录可能未成功')
     }
     console.log(
-      `[global-setup] 登录成功,expires: ${loginJson?.data?.expiresAt},cookies: ${authCookies.length}${token ? ',token: 有(body)' : ',token: 仅 cookie'}`,
+      `[global-setup] 登录成功,expires: ${loginJson?.data?.expiresAt},cookies: ${authCookies.length}`,
     )
   } catch (err) {
     if (IS_STAGING_TARGET) {
@@ -571,7 +562,7 @@ async function globalSetup(config) {
   }
 
   // ── 导入测试数据 ─────────────────────────────────────────────────
-  const seedAuthHeaders = buildAuthHeaders(token, authCookies)
+  const seedAuthHeaders = buildAuthHeaders(authCookies)
   if (!readOnlyMonitoringRun && Object.keys(seedAuthHeaders).length > 0) {
     for (const tenantId of ['ta', 'tb', 'tc', 'tx']) {
       await ensureFixtureTenant(seedAuthHeaders, tenantId)
@@ -596,8 +587,6 @@ async function globalSetup(config) {
           // FE 的 router beforeEach 检查这个 flag 决定 isLoggedIn(见 stores/auth.ts SESSION_FLAG_KEY)
           // 必须设,否则即使 HttpOnly cookie 有效,FE 也会直接 redirect 到 /login。
           { name: storageKeys.session, value: '1' },
-          // D7 Stage B 后 FE 不再读这个 key,保留是为兼容旧 spec 里可能的引用;真正的鉴权走 cookie。
-          { name: 'token', value: token ?? '' },
           // 强制中文 locale,避免某些 spec 没走 enterDemoApp 时 i18n 拿到浏览器默认 en-US
           // 见 src/constants/locale.ts:1 (LOCALE_STORAGE_KEY)
           { name: storageKeys.locale, value: DEFAULT_LOCALE },
@@ -622,11 +611,11 @@ async function globalSetup(config) {
   // ── 刷新分角色 storageState(role-*.json) ─────────────────────────
   // 以下场景共用分角色状态：scenarios-business / multi-tenant-and-stream / c-plus-coverage / rbac-matrix /
   // flows/_watchdog 都直接读这些文件做 APIRequestContext。
-  // 旧版只生成 user.json,role-*.json 的 token 容易过期导致 401。
+  // 旧版只生成 user.json,role-*.json 的会话容易过期导致 401。
   // 这里幂等准备账号并重新登录刷新，避免本地数据库缺账号时静默跳过 RBAC 覆盖。
-  // !!! BE 对同一 username 只保留最近一次 login 的 token,后登录的 token 会让之前的失效。
+  // !!! BE 对同一 username 只保留最近一次登录会话，后续登录会让之前的会话失效。
   //     所以 admin 这一项必须复用上面写到 user.json 的同一份 cookies,不能再 login 一次,
-  //     否则会反过来把 user.json 的 token 作废,导致全量 e2e 集体 401。
+  //     否则会反过来把 user.json 的会话作废,导致全量 e2e 集体 401。
   const ROLE_LOGINS = [
     {
       file: 'role-tenantUser.json',

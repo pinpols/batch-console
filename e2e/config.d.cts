@@ -1,4 +1,5 @@
 declare const config: {
+  DEFAULT_LOCALE: 'zh-CN' | 'en-US'
   FRONTEND_BASE_URL: string
   FRONTEND_ORIGIN: string
   API_BASE_URL: string

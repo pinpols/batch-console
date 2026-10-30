@@ -21,20 +21,18 @@ GitHub Security 告警的分类、修复、误报处理和合并后验证遵循[
 
 ## pr-gate 详情
 
+```mermaid
+%%{init: {"flowchart":{"curve":"linear","nodeSpacing":32,"rankSpacing":48},"sequence":{"mirrorActors":false}}}%%
+flowchart LR
+  SETUP["检出 / Node / npm ci"] --> STATIC["静态与治理检查<br/>版本 / lint / API / 类型 / i18n"]
+  STATIC --> UNIT["单测与覆盖率"]
+  UNIT --> BUILD["生产构建与体积预算"]
+  BUILD --> AUDIT["生产依赖安全审计"]
 ```
-checkout@v7 → setup-node@v7(node 24 + npm cache)
-        → npm ci --no-audit --no-fund
-        → npm run check:version
-        → npm run lint:check       (ESLint check 模式)
-        → npm run gen:api:check    (OpenAPI yaml ↔ api.generated.ts 漂移)
-        → npm run typecheck        (vue-tsc --noEmit)
-        → npm run check:i18n       (zh-CN ↔ en-US 1:1)
-        → architecture / env / maintainability / workflow / shell / docs / SBOM governance
-        → npm run test:unit -- --coverage
-        → npm run build:fast       (Vite 生产产物)
-        → npm run size
-        → npm audit --omit=dev --audit-level=high
-```
+
+静态阶段还包括 architecture、env、maintainability、workflow、shell、docs 和 SBOM 治理；对应入口为 `check:version`、`lint:check`、`gen:api:check`、`typecheck`、`check:i18n`。后续阶段使用 `test:unit -- --coverage`、`build:fast`、`size` 和 `npm audit --omit=dev --audit-level=high`。
+
+类型检查覆盖 TS/Vue 应用源码及 Vite 配置。
 
 并发控制:同 PR `cancel-in-progress: true` 取消过期任务。15 min timeout。
 
@@ -80,31 +78,25 @@ artifact 上传下载升级后，必须手动运行一次 `full-ci-gate`，确�
 `frontend-ci` 不再重复 `pr-gate` 的 lint / size / audit 主门禁,只做两件事:
 
 1. **Node 24 兼容构建**:在 Node 24 下跑 `check:version`、`typecheck`、`check:i18n`、`test:unit`、`build`。
-2. **统一文档构建**:检出配对后端文档并跑 `npm run docs:build`，确保前后端共享的 `tools/docs-bridge/frontend` 站点可生成，并执行文档 chunk 与搜索索引预算检查（普通 chunk raw 850 KB / gzip 220 KB；搜索索引 raw 4.5 MB / gzip 1.23 MB）。带日期的后端设计稿仅索引一至三级标题，页面正文仍完整发布；无日期的当前设计、API 与运维文档保留全文搜索。
+2. **统一文档构建**:检出配对后端文档并跑 `npm run docs:build`，先执行 `test:docs-publication` 无损分卷与导航回归，确保前后端共享的 `tools/docs-bridge/frontend` 站点可生成，再执行文档 chunk 与搜索索引预算检查（普通 chunk raw 850 KB / gzip 220 KB；搜索索引 raw 4.5 MB / gzip 1.23 MB）。带日期的后端设计稿、ADR与工程标准仅索引一至三级标题，页面正文仍完整发布；无日期的当前设计、API、产品指南与运维文档保留全文搜索。分卷及主题行为变化另验旧锚点和前后卷／目录导航，方法见[统一文档站](../engineering/unified-documentation-site.md)。
 
 这样 PR 必过门禁仍由 `pr-gate` 统一承担,Node 新版本兼容和文档站可独立暴露问题,避免同一 PR 出现两套相似 required check 一过一挂。
 
-## full-ci-gate 详情(4 个执行 job 并行 + 1 个范围探测 job)
+## full-ci-gate 详情（范围探测 + 按依赖执行的 4 个 job）
 
 每周定时运行是低频 runner、依赖和门禁漂移检查，不是每日重复回归；日常代码变更由 PR 和 main push 覆盖。
 
 PR 进入 workflow 后先执行 `Detect change scope`。仅包含 Markdown、`docs/**` 或 `.agents/**` 的 PR 会跳过 `Static checks + Unit` 和 `Security audit (full)` 两个重 job；required check 以 skipped-success 状态回报，不改变 main push / 每周定时 / 手动运行的全量门禁。包含 workflow、脚本、配置、源码、依赖或部署文件的 PR 仍完整执行。
 
-```
-                         ┌─ static-and-unit ──→ upload dist artifact
-                         │   (full build with i18n + typecheck)
-push main / weekly schedule ────┤
-                         ├─ docker-and-scan (needs static-and-unit)
-                         │   Docker build + Trivy CRITICAL block
-                         │   + HIGH+CRITICAL SARIF report upload
-                         │
-                         ├─ lighthouse (needs static-and-unit)
-                         │   Download dist + vite preview + Lighthouse CI
-                         │   阈值见 .github/lighthouse-budget.json
-                         │
-                         └─ security-audit
-                             全量 npm audit JSON → critical 挡 / high warning
-                             报告上传 artifact
+```mermaid
+%%{init: {"flowchart":{"curve":"linear","nodeSpacing":32,"rankSpacing":48},"sequence":{"mirrorActors":false}}}%%
+flowchart TB
+  EVENT["PR / main push / 每周 / 手动"] --> SCOPE["Detect change scope"]
+  SCOPE -->|"需要完整检查"| STATIC["static-and-unit<br/>静态检查 / 单测 / 完整构建"]
+  SCOPE -->|"需要完整检查"| SECURITY["security-audit<br/>全量 npm audit / 报告"]
+  STATIC --> DIST["dist artifact"]
+  DIST -->|"非 PR"| DOCKER["docker-and-scan<br/>镜像构建 / Trivy"]
+  DIST -->|"非 PR"| LH["lighthouse<br/>下载产物 / 预览 / 性能预算"]
 ```
 
 ## staging-gate 详情
@@ -112,22 +104,16 @@ push main / weekly schedule ────┤
 后端 `file-batch-system` 的 `compose-cd` workflow 复用本 workflow 所在仓库的 `build-image`
 workflow 输出 digest；不是通过浮动 tag 推断制品版本。主干 build-image 自身保持既有触发行为。
 
+```mermaid
+%%{init: {"flowchart":{"curve":"linear","nodeSpacing":32,"rankSpacing":48},"sequence":{"mirrorActors":false}}}%%
+flowchart TB
+  EVENT["tag v* / 手动"] --> PRE["precheck<br/>URL / 账号 / 健康 / 安全头 / 版本"]
+  PRE --> E2E["e2e-against-staging<br/>全量 Playwright / axe / 跨浏览器"]
+  PRE --> LH["lighthouse-against-staging<br/>真实 staging URL / 共享预算"]
+  E2E --> REPORT["Playwright 报告"]
 ```
-tag v* / 手动 ── precheck(URL/账号/healthz/部署安全头/版本必须有效)
-                      ├─ e2e-against-staging
-                        │   Playwright install --with-deps chromium
-                        │   PLAYWRIGHT_BASE_URL = secret.STAGING_URL
-                        │   E2E_USERNAME/PASSWORD = secret
-                        │   npm run test:e2e:all(含 @slow 的全量场景)
-                        │   键盘与 axe 基线在 Chromium 验收
-                        │   安装 Firefox/WebKit 后运行 smoke.spec.ts @cross-browser
-                        │   覆盖 Chromium / Firefox / WebKit / Pixel 5
-                        │   upload playwright-report artifact
-                        │
-                        └─ lighthouse-against-staging
-                            Lighthouse CI against staging URL
-                            阈值同 full-ci(共享 lighthouse-budget.json)
-```
+
+E2E 使用 `test:e2e:all`（含 `@slow`），并运行 `smoke.spec.ts @cross-browser`，覆盖 Chromium、Firefox、WebKit 与 Pixel 5 配置；环境 URL 和账号来自 staging 配置。
 
 `precheck` 使用 `scripts/check-security-headers.mjs` 对 `/`、`/login` 和 `/healthz` 发起真实 HTTP 请求，验证最终响应的 CSP 基线、安全响应头及 HTTPS HSTS。该检查验证部署后的响应，不替代 Nginx 配置审查或渗透测试。
 
@@ -162,7 +148,8 @@ tag v* / 手动 ── precheck(URL/账号/healthz/部署安全头/版本必须�
 | ---------------------------------------------------- | --------------------------- | --------------------------- | ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `eslint --check`                                     | ✅                          | ✅                          | —                  | `.husky/pre-commit` `lint-staged` + `preflight:changed`                                                                                             |
 | `prettier --check`                                   | (lint 包含)                 | (lint 包含)                 | —                  | `.husky/pre-commit` `lint-staged`                                                                                                                   |
-| `vue-tsc` typecheck                                  | ✅                          | ✅                          | —                  | `preflight:changed`(src 变更)                                                                                                                       |
+| 应用与 Vite 配置 typecheck                            | ✅                          | ✅                          | —                  | `preflight:changed`(src 变更)；显式使用 `tsconfig.app.json` 与 `tsconfig.node.json` |
+| 类型检查范围正反例 (`test:typecheck`)                  | ✅ (`verify-governance.sh`) | ✅ (`verify-governance.sh`) | —                  | 独立临时项目验证合法源码通过、TS/Vue/Vite 类型错误分别阻断；结果行使用 `group=testing` |
 | `check-i18n-messages.mjs`                            | ✅                          | ✅(含 build 里二次)         | —                  | `preflight:changed`(src / locale 变更)                                                                                                              |
 | `check-api-drift.sh`                                 | ✅                          | ✅                          | —                  | `preflight:changed`(api / generated types 变更)                                                                                                     |
 | Vitest 全量                                          | ✅                          | ✅                          | —                  | —                                                                                                                                                   |
@@ -189,12 +176,30 @@ CI workflow 和本地聚合门禁统一通过 `scripts/ci/run-gate.sh` /
 `scripts/lib/gate-result.sh` 输出最终状态行：
 
 ```text
-✅ 通过 | code=FE_VERSION | gate=版本对齐 | group=configuration | mode=enforce | exit_code=0 | action=none
-❌ 不通过 | code=FE_VERSION | gate=版本对齐 | group=configuration | mode=enforce | exit_code=1 | action=fix_and_retry
+✅ 通过 | code=EXAMPLE | gate=检查名称 | group=quality | mode=enforce | exit_code=0 | action=none
+❌ 不通过 | code=EXAMPLE | gate=检查名称 | group=quality | mode=enforce | exit_code=7 | action=fix_and_retry | reason=失败原因
+⏭️ 跳过 | code=EXAMPLE | gate=检查名称 | group=quality | mode=conditional | exit_code=0 | action=none | reason=没有相关变更
+⚠️ 报告 | code=EXAMPLE | gate=检查名称 | group=quality | mode=report | exit_code=7 | action=review_report
+⏭️ 忽略 | code=EXAMPLE | gate=检查名称 | group=quality | mode=ignore | exit_code=0 | action=none | reason=统一控制配置未执行该门禁
 ```
 
-状态行固定包含状态、`code`、`gate`、`group`、`mode`、`exit_code` 和 `action`。Runner 会过滤子检查器缺少 `group` / `mode` 的旧式状态行，保留诊断及格式合规的嵌套门禁状态；runner 输出作为本门禁的权威状态。失败汇总复用同一格式；
-扫描器明细、测试进度、构建日志和排查说明仍保留原有详细输出，但不能替代最终状态行。
+字段顺序固定为状态、`code`、`gate`、`group`、`mode`、`exit_code`、`action`；补充信息只在末尾追加`reason`。日志和GitHub步骤摘要使用同一条结果，`code`保留各仓既有命名空间，不改required check名称。
+
+| 状态 | 含义与退出规则 |
+|---|---|
+| PASS / 通过 | 命令成功，`exit_code=0`，`action=none` |
+| FAIL / 不通过 | 保留原命令非零退出码，`action=fix_and_retry`；收集模式最后统一非零退出 |
+| SKIP / 跳过 | 条件不满足，`mode=conditional`并给出原因，不作为已执行或已通过 |
+| REPORT / 报告 | 仍执行命令，保留实际非零`exit_code`，`action=review_report`；报告模式本身返回0，不冒充PASS |
+| IGNORE / 忽略 | 控制配置要求不执行，`mode=ignore`并给出原因，不冒充PASS |
+
+门禁自测使用独立的控制输入、失败账本和摘要文件；预设负例不进入调用方的真实CI摘要。真实执行器只发布本次实际结果，本地自测通过不等于远端CI已通过。
+
+结果字段始终保持单行：百分号、管道、回车、换行、制表符分别编码为`%25`、`%7C`、`%0D`、`%0A`、`%09`。非法状态、执行器参数缺失及无命令均输出结构化错误并返回2，不能落成空命令PASS。
+
+旧检查器缺少`group`/`mode`的成功状态行去重；旧失败、报告、忽略和跳过以`诊断 |`前缀保留，避免丢掉唯一原因；已合规的嵌套结果、扫描报告、测试进度和构建日志保留。最终门禁状态由执行器给出，不能从外围命令退出0推断所有子检查都执行过。失败汇总逐项复用同一格式，最后输出`GATE_COLLECTION_SUMMARY`、失败数并返回1。
+
+定向自测：`bash scripts/ci/test-gate-result-collection.sh`，复用PR/Full既有自测步骤。安装、checkout等工具原生日志及扫描明细不强行改成门禁状态行。
 
 ## 本地按需预检
 
@@ -220,7 +225,7 @@ npm run preflight:changed
 | `docs/**` / `tools/docs-bridge/**` / `scripts/docs-*`        | 文档链接检查 + 统一文档构建               |
 | 用户或部署影响文件                                           | Changelog 覆盖检查                        |
 
-`preflight:changed` 只读取 staged 文件；`preflight:changed:all` 合并 working tree 与未跟踪文件，不再扫描全部 tracked 文件。UTF-8 与说明性注释检查只接收本次变更路径，不再扫描全仓。普通 `docs/**` 变更只执行链接、路径和上线准入检查；只有文档桥接、站点配置或构建脚本变化才在本地执行完整 `docs:build`，统一文档 CI 继续对所有文档交付做构建兜底。单测覆盖率、bundle size、audit 可通过 `npm run verify:local` 一次执行；Docker/Trivy、Lighthouse、staging e2e 仍由 CI 分层承担。
+`preflight:changed` 只读取 staged 文件；`preflight:changed:all` 合并 working tree 与未跟踪文件，不再扫描全部 tracked 文件。UTF-8 与说明性注释检查只接收本次变更路径，不再扫描全仓。普通 `docs/**` 变更只执行链接、路径和上线准入检查；文档桥接、站点配置、构建脚本、`lib/docs-publication.mjs` 或其回归测试变化才在本地执行完整 `docs:build`，统一文档 CI 继续对所有文档交付做构建兜底。单测覆盖率、bundle size、audit 可通过 `npm run verify:local` 一次执行；Docker/Trivy、Lighthouse、staging e2e 仍由 CI 分层承担。
 
 ## 常见故障 / 排查
 

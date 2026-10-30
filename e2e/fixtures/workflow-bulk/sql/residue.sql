@@ -1,0 +1,26 @@
+-- 按已保存的数字身份独立回读，不能依赖已删父记录掩盖残留。
+with defs as (select unnest(string_to_array(:'workflow_ids',',')::bigint[]) as id),
+runs as (select unnest(string_to_array(:'run_ids',',')::bigint[]) as id),
+requests as (select unnest(string_to_array(:'request_ids',',')::bigint[]) as id),
+keys as (select :'tenant_id'||':workflow:'||id||':terminal' as event_key from runs)
+select json_build_object(
+ 'definitions',(select count(*) from batch.workflow_definition where tenant_id=:'tenant_id' and id in(select id from defs)),
+ 'nodes',(select count(*) from batch.workflow_node where workflow_definition_id in(select id from defs)),
+ 'edges',(select count(*) from batch.workflow_edge where workflow_definition_id in(select id from defs)),
+ 'versions',(select count(*) from batch.workflow_definition_version where tenant_id=:'tenant_id' and workflow_definition_id in(select id from defs)),
+ 'runs',(select count(*) from batch.workflow_run where tenant_id=:'tenant_id' and id in(select id from runs)),
+ 'nodeRuns',(select count(*) from batch.workflow_node_run where workflow_run_id in(select id from runs)),
+ 'requests',(select count(*) from batch.trigger_request where tenant_id=:'tenant_id' and id in(select id from requests)),
+ 'jobInstances',(select count(*) from batch.job_instance where tenant_id=:'tenant_id' and trigger_request_id in(select id from requests)),
+ 'terminalEvents',(select count(*) from batch.outbox_event where tenant_id=:'tenant_id' and event_key in(select event_key from keys)),
+ 'terminalReceipts',(select count(*) from batch.workflow_terminal_notification_receipt where tenant_id=:'tenant_id' and event_key in(select event_key from keys)),
+ 'terminalDedupKeys',(select count(*) from batch.outbox_event_dedup_key where tenant_id=:'tenant_id' and event_key in(select event_key from keys)),
+ 'calendars',(select count(*) from batch.business_calendar where tenant_id=:'tenant_id'),
+ 'batchDays',(select count(*) from batch.batch_day_instance where tenant_id=:'tenant_id'),
+ 'dayCursors',(select count(*) from batch.batch_day_open_cursor where tenant_id=:'tenant_id'),
+ 'dayAudits',(select count(*) from batch.batch_day_operation_audit where tenant_id=:'tenant_id'),
+ 'catchupControls',(select count(*) from batch.batch_day_catchup_control where tenant_id=:'tenant_id'),
+ 'catchupEvents',(select count(*) from batch.batch_day_catchup_control_event where tenant_id=:'tenant_id'),
+ 'tenants',(select count(*) from batch.tenant where tenant_id=:'tenant_id'),
+ 'configurationRevisions',(select count(*) from batch.tenant_configuration_revision where tenant_id=:'tenant_id'),
+ 'operationAudits',(select count(*) from batch.console_operation_audit where tenant_id=:'tenant_id'));

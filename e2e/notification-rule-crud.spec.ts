@@ -23,7 +23,6 @@ test.describe('notification rule CRUD', () => {
     const addBtn = page.getByRole('button', { name: /^新增/ }).first()
     if (!(await isVisible(addBtn, 2000))) return
     await addBtn.click()
-    await page.waitForTimeout(400)
     const dialog = page.locator('.el-dialog:visible, .el-drawer:visible').first()
     await expect(dialog).toBeVisible()
     await dialog.getByRole('button', { name: '取消' }).click({ force: true })
@@ -68,8 +67,7 @@ test.describe('notification rule CRUD', () => {
     await expect(chanOpt).toBeVisible({ timeout: 8000 })
     await chanOpt.click()
     // 等 el-select v-model 绑定落定(否则保存时 channelId 可能仍是 null);校验 select 已显示选中值
-    await expect(chanItem.locator('.el-select__wrapper')).not.toContainText('选择渠道', { timeout: 3000 }).catch(() => {})
-    await page.waitForTimeout(400)
+    await expect(chanItem.locator('.el-select__wrapper')).not.toContainText('选择渠道', { timeout: 3000 })
 
     await dialog.getByRole('button', { name: /保存|确定|创建/ }).first().click()
     await expect(page.locator('.el-message--success').first()).toBeVisible({ timeout: 6000 })

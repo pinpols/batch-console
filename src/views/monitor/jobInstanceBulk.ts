@@ -6,6 +6,9 @@ export const TERMINAL_INSTANCE_STATUSES = [
   'CANCELLED',
   'CANCELED',
   'TERMINATED',
+  'PARTIAL_FAILED',
+  'SUCCESS_DRY_RUN',
+  'FAILED_DRY_RUN',
 ]
 
 export function canSelectJobInstanceForBulk(row: ConsoleJobInstanceResponse): boolean {

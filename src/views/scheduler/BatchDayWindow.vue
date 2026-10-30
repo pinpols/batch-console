@@ -7,6 +7,12 @@
     >
       <template #actions>
         <el-button
+          v-if="canReadGovernance"
+          :disabled="!calendarCode"
+          @click="governanceVisible = true"
+          >{{ t('batchDayGovernance.title') }}</el-button
+        >
+        <el-button
           type="primary"
           :icon="Refresh"
           :loading="loading || refresh.loading.value"
@@ -17,13 +23,79 @@
         <el-button
           v-if="canManageSystem"
           type="success"
-          :disabled="!calendarCode || writesFrozen"
+          :disabled="!calendarCode || writesFrozen || recoveryBlocked || Boolean(recoveryKey)"
           @click="openCatchup"
         >
           {{ t('batchDayWindow.catchUp') }}
         </el-button>
       </template>
     </PageHeader>
+
+    <SectionCard v-if="canManageSystem && (recoveryKey || recoveryBlocked)">
+      <template #header>{{ t('batchDayWindow.recoveryTitle') }}</template>
+      <p v-if="recoveryBlocked">{{ t('batchDayWindow.recoveryStorageError') }}</p>
+      <template v-else>
+        <p>{{ t('batchDayWindow.recoveryKey', { key: recoveryKey }) }}</p>
+        <p v-if="recoveryStatus && !recoveryStatus.found">
+          {{ t('batchDayWindow.recoveryNotFound') }}
+        </p>
+        <template v-else-if="recoveryStatus">
+          <p>{{ t('batchDayWindow.recoveryState', { status: recoveryStatus.operationStatus }) }}</p>
+          <p v-for="item in recoveryStatus.items" :key="item.jobCode">
+            {{ item.jobCode }} · {{ item.status
+            }}<span v-if="item.referenceNo"> · {{ item.referenceNo }}</span>
+            <el-button
+              v-if="['UNKNOWN', 'IN_FLIGHT'].includes(item.status)"
+              :disabled="
+                writesFrozen ||
+                recoveryLoading ||
+                reconcileLoading ||
+                continueLoading ||
+                abandonLoading
+              "
+              @click="reconcileCatchUp(item.jobCode)"
+              >{{
+                t(
+                  recoveryStatus.catchUpPolicy === 'AUTO'
+                    ? 'batchDayWindow.recoveryVerifyTrigger'
+                    : 'batchDayWindow.recoveryReconcile',
+                )
+              }}</el-button
+            >
+          </p>
+        </template>
+        <p v-else>{{ t('batchDayWindow.recoveryUnknown') }}</p>
+        <el-button :loading="recoveryLoading" @click="refreshCatchUpStatus">{{
+          t('batchDayWindow.recoveryRefresh')
+        }}</el-button>
+        <el-button
+          v-if="recoveryStatus && !recoveryStatus.found"
+          :disabled="
+            writesFrozen || recoveryLoading || reconcileLoading || continueLoading || abandonLoading
+          "
+          :loading="abandonLoading"
+          @click="abandonUnpreparedCatchUp"
+          >{{ t('batchDayWindow.recoveryAbandon') }}</el-button
+        >
+        <el-button
+          v-if="canContinueCatchUp"
+          :disabled="
+            writesFrozen || recoveryLoading || reconcileLoading || continueLoading || abandonLoading
+          "
+          :loading="continueLoading"
+          @click="continueCatchUp"
+          >{{ t('batchDayWindow.recoveryContinue') }}</el-button
+        >
+        <el-button
+          v-if="
+            recoveryStatus?.found &&
+            ['COMPLETE', 'ABANDONED'].includes(recoveryStatus.operationStatus ?? '')
+          "
+          @click="acknowledgeCatchUp"
+          >{{ t('batchDayWindow.recoveryAcknowledge') }}</el-button
+        >
+      </template>
+    </SectionCard>
 
     <div class="batch-day-context" role="search">
       <div class="batch-day-context__field">
@@ -145,6 +217,83 @@
       </el-table>
     </SectionCard>
 
+    <SectionCard v-if="window">
+      <template #header>{{ t('batchDayWindow.scheduledOccurrences') }}</template>
+      <el-table
+        :data="window.scheduledOccurrences"
+        stripe
+        border
+        :empty-text="t('batchDayWindow.noScheduledOccurrences')"
+        class="console-table"
+      >
+        <el-table-column
+          prop="workflowCode"
+          :label="t('batchDayWindow.colWorkflow')"
+          min-width="180"
+        />
+        <el-table-column
+          prop="scheduleVersion"
+          :label="t('batchDayWindow.colScheduleVersion')"
+          width="100"
+        />
+        <el-table-column
+          prop="scheduledFireTime"
+          :label="t('batchDayWindow.colScheduledFire')"
+          min-width="190"
+        >
+          <template #default="{ row }">
+            <DatetimeText :value="row.scheduledFireTime" />
+          </template>
+        </el-table-column>
+        <el-table-column
+          prop="occurrenceStatus"
+          :label="t('batchDayWindow.colOccurrenceStatus')"
+          min-width="170"
+        >
+          <template #default="{ row }">
+            <el-tag :type="row.occurrenceStatus === 'CLOSED_DAY_REJECTED' ? 'danger' : 'info'">
+              {{ occurrenceStatusLabel(row.occurrenceStatus) }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="requestId" :label="t('batchDayWindow.colRequestId')" min-width="180">
+          <template #default="{ row }">{{ row.requestId || '—' }}</template>
+        </el-table-column>
+        <el-table-column
+          prop="lastRejectionReason"
+          :label="t('batchDayWindow.colRejectionReason')"
+          min-width="260"
+          show-overflow-tooltip
+        >
+          <template #default="{ row }">{{ row.lastRejectionReason || '—' }}</template>
+        </el-table-column>
+        <el-table-column :label="t('batchDayWindow.occurrenceAction')" width="150" fixed="right">
+          <template #default="{ row }">
+            <el-button
+              v-if="
+                canOfferOccurrenceCatchUp(
+                  row as ConsoleBatchDayWindowResponse['scheduledOccurrences'][number],
+                )
+              "
+              link
+              type="primary"
+              :disabled="writesFrozen"
+              @click="
+                openOccurrenceCatchUp(
+                  row as ConsoleBatchDayWindowResponse['scheduledOccurrences'][number],
+                )
+              "
+            >
+              {{ t('batchDayWindow.occurrenceCatchUp') }}
+            </el-button>
+            <span v-else-if="row.occurrenceStatus === 'CLOSED_DAY_REJECTED'" class="text-muted">
+              {{ t('batchDayWindow.occurrenceApprovalRequired') }}
+            </span>
+          </template>
+        </el-table-column>
+      </el-table>
+    </SectionCard>
+
     <SectionCard v-else-if="!loading && !calendarCode">
       <EmptyState
         :title="t('batchDayWindow.selectCalendarTitle')"
@@ -190,32 +339,90 @@
         <el-button
           type="primary"
           :loading="catchupLoading"
-          :disabled="writesFrozen"
+          :disabled="writesFrozen || recoveryBlocked || Boolean(recoveryKey)"
           @click="submitCatchup"
         >
           {{ t('batchDayWindow.dialogSubmit') }}
         </el-button>
       </template>
     </el-drawer>
+
+    <el-dialog
+      v-model="occurrenceCatchUpVisible"
+      :title="t('batchDayWindow.occurrenceCatchUpTitle')"
+      width="520px"
+      :close-on-click-modal="false"
+    >
+      <el-form label-position="top">
+        <el-form-item :label="t('batchDayWindow.colWorkflow')">
+          <el-input :model-value="selectedOccurrence?.occurrence.workflowCode" disabled />
+        </el-form-item>
+        <el-form-item :label="t('batchDayWindow.colScheduledFire')">
+          <el-input :model-value="selectedOccurrence?.occurrence.scheduledFireTime" disabled />
+        </el-form-item>
+        <el-form-item :label="t('batchDayWindow.bizDate')">
+          <el-input :model-value="selectedOccurrence?.occurrence.bizDate" disabled />
+        </el-form-item>
+        <el-form-item :label="t('batchDayWindow.occurrenceCatchUpReason')" required>
+          <el-input
+            v-model="occurrenceCatchUpReason"
+            type="textarea"
+            :rows="3"
+            maxlength="1024"
+            show-word-limit
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="occurrenceCatchUpVisible = false">{{ t('common.cancel') }}</el-button>
+        <el-button
+          type="primary"
+          :loading="occurrenceCatchUpLoading"
+          :disabled="writesFrozen || !occurrenceCatchUpReason.trim()"
+          @click="submitOccurrenceCatchUp"
+        >
+          {{ t('batchDayWindow.occurrenceCatchUpConfirm') }}
+        </el-button>
+      </template>
+    </el-dialog>
+    <BatchDayGovernanceDrawer
+      v-if="canReadGovernance"
+      v-model="governanceVisible"
+      :calendar-code="calendarCode"
+      :biz-date="bizDate"
+      @changed="load"
+    />
   </PageContainer>
 </template>
 
 <script setup lang="ts">
+  import BatchDayGovernanceDrawer from './components/BatchDayGovernanceDrawer.vue'
   import { computed, ref, watch } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
-  import { ElMessage } from 'element-plus'
+  import { ElMessage, ElMessageBox } from 'element-plus'
   import { RefreshCw as Refresh } from '@lucide/vue'
   import { useRefreshAction } from '@/composables/useRefreshAction'
   import { usePermission } from '@/composables/usePermission'
   import { useWriteAvailability } from '@/composables/useWriteAvailability'
+  import { workflowApi } from '@/api/workflow'
 
   const refresh = useRefreshAction()
-  const { canManageSystem } = usePermission()
+  const { canManageSystem, canMutateConfig, hasPermission } = usePermission()
   const { writesFrozen } = useWriteAvailability()
 
   const { t } = useI18n({ useScope: 'global' })
-  import { launchBatchDayCatchUp, queryBatchDayWindow } from '@/api/batchDays'
+  import {
+    abandonUnpreparedBatchDayCatchUp,
+    continueBatchDayCatchUpRequest,
+    getBatchDayCatchUpRequestStatus,
+    launchBatchDayCatchUp,
+    queryBatchDayWindow,
+    reconcileBatchDayCatchUpRequest,
+  } from '@/api/batchDays'
+  import { useAuthStore } from '@/stores/auth'
+  import { STORAGE_KEYS } from '@/constants/storageKeys'
+  import { createIdempotencyKey } from '@/utils/idempotency'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
   import PageContainer from '@/components/common/PageContainer.vue'
@@ -231,6 +438,11 @@
   const router = useRouter()
 
   const tenant = useTenantStore()
+  const auth = useAuthStore()
+  const governanceVisible = ref(false)
+  const canReadGovernance = computed(() =>
+    ['ROLE_ADMIN', 'ROLE_AUDITOR', 'ROLE_TENANT_ADMIN'].some(hasPermission),
+  )
 
   const bizDate = computed(() => (route.params.bizDate as string) || '')
   const calendarCode = computed(() => (route.query.calendarCode as string) || '')
@@ -250,14 +462,212 @@
 
   const filteredJobs = computed(() => {
     const list = window.value?.jobs ?? []
-    const k = jobKeyword.value.trim().toLowerCase()
+    const trimmedKeyword = jobKeyword.value.trim()
+    const k = trimmedKeyword.toLowerCase()
     if (!k) return list
-    return list.filter((x) =>
-      String(x.jobCode ?? '')
-        .toLowerCase()
-        .includes(k),
+    return list.filter((job) => {
+      const jobCodeText = String(job.jobCode ?? '')
+      const normalizedJobCode = jobCodeText.toLowerCase()
+      return normalizedJobCode.includes(k)
+    })
+  })
+
+  function occurrenceStatusLabel(status: string) {
+    return t(`batchDayWindow.occurrenceStatuses.${status}`)
+  }
+
+  type CatchUpStatus = Awaited<ReturnType<typeof getBatchDayCatchUpRequestStatus>>
+  const recoveryKey = ref('')
+  const recoveryStatus = ref<CatchUpStatus | null>(null)
+  const recoveryBlocked = ref(false)
+  const recoveryLoading = ref(false)
+  const reconcileLoading = ref(false)
+  const continueLoading = ref(false)
+  const abandonLoading = ref(false)
+  const canContinueCatchUp = computed(() => {
+    const status = recoveryStatus.value
+    return Boolean(
+      status?.found &&
+      ['PREPARED', 'RUNNING'].includes(status.operationStatus ?? '') &&
+      status.items.every((item) => item.status === 'PENDING' || item.status === 'ACCEPTED'),
     )
   })
+  let recoverySequence = 0
+  let catchupContextSequence = 0
+  const recoveryScope = computed(() => {
+    const actor = auth.userInfo?.username || ''
+    if (!actor || !tenant.tenantId || !bizDate.value || !calendarCode.value.trim()) return ''
+    const scopeKey = JSON.stringify([
+      actor,
+      tenant.tenantId,
+      bizDate.value,
+      calendarCode.value.trim(),
+    ])
+    return STORAGE_KEYS.batchDayCatchUpRecoveryPrefix + encodeURIComponent(scopeKey)
+  })
+
+  async function refreshCatchUpStatus() {
+    const scope = recoveryScope.value
+    const key = recoveryKey.value
+    const tenantId = tenant.tenantId
+    if (!scope || !key) return
+    const sequence = ++recoverySequence
+    recoveryLoading.value = true
+    recoveryStatus.value = null
+    try {
+      const result = await getBatchDayCatchUpRequestStatus(tenantId, key)
+      if (
+        sequence === recoverySequence &&
+        scope === recoveryScope.value &&
+        key === recoveryKey.value
+      ) {
+        const matchesScope =
+          result.tenantId === tenantId &&
+          (!result.found ||
+            (result.bizDate === bizDate.value && result.calendarCode === calendarCode.value.trim()))
+        recoveryStatus.value = matchesScope ? result : null
+      }
+    } catch {
+      // 查询失败不改变原请求结果，保留请求键供后续查询。
+    } finally {
+      if (sequence === recoverySequence) recoveryLoading.value = false
+    }
+  }
+
+  async function reconcileCatchUp(jobCode: string) {
+    const scope = recoveryScope.value
+    const key = recoveryKey.value
+    const tenantId = tenant.tenantId
+    if (
+      writesFrozen.value ||
+      reconcileLoading.value ||
+      continueLoading.value ||
+      abandonLoading.value ||
+      !scope ||
+      !key ||
+      !tenantId
+    )
+      return
+    reconcileLoading.value = true
+    try {
+      await reconcileBatchDayCatchUpRequest(tenantId, key, jobCode)
+    } catch {
+      // 对账失败不改变未知结果，继续从原请求查询。
+    } finally {
+      reconcileLoading.value = false
+      if (scope === recoveryScope.value && key === recoveryKey.value) await refreshCatchUpStatus()
+    }
+  }
+
+  async function continueCatchUp() {
+    const scope = recoveryScope.value
+    const key = recoveryKey.value
+    const tenantId = tenant.tenantId
+    if (
+      writesFrozen.value ||
+      reconcileLoading.value ||
+      continueLoading.value ||
+      abandonLoading.value ||
+      !canContinueCatchUp.value ||
+      !scope ||
+      !key ||
+      !tenantId
+    )
+      return
+    continueLoading.value = true
+    try {
+      await continueBatchDayCatchUpRequest(tenantId, key)
+    } catch {
+      // 结果不确定时保留原请求键并重新读取，不自动重发。
+    } finally {
+      continueLoading.value = false
+      if (scope === recoveryScope.value && key === recoveryKey.value) await refreshCatchUpStatus()
+    }
+  }
+
+  function restoreCatchUp() {
+    ++catchupContextSequence
+    ++recoverySequence
+    recoveryLoading.value = false
+    recoveryStatus.value = null
+    recoveryKey.value = ''
+    recoveryBlocked.value = !recoveryScope.value
+    if (!recoveryScope.value) return
+    try {
+      const stored = localStorage.getItem(recoveryScope.value)
+      if (stored !== null && !stored.trim()) throw new Error('invalid request key')
+      recoveryKey.value = stored || ''
+    } catch {
+      recoveryBlocked.value = true
+    }
+    if (recoveryKey.value && canManageSystem.value) void refreshCatchUpStatus()
+  }
+
+  async function abandonUnpreparedCatchUp() {
+    const scope = recoveryScope.value
+    const key = recoveryKey.value
+    const tenantId = tenant.tenantId
+    const date = bizDate.value
+    const calendar = calendarCode.value.trim()
+    if (
+      writesFrozen.value ||
+      abandonLoading.value ||
+      recoveryLoading.value ||
+      reconcileLoading.value ||
+      continueLoading.value ||
+      !scope ||
+      !key ||
+      !recoveryStatus.value ||
+      recoveryStatus.value.found
+    )
+      return
+    try {
+      await ElMessageBox.confirm(
+        t('batchDayWindow.recoveryAbandonConfirm'),
+        t('batchDayWindow.recoveryAbandon'),
+        { type: 'warning' },
+      )
+    } catch {
+      return
+    }
+    if (
+      abandonLoading.value ||
+      scope !== recoveryScope.value ||
+      key !== recoveryKey.value ||
+      !recoveryStatus.value ||
+      recoveryStatus.value.found ||
+      writesFrozen.value
+    )
+      return
+    abandonLoading.value = true
+    try {
+      await abandonUnpreparedBatchDayCatchUp(tenantId, key, date, calendar)
+    } catch {
+      // 请求结果不确定时，保留原键并重新读取服务端状态。
+    } finally {
+      abandonLoading.value = false
+      if (scope === recoveryScope.value && key === recoveryKey.value) await refreshCatchUpStatus()
+    }
+  }
+
+  function acknowledgeCatchUp() {
+    if (
+      !recoveryStatus.value?.found ||
+      !['COMPLETE', 'ABANDONED'].includes(recoveryStatus.value.operationStatus ?? '')
+    )
+      return
+    try {
+      if (localStorage.getItem(recoveryScope.value) !== recoveryKey.value)
+        throw new Error('request changed')
+      localStorage.removeItem(recoveryScope.value)
+      recoveryKey.value = ''
+      recoveryStatus.value = null
+    } catch {
+      recoveryBlocked.value = true
+    }
+  }
+
+  watch([recoveryScope, canManageSystem], restoreCatchUp, { immediate: true })
 
   const catchupVisible = ref(false)
   const catchupLoading = ref(false)
@@ -266,21 +676,95 @@
     calendarCode: '',
     reason: '',
   })
+  const occurrenceCatchUpVisible = ref(false)
+  const occurrenceCatchUpLoading = ref(false)
+  const occurrenceCatchUpReason = ref('')
+  const selectedOccurrence = ref<{
+    tenantId: string
+    occurrence: ConsoleBatchDayWindowResponse['scheduledOccurrences'][number]
+  } | null>(null)
 
+  function canOfferOccurrenceCatchUp(
+    occurrence: ConsoleBatchDayWindowResponse['scheduledOccurrences'][number],
+  ) {
+    return (
+      occurrence.occurrenceStatus === 'CLOSED_DAY_REJECTED' &&
+      ['AUTO', 'MANUAL_APPROVAL'].includes(occurrence.catchUpPolicy) &&
+      canMutateConfig.value
+    )
+  }
+
+  function openOccurrenceCatchUp(
+    occurrence: ConsoleBatchDayWindowResponse['scheduledOccurrences'][number],
+  ) {
+    if (writesFrozen.value || occurrence.occurrenceStatus !== 'CLOSED_DAY_REJECTED') return
+    selectedOccurrence.value = { tenantId: tenant.tenantId, occurrence }
+    occurrenceCatchUpReason.value = ''
+    occurrenceCatchUpVisible.value = true
+  }
+
+  async function submitOccurrenceCatchUp() {
+    const selection = selectedOccurrence.value
+    const occurrence = selection?.occurrence
+    const reason = occurrenceCatchUpReason.value.trim()
+    const occurrenceCatchUpSubmissionIsBlocked =
+      !selection ||
+      !occurrence ||
+      tenant.tenantId !== selection.tenantId ||
+      !reason ||
+      writesFrozen.value ||
+      occurrenceCatchUpLoading.value
+    if (occurrenceCatchUpSubmissionIsBlocked) return
+    occurrenceCatchUpLoading.value = true
+    try {
+      const result = await workflowApi.catchUpScheduledOccurrence(occurrence.workflowDefinitionId, {
+        tenantId: selection.tenantId,
+        scheduledFireTime: occurrence.scheduledFireTime,
+        bizDate: occurrence.bizDate,
+        reason,
+      })
+      if (result.status === 'PENDING_APPROVAL') {
+        ElMessage.success(
+          t('batchDayWindow.occurrenceCatchUpApprovalCreated', {
+            approvalId: result.approvalId || result.requestId,
+          }),
+        )
+      } else {
+        ElMessage.success(
+          t('batchDayWindow.occurrenceCatchUpAccepted', { requestId: result.requestId }),
+        )
+      }
+      occurrenceCatchUpVisible.value = false
+      await load()
+    } finally {
+      occurrenceCatchUpLoading.value = false
+    }
+  }
+
+  let windowReadSequence = 0
   async function load() {
+    const sequence = ++windowReadSequence
+    const tenantId = tenant.tenantId
     const bd = bizDate.value
     const cal = calendarCode.value.trim()
-    if (!bd || !cal) {
-      window.value = null
+    window.value = null
+    if (!tenantId || !bd || !cal) {
+      loading.value = false
       return
     }
     loading.value = true
+    const isCurrent = () =>
+      sequence === windowReadSequence &&
+      tenantId === tenant.tenantId &&
+      bd === bizDate.value &&
+      cal === calendarCode.value.trim()
     try {
-      window.value = await queryBatchDayWindow(tenant.tenantId, cal, bd)
+      const result = await queryBatchDayWindow(tenantId, cal, bd)
+      if (isCurrent()) window.value = result
     } catch {
-      window.value = null
+      if (isCurrent()) window.value = null
     } finally {
-      loading.value = false
+      if (isCurrent()) loading.value = false
     }
   }
 
@@ -317,35 +801,94 @@
   }
 
   async function submitCatchup() {
-    if (writesFrozen.value) return
+    if (writesFrozen.value || recoveryBlocked.value || recoveryKey.value || catchupLoading.value)
+      return
     const bd = bizDate.value
-    if (!bd) return
+    const scope = recoveryScope.value
+    const tenantId = tenant.tenantId
+    if (!bd || !scope || !tenantId || catchupForm.value.calendarCode !== calendarCode.value.trim())
+      return
     const raw = catchupJobCodesText.value.trim()
-    const jobCodes = raw
-      ? raw
-          .split(/[,，\s]+/)
-          .map((s) => s.trim())
-          .filter(Boolean)
-      : undefined
+    let jobCodes: string[] | undefined
+    if (raw) {
+      const splitJobCodes = raw.split(/[,，\s]+/)
+      const trimmedJobCodes = splitJobCodes.map((jobCode) => jobCode.trim())
+      jobCodes = trimmedJobCodes.filter(Boolean)
+    }
 
+    const key = createIdempotencyKey()
+    try {
+      if (localStorage.getItem(scope) !== null) {
+        restoreCatchUp()
+        return
+      }
+      localStorage.setItem(scope, key)
+      if (localStorage.getItem(scope) !== key) throw new Error('request key not saved')
+      recoveryKey.value = key
+    } catch {
+      recoveryBlocked.value = true
+      return
+    }
+    const contextSequence = catchupContextSequence
     catchupLoading.value = true
     try {
-      const res = await launchBatchDayCatchUp(bd, {
-        tenantId: tenant.tenantId,
-        calendarCode: catchupForm.value.calendarCode,
-        jobCodes,
-        reason: catchupForm.value.reason || undefined,
-      })
+      const res = await launchBatchDayCatchUp(
+        bd,
+        {
+          tenantId,
+          calendarCode: catchupForm.value.calendarCode,
+          jobCodes,
+          reason: catchupForm.value.reason || undefined,
+        },
+        key,
+      )
+      if (contextSequence !== catchupContextSequence || scope !== recoveryScope.value) return
       const n = res.items?.length ?? 0
       ElMessage.success(t('batchDayWindow.submitSuccess', { n }))
       catchupVisible.value = false
+      if (scope === recoveryScope.value && key === recoveryKey.value) await refreshCatchUpStatus()
       await load()
+    } catch {
+      if (
+        contextSequence === catchupContextSequence &&
+        scope === recoveryScope.value &&
+        key === recoveryKey.value
+      ) {
+        catchupVisible.value = false
+        await refreshCatchUpStatus()
+      }
     } finally {
       catchupLoading.value = false
     }
   }
 
+  watch(recoveryScope, () => {
+    catchupVisible.value = false
+    resetCatchup()
+  })
+
   useTenantReload(load)
+  watch(
+    () => tenant.tenantId,
+    (value) => {
+      if (!value) {
+        ++windowReadSequence
+        window.value = null
+        loading.value = false
+      }
+    },
+  )
+
+  watch(
+    () => tenant.tenantId,
+    (tenantId) => {
+      if (selectedOccurrence.value && selectedOccurrence.value.tenantId !== tenantId) {
+        occurrenceCatchUpVisible.value = false
+        selectedOccurrence.value = null
+        occurrenceCatchUpReason.value = ''
+      }
+    },
+  )
 
   watch([bizDate, calendarCode], () => {
     bizDateDraft.value = bizDate.value

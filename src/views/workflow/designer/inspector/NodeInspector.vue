@@ -15,7 +15,6 @@
   import StartNodeForm from './StartNodeForm.vue'
   import EndNodeForm from './EndNodeForm.vue'
   import JobNodeForm from './JobNodeForm.vue'
-  import FileStepNodeForm from './FileStepNodeForm.vue'
   import GatewayNodeForm from './GatewayNodeForm.vue'
   import EdgeInspector from './EdgeInspector.vue'
   import DependencyCreateDialog from './DependencyCreateDialog.vue'
@@ -53,11 +52,19 @@
 
   function edgeOptionLabel(edge: (typeof store.edges)[number]): string {
     const type = edgeTypeOf(edge)
-    return `${nodeLabel(edge.source)} → ${nodeLabel(edge.target)} · ${t(`enum.edgeType.${type}`)}`
+    const sourceLabel = nodeLabel(edge.source)
+    const targetLabel = nodeLabel(edge.target)
+    const edgeTypeLabel = t(`enum.edgeType.${type}`)
+    return `${sourceLabel} → ${targetLabel} · ${edgeTypeLabel}`
   }
 
   function selectEdge(edgeId: string) {
     store.setSelection(edgeId ? [edgeId] : [])
+  }
+
+  function onEdgeSelectionChange(value: unknown) {
+    const edgeId = String(value ?? '')
+    selectEdge(edgeId)
   }
 
   function deleteSelectedNode() {
@@ -112,7 +119,7 @@
       :aria-label="t('workflowDesignerMvp.dependencyPickerAria')"
       filterable
       clearable
-      @change="selectEdge(String($event ?? ''))"
+      @change="onEdgeSelectionChange"
     >
       <el-option
         v-for="edge in store.edges"
@@ -134,7 +141,7 @@
       :readonly="readonly"
       @topology-changed="emit('topology-changed')"
     />
-    <template v-else>
+    <template v-else-if="selectedNode">
       <StartNodeForm
         v-if="selectedNode.nodeType === 'START'"
         :node="selectedNode"
@@ -147,11 +154,6 @@
       />
       <JobNodeForm
         v-else-if="selectedNode.nodeType === 'JOB'"
-        :node="selectedNode"
-        :readonly="readonly"
-      />
-      <FileStepNodeForm
-        v-else-if="selectedNode.nodeType === 'FILE_STEP'"
         :node="selectedNode"
         :readonly="readonly"
       />

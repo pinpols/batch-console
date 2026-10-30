@@ -10,9 +10,9 @@ export interface InstanceQueryParams {
   instanceStatus?: string
   /** CSV 多状态(如 "FAILED,PARTIAL_FAILED"),优先于 instanceStatus 单值 */
   instanceStatuses?: string
-  /** ISO 日期范围起点 */
+  /** 作业开始时间的ISO日期范围起点，不是业务日期 */
   startDate?: string
-  /** ISO 日期范围终点 */
+  /** 作业开始时间的ISO日期范围终点，不是业务日期 */
   endDate?: string
   /** 模糊匹配 */
   traceId?: string

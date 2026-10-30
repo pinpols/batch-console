@@ -61,16 +61,18 @@ test('AI history excludes another owner and another tenant', async ({ page, netw
   const ownId = `e2e-ai-own-${randomUUID()}`
   const otherOwnerId = `e2e-ai-owner-${randomUUID()}`
   const otherTenantId = `e2e-ai-tenant-${randomUUID()}`
-  const insert = (id: string, tenantId: 'ta' | 'tb', userId: string) =>
-    runTenantSql(
-      tenantId,
-      `INSERT INTO batch.console_ai_conversation (id, tenant_id, owner_user_id, title, context_version, expires_at) VALUES ('${id}', '${tenantId}', '${userId}', '${id}', 'v1', CURRENT_TIMESTAMP + INTERVAL '1 hour')`,
-    )
-  const remove = (id: string, tenantId: 'ta' | 'tb') =>
-    runTenantSql(
-      tenantId,
-      `DELETE FROM batch.console_ai_conversation WHERE tenant_id = '${tenantId}' AND id = '${id}'`,
-    )
+  const insertConversationSql = (id: string, tenantId: 'ta' | 'tb', userId: string) =>
+    `INSERT INTO batch.console_ai_conversation (id, tenant_id, owner_user_id, title, context_version, expires_at) VALUES ('${id}', '${tenantId}', '${userId}', '${id}', 'v1', CURRENT_TIMESTAMP + INTERVAL '1 hour')`
+  const deleteConversationSql = (id: string, tenantId: 'ta' | 'tb') =>
+    `DELETE FROM batch.console_ai_conversation WHERE tenant_id = '${tenantId}' AND id = '${id}'`
+  const insert = (id: string, tenantId: 'ta' | 'tb', userId: string) => {
+    const insertConversationFixtureSql = insertConversationSql(id, tenantId, userId)
+    runTenantSql(tenantId, insertConversationFixtureSql)
+  }
+  const remove = (id: string, tenantId: 'ta' | 'tb') => {
+    const deleteConversationFixtureSql = deleteConversationSql(id, tenantId)
+    runTenantSql(tenantId, deleteConversationFixtureSql)
+  }
 
   try {
     insert(ownId, 'ta', owner)

@@ -8,8 +8,7 @@
 
 ## 1. 为什么不用 SSE
 
-桌面端不少页(`/observability/outbox`、`/m/catchup` 对应桌面的 `/scheduler/catch-up-approvals`、
-`/files/list` 等)有 SSE 推流;**移动端故意不接 SSE**:
+桌面运行与观测页面按接口能力使用 SSE；移动业务列表/详情的数据刷新采用短轮询或手动刷新。全局 AI 对话仍复用 POST SSE，它不是本节讨论的列表刷新连接。桌面 Catch-up 的当前入口是 `/approvals?tab=catch-up`，`/scheduler/catch-up-approvals` 是兼容重定向。
 
 | 维度 | SSE | 短轮询 |
 |---|---|---|
@@ -20,7 +19,7 @@
 | **实现复杂度** | 需要重连退避 / 心跳 / Last-Event-ID | `setInterval` |
 
 移动端是**oncall 应急定位**形态(从 push / 邮件 / 扫码 入页),不是"长时间盯屏"。
-30s 内的延迟用户无感。
+轮询间隔按业务紧迫性选择；不能仅凭配置间隔宣称所有用户都可接受延迟。
 
 ## 2. 统一的轮询档位
 
@@ -28,7 +27,7 @@
 
 | 档 | 时长 | 何时用 | 例子 |
 |---|---|---|---|
-| **HOT** | 10s | 详情运行中、workflow run overlay,oncall 必须看着翻转 | `MJobInstanceDetail`(运行态时短轮询)、`MWorkflowViewer`(有 runId 时) |
+| **HOT** | 10s | 详情运行中、workflow run overlay,oncall 必须看着翻转 | `MJobInstanceDetail`(运行态时短轮询)、`MWorkflowViewer`（有 runId 且满足运行态轮询条件时） |
 | **WARM** | 20s | 次实时列表 — 告警未读、待审批堆积 | `MAlerts` |
 | **COLD** | 30s | 一般概览 — 拓扑/计数类 | `MOpsSummary`、`MWorkers`、`MOutbox` |
 
@@ -73,4 +72,3 @@ PWA push / 邮件 / 扫码 进入未登录态时:
 才会被自动转 `/m/ops/summary`**;深链 `/m/*` 始终保留 mobile 路由,不会被覆盖。
 
 `/m/workflow/:id?runId=NNN` 是 2026-05-16 新增的 mobile 只读 workflow viewer,沿用同套机制。
-

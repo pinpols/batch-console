@@ -18,6 +18,12 @@
     </PageHeader>
 
     <SectionCard>
+      <el-alert
+        v-if="loadError"
+        :title="userErrorMessage(loadError)"
+        type="error"
+        :closable="false"
+      />
       <ListPageQueryBar
         :filter-busy="filterBusy"
         :refresh-busy="loading"
@@ -111,7 +117,10 @@
         <el-table-column :label="t('monitor.partColActions')" width="170" fixed="right">
           <template #default="{ row }">
             <div class="table-actions">
-              <RowActions :actions="partitionRowActions(row)" :inline-limit="1" />
+              <RowActions
+                :actions="partitionRowActions(row as ConsoleJobPartitionResponse)"
+                :inline-limit="1"
+              />
             </div>
           </template>
         </el-table-column>
@@ -125,7 +134,7 @@
           (s: number) => {
             pageSize = s
             page = 1
-            void load()
+            void loadForNavigation()
           }
         "
       />
@@ -141,6 +150,7 @@
   import { confirmDanger } from '@/composables/useDangerConfirm'
   import { RefreshCw as Refresh } from '@lucide/vue'
   import { useRefreshAction } from '@/composables/useRefreshAction'
+  import { userErrorMessage } from '@/utils/userErrorMessage'
 
   const refresh = useRefreshAction()
 
@@ -149,6 +159,9 @@
   import { queryPartitionsPaged, type ConsoleJobPartitionResponse } from '@/api/queries/partitions'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
+  import { useTenantRequestScope } from '@/composables/useTenantRequestScope'
+  import { usePermission } from '@/composables/usePermission'
+  import { useAuthStore } from '@/stores/auth'
   import PageContainer from '@/components/common/PageContainer.vue'
   import MetaSelect from '@/components/common/MetaSelect.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
@@ -163,7 +176,12 @@
 
   const route = useRoute()
   const tenant = useTenantStore()
+  const auth = useAuthStore()
+  const { canWriteSystem } = usePermission()
+  const listScope = useTenantRequestScope()
+  const actionScope = useTenantRequestScope()
   const loading = ref(false)
+  const loadError = ref<unknown>(null)
   const { filterBusy, runSearch, runReset, runRefresh } = useListFilterFeedback(loading)
   const rows = ref<ConsoleJobPartitionResponse[]>([])
   const page = ref(1)
@@ -181,20 +199,38 @@
   const filterApplied = reactive({ partitionStatus: '' })
 
   async function load() {
-    if (!Number.isFinite(instanceId.value)) return
+    const scope = listScope.begin()
+    const requestedInstance = instanceId.value
+    if (!scope.tenantId || !Number.isSafeInteger(requestedInstance) || requestedInstance <= 0)
+      return
     loading.value = true
+    loadError.value = null
     try {
       const pr = await queryPartitionsPaged({
-        tenantId: tenant.tenantId,
-        jobInstanceId: instanceId.value,
+        tenantId: scope.tenantId,
+        jobInstanceId: requestedInstance,
         partitionStatus: filterApplied.partitionStatus,
         page: page.value,
         pageSize: pageSize.value,
       })
+      if (!listScope.isCurrent(scope) || requestedInstance !== instanceId.value) return
       rows.value = pr.records
       total.value = pr.total
+    } catch (error) {
+      if (!listScope.isCurrent(scope) || requestedInstance !== instanceId.value) return
+      loadError.value = error
+      throw error
     } finally {
-      loading.value = false
+      if (listScope.isCurrent(scope) && requestedInstance === instanceId.value)
+        loading.value = false
+    }
+  }
+
+  async function loadForNavigation() {
+    try {
+      await load()
+    } catch {
+      // 被动加载失败已由页面错误态呈现，主动查询仍传播失败以避免成功提示。
     }
   }
 
@@ -217,10 +253,41 @@
 
   function onPageChange(p: number) {
     page.value = p
-    void load()
+    void loadForNavigation()
   }
 
+  /** 不能把离开实例前的确认应用到新页面或新租户。 */
+  function capturePartitionAction(row: ConsoleJobPartitionResponse) {
+    const scope = actionScope.begin()
+    const requestedInstance = instanceId.value
+    const operator = auth.userInfo?.username ?? auth.userInfo?.userId
+    const isCurrent = () =>
+      actionScope.isCurrent(scope) &&
+      requestedInstance === instanceId.value &&
+      operator === (auth.userInfo?.username ?? auth.userInfo?.userId) &&
+      canWriteSystem.value &&
+      (!row.tenantId || row.tenantId === scope.tenantId) &&
+      rows.value.some((current) => current.id === row.id)
+    return { tenantId: scope.tenantId, isCurrent }
+  }
+
+  watch(
+    [instanceId, () => tenant.tenantId],
+    () => {
+      listScope.begin()
+      actionScope.begin()
+      rows.value = []
+      total.value = 0
+      page.value = 1
+      loading.value = false
+      loadError.value = null
+    },
+    { flush: 'sync' },
+  )
+
   async function cancelPartition(row: ConsoleJobPartitionResponse) {
+    const context = capturePartitionAction(row)
+    if (!context.isCurrent()) return
     try {
       await confirmDanger({
         verb: t('monitor.partActionCancel'),
@@ -228,7 +295,9 @@
         confirmButtonText: t('common.confirm'),
         cancelButtonText: t('common.cancel'),
       })
-      await instanceApi.cancelPartition(row.id, row.tenantId ?? tenant.tenantId)
+      if (!context.isCurrent()) return
+      await instanceApi.cancelPartition(row.id, context.tenantId)
+      if (!context.isCurrent()) return
       ElMessage.success(t('monitor.partCanceled'))
       await load()
     } catch {
@@ -237,6 +306,8 @@
   }
 
   async function retryPartition(row: ConsoleJobPartitionResponse) {
+    const context = capturePartitionAction(row)
+    if (!context.isCurrent()) return
     try {
       await ElMessageBox.confirm(
         t('monitor.partRetryConfirmText', { id: row.id }),
@@ -247,7 +318,9 @@
           cancelButtonText: t('common.cancel'),
         },
       )
-      await instanceApi.retryPartition(row.id, row.tenantId ?? tenant.tenantId)
+      if (!context.isCurrent()) return
+      await instanceApi.retryPartition(row.id, context.tenantId)
+      if (!context.isCurrent()) return
       ElMessage.success(t('monitor.partRetrySuccess'))
       await load()
     } catch {
@@ -260,12 +333,14 @@
       {
         key: 'retry',
         label: t('monitor.partActionRetry'),
+        disabled: !canWriteSystem.value,
         primary: true,
         onClick: () => retryPartition(row),
       },
       {
         key: 'cancel',
         label: t('monitor.partActionCancel'),
+        disabled: !canWriteSystem.value,
         danger: true,
         divided: true,
         onClick: () => cancelPartition(row),
@@ -276,6 +351,6 @@
   useTenantReload(load)
 
   watch(instanceId, () => {
-    void load()
+    void loadForNavigation()
   })
 </script>

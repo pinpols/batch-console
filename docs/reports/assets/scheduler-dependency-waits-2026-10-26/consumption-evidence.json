@@ -1,0 +1,41 @@
+{
+  "acceptanceStatus": "PASS",
+  "scope": "manual calendar dependency SKIP consumed by the WDI scheduler",
+  "frontendBranch": "fix/wdi-current",
+  "frontendHead": "662d254e2f8b97f93021de548815470d2291c997",
+  "backendBranch": "fix/wdi-current",
+  "backendHead": "f3d5e400d3b5bd737124b57cf0a38e685432aab2",
+  "environment": {
+    "isolatedConsolePort": 18181,
+    "isolatedOrchestratorPort": 18182,
+    "isolatedVitePort": 5181,
+    "sharedServicesRestarted": false
+  },
+  "playwright": {
+    "browser": "Chromium",
+    "passed": 1,
+    "failed": 0,
+    "retries": 0
+  },
+  "consumption": {
+    "schedulerLogSignal": "MANUAL_CALENDAR_DEPENDENCY_SKIP",
+    "manualAction": "SKIP",
+    "manualReasonRecorded": true,
+    "calendarWaitStatus": "SKIPPED",
+    "skippedBatchDayCount": 1,
+    "skippedBatchDayStatus": "SKIPPED"
+  },
+  "cleanup": {
+    "playwrightOwnedRowsAndAccountsRemaining": 0,
+    "playwrightOwnedDefinitionsAndDependenciesRemaining": 0,
+    "playwrightOwnedBatchDaysRemaining": 0,
+    "failedAttemptDatabasesRemaining": 0,
+    "taskOwnedPortsListening": 0
+  },
+  "notCovered": [
+    "calendar RELEASE scheduler consumption",
+    "other DAG node and relationship combinations",
+    "real file Pipeline Worker execution and recovery",
+    "Quartz current-day planned coverage"
+  ]
+}

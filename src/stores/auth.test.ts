@@ -1,9 +1,11 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
+import { nextTick } from 'vue'
 import { STORAGE_KEYS } from '@/constants/storageKeys'
 import { stubLocalStorage } from '@/test-utils/localStorage'
 import { useAuthStore } from './auth'
 import { useTenantStore } from './tenant'
+import { authApi } from '@/api/auth'
 
 const storage = stubLocalStorage()
 const sessionStorageState = new Map<string, string>()
@@ -41,7 +43,8 @@ describe('useAuthStore', () => {
     storage.clear()
     sessionStorageState.clear()
     setActivePinia(createPinia())
-    vi.clearAllMocks()
+    vi.resetAllMocks()
+    vi.mocked(authApi.logout).mockResolvedValue(undefined)
   })
 
   it('isLoggedIn is false when no token', () => {
@@ -287,6 +290,103 @@ describe('useAuthStore', () => {
     expect(mockedGet).not.toHaveBeenCalled()
   })
 
+  function pendingProfile() {
+    let resolve!: (value: unknown) => void
+    const promise = new Promise((r) => {
+      resolve = r
+    })
+    return { promise, resolve }
+  }
+
+  it('退出完成后，旧资料响应不能恢复账号资料和资料就绪标记', async () => {
+    storage.set(STORAGE_KEYS.session, '1')
+    const auth = useAuthStore()
+    const old = pendingProfile()
+    apiMocks.get.mockReturnValueOnce(old.promise)
+    const request = auth.fetchMe()
+    await auth.logout()
+    old.resolve({ username: 'old-admin', permissions: ['ROLE_ADMIN'] })
+    await request
+
+    expect(auth.isLoggedIn).toBe(false)
+    expect(auth.userInfo).toBeNull()
+    expect(auth.profileLoaded).toBe(false)
+  })
+
+  it('重新登录后，旧会话的资料响应不能覆盖新账号', async () => {
+    storage.set(STORAGE_KEYS.session, '1')
+    const auth = useAuthStore()
+    const old = pendingProfile()
+    apiMocks.get.mockReturnValueOnce(old.promise)
+    const request = auth.fetchMe()
+    await auth.logout()
+    vi.mocked(authApi.login).mockResolvedValue({
+      token: 'test-token',
+      tenantId: 'system',
+      userInfo: {
+        userId: 'next-user',
+        username: 'next-user',
+        role: 'VIEWER',
+        permissions: ['ROLE_AUDITOR'],
+        capabilities: [],
+      },
+    })
+    await auth.login('next-user', 'pw')
+    old.resolve({ username: 'old-admin', permissions: ['ROLE_ADMIN'] })
+    await request
+
+    expect(auth.userInfo?.username).toBe('next-user')
+    expect(auth.hasPermission('ROLE_ADMIN')).toBe(false)
+    expect(auth.profileLoaded).toBe(false)
+  })
+
+  it('A→B→A 的旧资料不能覆盖新请求或清掉新请求的并发复用', async () => {
+    storage.set(STORAGE_KEYS.session, '1')
+    storage.set(STORAGE_KEYS.tenantId, 'tenant-a')
+    const auth = useAuthStore()
+    const tenant = useTenantStore()
+    const first = pendingProfile()
+    const middle = pendingProfile()
+    const latest = pendingProfile()
+    apiMocks.get.mockResolvedValue({ username: 'unexpected-extra-profile', permissions: [] })
+    apiMocks.get
+      .mockReturnValueOnce(first.promise)
+      .mockReturnValueOnce(middle.promise)
+      .mockReturnValueOnce(latest.promise)
+    const firstRequest = auth.fetchMe()
+    tenant.setTenantId('tenant-b')
+    await nextTick()
+    tenant.setTenantId('tenant-a')
+    await nextTick()
+    expect(apiMocks.get).toHaveBeenCalledTimes(3)
+    first.resolve({ username: 'old-admin', permissions: ['ROLE_ADMIN'] })
+    await firstRequest
+    const reusedRequest = auth.fetchMe()
+    expect(apiMocks.get).toHaveBeenCalledTimes(3)
+    expect(auth.userInfo).toBeNull()
+    latest.resolve({ username: 'current-user', permissions: ['ROLE_TENANT_USER'] })
+    await reusedRequest
+    middle.resolve({ username: 'middle-user', permissions: ['ROLE_AUDITOR'] })
+    await nextTick()
+    expect(auth.userInfo?.username).toBe('current-user')
+    expect(auth.hasPermission('ROLE_ADMIN')).toBe(false)
+  })
+
+  it('后台资料刷新失败由生命周期承接，随后仍可正常重试', async () => {
+    storage.set(STORAGE_KEYS.session, '1')
+    const auth = useAuthStore()
+    const tenant = useTenantStore()
+    apiMocks.get.mockRejectedValueOnce(new Error('资料服务暂不可用'))
+    tenant.setTenantId('tenant-b')
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    expect(apiMocks.get).toHaveBeenCalledOnce()
+    expect(auth.profileLoaded).toBe(false)
+    apiMocks.get.mockResolvedValueOnce({ username: 'current-user', permissions: ['ROLE_AUDITOR'] })
+    await auth.fetchMe()
+    expect(auth.profileLoaded).toBe(true)
+    expect(auth.userInfo?.username).toBe('current-user')
+  })
+
   describe('login tenant resolution (2026-05 角色重设计)', () => {
     it('admin login with tenantId=system → 不写 tenant store,保留 localStorage 上次值', async () => {
       // 模拟之前已选过业务租户 ta
@@ -331,6 +431,13 @@ describe('useAuthStore', () => {
 
       const auth = useAuthStore()
       const tenant = useTenantStore()
+      apiMocks.get.mockResolvedValue({
+        userId: 'op-ta',
+        username: 'op-ta',
+        role: 'OPERATOR',
+        permissions: ['ROLE_TENANT_ADMIN'],
+        capabilities: [],
+      })
       await auth.login('op-ta', 'pw')
 
       expect(tenant.tenantId).toBe('ta')

@@ -32,8 +32,12 @@ async function runAxe(page: Page, exclude: string[] = [], extraDisable: string[]
 async function gotoStable(page: Page, route: string): Promise<void> {
   await page.goto(route)
   await page.waitForLoadState('domcontentloaded')
-  // 1.5s 缓冲:dashboard SSE 心跳页 networkidle 永不达
-  await page.waitForTimeout(1500)
+  // SSE 页面不能依赖 networkidle；以实际页面主体挂载作为 axe 的起点。
+  const content = route === '/login'
+    ? page.getByRole('button', { name: /登\s*录/ }).first()
+    : page.locator('.page-header .title').first()
+  await expect(content).toBeVisible()
+  await expect(page.locator('.route-progress')).toBeHidden()
 }
 
 // @slow lane:axe 本身 ~2s/页,但 10 页 × (页加载 + 1.5s 缓冲 + 重试)在 4-worker 并发下
@@ -104,12 +108,6 @@ test.describe('@slow @cross-browser a11y baseline (C 档):P0 10 页 axe critical
 
   test('/files/templates 文件模板', async ({ page }) => {
     await gotoStable(page, '/files/templates')
-    const { blockers } = await runAxe(page)
-    expect(blockers, blockers.map((v) => v.id).join(', ')).toHaveLength(0)
-  })
-
-  test('/jobs/pipelines Pipeline 定义', async ({ page }) => {
-    await gotoStable(page, '/jobs/pipelines')
     const { blockers } = await runAxe(page)
     expect(blockers, blockers.map((v) => v.id).join(', ')).toHaveLength(0)
   })

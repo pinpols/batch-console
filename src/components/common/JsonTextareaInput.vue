@@ -3,7 +3,7 @@
     class="json-textarea-input"
     :class="{
       'json-textarea-input--dragover': dragover,
-      'json-textarea-input--loaded': !!modelValue?.toString().trim(),
+      'json-textarea-input--loaded': hasNonBlankValue(modelValue),
     }"
     @dragover.prevent="dragover = true"
     @dragenter.prevent="dragover = true"
@@ -19,7 +19,7 @@
       :spellcheck="false"
       :disabled="disabled"
       class="json-textarea-input__textarea"
-      @update:model-value="(v) => emit('update:modelValue', v)"
+      @update:model-value="(v: string) => emit('update:modelValue', v)"
     />
     <div class="json-textarea-input__bar">
       <div class="json-textarea-input__left">
@@ -47,7 +47,7 @@
           {{ t('jsonTextareaInput.validPrefix') }} · {{ parseStatus.summary }}
         </span>
         <el-button
-          v-if="modelValue?.toString().trim()"
+          v-if="hasNonBlankValue(modelValue)"
           link
           type="info"
           size="small"
@@ -132,9 +132,22 @@
 
   const defaultSeed = computed(() => (props.expect === 'array' ? '[]' : '{}'))
 
+  function hasNonBlankValue(value?: string): boolean {
+    const valueText = value?.toString()
+    const trimmedValue = valueText?.trim()
+    return Boolean(trimmedValue)
+  }
+
   function ensureDefault() {
     if (props.disabled || !props.initializeDefault) return
-    if (!props.modelValue || !props.modelValue.toString().trim()) {
+    const currentValue = props.modelValue
+    if (!currentValue) {
+      emit('update:modelValue', defaultSeed.value)
+      return
+    }
+    const currentValueText = currentValue.toString()
+    const trimmedCurrentValue = currentValueText.trim()
+    if (!trimmedCurrentValue) {
       emit('update:modelValue', defaultSeed.value)
     }
   }
@@ -148,18 +161,20 @@
     { kind: 'idle' } | { kind: 'ok'; summary: string } | { kind: 'error'; message: string }
 
   const parseStatus = computed<ParseStatus>(() => {
-    const raw = props.modelValue?.toString().trim()
+    const modelValue = props.modelValue
+    const modelValueText = modelValue?.toString()
+    const raw = modelValueText?.trim()
     if (!raw) return { kind: 'idle' }
     try {
       const parsed = JSON.parse(raw)
       if (props.expect === 'array' && !Array.isArray(parsed)) {
         return { kind: 'error', message: t('jsonTextareaInput.expectArray') }
       }
-      if (
-        props.expect === 'object' &&
-        (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed))
-      ) {
-        return { kind: 'error', message: t('jsonTextareaInput.expectObject') }
+      if (props.expect === 'object') {
+        const isJsonObject = typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed)
+        if (!isJsonObject) {
+          return { kind: 'error', message: t('jsonTextareaInput.expectObject') }
+        }
       }
       const summary = Array.isArray(parsed)
         ? t('jsonTextareaInput.summaryArray', { n: parsed.length })
@@ -177,18 +192,21 @@
   }
 
   async function loadFile(file: File) {
-    if (!/\.json$/i.test(file.name) && file.type !== 'application/json') {
+    const isJsonFile = /\.json$/i.test(file.name) || file.type === 'application/json'
+    if (!isJsonFile) {
+      const displayName = file.name || file.type || t('jsonTextareaInput.unknownFile')
       ElMessage.warning(
         t('jsonTextareaInput.onlyJsonFile', {
-          name: file.name || file.type || t('jsonTextareaInput.unknownFile'),
+          name: displayName,
         }),
       )
       return
     }
     if (file.size > props.maxBytes) {
+      const sizeLimitMegabytes = Math.round(props.maxBytes / 1024 / 1024)
       ElMessage.error(
         t('jsonTextareaInput.fileTooLarge', {
-          mb: Math.round(props.maxBytes / 1024 / 1024),
+          mb: sizeLimitMegabytes,
         }),
       )
       return

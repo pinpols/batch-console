@@ -140,23 +140,6 @@ describe('validateDag', () => {
     ).toBeTruthy()
   })
 
-  it('R7 FILE_STEP 缺 pipelineCode', () => {
-    const errs = validateDag(
-      snap(
-        [
-          { id: 's', type: 'START' },
-          { id: 'f', type: 'FILE_STEP' },
-          { id: 'e', type: 'END' },
-        ],
-        [
-          ['s', 'f'],
-          ['f', 'e'],
-        ],
-      ),
-    )
-    expect(errs.find((e) => e.nodeId === 'f' && e.field === 'pipelineCode')).toBeTruthy()
-  })
-
   it('R8 汇聚 GATEWAY joinMode 必填(空 / 非法值)', () => {
     const errs = validateDag(
       snap(
@@ -182,6 +165,92 @@ describe('validateDag', () => {
           e.nodeId === 'g' && e.field === 'joinMode' && e.messageKey.endsWith('.joinModeRequired'),
       ),
     ).toBeTruthy()
+  })
+
+  it('单入边分支允许不配置汇聚模式，但拒绝显式未知模式', () => {
+    const graph = (joinMode?: string) =>
+      snap(
+        [
+          { id: 's', type: 'START' },
+          { id: 'g', type: 'GATEWAY', attrs: joinMode ? { joinMode } : {} },
+          { id: 'a', type: 'JOB', attrs: { jobCode: 'A' } },
+          { id: 'b', type: 'JOB', attrs: { jobCode: 'B' } },
+          { id: 'e', type: 'END' },
+        ],
+        [
+          ['s', 'g'],
+          ['g', 'a'],
+          ['g', 'b'],
+          ['a', 'e'],
+          ['b', 'e'],
+        ],
+      )
+    expect(validateDag(graph()).some((e) => e.nodeId === 'g' && e.field === 'joinMode')).toBe(false)
+    expect(validateDag(graph('BAD')).some((e) => e.nodeId === 'g' && e.field === 'joinMode')).toBe(
+      true,
+    )
+  })
+
+  it('普通作业节点的显式非法汇聚配置被拒绝，缺省配置可用', () => {
+    const graph = (attrs: Record<string, unknown>) =>
+      snap(
+        [
+          { id: 's', type: 'START' },
+          { id: 'a', type: 'JOB', attrs: { jobCode: 'A' } },
+          { id: 'b', type: 'JOB', attrs: { jobCode: 'B' } },
+          { id: 'j', type: 'JOB', attrs: { jobCode: 'J', ...attrs } },
+          { id: 'e', type: 'END' },
+        ],
+        [
+          ['s', 'a'],
+          ['s', 'b'],
+          ['a', 'j'],
+          ['b', 'j'],
+          ['j', 'e'],
+        ],
+      )
+    expect(validateDag(graph({})).some((e) => e.nodeId === 'j' && e.field === 'joinMode')).toBe(
+      false,
+    )
+    expect(
+      validateDag(graph({ joinMode: 'BAD' })).some(
+        (e) => e.nodeId === 'j' && e.field === 'joinMode',
+      ),
+    ).toBe(true)
+    expect(
+      validateDag(graph({ joinMode: 'N_OF', joinThreshold: 3 })).some(
+        (e) => e.nodeId === 'j' && e.field === 'joinThreshold',
+      ),
+    ).toBe(true)
+  })
+
+  it('阈值文本格式与后端一致：普通节点仅接受整数文本，网关要求数值', () => {
+    const graph = (type: 'JOB' | 'GATEWAY', threshold: unknown) =>
+      snap(
+        [
+          { id: 's', type: 'START' },
+          { id: 'a', type: 'JOB', attrs: { jobCode: 'A' } },
+          { id: 'b', type: 'JOB', attrs: { jobCode: 'B' } },
+          { id: 'j', type, attrs: { jobCode: 'J', joinMode: 'N_OF', joinThreshold: threshold } },
+          { id: 'e', type: 'END' },
+        ],
+        [
+          ['s', 'a'],
+          ['s', 'b'],
+          ['a', 'j'],
+          ['b', 'j'],
+          ['j', 'e'],
+        ],
+      )
+    const invalid = (type: 'JOB' | 'GATEWAY', threshold: unknown) =>
+      validateDag(graph(type, threshold)).some(
+        (e) => e.nodeId === 'j' && e.field === 'joinThreshold',
+      )
+    expect(invalid('JOB', '1')).toBe(false)
+    expect(invalid('JOB', ' 1 ')).toBe(true)
+    expect(invalid('JOB', '1.0')).toBe(true)
+    expect(invalid('GATEWAY', '1')).toBe(true)
+    expect(invalid('GATEWAY', 1)).toBe(false)
   })
 
   it('R8 N_OF 阈值必须在 1 到入度之间', () => {

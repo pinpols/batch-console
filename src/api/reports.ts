@@ -27,7 +27,8 @@ export function parseFilenameFromContentDisposition(
   const m = /filename\*?=(?:UTF-8'')?["']?([^"';]+)/i.exec(header)
   if (!m?.[1]) return fallback
   try {
-    return decodeURIComponent(m[1].replace(/["']/g, ''))
+    const encodedFilename = m[1].replace(/["']/g, '')
+    return decodeURIComponent(encodedFilename)
   } catch {
     return m[1]
   }

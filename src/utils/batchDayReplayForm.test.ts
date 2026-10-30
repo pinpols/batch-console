@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest'
 import type { BatchDayReplaySubmitRequest } from '@/api/batchDayReplay'
 import {
   batchDayReplayRequestKey,
+  batchDayReplayRangeRequestKey,
   buildBatchDayReplayRequest,
+  isReplayRangePreviewCurrent,
   isReplayPreviewCurrent,
 } from './batchDayReplayForm'
 
@@ -98,5 +100,32 @@ describe('batchDayReplayRequestKey', () => {
     expect(
       isReplayPreviewCurrent({ ...request, autoApprove: true }, batchDayReplayRequestKey(request)),
     ).toBe(false)
+  })
+})
+
+describe('isReplayRangePreviewCurrent', () => {
+  const request = {
+    tenantId: 'tenant-a',
+    calendarCode: 'default',
+    fromDate: '2026-09-11',
+    throughDate: '2026-09-12',
+    scope: 'ALL_FAILED' as const,
+    resultPolicy: 'CREATE_NEW_VERSION' as const,
+    configVersionPolicy: 'USE_ORIGINAL_CONFIG' as const,
+    reason: 'late file',
+    requestedBy: 'operator',
+    autoApprove: false,
+    executionMode: 'REPLAY' as const,
+    candidateSource: 'EXISTING_INSTANCES' as const,
+  }
+
+  it('rejects a preview after the tenant, dates, or filters change', () => {
+    const previewKey = batchDayReplayRangeRequestKey(request)
+
+    expect(isReplayRangePreviewCurrent(request, previewKey)).toBe(true)
+    expect(isReplayRangePreviewCurrent({ ...request, tenantId: 'tenant-b' }, previewKey)).toBe(false)
+    expect(isReplayRangePreviewCurrent({ ...request, throughDate: '2026-09-13' }, previewKey)).toBe(false)
+    expect(isReplayRangePreviewCurrent({ ...request, reason: 'corrected' }, previewKey)).toBe(false)
+    expect(isReplayRangePreviewCurrent(request, null)).toBe(false)
   })
 })

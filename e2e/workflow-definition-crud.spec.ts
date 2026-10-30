@@ -22,7 +22,6 @@ test.describe('workflow definition CRUD', () => {
       await kw.fill('e2e-test')
       const searchBtn = page.getByRole('button', { name: '搜索' }).first()
       if (await searchBtn.count()) await searchBtn.click()
-      await page.waitForTimeout(500)
       const resetBtn = page.getByRole('button', { name: '重置' }).first()
       if (await resetBtn.count()) await resetBtn.click()
     }

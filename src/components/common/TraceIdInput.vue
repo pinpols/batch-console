@@ -61,7 +61,9 @@
   })
 
   function onInput(v: string) {
-    emit('update:modelValue', v.trim().slice(0, 128))
+    const trimmedInput = v.trim()
+    const boundedTraceId = trimmedInput.slice(0, 128)
+    emit('update:modelValue', boundedTraceId)
   }
 
   async function onPaste() {
@@ -72,14 +74,16 @@
         ElMessage.warning(t('traceIdInput.emptyClipboard'))
         return
       }
-      emit('update:modelValue', cleaned.slice(0, 128))
+      const boundedTraceId = cleaned.slice(0, 128)
+      emit('update:modelValue', boundedTraceId)
     } catch {
       ElMessage.warning(t('traceIdInput.pasteFailed'))
     }
   }
 
   function onGo() {
-    const traceId = props.modelValue.trim().slice(0, 128)
+    const trimmedTraceId = props.modelValue.trim()
+    const traceId = trimmedTraceId.slice(0, 128)
     if (!props.goTo || !traceId) return
     router.push({ path: '/observability/trace', query: { traceId } })
   }

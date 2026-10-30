@@ -56,7 +56,9 @@
     pending.add(id)
     try {
       const blob = await getAiAttachmentContent(id).catch(() => null)
-      if (!blob || disposed || !props.images.some((image) => image.id === id)) return
+      if (!blob || disposed) return
+      const imageStillPresent = props.images.some((image) => image.id === id)
+      if (!imageStillPresent) return
       urls.set(id, URL.createObjectURL(blob))
     } finally {
       pending.delete(id)

@@ -5,7 +5,7 @@
     :title="t('tenantBatchCreateDialog.title')"
     direction="rtl"
     size="640px"
-    @update:model-value="(v) => emit('update:modelValue', v)"
+    @update:model-value="(v: boolean) => emit('update:modelValue', v)"
   >
     <el-form ref="batchFormRef" :model="form" :rules="batchFormRules" label-width="88px">
       <el-form-item :label="t('tenantBatchCreateDialog.fieldTenants')" prop="tenantsText">
@@ -137,17 +137,24 @@
       {
         validator: (_r, v: string, cb) => {
           const items = parseTenants(v ?? '')
-          if (items.length === 0) return cb(new Error(t('tenantBatchCreateDialog.ruleAtLeastOne')))
-          if (items.length > 50) return cb(new Error(t('tenantBatchCreateDialog.ruleMax50')))
+          if (items.length === 0) {
+            const errorMessage = t('tenantBatchCreateDialog.ruleAtLeastOne')
+            const validationError = new Error(errorMessage)
+            return cb(validationError)
+          }
+          if (items.length > 50) {
+            const errorMessage = t('tenantBatchCreateDialog.ruleMax50')
+            const validationError = new Error(errorMessage)
+            return cb(validationError)
+          }
           for (const item of items) {
             if (!item.tenantId || !item.tenantName) {
-              return cb(
-                new Error(
-                  t('tenantBatchCreateDialog.ruleLineMissing', {
-                    row: item.tenantId || t('tenantBatchCreateDialog.ruleLineEmpty'),
-                  }),
-                ),
-              )
+              const rowLabel = item.tenantId || t('tenantBatchCreateDialog.ruleLineEmpty')
+              const validationMessage = t('tenantBatchCreateDialog.ruleLineMissing', {
+                row: rowLabel,
+              })
+              const validationError = new Error(validationMessage)
+              return cb(validationError)
             }
           }
           cb()
@@ -159,14 +166,15 @@
   }
 
   function parseTenants(text: string) {
-    return text
-      .split('\n')
-      .map((line) => line.trim())
-      .filter(Boolean)
-      .map((line) => {
-        const [tenantId = '', tenantName = '', description] = line.split(',').map((s) => s.trim())
-        return { tenantId, tenantName, description: description || undefined }
-      })
+    const lines = text.split('\n')
+    const trimmedLines = lines.map((line) => line.trim())
+    const nonEmptyLines = trimmedLines.filter(Boolean)
+    return nonEmptyLines.map((line) => {
+      const rawFields = line.split(',')
+      const trimmedFields = rawFields.map((field) => field.trim())
+      const [tenantId = '', tenantName = '', description] = trimmedFields
+      return { tenantId, tenantName, description: description || undefined }
+    })
   }
 
   // useAsyncAction:连点抗抖,完成后 300ms 内 :loading 仍 true,防止用户在 emit

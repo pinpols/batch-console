@@ -62,7 +62,8 @@ export function useProgressEta(
 
     const remaining = target - done
     const remainingMs = remaining / ratePerMs
-    return Math.max(1, Math.round(remainingMs / 1000))
+    const estimatedSeconds = Math.round(remainingMs / 1000)
+    return Math.max(1, estimatedSeconds)
   })
 
   const etaText = computed<string>(() => {

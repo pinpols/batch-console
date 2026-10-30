@@ -29,7 +29,6 @@ test.describe('trigger CRUD', () => {
     const triggerBtn = page.getByRole('button', { name: /触发|手动触发/ }).first()
     if (!(await isVisible(triggerBtn, 2000))) return
     await triggerBtn.click()
-    await page.waitForTimeout(400)
     const dialog = page.locator('.el-dialog,.el-message-box').first()
     if (await isVisible(dialog, 2000)) {
       const cancel = dialog.getByRole('button', { name: '取消' }).first()

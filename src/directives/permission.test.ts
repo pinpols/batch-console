@@ -22,7 +22,7 @@ function runMounted(value: unknown): HTMLElement {
   el.className = 'gated'
   parent.appendChild(el)
   document.body.appendChild(parent)
-  permissionDirective.mounted!(el, { value } as DirectiveBinding, null as never, null)
+  permissionDirective.mounted!(el, { value } as DirectiveBinding, null as never, null as never)
   return parent
 }
 
@@ -32,6 +32,7 @@ function survived(parent: HTMLElement): boolean {
 
 describe('v-permission directive', () => {
   beforeEach(() => {
+    vi.restoreAllMocks()
     setActivePinia(createPinia())
     document.body.innerHTML = ''
   })

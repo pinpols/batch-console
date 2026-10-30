@@ -42,7 +42,7 @@
                 :model-value="isColVisible(def.key)"
                 :disabled="def.hideable === false"
                 :title="def.hideable === false ? t('proTable.columnSettings.required') : ''"
-                @update:model-value="(v: boolean) => toggleColumn(def.key, v)"
+                @update:model-value="(v: unknown) => toggleColumn(def.key, v === true)"
               >
                 {{ def.label }}
               </el-checkbox>
@@ -63,7 +63,7 @@
     <template v-else>
       <el-table
         ref="tableRef"
-        :data="data"
+        :data="data as Record<PropertyKey, unknown>[]"
         v-loading="loading"
         :max-height="autoFillHeight ? fillMaxHeight : undefined"
         stripe
@@ -222,7 +222,9 @@
     if (!props.persistPageSize) return
     try {
       const saved = Number(localStorage.getItem(storageKey.value))
-      if (saved > 0 && saved !== props.pageSize && (props.pageSizes ?? []).includes(saved)) {
+      const savedPageSizeCanBeRestored =
+        saved > 0 && saved !== props.pageSize && (props.pageSizes ?? []).includes(saved)
+      if (savedPageSizeCanBeRestored) {
         emit('update:pageSize', saved)
       }
     } catch {
@@ -244,7 +246,9 @@
   const hiddenKeys = ref<Set<string>>(new Set())
 
   function defaultHiddenSet(): Set<string> {
-    return new Set((props.columnDefs ?? []).filter((d) => d.defaultHidden).map((d) => d.key))
+    const defaultHiddenColumns = (props.columnDefs ?? []).filter((column) => column.defaultHidden)
+    const defaultHiddenKeys = defaultHiddenColumns.map((column) => column.key)
+    return new Set(defaultHiddenKeys)
   }
 
   function loadHiddenFromStorage() {
@@ -255,12 +259,16 @@
       if (raw) {
         const saved = JSON.parse(raw) as string[]
         if (Array.isArray(saved)) {
-          const known = new Set((props.columnDefs ?? []).map((d) => d.key))
+          const knownColumnKeys = (props.columnDefs ?? []).map((column) => column.key)
+          const known = new Set(knownColumnKeys)
           // 必选列(hideable:false)永不隐藏,过滤掉脏数据
-          const required = new Set(
-            (props.columnDefs ?? []).filter((d) => d.hideable === false).map((d) => d.key),
+          const requiredColumns = (props.columnDefs ?? []).filter(
+            (column) => column.hideable === false,
           )
-          next = new Set(saved.filter((k) => known.has(k) && !required.has(k)))
+          const requiredColumnKeys = requiredColumns.map((column) => column.key)
+          const required = new Set(requiredColumnKeys)
+          const validSavedKeys = saved.filter((key) => known.has(key) && !required.has(key))
+          next = new Set(validSavedKeys)
         }
       }
     } catch {
@@ -331,7 +339,9 @@
   const resolvedErrorText = computed(() => {
     if (props.errorText?.trim()) return props.errorText.trim()
     if (props.error instanceof Error && props.error.message) {
-      return userErrorMessage(props.error, t('empty.error'))
+      const error = props.error
+      const fallbackMessage = t('empty.error')
+      return userErrorMessage(error, fallbackMessage)
     }
     return t('proTable.loadFailed')
   })

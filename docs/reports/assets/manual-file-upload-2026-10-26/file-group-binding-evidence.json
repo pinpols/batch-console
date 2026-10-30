@@ -1,0 +1,80 @@
+{
+  "date": "2026-10-26",
+  "branch": "fix/wdi-current",
+  "frontendHead": "662d254e2f8b97f93021de548815470d2291c997",
+  "backendHead": "f3d5e400d3b5bd737124b57cf0a38e685432aab2",
+  "test": {
+    "file": "e2e/manual-file-upload-real.spec.ts",
+    "browser": "Chromium",
+    "passed": 1,
+    "failed": 0,
+    "retries": 0,
+    "duration": "about 1.2 minutes",
+    "frontendPort": 5181,
+    "consolePort": 18181,
+    "orchestratorPort": 18182,
+    "anonymousAuthMe": 401
+  },
+  "upload": {
+    "presignStatus": 200,
+    "contentPutStatus": 200,
+    "contentBytes": 37,
+    "objectContentMatchesUploadedBytes": true,
+    "preConfirmationScanWindowSeconds": 35,
+    "preConfirmationWorkflowRunCount": 0,
+    "confirmArrivalStatus": 200,
+    "arrivalConfirmed": true,
+    "persistedFileSizeBytes": 37,
+    "persistedFileStatus": "RECEIVED",
+    "auditOperations": [
+      "UPLOAD_SESSION_CREATED",
+      "CONFIRM_ARRIVAL"
+    ],
+    "auditResults": "SUCCESS",
+    "workflowRunCount": 1,
+    "workflowRunStatus": "SUCCESS",
+    "downstreamWorkflowLinked": true
+  },
+  "access": {
+    "tenantAdminUploadActionVisible": true,
+    "auditorUploadActionVisible": false,
+    "auditorUploadApi": 403,
+    "tenantUserUploadActionVisible": false,
+    "tenantUserUploadApi": 403,
+    "anonymousUploadPost": 403,
+    "anonymousStatusNote": "CSRF filtering; not interpreted as authentication status"
+  },
+  "cleanup": {
+    "fileRowsRemaining": 0,
+    "fileAuditsRemaining": 0,
+    "channelsRemaining": 0,
+    "expectationsRemaining": 0,
+    "templatesRemaining": 0,
+    "workflowDefinitionsRemaining": 0,
+    "workflowNodesRemaining": 0,
+    "workflowEdgesRemaining": 0,
+    "workflowRunsRemaining": 0,
+    "workflowNodeRunsRemaining": 0,
+    "triggerRequestsRemaining": 0,
+    "jobInstancesRemaining": 0,
+    "workflowAuditsRemaining": 0,
+    "triggerOutboxEventsRemaining": 0,
+    "idempotencyAliasesRemaining": 0,
+    "workflowEventsRemaining": 0,
+    "eventDeliveriesRemaining": 0,
+    "eventRetriesRemaining": 0,
+    "terminalReceiptsRemaining": 0,
+    "terminalNotificationDeliveriesRemaining": 0,
+    "terminalWebhookDeliveriesRemaining": 0,
+    "dedupKeysRemaining": 0,
+    "roleAccountsRemaining": 0,
+    "minioObjectRemoved": true,
+    "isolatedDatabasesRemoved": true
+  },
+  "limits": [
+    "The linked Workflow is a START-to-END control graph; it does not prove IMPORT Pipeline or Worker execution.",
+    "Worker fault recovery and Pipeline stage progress remain in P01/P02 acceptance scope.",
+    "The anonymous POST returned 403 through CSRF filtering and is not used as authentication evidence."
+  ],
+  "e2eGateNote": "The 35-second scan window is applied after the backend accepts the content PUT but before its response is released to the browser. This preserves the real stored object and avoids expiring the browser's 30-second default confirmation request timeout."
+}

@@ -1,0 +1,1015 @@
+{
+  "running": {
+    "worker": {
+      "status": "ONLINE",
+      "workerGroup": "DISPATCH"
+    },
+    "runs": [
+      {
+        "id": 1,
+        "status": "RUNNING",
+        "startedAtMs": 1793001966678,
+        "finishedAtMs": null
+      }
+    ],
+    "nodes": [
+      {
+        "id": 1,
+        "runId": 1,
+        "code": "START",
+        "type": "START",
+        "status": "SUCCESS",
+        "jobInstanceId": null
+      },
+      {
+        "id": 2,
+        "runId": 1,
+        "code": "GATEWAY",
+        "type": "GATEWAY",
+        "status": "SUCCESS",
+        "jobInstanceId": null
+      },
+      {
+        "id": 3,
+        "runId": 1,
+        "code": "DELIVERY",
+        "type": "JOB",
+        "status": "READY",
+        "jobInstanceId": 2
+      }
+    ],
+    "instances": [
+      {
+        "id": 2,
+        "status": "RUNNING",
+        "expectedPartitions": 1,
+        "successPartitions": 0,
+        "failedPartitions": 0
+      }
+    ],
+    "partitions": [
+      {
+        "id": 1,
+        "jobInstanceId": 2,
+        "status": "RUNNING",
+        "workerCode": "dispatch-progress-c371541eb0b349d9"
+      }
+    ],
+    "tasks": [
+      {
+        "id": 1,
+        "jobInstanceId": 2,
+        "status": "RUNNING",
+        "workerCode": "dispatch-progress-c371541eb0b349d9"
+      }
+    ],
+    "failedTaskCodes": [],
+    "failedTasks": [],
+    "approvals": [],
+    "operations": [],
+    "commands": [],
+    "sourceObjectFileCount": 1,
+    "workerHeartbeatMs": 1793001996310.315,
+    "pipelines": [
+      {
+        "id": 1,
+        "jobInstanceId": 2,
+        "fileId": 1,
+        "status": "RUNNING",
+        "stage": "DISPATCH"
+      }
+    ],
+    "steps": [
+      {
+        "id": 1,
+        "pipelineId": 1,
+        "stage": "PREPARE",
+        "runSeq": 1,
+        "status": "SUCCESS",
+        "errorCode": null
+      },
+      {
+        "id": 2,
+        "pipelineId": 1,
+        "stage": "DISPATCH",
+        "runSeq": 1,
+        "status": "RUNNING",
+        "errorCode": null
+      }
+    ],
+    "deliveries": [
+      {
+        "id": 1,
+        "pipelineId": 1,
+        "status": "CREATED",
+        "receiptStatus": "NONE",
+        "receiptCode": null,
+        "externalRequestId": "dispatch-37e39338-1487-4263-900c-2d6c5681f899",
+        "attempt": 1,
+        "errorCode": null
+      }
+    ],
+    "deadLetters": [],
+    "resolutions": [
+      {
+        "taskId": 1,
+        "status": "RUNNING",
+        "errorCode": null,
+        "version": null,
+        "requestId": null,
+        "consumed": false
+      }
+    ]
+  },
+  "unknown": {
+    "worker": {
+      "status": "ONLINE",
+      "workerGroup": "DISPATCH"
+    },
+    "runs": [
+      {
+        "id": 1,
+        "status": "FAILED",
+        "startedAtMs": 1793001966678,
+        "finishedAtMs": 1793002043819
+      }
+    ],
+    "nodes": [
+      {
+        "id": 1,
+        "runId": 1,
+        "code": "START",
+        "type": "START",
+        "status": "SUCCESS",
+        "jobInstanceId": null
+      },
+      {
+        "id": 2,
+        "runId": 1,
+        "code": "GATEWAY",
+        "type": "GATEWAY",
+        "status": "SUCCESS",
+        "jobInstanceId": null
+      },
+      {
+        "id": 3,
+        "runId": 1,
+        "code": "DELIVERY",
+        "type": "JOB",
+        "status": "FAILED",
+        "jobInstanceId": 2
+      }
+    ],
+    "instances": [
+      {
+        "id": 2,
+        "status": "FAILED",
+        "expectedPartitions": 1,
+        "successPartitions": 0,
+        "failedPartitions": 1
+      }
+    ],
+    "partitions": [
+      {
+        "id": 1,
+        "jobInstanceId": 2,
+        "status": "FAILED",
+        "workerCode": null
+      }
+    ],
+    "tasks": [
+      {
+        "id": 1,
+        "jobInstanceId": 2,
+        "status": "FAILED",
+        "workerCode": "dispatch-progress-c371541eb0b349d9"
+      }
+    ],
+    "failedTaskCodes": [
+      "EXTERNAL_OUTCOME_UNKNOWN"
+    ],
+    "failedTasks": [
+      {
+        "code": "EXTERNAL_OUTCOME_UNKNOWN",
+        "message": "A prior worker left the dispatch record in CREATED; external delivery may have occurred."
+      }
+    ],
+    "approvals": [],
+    "operations": [],
+    "commands": [],
+    "sourceObjectFileCount": 1,
+    "workerHeartbeatMs": 1793002045404.468,
+    "pipelines": [
+      {
+        "id": 1,
+        "jobInstanceId": 2,
+        "fileId": 1,
+        "status": "FAILED",
+        "stage": "DISPATCH"
+      }
+    ],
+    "steps": [
+      {
+        "id": 1,
+        "pipelineId": 1,
+        "stage": "PREPARE",
+        "runSeq": 1,
+        "status": "SUCCESS",
+        "errorCode": null
+      },
+      {
+        "id": 2,
+        "pipelineId": 1,
+        "stage": "DISPATCH",
+        "runSeq": 1,
+        "status": "FAILED",
+        "errorCode": "PIPELINE_ATTEMPT_INTERRUPTED"
+      },
+      {
+        "id": 3,
+        "pipelineId": 1,
+        "stage": "PREPARE",
+        "runSeq": 2,
+        "status": "SUCCESS",
+        "errorCode": null
+      },
+      {
+        "id": 4,
+        "pipelineId": 1,
+        "stage": "DISPATCH",
+        "runSeq": 2,
+        "status": "FAILED",
+        "errorCode": "EXTERNAL_OUTCOME_UNKNOWN"
+      }
+    ],
+    "deliveries": [
+      {
+        "id": 1,
+        "pipelineId": 1,
+        "status": "FAILED",
+        "receiptStatus": "FAILED",
+        "receiptCode": null,
+        "externalRequestId": "dispatch-37e39338-1487-4263-900c-2d6c5681f899",
+        "attempt": 1,
+        "errorCode": "EXTERNAL_OUTCOME_UNKNOWN"
+      }
+    ],
+    "deadLetters": [
+      {
+        "id": 1,
+        "sourceId": "1",
+        "reason": "EXTERNAL_OUTCOME_UNKNOWN: A prior worker left the dispatch record in CREATED; external delivery may have occurred.",
+        "replayStatus": "NEW"
+      }
+    ],
+    "resolutions": [
+      {
+        "taskId": 1,
+        "status": "FAILED",
+        "errorCode": "EXTERNAL_OUTCOME_UNKNOWN",
+        "version": null,
+        "requestId": null,
+        "consumed": false
+      }
+    ]
+  },
+  "terminal": {
+    "worker": {
+      "status": "ONLINE",
+      "workerGroup": "DISPATCH"
+    },
+    "runs": [
+      {
+        "id": 1,
+        "status": "FAILED",
+        "startedAtMs": 1793001966678,
+        "finishedAtMs": 1793002043819
+      },
+      {
+        "id": 2,
+        "status": "SUCCESS",
+        "startedAtMs": 1793002055176,
+        "finishedAtMs": 1793002077320
+      }
+    ],
+    "nodes": [
+      {
+        "id": 1,
+        "runId": 1,
+        "code": "START",
+        "type": "START",
+        "status": "SUCCESS",
+        "jobInstanceId": null
+      },
+      {
+        "id": 2,
+        "runId": 1,
+        "code": "GATEWAY",
+        "type": "GATEWAY",
+        "status": "SUCCESS",
+        "jobInstanceId": null
+      },
+      {
+        "id": 3,
+        "runId": 1,
+        "code": "DELIVERY",
+        "type": "JOB",
+        "status": "FAILED",
+        "jobInstanceId": 2
+      },
+      {
+        "id": 4,
+        "runId": 2,
+        "code": "START",
+        "type": "START",
+        "status": "SUCCESS",
+        "jobInstanceId": null
+      },
+      {
+        "id": 5,
+        "runId": 2,
+        "code": "JOB",
+        "type": "JOB",
+        "status": "SUCCESS",
+        "jobInstanceId": 3
+      },
+      {
+        "id": 6,
+        "runId": 2,
+        "code": "END",
+        "type": "END",
+        "status": "SUCCESS",
+        "jobInstanceId": null
+      }
+    ],
+    "instances": [
+      {
+        "id": 2,
+        "status": "FAILED",
+        "expectedPartitions": 1,
+        "successPartitions": 0,
+        "failedPartitions": 1
+      },
+      {
+        "id": 3,
+        "status": "SUCCESS",
+        "expectedPartitions": 1,
+        "successPartitions": 1,
+        "failedPartitions": 0
+      }
+    ],
+    "partitions": [
+      {
+        "id": 1,
+        "jobInstanceId": 2,
+        "status": "FAILED",
+        "workerCode": null
+      },
+      {
+        "id": 2,
+        "jobInstanceId": 3,
+        "status": "SUCCESS",
+        "workerCode": null
+      }
+    ],
+    "tasks": [
+      {
+        "id": 1,
+        "jobInstanceId": 2,
+        "status": "FAILED",
+        "workerCode": "dispatch-progress-c371541eb0b349d9"
+      },
+      {
+        "id": 2,
+        "jobInstanceId": 3,
+        "status": "SUCCESS",
+        "workerCode": "dispatch-progress-c371541eb0b349d9"
+      }
+    ],
+    "failedTaskCodes": [
+      "EXTERNAL_OUTCOME_UNKNOWN"
+    ],
+    "failedTasks": [
+      {
+        "code": "EXTERNAL_OUTCOME_UNKNOWN",
+        "message": "A prior worker left the dispatch record in CREATED; external delivery may have occurred."
+      }
+    ],
+    "approvals": [
+      {
+        "number": "apr-20261026T080732Z-f19d9c26b8f44705",
+        "status": "EXECUTED",
+        "requester": "progress-admin-7cfa1308-a09c-4d7f-840b-64d913847950",
+        "approver": "progress-reader-f1fe0fda-e8fb-488c-8d05-d1b0165d5bf3",
+        "targetType": "DLQ",
+        "targetId": "1"
+      }
+    ],
+    "operations": [],
+    "commands": [
+      {
+        "status": "SUCCESS",
+        "type": "DLQ",
+        "sourceJobId": null
+      }
+    ],
+    "sourceObjectFileCount": 1,
+    "workerHeartbeatMs": 1793002079031.765,
+    "pipelines": [
+      {
+        "id": 1,
+        "jobInstanceId": 2,
+        "fileId": 1,
+        "status": "FAILED",
+        "stage": "DISPATCH"
+      },
+      {
+        "id": 3,
+        "jobInstanceId": 3,
+        "fileId": 1,
+        "status": "SUCCESS",
+        "stage": "COMPLETE"
+      }
+    ],
+    "steps": [
+      {
+        "id": 1,
+        "pipelineId": 1,
+        "stage": "PREPARE",
+        "runSeq": 1,
+        "status": "SUCCESS",
+        "errorCode": null
+      },
+      {
+        "id": 2,
+        "pipelineId": 1,
+        "stage": "DISPATCH",
+        "runSeq": 1,
+        "status": "FAILED",
+        "errorCode": "PIPELINE_ATTEMPT_INTERRUPTED"
+      },
+      {
+        "id": 3,
+        "pipelineId": 1,
+        "stage": "PREPARE",
+        "runSeq": 2,
+        "status": "SUCCESS",
+        "errorCode": null
+      },
+      {
+        "id": 4,
+        "pipelineId": 1,
+        "stage": "DISPATCH",
+        "runSeq": 2,
+        "status": "FAILED",
+        "errorCode": "EXTERNAL_OUTCOME_UNKNOWN"
+      },
+      {
+        "id": 5,
+        "pipelineId": 3,
+        "stage": "PREPARE",
+        "runSeq": 1,
+        "status": "SUCCESS",
+        "errorCode": null
+      },
+      {
+        "id": 6,
+        "pipelineId": 3,
+        "stage": "DISPATCH",
+        "runSeq": 1,
+        "status": "SUCCESS",
+        "errorCode": null
+      },
+      {
+        "id": 7,
+        "pipelineId": 3,
+        "stage": "ACK",
+        "runSeq": 1,
+        "status": "SUCCESS",
+        "errorCode": null
+      },
+      {
+        "id": 8,
+        "pipelineId": 3,
+        "stage": "COMPLETE",
+        "runSeq": 1,
+        "status": "SUCCESS",
+        "errorCode": null
+      }
+    ],
+    "deliveries": [
+      {
+        "id": 1,
+        "pipelineId": 3,
+        "status": "ACKED",
+        "receiptStatus": "SUCCESS",
+        "receiptCode": "R-dispatch-37e39338-1487-4263-900c-2d6c5681f899",
+        "externalRequestId": "dispatch-37e39338-1487-4263-900c-2d6c5681f899",
+        "attempt": 2,
+        "errorCode": null
+      }
+    ],
+    "deadLetters": [
+      {
+        "id": 1,
+        "sourceId": "1",
+        "reason": "EXTERNAL_OUTCOME_UNKNOWN: A prior worker left the dispatch record in CREATED; external delivery may have occurred.",
+        "replayStatus": "SUCCESS"
+      }
+    ],
+    "resolutions": [
+      {
+        "taskId": 1,
+        "status": "FAILED",
+        "errorCode": "EXTERNAL_OUTCOME_UNKNOWN",
+        "version": 5,
+        "requestId": 3,
+        "consumed": true
+      },
+      {
+        "taskId": 2,
+        "status": "SUCCESS",
+        "errorCode": null,
+        "version": null,
+        "requestId": null,
+        "consumed": false
+      }
+    ]
+  },
+  "partialFiles": [
+    {
+      "name": "delivery-c371541eb0b349d9.csv.tmp-850a961f-985f-485f-b408-09feda0e3d64",
+      "bytes": 1721949
+    }
+  ],
+  "transfers": [
+    {
+      "bytes": 1787485,
+      "complete": false,
+      "status": 200
+    },
+    {
+      "bytes": 8388608,
+      "complete": true,
+      "status": 200
+    }
+  ],
+  "bytes": 8388608,
+  "sha256": "40f705a9c952402cb4a6cbd6653b4c6674e59ddc57051972a84e19889163a9cb",
+  "receiptVerified": true,
+  "periodicGets": 0,
+  "evidenceReference": "local-evidence://dispatch-progress-c371541eb0b349d9/nas-final-absent",
+  "publishedFiles": [
+    {
+      "name": "delivery-c371541eb0b349d9.csv",
+      "bytes": 8388608
+    },
+    {
+      "name": "delivery-c371541eb0b349d9.csv.chk",
+      "bytes": 878
+    }
+  ],
+  "snapshots": [
+    {
+      "tenantId": "e2e-bulk-53c639b4f57e4ff2b9662c51a860a7ae",
+      "jobInstanceId": 2,
+      "jobCode": "dispatch-progress-c371541eb0b349d9",
+      "instanceStatus": "RUNNING",
+      "generatedAt": "2026-10-26T08:06:39.713615Z",
+      "startedAt": "2026-10-26T08:06:06.809375Z",
+      "finishedAt": null,
+      "expectedPartitions": 1,
+      "workflowRunId": 1,
+      "nodeCode": "DELIVERY",
+      "pipelineInstanceId": 1,
+      "pipelineStatus": "RUNNING",
+      "currentStage": "DISPATCH",
+      "systemPipelineCode": "DISPATCH",
+      "systemPipelineVersion": 1,
+      "stageGraphAvailable": true,
+      "counts": [
+        {
+          "scope": "PARTITION",
+          "status": "RUNNING",
+          "count": 1
+        },
+        {
+          "scope": "TASK",
+          "status": "RUNNING",
+          "count": 1
+        }
+      ],
+      "stages": [
+        {
+          "stageCode": "PREPARE",
+          "stageStatus": "SUCCESS",
+          "stepRunId": 1,
+          "runSeq": 1,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "DISPATCH",
+          "stageStatus": "RUNNING",
+          "stepRunId": 2,
+          "runSeq": 1,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "ACK",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "RETRY",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "COMPENSATE",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "COMPLETE",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        }
+      ]
+    },
+    {
+      "tenantId": "e2e-bulk-53c639b4f57e4ff2b9662c51a860a7ae",
+      "jobInstanceId": 2,
+      "jobCode": "dispatch-progress-c371541eb0b349d9",
+      "instanceStatus": "RUNNING",
+      "generatedAt": "2026-10-26T08:07:15.306754Z",
+      "startedAt": "2026-10-26T08:06:06.809375Z",
+      "finishedAt": null,
+      "expectedPartitions": 1,
+      "workflowRunId": 1,
+      "nodeCode": "DELIVERY",
+      "pipelineInstanceId": 1,
+      "pipelineStatus": "RUNNING",
+      "currentStage": "DISPATCH",
+      "systemPipelineCode": "DISPATCH",
+      "systemPipelineVersion": 1,
+      "stageGraphAvailable": true,
+      "counts": [
+        {
+          "scope": "PARTITION",
+          "status": "READY",
+          "count": 1
+        },
+        {
+          "scope": "TASK",
+          "status": "READY",
+          "count": 1
+        }
+      ],
+      "stages": [
+        {
+          "stageCode": "PREPARE",
+          "stageStatus": "SUCCESS",
+          "stepRunId": 1,
+          "runSeq": 1,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "DISPATCH",
+          "stageStatus": "RUNNING",
+          "stepRunId": 2,
+          "runSeq": 1,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "ACK",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "RETRY",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "COMPENSATE",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "COMPLETE",
+          "stageStatus": "PENDING",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        }
+      ]
+    },
+    {
+      "tenantId": "e2e-bulk-53c639b4f57e4ff2b9662c51a860a7ae",
+      "jobInstanceId": 2,
+      "jobCode": "dispatch-progress-c371541eb0b349d9",
+      "instanceStatus": "FAILED",
+      "generatedAt": "2026-10-26T08:07:25.446984Z",
+      "startedAt": "2026-10-26T08:06:06.809375Z",
+      "finishedAt": "2026-10-26T08:07:23.722798Z",
+      "expectedPartitions": 1,
+      "workflowRunId": 1,
+      "nodeCode": "DELIVERY",
+      "pipelineInstanceId": 1,
+      "pipelineStatus": "FAILED",
+      "currentStage": "DISPATCH",
+      "systemPipelineCode": "DISPATCH",
+      "systemPipelineVersion": 1,
+      "stageGraphAvailable": true,
+      "counts": [
+        {
+          "scope": "PARTITION",
+          "status": "FAILED",
+          "count": 1
+        },
+        {
+          "scope": "TASK",
+          "status": "FAILED",
+          "count": 1
+        }
+      ],
+      "stages": [
+        {
+          "stageCode": "PREPARE",
+          "stageStatus": "SUCCESS",
+          "stepRunId": 3,
+          "runSeq": 2,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "DISPATCH",
+          "stageStatus": "FAILED",
+          "stepRunId": 4,
+          "runSeq": 2,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": "EXTERNAL_OUTCOME_UNKNOWN"
+        },
+        {
+          "stageCode": "ACK",
+          "stageStatus": "NOT_EXECUTED",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "RETRY",
+          "stageStatus": "NOT_EXECUTED",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "COMPENSATE",
+          "stageStatus": "NOT_EXECUTED",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "COMPLETE",
+          "stageStatus": "NOT_EXECUTED",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        }
+      ]
+    },
+    {
+      "tenantId": "e2e-bulk-53c639b4f57e4ff2b9662c51a860a7ae",
+      "jobInstanceId": 3,
+      "jobCode": "dispatch-progress-c371541eb0b349d9",
+      "instanceStatus": "SUCCESS",
+      "generatedAt": "2026-10-26T08:07:59.656626Z",
+      "startedAt": "2026-10-26T08:07:35.252551Z",
+      "finishedAt": "2026-10-26T08:07:57.182023Z",
+      "expectedPartitions": 1,
+      "workflowRunId": 2,
+      "nodeCode": "JOB",
+      "pipelineInstanceId": 3,
+      "pipelineStatus": "SUCCESS",
+      "currentStage": "COMPLETE",
+      "systemPipelineCode": "DISPATCH",
+      "systemPipelineVersion": 1,
+      "stageGraphAvailable": true,
+      "counts": [
+        {
+          "scope": "PARTITION",
+          "status": "SUCCESS",
+          "count": 1
+        },
+        {
+          "scope": "TASK",
+          "status": "SUCCESS",
+          "count": 1
+        }
+      ],
+      "stages": [
+        {
+          "stageCode": "PREPARE",
+          "stageStatus": "SUCCESS",
+          "stepRunId": 5,
+          "runSeq": 1,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "DISPATCH",
+          "stageStatus": "SUCCESS",
+          "stepRunId": 6,
+          "runSeq": 1,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "ACK",
+          "stageStatus": "SUCCESS",
+          "stepRunId": 7,
+          "runSeq": 1,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "RETRY",
+          "stageStatus": "NOT_EXECUTED",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "COMPENSATE",
+          "stageStatus": "NOT_EXECUTED",
+          "stepRunId": null,
+          "runSeq": null,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        },
+        {
+          "stageCode": "COMPLETE",
+          "stageStatus": "SUCCESS",
+          "stepRunId": 8,
+          "runSeq": 1,
+          "rowsProcessed": null,
+          "lastHeartbeatAt": null,
+          "errorCode": null
+        }
+      ]
+    }
+  ],
+  "cleanup": {
+    "definitions": 0,
+    "nodes": 0,
+    "edges": 0,
+    "versions": 0,
+    "runs": 0,
+    "nodeRuns": 0,
+    "requests": 0,
+    "jobInstances": 0,
+    "terminalEvents": 0,
+    "terminalReceipts": 0,
+    "terminalDedupKeys": 0,
+    "calendars": 0,
+    "batchDays": 0,
+    "dayCursors": 0,
+    "dayAudits": 0,
+    "catchupControls": 0,
+    "catchupEvents": 0,
+    "tenants": 0,
+    "configurationRevisions": 0,
+    "operationAudits": 0,
+    "credentialAccounts": 0,
+    "dispatchPipelines": 0,
+    "dispatchSteps": 0,
+    "dispatchCheckpoints": 0,
+    "dispatchRecords": 0,
+    "dispatchSourceFiles": 0,
+    "dispatchSourceAudits": 0,
+    "dispatchChannels": 0,
+    "dispatchHealth": 0,
+    "dispatchApprovals": 0,
+    "dispatchCommands": 0,
+    "jobDefinitions": 0,
+    "instances": 0,
+    "partitions": 0,
+    "tasks": 0,
+    "stepInstances": 0,
+    "executionLogs": 0,
+    "workerReports": 0,
+    "jobEvents": 0,
+    "workerRegistry": 0,
+    "fileRowsRemaining": 0,
+    "fileAuditsRemaining": 0,
+    "channelsRemaining": 0,
+    "expectationsRemaining": 0,
+    "templatesRemaining": 0,
+    "workflowDefinitionsRemaining": 0,
+    "workflowNodesRemaining": 0,
+    "workflowEdgesRemaining": 0,
+    "workflowRunsRemaining": 0,
+    "workflowNodeRunsRemaining": 0,
+    "triggerRequestsRemaining": 0,
+    "jobInstancesRemaining": 0,
+    "workflowAuditsRemaining": 0,
+    "triggerOutboxEventsRemaining": 0,
+    "idempotencyAliasesRemaining": 0,
+    "workflowEventsRemaining": 0,
+    "eventDeliveriesRemaining": 0,
+    "eventRetriesRemaining": 0,
+    "terminalReceiptsRemaining": 0,
+    "terminalNotificationDeliveriesRemaining": 0,
+    "terminalWebhookDeliveriesRemaining": 0,
+    "dedupKeysRemaining": 0,
+    "idempotencyRows": 0,
+    "lateApprovalNotifications": 0,
+    "usageRows": 0,
+    "deadLetters": 0,
+    "finalExecutionLogs": 0,
+    "finalJobDedupKeys": 0,
+    "alertRows": 0,
+    "remainingEventDeliveries": 0,
+    "remainingEventRetries": 0,
+    "remainingEventKeys": 0,
+    "remainingEvents": 0,
+    "remainingAssets": 0,
+    "tenantTableRows": 0,
+    "nasDirectories": 0,
+    "dispatchObjects": 0
+  },
+  "validation": {
+    "status": "passed",
+    "tests": 1,
+    "retries": 0,
+    "runnerExitCode": 0,
+    "scope": "local real NAS adapter to isolated filesystem from real S3 object, unknown-outcome verification and approval recovery; no external NAS mount or SFTP acceptance",
+    "cleanupCounters": 77,
+    "permissionUnitAndApiTests": 12
+  },
+  "sourceSha256": {
+    "src/views/observability/components/DeadLettersTab.vue": "ec5352d7a55fb985fccd6654c019c66a2d93f40a85dc0b307a85f3d9a5589884",
+    "src/views/observability/components/DeadLettersTab.test.ts": "89108158a00c2ece7b29406de2e2d7c2e00c725fd3ecab000ec721442fcf2be0",
+    "e2e/dispatch-worker-pipeline-progress-real.spec.ts": "8daca24616d2ba8b4f31ef30c11d7366567431204a55093bbcecfe5d1d8bcff2",
+    "e2e/fixtures/runtime-progress/dispatchWorkerPipelineFixture.ts": "763f7f6d278aeae41451cc0162755094ab86179c982886049b4f0754ebf2c332",
+    "e2e/fixtures/runtime-progress/throttledObjectProxy.ts": "9af089abce9bcbe8e900e05656d0a5e19385d61660de397c4f4e517a68414028",
+    "e2e/fixtures/runtime-progress/sql/dispatch-worker-state.sql": "844abd72b079060d0f0f7033863cfa248f58326187a06d2e73d789e365d31cbe",
+    "e2e/fixtures/runtime-progress/sql/dispatch-worker-cleanup.sql": "1b8fe793d6068a961bb7eaa1d6ebfae0ac5dfbdc8abc80a5a68ce5115c320bf0"
+  }
+}

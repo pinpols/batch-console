@@ -1,0 +1,1764 @@
+{
+  "date": "2026-10-26",
+  "branch": "fix/wdi-current",
+  "frontendHead": "662d254e2f8b97f93021de548815470d2291c997",
+  "backendHead": "f3d5e400d3b5bd737124b57cf0a38e685432aab2",
+  "uncommittedWorktree": true,
+  "buildSha256": {
+    "orchestrator.jar": "58540ec3446a590de129127c90c53f8a5514aacefde93e14f32dba1f41b70c2c",
+    "console.jar": "2ef09e7aff81a1e97fd8ec2482376116df07c9b9ec43ba55b5e80db7284a8c41",
+    "trigger.jar": "1c159f265079cf5fe6fe9c635d72ec7b173f06688aa1297e2a39732b838b4342",
+    "worker-atomic.jar": "73c4e0efd09ca77e8364d89953fc3cc9fd29e8810d3008a0dcea3f637487db14"
+  },
+  "frontendIndexSha256": "d4172089ec8a55f26953b017ca93b40eeb3c8506c3d706b776a3eb599a488f3a",
+  "scope": "local authenticated Console/Orchestrator/Trigger, real Atomic Worker and controlled real HTTP endpoints",
+  "browserStats": {
+    "startTime": "2026-10-26T03:45:34.793Z",
+    "duration": 123564.646,
+    "expected": 2,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "cases": [
+    {
+      "mode": "parallel-all",
+      "status": "passed",
+      "retry": 0,
+      "proof": {
+        "mode": "parallel-all",
+        "persisted": {
+          "failedTaskCodes": [],
+          "failedTasks": [],
+          "runs": [
+            {
+              "id": 1,
+              "status": "SUCCESS",
+              "startedAtMs": 1792986355739,
+              "finishedAtMs": 1792986387022
+            }
+          ],
+          "nodes": [
+            {
+              "id": 1,
+              "runId": 1,
+              "code": "START",
+              "type": "START",
+              "status": "SUCCESS",
+              "jobInstanceId": null
+            },
+            {
+              "id": 2,
+              "runId": 1,
+              "code": "FORK",
+              "type": "GATEWAY",
+              "status": "SUCCESS",
+              "jobInstanceId": null
+            },
+            {
+              "id": 3,
+              "runId": 1,
+              "code": "LEFT_JOB",
+              "type": "JOB",
+              "status": "SUCCESS",
+              "jobInstanceId": 2
+            },
+            {
+              "id": 4,
+              "runId": 1,
+              "code": "RIGHT_JOB",
+              "type": "JOB",
+              "status": "SUCCESS",
+              "jobInstanceId": 3
+            },
+            {
+              "id": 5,
+              "runId": 1,
+              "code": "JOIN",
+              "type": "GATEWAY",
+              "status": "SUCCESS",
+              "jobInstanceId": null
+            },
+            {
+              "id": 6,
+              "runId": 1,
+              "code": "END",
+              "type": "END",
+              "status": "SUCCESS",
+              "jobInstanceId": null
+            }
+          ],
+          "approvals": [],
+          "operations": [],
+          "commands": []
+        },
+        "jobs": {
+          "worker": {
+            "status": "ONLINE",
+            "workerGroup": "ATOMIC"
+          },
+          "runs": [
+            {
+              "id": 1,
+              "status": "SUCCESS"
+            }
+          ],
+          "nodes": [
+            {
+              "workflowRunId": 1,
+              "nodeCode": "END",
+              "status": "SUCCESS",
+              "jobInstanceId": null
+            },
+            {
+              "workflowRunId": 1,
+              "nodeCode": "FORK",
+              "status": "SUCCESS",
+              "jobInstanceId": null
+            },
+            {
+              "workflowRunId": 1,
+              "nodeCode": "JOIN",
+              "status": "SUCCESS",
+              "jobInstanceId": null
+            },
+            {
+              "workflowRunId": 1,
+              "nodeCode": "LEFT_JOB",
+              "status": "SUCCESS",
+              "jobInstanceId": 2
+            },
+            {
+              "workflowRunId": 1,
+              "nodeCode": "RIGHT_JOB",
+              "status": "SUCCESS",
+              "jobInstanceId": 3
+            },
+            {
+              "workflowRunId": 1,
+              "nodeCode": "START",
+              "status": "SUCCESS",
+              "jobInstanceId": null
+            }
+          ],
+          "instances": [
+            {
+              "id": 2,
+              "status": "SUCCESS",
+              "expectedPartitions": 1,
+              "successPartitions": 1,
+              "failedPartitions": 0
+            },
+            {
+              "id": 3,
+              "status": "SUCCESS",
+              "expectedPartitions": 1,
+              "successPartitions": 1,
+              "failedPartitions": 0
+            }
+          ],
+          "partitions": [
+            {
+              "id": 1,
+              "jobInstanceId": 2,
+              "status": "SUCCESS",
+              "workerCode": null
+            },
+            {
+              "id": 2,
+              "jobInstanceId": 3,
+              "status": "SUCCESS",
+              "workerCode": null
+            }
+          ],
+          "tasks": [
+            {
+              "id": 1,
+              "jobInstanceId": 2,
+              "status": "SUCCESS",
+              "workerCode": "progress-atomic-160f3c4a4c354ac8a24d"
+            },
+            {
+              "id": 2,
+              "jobInstanceId": 3,
+              "status": "SUCCESS",
+              "workerCode": "progress-atomic-160f3c4a4c354ac8a24d"
+            }
+          ]
+        },
+        "snapshots": [
+          {
+            "workflowRunId": 1,
+            "workflowDefinitionId": 3,
+            "workflowVersion": 1,
+            "runStatus": "RUNNING",
+            "bizDate": "2026-11-16",
+            "startedAt": "2026-10-26T03:45:55.739707Z",
+            "finishedAt": null,
+            "snapshotAvailable": true,
+            "generatedAt": "2026-10-26T03:45:57.660991Z",
+            "nodes": [
+              {
+                "nodeCode": "START",
+                "nodeName": "START",
+                "nodeType": "START",
+                "relatedJobCode": null,
+                "nodeStatus": "SUCCESS",
+                "nodeRunId": 1,
+                "runSeq": 1,
+                "jobInstanceId": null,
+                "jobInstanceStatus": null,
+                "expectedPartitions": null,
+                "completedPartitions": null,
+                "createdTasks": 0,
+                "finishedTasks": 0,
+                "activeSteps": [],
+                "errorCode": null,
+                "skipReasonCode": null,
+                "startedAt": "2026-10-26T03:45:55.708108Z",
+                "finishedAt": "2026-10-26T03:45:55.708108Z"
+              },
+              {
+                "nodeCode": "FORK",
+                "nodeName": "FORK",
+                "nodeType": "GATEWAY",
+                "relatedJobCode": null,
+                "nodeStatus": "SUCCESS",
+                "nodeRunId": 2,
+                "runSeq": 1,
+                "jobInstanceId": null,
+                "jobInstanceStatus": null,
+                "expectedPartitions": null,
+                "completedPartitions": null,
+                "createdTasks": 0,
+                "finishedTasks": 0,
+                "activeSteps": [],
+                "errorCode": null,
+                "skipReasonCode": null,
+                "startedAt": "2026-10-26T03:45:55.789391Z",
+                "finishedAt": "2026-10-26T03:45:55.789391Z"
+              },
+              {
+                "nodeCode": "LEFT_JOB",
+                "nodeName": "LEFT_JOB",
+                "nodeType": "JOB",
+                "relatedJobCode": "progress-job-160f3c4a4c354ac8a24d-left",
+                "nodeStatus": "READY",
+                "nodeRunId": 3,
+                "runSeq": 1,
+                "jobInstanceId": 2,
+                "jobInstanceStatus": "RUNNING",
+                "expectedPartitions": 1,
+                "completedPartitions": 0,
+                "createdTasks": 1,
+                "finishedTasks": 0,
+                "activeSteps": [],
+                "errorCode": null,
+                "skipReasonCode": null,
+                "startedAt": null,
+                "finishedAt": null
+              },
+              {
+                "nodeCode": "RIGHT_JOB",
+                "nodeName": "RIGHT_JOB",
+                "nodeType": "JOB",
+                "relatedJobCode": "progress-job-160f3c4a4c354ac8a24d-right",
+                "nodeStatus": "READY",
+                "nodeRunId": 4,
+                "runSeq": 1,
+                "jobInstanceId": 3,
+                "jobInstanceStatus": "RUNNING",
+                "expectedPartitions": 1,
+                "completedPartitions": 0,
+                "createdTasks": 1,
+                "finishedTasks": 0,
+                "activeSteps": [],
+                "errorCode": null,
+                "skipReasonCode": null,
+                "startedAt": null,
+                "finishedAt": null
+              },
+              {
+                "nodeCode": "JOIN",
+                "nodeName": "JOIN",
+                "nodeType": "GATEWAY",
+                "relatedJobCode": null,
+                "nodeStatus": "PENDING",
+                "nodeRunId": null,
+                "runSeq": null,
+                "jobInstanceId": null,
+                "jobInstanceStatus": null,
+                "expectedPartitions": null,
+                "completedPartitions": null,
+                "createdTasks": 0,
+                "finishedTasks": 0,
+                "activeSteps": [],
+                "errorCode": null,
+                "skipReasonCode": null,
+                "startedAt": null,
+                "finishedAt": null
+              },
+              {
+                "nodeCode": "END",
+                "nodeName": "END",
+                "nodeType": "END",
+                "relatedJobCode": null,
+                "nodeStatus": "PENDING",
+                "nodeRunId": null,
+                "runSeq": null,
+                "jobInstanceId": null,
+                "jobInstanceStatus": null,
+                "expectedPartitions": null,
+                "completedPartitions": null,
+                "createdTasks": 0,
+                "finishedTasks": 0,
+                "activeSteps": [],
+                "errorCode": null,
+                "skipReasonCode": null,
+                "startedAt": null,
+                "finishedAt": null
+              }
+            ],
+            "edges": [
+              {
+                "fromNodeCode": "START",
+                "toNodeCode": "FORK",
+                "edgeType": "ALWAYS"
+              },
+              {
+                "fromNodeCode": "FORK",
+                "toNodeCode": "LEFT_JOB",
+                "edgeType": "ALWAYS"
+              },
+              {
+                "fromNodeCode": "FORK",
+                "toNodeCode": "RIGHT_JOB",
+                "edgeType": "ALWAYS"
+              },
+              {
+                "fromNodeCode": "LEFT_JOB",
+                "toNodeCode": "JOIN",
+                "edgeType": "SUCCESS"
+              },
+              {
+                "fromNodeCode": "RIGHT_JOB",
+                "toNodeCode": "JOIN",
+                "edgeType": "SUCCESS"
+              },
+              {
+                "fromNodeCode": "JOIN",
+                "toNodeCode": "END",
+                "edgeType": "SUCCESS"
+              }
+            ]
+          },
+          {
+            "workflowRunId": 1,
+            "workflowDefinitionId": 3,
+            "workflowVersion": 1,
+            "runStatus": "RUNNING",
+            "bizDate": "2026-11-16",
+            "startedAt": "2026-10-26T03:45:55.739707Z",
+            "finishedAt": null,
+            "snapshotAvailable": true,
+            "generatedAt": "2026-10-26T03:46:24.191412Z",
+            "nodes": [
+              {
+                "nodeCode": "START",
+                "nodeName": "START",
+                "nodeType": "START",
+                "relatedJobCode": null,
+                "nodeStatus": "SUCCESS",
+                "nodeRunId": 1,
+                "runSeq": 1,
+                "jobInstanceId": null,
+                "jobInstanceStatus": null,
+                "expectedPartitions": null,
+                "completedPartitions": null,
+                "createdTasks": 0,
+                "finishedTasks": 0,
+                "activeSteps": [],
+                "errorCode": null,
+                "skipReasonCode": null,
+                "startedAt": "2026-10-26T03:45:55.708108Z",
+                "finishedAt": "2026-10-26T03:45:55.708108Z"
+              },
+              {
+                "nodeCode": "FORK",
+                "nodeName": "FORK",
+                "nodeType": "GATEWAY",
+                "relatedJobCode": null,
+                "nodeStatus": "SUCCESS",
+                "nodeRunId": 2,
+                "runSeq": 1,
+                "jobInstanceId": null,
+                "jobInstanceStatus": null,
+                "expectedPartitions": null,
+                "completedPartitions": null,
+                "createdTasks": 0,
+                "finishedTasks": 0,
+                "activeSteps": [],
+                "errorCode": null,
+                "skipReasonCode": null,
+                "startedAt": "2026-10-26T03:45:55.789391Z",
+                "finishedAt": "2026-10-26T03:45:55.789391Z"
+              },
+              {
+                "nodeCode": "LEFT_JOB",
+                "nodeName": "LEFT_JOB",
+                "nodeType": "JOB",
+                "relatedJobCode": "progress-job-160f3c4a4c354ac8a24d-left",
+                "nodeStatus": "READY",
+                "nodeRunId": 3,
+                "runSeq": 1,
+                "jobInstanceId": 2,
+                "jobInstanceStatus": "RUNNING",
+                "expectedPartitions": 1,
+                "completedPartitions": 0,
+                "createdTasks": 1,
+                "finishedTasks": 0,
+                "activeSteps": [
+                  "LEFT_JOB"
+                ],
+                "errorCode": null,
+                "skipReasonCode": null,
+                "startedAt": null,
+                "finishedAt": null
+              },
+              {
+                "nodeCode": "RIGHT_JOB",
+                "nodeName": "RIGHT_JOB",
+                "nodeType": "JOB",
+                "relatedJobCode": "progress-job-160f3c4a4c354ac8a24d-right",
+                "nodeStatus": "READY",
+                "nodeRunId": 4,
+                "runSeq": 1,
+                "jobInstanceId": 3,
+                "jobInstanceStatus": "RUNNING",
+                "expectedPartitions": 1,
+                "completedPartitions": 0,
+                "createdTasks": 1,
+                "finishedTasks": 0,
+                "activeSteps": [
+                  "RIGHT_JOB"
+                ],
+                "errorCode": null,
+                "skipReasonCode": null,
+                "startedAt": null,
+                "finishedAt": null
+              },
+              {
+                "nodeCode": "JOIN",
+                "nodeName": "JOIN",
+                "nodeType": "GATEWAY",
+                "relatedJobCode": null,
+                "nodeStatus": "PENDING",
+                "nodeRunId": null,
+                "runSeq": null,
+                "jobInstanceId": null,
+                "jobInstanceStatus": null,
+                "expectedPartitions": null,
+                "completedPartitions": null,
+                "createdTasks": 0,
+                "finishedTasks": 0,
+                "activeSteps": [],
+                "errorCode": null,
+                "skipReasonCode": null,
+                "startedAt": null,
+                "finishedAt": null
+              },
+              {
+                "nodeCode": "END",
+                "nodeName": "END",
+                "nodeType": "END",
+                "relatedJobCode": null,
+                "nodeStatus": "PENDING",
+                "nodeRunId": null,
+                "runSeq": null,
+                "jobInstanceId": null,
+                "jobInstanceStatus": null,
+                "expectedPartitions": null,
+                "completedPartitions": null,
+                "createdTasks": 0,
+                "finishedTasks": 0,
+                "activeSteps": [],
+                "errorCode": null,
+                "skipReasonCode": null,
+                "startedAt": null,
+                "finishedAt": null
+              }
+            ],
+            "edges": [
+              {
+                "fromNodeCode": "START",
+                "toNodeCode": "FORK",
+                "edgeType": "ALWAYS"
+              },
+              {
+                "fromNodeCode": "FORK",
+                "toNodeCode": "LEFT_JOB",
+                "edgeType": "ALWAYS"
+              },
+              {
+                "fromNodeCode": "FORK",
+                "toNodeCode": "RIGHT_JOB",
+                "edgeType": "ALWAYS"
+              },
+              {
+                "fromNodeCode": "LEFT_JOB",
+                "toNodeCode": "JOIN",
+                "edgeType": "SUCCESS"
+              },
+              {
+                "fromNodeCode": "RIGHT_JOB",
+                "toNodeCode": "JOIN",
+                "edgeType": "SUCCESS"
+              },
+              {
+                "fromNodeCode": "JOIN",
+                "toNodeCode": "END",
+                "edgeType": "SUCCESS"
+              }
+            ]
+          },
+          {
+            "workflowRunId": 1,
+            "workflowDefinitionId": 3,
+            "workflowVersion": 1,
+            "runStatus": "RUNNING",
+            "bizDate": "2026-11-16",
+            "startedAt": "2026-10-26T03:45:55.739707Z",
+            "finishedAt": null,
+            "snapshotAvailable": true,
+            "generatedAt": "2026-10-26T03:46:26.206153Z",
+            "nodes": [
+              {
+                "nodeCode": "START",
+                "nodeName": "START",
+                "nodeType": "START",
+                "relatedJobCode": null,
+                "nodeStatus": "SUCCESS",
+                "nodeRunId": 1,
+                "runSeq": 1,
+                "jobInstanceId": null,
+                "jobInstanceStatus": null,
+                "expectedPartitions": null,
+                "completedPartitions": null,
+                "createdTasks": 0,
+                "finishedTasks": 0,
+                "activeSteps": [],
+                "errorCode": null,
+                "skipReasonCode": null,
+                "startedAt": "2026-10-26T03:45:55.708108Z",
+                "finishedAt": "2026-10-26T03:45:55.708108Z"
+              },
+              {
+                "nodeCode": "FORK",
+                "nodeName": "FORK",
+                "nodeType": "GATEWAY",
+                "relatedJobCode": null,
+                "nodeStatus": "SUCCESS",
+                "nodeRunId": 2,
+                "runSeq": 1,
+                "jobInstanceId": null,
+                "jobInstanceStatus": null,
+                "expectedPartitions": null,
+                "completedPartitions": null,
+                "createdTasks": 0,
+                "finishedTasks": 0,
+                "activeSteps": [],
+                "errorCode": null,
+                "skipReasonCode": null,
+                "startedAt": "2026-10-26T03:45:55.789391Z",
+                "finishedAt": "2026-10-26T03:45:55.789391Z"
+              },
+              {
+                "nodeCode": "LEFT_JOB",
+                "nodeName": "LEFT_JOB",
+                "nodeType": "JOB",
+                "relatedJobCode": "progress-job-160f3c4a4c354ac8a24d-left",
+                "nodeStatus": "SUCCESS",
+                "nodeRunId": 3,
+                "runSeq": 1,
+                "jobInstanceId": 2,
+                "jobInstanceStatus": "SUCCESS",
+                "expectedPartitions": 1,
+                "completedPartitions": 1,
+                "createdTasks": 1,
+                "finishedTasks": 1,
+                "activeSteps": [],
+                "errorCode": null,
+                "skipReasonCode": null,
+                "startedAt": null,
+                "finishedAt": "2026-10-26T03:46:24.937810Z"
+              },
+              {
+                "nodeCode": "RIGHT_JOB",
+                "nodeName": "RIGHT_JOB",
+                "nodeType": "JOB",
+                "relatedJobCode": "progress-job-160f3c4a4c354ac8a24d-right",
+                "nodeStatus": "READY",
+                "nodeRunId": 4,
+                "runSeq": 1,
+                "jobInstanceId": 3,
+                "jobInstanceStatus": "RUNNING",
+                "expectedPartitions": 1,
+                "completedPartitions": 0,
+                "createdTasks": 1,
+                "finishedTasks": 0,
+                "activeSteps": [
+                  "RIGHT_JOB"
+                ],
+                "errorCode": null,
+                "skipReasonCode": null,
+                "startedAt": null,
+                "finishedAt": null
+              },
+              {
+                "nodeCode": "JOIN",
+                "nodeName": "JOIN",
+                "nodeType": "GATEWAY",
+                "relatedJobCode": null,
+                "nodeStatus": "PENDING",
+                "nodeRunId": null,
+                "runSeq": null,
+                "jobInstanceId": null,
+                "jobInstanceStatus": null,
+                "expectedPartitions": null,
+                "completedPartitions": null,
+                "createdTasks": 0,
+                "finishedTasks": 0,
+                "activeSteps": [],
+                "errorCode": null,
+                "skipReasonCode": null,
+                "startedAt": null,
+                "finishedAt": null
+              },
+              {
+                "nodeCode": "END",
+                "nodeName": "END",
+                "nodeType": "END",
+                "relatedJobCode": null,
+                "nodeStatus": "PENDING",
+                "nodeRunId": null,
+                "runSeq": null,
+                "jobInstanceId": null,
+                "jobInstanceStatus": null,
+                "expectedPartitions": null,
+                "completedPartitions": null,
+                "createdTasks": 0,
+                "finishedTasks": 0,
+                "activeSteps": [],
+                "errorCode": null,
+                "skipReasonCode": null,
+                "startedAt": null,
+                "finishedAt": null
+              }
+            ],
+            "edges": [
+              {
+                "fromNodeCode": "START",
+                "toNodeCode": "FORK",
+                "edgeType": "ALWAYS"
+              },
+              {
+                "fromNodeCode": "FORK",
+                "toNodeCode": "LEFT_JOB",
+                "edgeType": "ALWAYS"
+              },
+              {
+                "fromNodeCode": "FORK",
+                "toNodeCode": "RIGHT_JOB",
+                "edgeType": "ALWAYS"
+              },
+              {
+                "fromNodeCode": "LEFT_JOB",
+                "toNodeCode": "JOIN",
+                "edgeType": "SUCCESS"
+              },
+              {
+                "fromNodeCode": "RIGHT_JOB",
+                "toNodeCode": "JOIN",
+                "edgeType": "SUCCESS"
+              },
+              {
+                "fromNodeCode": "JOIN",
+                "toNodeCode": "END",
+                "edgeType": "SUCCESS"
+              }
+            ]
+          },
+          {
+            "workflowRunId": 1,
+            "workflowDefinitionId": 3,
+            "workflowVersion": 1,
+            "runStatus": "SUCCESS",
+            "bizDate": "2026-11-16",
+            "startedAt": "2026-10-26T03:45:55.739707Z",
+            "finishedAt": "2026-10-26T03:46:27.022667Z",
+            "snapshotAvailable": true,
+            "generatedAt": "2026-10-26T03:46:28.223152Z",
+            "nodes": [
+              {
+                "nodeCode": "START",
+                "nodeName": "START",
+                "nodeType": "START",
+                "relatedJobCode": null,
+                "nodeStatus": "SUCCESS",
+                "nodeRunId": 1,
+                "runSeq": 1,
+                "jobInstanceId": null,
+                "jobInstanceStatus": null,
+                "expectedPartitions": null,
+                "completedPartitions": null,
+                "createdTasks": 0,
+                "finishedTasks": 0,
+                "activeSteps": [],
+                "errorCode": null,
+                "skipReasonCode": null,
+                "startedAt": "2026-10-26T03:45:55.708108Z",
+                "finishedAt": "2026-10-26T03:45:55.708108Z"
+              },
+              {
+                "nodeCode": "FORK",
+                "nodeName": "FORK",
+                "nodeType": "GATEWAY",
+                "relatedJobCode": null,
+                "nodeStatus": "SUCCESS",
+                "nodeRunId": 2,
+                "runSeq": 1,
+                "jobInstanceId": null,
+                "jobInstanceStatus": null,
+                "expectedPartitions": null,
+                "completedPartitions": null,
+                "createdTasks": 0,
+                "finishedTasks": 0,
+                "activeSteps": [],
+                "errorCode": null,
+                "skipReasonCode": null,
+                "startedAt": "2026-10-26T03:45:55.789391Z",
+                "finishedAt": "2026-10-26T03:45:55.789391Z"
+              },
+              {
+                "nodeCode": "LEFT_JOB",
+                "nodeName": "LEFT_JOB",
+                "nodeType": "JOB",
+                "relatedJobCode": "progress-job-160f3c4a4c354ac8a24d-left",
+                "nodeStatus": "SUCCESS",
+                "nodeRunId": 3,
+                "runSeq": 1,
+                "jobInstanceId": 2,
+                "jobInstanceStatus": "SUCCESS",
+                "expectedPartitions": 1,
+                "completedPartitions": 1,
+                "createdTasks": 1,
+                "finishedTasks": 1,
+                "activeSteps": [],
+                "errorCode": null,
+                "skipReasonCode": null,
+                "startedAt": null,
+                "finishedAt": "2026-10-26T03:46:24.937810Z"
+              },
+              {
+                "nodeCode": "RIGHT_JOB",
+                "nodeName": "RIGHT_JOB",
+                "nodeType": "JOB",
+                "relatedJobCode": "progress-job-160f3c4a4c354ac8a24d-right",
+                "nodeStatus": "SUCCESS",
+                "nodeRunId": 4,
+                "runSeq": 1,
+                "jobInstanceId": 3,
+                "jobInstanceStatus": "SUCCESS",
+                "expectedPartitions": 1,
+                "completedPartitions": 1,
+                "createdTasks": 1,
+                "finishedTasks": 1,
+                "activeSteps": [],
+                "errorCode": null,
+                "skipReasonCode": null,
+                "startedAt": null,
+                "finishedAt": "2026-10-26T03:46:26.945274Z"
+              },
+              {
+                "nodeCode": "JOIN",
+                "nodeName": "JOIN",
+                "nodeType": "GATEWAY",
+                "relatedJobCode": null,
+                "nodeStatus": "SUCCESS",
+                "nodeRunId": 5,
+                "runSeq": 1,
+                "jobInstanceId": null,
+                "jobInstanceStatus": null,
+                "expectedPartitions": null,
+                "completedPartitions": null,
+                "createdTasks": 0,
+                "finishedTasks": 0,
+                "activeSteps": [],
+                "errorCode": null,
+                "skipReasonCode": null,
+                "startedAt": "2026-10-26T03:46:26.993017Z",
+                "finishedAt": "2026-10-26T03:46:26.993017Z"
+              },
+              {
+                "nodeCode": "END",
+                "nodeName": "END",
+                "nodeType": "END",
+                "relatedJobCode": null,
+                "nodeStatus": "SUCCESS",
+                "nodeRunId": 6,
+                "runSeq": 1,
+                "jobInstanceId": null,
+                "jobInstanceStatus": null,
+                "expectedPartitions": null,
+                "completedPartitions": null,
+                "createdTasks": 0,
+                "finishedTasks": 0,
+                "activeSteps": [],
+                "errorCode": null,
+                "skipReasonCode": null,
+                "startedAt": "2026-10-26T03:46:26.993017Z",
+                "finishedAt": "2026-10-26T03:46:26.993017Z"
+              }
+            ],
+            "edges": [
+              {
+                "fromNodeCode": "START",
+                "toNodeCode": "FORK",
+                "edgeType": "ALWAYS"
+              },
+              {
+                "fromNodeCode": "FORK",
+                "toNodeCode": "LEFT_JOB",
+                "edgeType": "ALWAYS"
+              },
+              {
+                "fromNodeCode": "FORK",
+                "toNodeCode": "RIGHT_JOB",
+                "edgeType": "ALWAYS"
+              },
+              {
+                "fromNodeCode": "LEFT_JOB",
+                "toNodeCode": "JOIN",
+                "edgeType": "SUCCESS"
+              },
+              {
+                "fromNodeCode": "RIGHT_JOB",
+                "toNodeCode": "JOIN",
+                "edgeType": "SUCCESS"
+              },
+              {
+                "fromNodeCode": "JOIN",
+                "toNodeCode": "END",
+                "edgeType": "SUCCESS"
+              }
+            ]
+          }
+        ],
+        "httpResults": [
+          {
+            "key": "left",
+            "status": 200
+          },
+          {
+            "key": "right",
+            "status": 200
+          }
+        ],
+        "periodicGets": 0
+      },
+      "cleanup": {
+        "definitions": 0,
+        "nodes": 0,
+        "edges": 0,
+        "versions": 0,
+        "runs": 0,
+        "nodeRuns": 0,
+        "requests": 0,
+        "jobInstances": 0,
+        "terminalEvents": 0,
+        "terminalReceipts": 0,
+        "terminalDedupKeys": 0,
+        "calendars": 0,
+        "batchDays": 0,
+        "dayCursors": 0,
+        "dayAudits": 0,
+        "catchupControls": 0,
+        "catchupEvents": 0,
+        "tenants": 0,
+        "configurationRevisions": 0,
+        "operationAudits": 0,
+        "credentialAccounts": 0,
+        "jobDefinitions": 0,
+        "instances": 0,
+        "partitions": 0,
+        "tasks": 0,
+        "stepInstances": 0,
+        "executionLogs": 0,
+        "workerReports": 0,
+        "jobEvents": 0,
+        "workerRegistry": 0,
+        "replayOperations": 0,
+        "replayTokens": 0,
+        "approvals": 0,
+        "approvalNotifications": 0,
+        "compensationCommands": 0,
+        "businessTables": 0,
+        "idempotencyRows": 0,
+        "lateApprovalNotifications": 0,
+        "usageRows": 0,
+        "deadLetters": 0,
+        "finalExecutionLogs": 0,
+        "finalJobDedupKeys": 0,
+        "alertRows": 0,
+        "remainingEventDeliveries": 0,
+        "remainingEventRetries": 0,
+        "remainingEventKeys": 0,
+        "remainingEvents": 0,
+        "remainingAssets": 0,
+        "tenantTableRows": 0
+      }
+    },
+    {
+      "mode": "condition-failure",
+      "status": "passed",
+      "retry": 0,
+      "proof": {
+        "mode": "condition-failure",
+        "persisted": {
+          "failedTaskCodes": [
+            "EXECUTION_FAILED"
+          ],
+          "failedTasks": [
+            {
+              "code": "EXECUTION_FAILED",
+              "message": "status 503 not in expected [200]"
+            }
+          ],
+          "runs": [
+            {
+              "id": 2,
+              "status": "FAILED",
+              "startedAtMs": 1792986416589,
+              "finishedAtMs": 1792986448709
+            }
+          ],
+          "nodes": [
+            {
+              "id": 7,
+              "runId": 2,
+              "code": "START",
+              "type": "START",
+              "status": "SUCCESS",
+              "jobInstanceId": null
+            },
+            {
+              "id": 8,
+              "runId": 2,
+              "code": "CHOICE",
+              "type": "GATEWAY",
+              "status": "SUCCESS",
+              "jobInstanceId": null
+            },
+            {
+              "id": 9,
+              "runId": 2,
+              "code": "FAIL_JOB",
+              "type": "JOB",
+              "status": "FAILED",
+              "jobInstanceId": 4
+            },
+            {
+              "id": 10,
+              "runId": 2,
+              "code": "NOT_SELECTED",
+              "type": "GATEWAY",
+              "status": "SKIPPED",
+              "jobInstanceId": null
+            },
+            {
+              "id": 11,
+              "runId": 2,
+              "code": "HANDLER",
+              "type": "JOB",
+              "status": "SUCCESS",
+              "jobInstanceId": 5
+            },
+            {
+              "id": 12,
+              "runId": 2,
+              "code": "SUCCESS_ONLY",
+              "type": "GATEWAY",
+              "status": "SKIPPED",
+              "jobInstanceId": null
+            },
+            {
+              "id": 13,
+              "runId": 2,
+              "code": "END",
+              "type": "END",
+              "status": "SUCCESS",
+              "jobInstanceId": null
+            }
+          ],
+          "approvals": [],
+          "operations": [],
+          "commands": []
+        },
+        "jobs": {
+          "worker": {
+            "status": "ONLINE",
+            "workerGroup": "ATOMIC"
+          },
+          "runs": [
+            {
+              "id": 2,
+              "status": "FAILED"
+            }
+          ],
+          "nodes": [
+            {
+              "workflowRunId": 2,
+              "nodeCode": "CHOICE",
+              "status": "SUCCESS",
+              "jobInstanceId": null
+            },
+            {
+              "workflowRunId": 2,
+              "nodeCode": "END",
+              "status": "SUCCESS",
+              "jobInstanceId": null
+            },
+            {
+              "workflowRunId": 2,
+              "nodeCode": "FAIL_JOB",
+              "status": "FAILED",
+              "jobInstanceId": 4
+            },
+            {
+              "workflowRunId": 2,
+              "nodeCode": "HANDLER",
+              "status": "SUCCESS",
+              "jobInstanceId": 5
+            },
+            {
+              "workflowRunId": 2,
+              "nodeCode": "NOT_SELECTED",
+              "status": "SKIPPED",
+              "jobInstanceId": null
+            },
+            {
+              "workflowRunId": 2,
+              "nodeCode": "START",
+              "status": "SUCCESS",
+              "jobInstanceId": null
+            },
+            {
+              "workflowRunId": 2,
+              "nodeCode": "SUCCESS_ONLY",
+              "status": "SKIPPED",
+              "jobInstanceId": null
+            }
+          ],
+          "instances": [
+            {
+              "id": 4,
+              "status": "FAILED",
+              "expectedPartitions": 1,
+              "successPartitions": 0,
+              "failedPartitions": 1
+            },
+            {
+              "id": 5,
+              "status": "SUCCESS",
+              "expectedPartitions": 1,
+              "successPartitions": 1,
+              "failedPartitions": 0
+            }
+          ],
+          "partitions": [
+            {
+              "id": 3,
+              "jobInstanceId": 4,
+              "status": "FAILED",
+              "workerCode": null
+            },
+            {
+              "id": 4,
+              "jobInstanceId": 5,
+              "status": "SUCCESS",
+              "workerCode": null
+            }
+          ],
+          "tasks": [
+            {
+              "id": 3,
+              "jobInstanceId": 4,
+              "status": "FAILED",
+              "workerCode": "progress-atomic-750fc08db50f4acf971b"
+            },
+            {
+              "id": 4,
+              "jobInstanceId": 5,
+              "status": "SUCCESS",
+              "workerCode": "progress-atomic-750fc08db50f4acf971b"
+            }
+          ]
+        },
+        "snapshots": [
+          {
+            "workflowRunId": 2,
+            "workflowDefinitionId": 6,
+            "workflowVersion": 1,
+            "runStatus": "RUNNING",
+            "bizDate": "2026-11-16",
+            "startedAt": "2026-10-26T03:46:56.589294Z",
+            "finishedAt": null,
+            "snapshotAvailable": true,
+            "generatedAt": "2026-10-26T03:46:57.262548Z",
+            "nodes": [
+              {
+                "nodeCode": "START",
+                "nodeName": "START",
+                "nodeType": "START",
+                "relatedJobCode": null,
+                "nodeStatus": "SUCCESS",
+                "nodeRunId": 7,
+                "runSeq": 1,
+                "jobInstanceId": null,
+                "jobInstanceStatus": null,
+                "expectedPartitions": null,
+                "completedPartitions": null,
+                "createdTasks": 0,
+                "finishedTasks": 0,
+                "activeSteps": [],
+                "errorCode": null,
+                "skipReasonCode": null,
+                "startedAt": "2026-10-26T03:46:56.578753Z",
+                "finishedAt": "2026-10-26T03:46:56.578753Z"
+              },
+              {
+                "nodeCode": "CHOICE",
+                "nodeName": "CHOICE",
+                "nodeType": "GATEWAY",
+                "relatedJobCode": null,
+                "nodeStatus": "SUCCESS",
+                "nodeRunId": 8,
+                "runSeq": 1,
+                "jobInstanceId": null,
+                "jobInstanceStatus": null,
+                "expectedPartitions": null,
+                "completedPartitions": null,
+                "createdTasks": 0,
+                "finishedTasks": 0,
+                "activeSteps": [],
+                "errorCode": null,
+                "skipReasonCode": null,
+                "startedAt": "2026-10-26T03:46:56.614501Z",
+                "finishedAt": "2026-10-26T03:46:56.614501Z"
+              },
+              {
+                "nodeCode": "FAIL_JOB",
+                "nodeName": "FAIL_JOB",
+                "nodeType": "JOB",
+                "relatedJobCode": "progress-job-750fc08db50f4acf971b-failed",
+                "nodeStatus": "READY",
+                "nodeRunId": 9,
+                "runSeq": 1,
+                "jobInstanceId": 4,
+                "jobInstanceStatus": "RUNNING",
+                "expectedPartitions": 1,
+                "completedPartitions": 0,
+                "createdTasks": 1,
+                "finishedTasks": 0,
+                "activeSteps": [],
+                "errorCode": null,
+                "skipReasonCode": null,
+                "startedAt": null,
+                "finishedAt": null
+              },
+              {
+                "nodeCode": "NOT_SELECTED",
+                "nodeName": "NOT_SELECTED",
+                "nodeType": "GATEWAY",
+                "relatedJobCode": null,
+                "nodeStatus": "SKIPPED",
+                "nodeRunId": 10,
+                "runSeq": 1,
+                "jobInstanceId": null,
+                "jobInstanceStatus": null,
+                "expectedPartitions": null,
+                "completedPartitions": null,
+                "createdTasks": 0,
+                "finishedTasks": 0,
+                "activeSteps": [],
+                "errorCode": null,
+                "skipReasonCode": "CONDITION_NOT_MATCHED",
+                "startedAt": "2026-10-26T03:46:56.827650Z",
+                "finishedAt": "2026-10-26T03:46:56.827650Z"
+              },
+              {
+                "nodeCode": "HANDLER",
+                "nodeName": "HANDLER",
+                "nodeType": "JOB",
+                "relatedJobCode": "progress-job-750fc08db50f4acf971b-handler",
+                "nodeStatus": "PENDING",
+                "nodeRunId": null,
+                "runSeq": null,
+                "jobInstanceId": null,
+                "jobInstanceStatus": null,
+                "expectedPartitions": null,
+                "completedPartitions": null,
+                "createdTasks": 0,
+                "finishedTasks": 0,
+                "activeSteps": [],
+                "errorCode": null,
+                "skipReasonCode": null,
+                "startedAt": null,
+                "finishedAt": null
+              },
+              {
+                "nodeCode": "SUCCESS_ONLY",
+                "nodeName": "SUCCESS_ONLY",
+                "nodeType": "GATEWAY",
+                "relatedJobCode": null,
+                "nodeStatus": "PENDING",
+                "nodeRunId": null,
+                "runSeq": null,
+                "jobInstanceId": null,
+                "jobInstanceStatus": null,
+                "expectedPartitions": null,
+                "completedPartitions": null,
+                "createdTasks": 0,
+                "finishedTasks": 0,
+                "activeSteps": [],
+                "errorCode": null,
+                "skipReasonCode": null,
+                "startedAt": null,
+                "finishedAt": null
+              },
+              {
+                "nodeCode": "END",
+                "nodeName": "END",
+                "nodeType": "END",
+                "relatedJobCode": null,
+                "nodeStatus": "PENDING",
+                "nodeRunId": null,
+                "runSeq": null,
+                "jobInstanceId": null,
+                "jobInstanceStatus": null,
+                "expectedPartitions": null,
+                "completedPartitions": null,
+                "createdTasks": 0,
+                "finishedTasks": 0,
+                "activeSteps": [],
+                "errorCode": null,
+                "skipReasonCode": null,
+                "startedAt": null,
+                "finishedAt": null
+              }
+            ],
+            "edges": [
+              {
+                "fromNodeCode": "START",
+                "toNodeCode": "CHOICE",
+                "edgeType": "ALWAYS"
+              },
+              {
+                "fromNodeCode": "CHOICE",
+                "toNodeCode": "FAIL_JOB",
+                "edgeType": "CONDITION"
+              },
+              {
+                "fromNodeCode": "CHOICE",
+                "toNodeCode": "NOT_SELECTED",
+                "edgeType": "CONDITION"
+              },
+              {
+                "fromNodeCode": "FAIL_JOB",
+                "toNodeCode": "HANDLER",
+                "edgeType": "FAILURE"
+              },
+              {
+                "fromNodeCode": "FAIL_JOB",
+                "toNodeCode": "SUCCESS_ONLY",
+                "edgeType": "SUCCESS"
+              },
+              {
+                "fromNodeCode": "NOT_SELECTED",
+                "toNodeCode": "END",
+                "edgeType": "ALWAYS"
+              },
+              {
+                "fromNodeCode": "HANDLER",
+                "toNodeCode": "END",
+                "edgeType": "SUCCESS"
+              },
+              {
+                "fromNodeCode": "SUCCESS_ONLY",
+                "toNodeCode": "END",
+                "edgeType": "ALWAYS"
+              }
+            ]
+          },
+          {
+            "workflowRunId": 2,
+            "workflowDefinitionId": 6,
+            "workflowVersion": 1,
+            "runStatus": "RUNNING",
+            "bizDate": "2026-11-16",
+            "startedAt": "2026-10-26T03:46:56.589294Z",
+            "finishedAt": null,
+            "snapshotAvailable": true,
+            "generatedAt": "2026-10-26T03:47:27.564950Z",
+            "nodes": [
+              {
+                "nodeCode": "START",
+                "nodeName": "START",
+                "nodeType": "START",
+                "relatedJobCode": null,
+                "nodeStatus": "SUCCESS",
+                "nodeRunId": 7,
+                "runSeq": 1,
+                "jobInstanceId": null,
+                "jobInstanceStatus": null,
+                "expectedPartitions": null,
+                "completedPartitions": null,
+                "createdTasks": 0,
+                "finishedTasks": 0,
+                "activeSteps": [],
+                "errorCode": null,
+                "skipReasonCode": null,
+                "startedAt": "2026-10-26T03:46:56.578753Z",
+                "finishedAt": "2026-10-26T03:46:56.578753Z"
+              },
+              {
+                "nodeCode": "CHOICE",
+                "nodeName": "CHOICE",
+                "nodeType": "GATEWAY",
+                "relatedJobCode": null,
+                "nodeStatus": "SUCCESS",
+                "nodeRunId": 8,
+                "runSeq": 1,
+                "jobInstanceId": null,
+                "jobInstanceStatus": null,
+                "expectedPartitions": null,
+                "completedPartitions": null,
+                "createdTasks": 0,
+                "finishedTasks": 0,
+                "activeSteps": [],
+                "errorCode": null,
+                "skipReasonCode": null,
+                "startedAt": "2026-10-26T03:46:56.614501Z",
+                "finishedAt": "2026-10-26T03:46:56.614501Z"
+              },
+              {
+                "nodeCode": "FAIL_JOB",
+                "nodeName": "FAIL_JOB",
+                "nodeType": "JOB",
+                "relatedJobCode": "progress-job-750fc08db50f4acf971b-failed",
+                "nodeStatus": "FAILED",
+                "nodeRunId": 9,
+                "runSeq": 1,
+                "jobInstanceId": 4,
+                "jobInstanceStatus": "FAILED",
+                "expectedPartitions": 1,
+                "completedPartitions": 1,
+                "createdTasks": 1,
+                "finishedTasks": 1,
+                "activeSteps": [],
+                "errorCode": "EXECUTION_FAILED",
+                "skipReasonCode": null,
+                "startedAt": null,
+                "finishedAt": "2026-10-26T03:47:25.876892Z"
+              },
+              {
+                "nodeCode": "NOT_SELECTED",
+                "nodeName": "NOT_SELECTED",
+                "nodeType": "GATEWAY",
+                "relatedJobCode": null,
+                "nodeStatus": "SKIPPED",
+                "nodeRunId": 10,
+                "runSeq": 1,
+                "jobInstanceId": null,
+                "jobInstanceStatus": null,
+                "expectedPartitions": null,
+                "completedPartitions": null,
+                "createdTasks": 0,
+                "finishedTasks": 0,
+                "activeSteps": [],
+                "errorCode": null,
+                "skipReasonCode": "CONDITION_NOT_MATCHED",
+                "startedAt": "2026-10-26T03:46:56.827650Z",
+                "finishedAt": "2026-10-26T03:46:56.827650Z"
+              },
+              {
+                "nodeCode": "HANDLER",
+                "nodeName": "HANDLER",
+                "nodeType": "JOB",
+                "relatedJobCode": "progress-job-750fc08db50f4acf971b-handler",
+                "nodeStatus": "READY",
+                "nodeRunId": 11,
+                "runSeq": 1,
+                "jobInstanceId": 5,
+                "jobInstanceStatus": "RUNNING",
+                "expectedPartitions": 1,
+                "completedPartitions": 0,
+                "createdTasks": 1,
+                "finishedTasks": 0,
+                "activeSteps": [],
+                "errorCode": null,
+                "skipReasonCode": null,
+                "startedAt": null,
+                "finishedAt": null
+              },
+              {
+                "nodeCode": "SUCCESS_ONLY",
+                "nodeName": "SUCCESS_ONLY",
+                "nodeType": "GATEWAY",
+                "relatedJobCode": null,
+                "nodeStatus": "SKIPPED",
+                "nodeRunId": 12,
+                "runSeq": 1,
+                "jobInstanceId": null,
+                "jobInstanceStatus": null,
+                "expectedPartitions": null,
+                "completedPartitions": null,
+                "createdTasks": 0,
+                "finishedTasks": 0,
+                "activeSteps": [],
+                "errorCode": null,
+                "skipReasonCode": "UPSTREAM_FAILED",
+                "startedAt": "2026-10-26T03:47:26.046348Z",
+                "finishedAt": "2026-10-26T03:47:26.046348Z"
+              },
+              {
+                "nodeCode": "END",
+                "nodeName": "END",
+                "nodeType": "END",
+                "relatedJobCode": null,
+                "nodeStatus": "PENDING",
+                "nodeRunId": null,
+                "runSeq": null,
+                "jobInstanceId": null,
+                "jobInstanceStatus": null,
+                "expectedPartitions": null,
+                "completedPartitions": null,
+                "createdTasks": 0,
+                "finishedTasks": 0,
+                "activeSteps": [],
+                "errorCode": null,
+                "skipReasonCode": null,
+                "startedAt": null,
+                "finishedAt": null
+              }
+            ],
+            "edges": [
+              {
+                "fromNodeCode": "START",
+                "toNodeCode": "CHOICE",
+                "edgeType": "ALWAYS"
+              },
+              {
+                "fromNodeCode": "CHOICE",
+                "toNodeCode": "FAIL_JOB",
+                "edgeType": "CONDITION"
+              },
+              {
+                "fromNodeCode": "CHOICE",
+                "toNodeCode": "NOT_SELECTED",
+                "edgeType": "CONDITION"
+              },
+              {
+                "fromNodeCode": "FAIL_JOB",
+                "toNodeCode": "HANDLER",
+                "edgeType": "FAILURE"
+              },
+              {
+                "fromNodeCode": "FAIL_JOB",
+                "toNodeCode": "SUCCESS_ONLY",
+                "edgeType": "SUCCESS"
+              },
+              {
+                "fromNodeCode": "NOT_SELECTED",
+                "toNodeCode": "END",
+                "edgeType": "ALWAYS"
+              },
+              {
+                "fromNodeCode": "HANDLER",
+                "toNodeCode": "END",
+                "edgeType": "SUCCESS"
+              },
+              {
+                "fromNodeCode": "SUCCESS_ONLY",
+                "toNodeCode": "END",
+                "edgeType": "ALWAYS"
+              }
+            ]
+          },
+          {
+            "workflowRunId": 2,
+            "workflowDefinitionId": 6,
+            "workflowVersion": 1,
+            "runStatus": "FAILED",
+            "bizDate": "2026-11-16",
+            "startedAt": "2026-10-26T03:46:56.589294Z",
+            "finishedAt": "2026-10-26T03:47:28.709669Z",
+            "snapshotAvailable": true,
+            "generatedAt": "2026-10-26T03:47:29.589612Z",
+            "nodes": [
+              {
+                "nodeCode": "START",
+                "nodeName": "START",
+                "nodeType": "START",
+                "relatedJobCode": null,
+                "nodeStatus": "SUCCESS",
+                "nodeRunId": 7,
+                "runSeq": 1,
+                "jobInstanceId": null,
+                "jobInstanceStatus": null,
+                "expectedPartitions": null,
+                "completedPartitions": null,
+                "createdTasks": 0,
+                "finishedTasks": 0,
+                "activeSteps": [],
+                "errorCode": null,
+                "skipReasonCode": null,
+                "startedAt": "2026-10-26T03:46:56.578753Z",
+                "finishedAt": "2026-10-26T03:46:56.578753Z"
+              },
+              {
+                "nodeCode": "CHOICE",
+                "nodeName": "CHOICE",
+                "nodeType": "GATEWAY",
+                "relatedJobCode": null,
+                "nodeStatus": "SUCCESS",
+                "nodeRunId": 8,
+                "runSeq": 1,
+                "jobInstanceId": null,
+                "jobInstanceStatus": null,
+                "expectedPartitions": null,
+                "completedPartitions": null,
+                "createdTasks": 0,
+                "finishedTasks": 0,
+                "activeSteps": [],
+                "errorCode": null,
+                "skipReasonCode": null,
+                "startedAt": "2026-10-26T03:46:56.614501Z",
+                "finishedAt": "2026-10-26T03:46:56.614501Z"
+              },
+              {
+                "nodeCode": "FAIL_JOB",
+                "nodeName": "FAIL_JOB",
+                "nodeType": "JOB",
+                "relatedJobCode": "progress-job-750fc08db50f4acf971b-failed",
+                "nodeStatus": "FAILED",
+                "nodeRunId": 9,
+                "runSeq": 1,
+                "jobInstanceId": 4,
+                "jobInstanceStatus": "FAILED",
+                "expectedPartitions": 1,
+                "completedPartitions": 1,
+                "createdTasks": 1,
+                "finishedTasks": 1,
+                "activeSteps": [],
+                "errorCode": "EXECUTION_FAILED",
+                "skipReasonCode": null,
+                "startedAt": null,
+                "finishedAt": "2026-10-26T03:47:25.876892Z"
+              },
+              {
+                "nodeCode": "NOT_SELECTED",
+                "nodeName": "NOT_SELECTED",
+                "nodeType": "GATEWAY",
+                "relatedJobCode": null,
+                "nodeStatus": "SKIPPED",
+                "nodeRunId": 10,
+                "runSeq": 1,
+                "jobInstanceId": null,
+                "jobInstanceStatus": null,
+                "expectedPartitions": null,
+                "completedPartitions": null,
+                "createdTasks": 0,
+                "finishedTasks": 0,
+                "activeSteps": [],
+                "errorCode": null,
+                "skipReasonCode": "CONDITION_NOT_MATCHED",
+                "startedAt": "2026-10-26T03:46:56.827650Z",
+                "finishedAt": "2026-10-26T03:46:56.827650Z"
+              },
+              {
+                "nodeCode": "HANDLER",
+                "nodeName": "HANDLER",
+                "nodeType": "JOB",
+                "relatedJobCode": "progress-job-750fc08db50f4acf971b-handler",
+                "nodeStatus": "SUCCESS",
+                "nodeRunId": 11,
+                "runSeq": 1,
+                "jobInstanceId": 5,
+                "jobInstanceStatus": "SUCCESS",
+                "expectedPartitions": 1,
+                "completedPartitions": 1,
+                "createdTasks": 1,
+                "finishedTasks": 1,
+                "activeSteps": [],
+                "errorCode": null,
+                "skipReasonCode": null,
+                "startedAt": null,
+                "finishedAt": "2026-10-26T03:47:28.598841Z"
+              },
+              {
+                "nodeCode": "SUCCESS_ONLY",
+                "nodeName": "SUCCESS_ONLY",
+                "nodeType": "GATEWAY",
+                "relatedJobCode": null,
+                "nodeStatus": "SKIPPED",
+                "nodeRunId": 12,
+                "runSeq": 1,
+                "jobInstanceId": null,
+                "jobInstanceStatus": null,
+                "expectedPartitions": null,
+                "completedPartitions": null,
+                "createdTasks": 0,
+                "finishedTasks": 0,
+                "activeSteps": [],
+                "errorCode": null,
+                "skipReasonCode": "UPSTREAM_FAILED",
+                "startedAt": "2026-10-26T03:47:26.046348Z",
+                "finishedAt": "2026-10-26T03:47:26.046348Z"
+              },
+              {
+                "nodeCode": "END",
+                "nodeName": "END",
+                "nodeType": "END",
+                "relatedJobCode": null,
+                "nodeStatus": "SUCCESS",
+                "nodeRunId": 13,
+                "runSeq": 1,
+                "jobInstanceId": null,
+                "jobInstanceStatus": null,
+                "expectedPartitions": null,
+                "completedPartitions": null,
+                "createdTasks": 0,
+                "finishedTasks": 0,
+                "activeSteps": [],
+                "errorCode": null,
+                "skipReasonCode": null,
+                "startedAt": "2026-10-26T03:47:28.598841Z",
+                "finishedAt": "2026-10-26T03:47:28.598841Z"
+              }
+            ],
+            "edges": [
+              {
+                "fromNodeCode": "START",
+                "toNodeCode": "CHOICE",
+                "edgeType": "ALWAYS"
+              },
+              {
+                "fromNodeCode": "CHOICE",
+                "toNodeCode": "FAIL_JOB",
+                "edgeType": "CONDITION"
+              },
+              {
+                "fromNodeCode": "CHOICE",
+                "toNodeCode": "NOT_SELECTED",
+                "edgeType": "CONDITION"
+              },
+              {
+                "fromNodeCode": "FAIL_JOB",
+                "toNodeCode": "HANDLER",
+                "edgeType": "FAILURE"
+              },
+              {
+                "fromNodeCode": "FAIL_JOB",
+                "toNodeCode": "SUCCESS_ONLY",
+                "edgeType": "SUCCESS"
+              },
+              {
+                "fromNodeCode": "NOT_SELECTED",
+                "toNodeCode": "END",
+                "edgeType": "ALWAYS"
+              },
+              {
+                "fromNodeCode": "HANDLER",
+                "toNodeCode": "END",
+                "edgeType": "SUCCESS"
+              },
+              {
+                "fromNodeCode": "SUCCESS_ONLY",
+                "toNodeCode": "END",
+                "edgeType": "ALWAYS"
+              }
+            ]
+          }
+        ],
+        "httpResults": [
+          {
+            "key": "failed",
+            "status": 503
+          },
+          {
+            "key": "handler",
+            "status": 200
+          }
+        ],
+        "periodicGets": 0
+      },
+      "cleanup": {
+        "definitions": 0,
+        "nodes": 0,
+        "edges": 0,
+        "versions": 0,
+        "runs": 0,
+        "nodeRuns": 0,
+        "requests": 0,
+        "jobInstances": 0,
+        "terminalEvents": 0,
+        "terminalReceipts": 0,
+        "terminalDedupKeys": 0,
+        "calendars": 0,
+        "batchDays": 0,
+        "dayCursors": 0,
+        "dayAudits": 0,
+        "catchupControls": 0,
+        "catchupEvents": 0,
+        "tenants": 0,
+        "configurationRevisions": 0,
+        "operationAudits": 0,
+        "credentialAccounts": 0,
+        "jobDefinitions": 0,
+        "instances": 0,
+        "partitions": 0,
+        "tasks": 0,
+        "stepInstances": 0,
+        "executionLogs": 0,
+        "workerReports": 0,
+        "jobEvents": 0,
+        "workerRegistry": 0,
+        "replayOperations": 0,
+        "replayTokens": 0,
+        "approvals": 0,
+        "approvalNotifications": 0,
+        "compensationCommands": 0,
+        "businessTables": 0,
+        "idempotencyRows": 0,
+        "lateApprovalNotifications": 0,
+        "usageRows": 0,
+        "deadLetters": 0,
+        "finalExecutionLogs": 0,
+        "finalJobDedupKeys": 0,
+        "alertRows": 0,
+        "remainingEventDeliveries": 0,
+        "remainingEventRetries": 0,
+        "remainingEventKeys": 0,
+        "remainingEvents": 0,
+        "remainingAssets": 0,
+        "tenantTableRows": 0
+      }
+    }
+  ],
+  "limits": [
+    "ALL parallel business jobs and one condition/failure graph",
+    "Controlled local HTTP endpoints; not external service acceptance",
+    "No whole-Workflow replay or all Join/recovery strategies acceptance"
+  ]
+}

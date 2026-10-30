@@ -66,6 +66,7 @@
                 type="primary"
                 :icon="Save"
                 :loading="savingKey === String(row.tagKey)"
+                :disabled="!loadedIdentityMatchesQuery"
                 @click="saveRow(row)"
               >
                 {{ t('common.save') }}
@@ -76,6 +77,7 @@
                 type="danger"
                 :icon="Trash2"
                 :loading="deletingKey === String(row.tagKey)"
+                :disabled="!loadedIdentityMatchesQuery"
                 @click="confirmDeleteTag(row)"
               >
                 {{ t('tagResourceTab.btnDelete') }}
@@ -141,6 +143,8 @@
   import { useListLoadState } from '@/composables/useListLoadState'
   import DataState from '@/components/common/DataState.vue'
   import MetaSelect from '@/components/common/MetaSelect.vue'
+  import { tagResourceIdentityMatches } from './tagResourceIdentity'
+  import type { TagResourceIdentity } from './tagResourceIdentity'
 
   const tenant = useTenantStore()
   const { data: metaEnums } = useConsoleMetaEnumsQuery()
@@ -163,11 +167,23 @@
   const savingKey = ref('')
   const deletingKey = ref('')
   const tagRows = ref<Record<string, unknown>[]>([])
+  const loadedIdentity = ref<TagResourceIdentity | null>(null)
+  let loadGeneration = 0
+  const currentIdentity = (): TagResourceIdentity => ({
+    tenantId: String(tenant.tenantId),
+    resourceType: queryForm.resourceType,
+    resourceCode: queryForm.resourceCode,
+  })
+  const loadedIdentityMatchesQuery = computed(() =>
+    tagResourceIdentityMatches(loadedIdentity.value, currentIdentity()),
+  )
 
   function resetTagFilter() {
+    loadGeneration += 1
     queryForm.resourceType = ''
     queryForm.resourceCode = ''
     tagRows.value = []
+    loadedIdentity.value = null
   }
 
   const savingNew = ref(false)
@@ -179,25 +195,42 @@
       ElMessage.warning(t('tagResourceTab.needResourceTypeCode'))
       return
     }
+    const requestIdentity = currentIdentity()
+    const requestGeneration = ++loadGeneration
     await runLoadTags(async () => {
       const data = await listResourceTags(
-        tenant.tenantId,
-        queryForm.resourceType as ResourceType,
-        queryForm.resourceCode,
+        requestIdentity.tenantId,
+        requestIdentity.resourceType as ResourceType,
+        requestIdentity.resourceCode,
       )
+      const requestWasSuperseded = requestGeneration !== loadGeneration
+      if (requestWasSuperseded) return
+      const responseMatchesCurrentResource = tagResourceIdentityMatches(
+        requestIdentity,
+        currentIdentity(),
+      )
+      if (!responseMatchesCurrentResource) return
       tagRows.value = Array.isArray(data) ? (data as Record<string, unknown>[]) : []
+      loadedIdentity.value = requestIdentity
       Object.keys(editValueByKey).forEach((k) => delete editValueByKey[k])
       tagRows.value.forEach((row) => {
         const tagKey = String(row.tagKey ?? '')
         editValueByKey[tagKey] = row.tagValue ? String(row.tagValue) : ''
       })
     }).catch(() => {
-      tagRows.value = []
+      if (requestGeneration === loadGeneration) {
+        tagRows.value = []
+        loadedIdentity.value = null
+      }
     })
   }
 
-  async function upsertTag(tagKey: string, tagValue: string) {
-    if (!queryForm.resourceType || !queryForm.resourceCode.trim()) {
+  async function upsertTag(
+    tagKey: string,
+    tagValue: string,
+    identity: TagResourceIdentity = currentIdentity(),
+  ) {
+    if (!identity.resourceType || !identity.resourceCode.trim()) {
       ElMessage.warning(t('tagResourceTab.selectAbove'))
       return
     }
@@ -206,9 +239,9 @@
       return
     }
     try {
-      await upsertResourceTag(tenant.tenantId, {
-        resourceType: queryForm.resourceType as ResourceType,
-        resourceCode: queryForm.resourceCode,
+      await upsertResourceTag(identity.tenantId, {
+        resourceType: identity.resourceType as ResourceType,
+        resourceCode: identity.resourceCode,
         tagKey,
         ...(tagValue ? { tagValue } : {}),
       })
@@ -220,10 +253,14 @@
   }
 
   async function saveRow(row: Record<string, unknown>) {
+    if (!loadedIdentityMatchesQuery.value || !loadedIdentity.value) {
+      ElMessage.warning(t('tagResourceTab.selectAbove'))
+      return
+    }
     const k = String(row.tagKey ?? '')
     savingKey.value = k
     try {
-      await upsertTag(k, editValueByKey[k] ?? '')
+      await upsertTag(k, editValueByKey[k] ?? '', loadedIdentity.value)
     } finally {
       savingKey.value = ''
     }
@@ -252,21 +289,31 @@
   }
 
   async function confirmDeleteTag(row: Record<string, unknown>) {
+    if (!loadedIdentityMatchesQuery.value || !loadedIdentity.value) {
+      ElMessage.warning(t('tagResourceTab.selectAbove'))
+      return
+    }
+    const identity = { ...loadedIdentity.value }
     deletingKey.value = String(row.tagKey ?? '')
     try {
       await confirmDanger({
         verb: t('tagResourceTab.deleteVerb'),
         target: t('tagResourceTab.deleteTarget', { key: row.tagKey }),
         consequence: t('tagResourceTab.deleteConsequence', {
-          type: queryForm.resourceType,
-          code: queryForm.resourceCode,
+          type: identity.resourceType,
+          code: identity.resourceCode,
         }),
         irreversible: false,
       })
+      const identityAfterConfirmation = currentIdentity()
+      if (!tagResourceIdentityMatches(identity, identityAfterConfirmation)) {
+        ElMessage.warning(t('tagResourceTab.selectAbove'))
+        return
+      }
       await deleteResourceTag(
-        tenant.tenantId,
-        queryForm.resourceType,
-        queryForm.resourceCode,
+        identity.tenantId,
+        identity.resourceType,
+        identity.resourceCode,
         String(row.tagKey),
       )
       ElMessage.success(t('tagResourceTab.deletedToast'))
@@ -279,7 +326,9 @@
   }
 
   useTenantReload(() => {
+    loadGeneration += 1
     tagRows.value = []
+    loadedIdentity.value = null
   })
 
   defineExpose({ openNewDialog, canCreate })

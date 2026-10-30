@@ -80,6 +80,7 @@
   function jumpTrace() {
     const v = traceQuick.value.trim()
     if (!v) return
-    void router.push(`/observability/trace?traceId=${encodeURIComponent(v)}`)
+    const encodedTraceId = encodeURIComponent(v)
+    void router.push(`/observability/trace?traceId=${encodedTraceId}`)
   }
 </script>

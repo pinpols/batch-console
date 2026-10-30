@@ -44,12 +44,18 @@ export async function fetchAllPageItems<T>(
   const batch0 = (pr0.items ?? []) as T[]
   const out: T[] = [...batch0]
   const total = Number(pr0.total ?? 0)
-  if (batch0.length < pageSize || (total > 0 && out.length >= total)) {
+  const firstPageIsComplete =
+    batch0.length < pageSize || (total > 0 && out.length >= total)
+  if (firstPageIsComplete) {
     return out
   }
 
   // 根据 total 计算剩余页数，并行请求
-  const totalPages = total > 0 ? Math.min(Math.ceil(total / pageSize), maxPages) : maxPages
+  const requiredPages = total > 0 ? Math.ceil(total / pageSize) : 0
+  let totalPages = maxPages
+  if (total > 0) {
+    totalPages = Math.min(requiredPages, maxPages)
+  }
   if (totalPages > 1) {
     const remaining = Array.from({ length: totalPages - 1 }, (_, i) =>
       get<PageResponse<T>>(url, { ...baseParams, pageNo: i + 2, pageSize }),
@@ -61,18 +67,20 @@ export async function fetchAllPageItems<T>(
       if (total > 0 && out.length >= total) break
     }
   }
-  if (import.meta.env.DEV && devWarnThreshold > 0 && out.length > devWarnThreshold) {
+  const shouldWarnAboutClientSideFiltering =
+    import.meta.env.DEV && devWarnThreshold > 0 && out.length > devWarnThreshold
+  if (shouldWarnAboutClientSideFiltering) {
     console.warn(
       `[fetchAllPageItems] ${url} returned ${out.length} items — consider server-side filtering`,
     )
   }
-  const cappedByMaxPages = total > 0 && Math.ceil(total / pageSize) > maxPages
-  if (
+  const cappedByMaxPages = total > 0 && requiredPages > maxPages
+  const shouldNotifyMaxPageTruncation =
     cappedByMaxPages &&
     out.length < total &&
     typeof document !== 'undefined' &&
     !truncationNotified.has(url)
-  ) {
+  if (shouldNotifyMaxPageTruncation) {
     truncationNotified.add(url)
     ElMessage.warning({
       message: i18n.global.t('fetchAllPageItems.truncated', { shown: out.length, total }),

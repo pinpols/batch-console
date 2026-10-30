@@ -107,7 +107,7 @@
               :inactive-text="t('alertRoutingPanel.switchOff')"
               :loading="togglingId === row.id"
               :disabled="!routingRuntimeEnabled"
-              @change="toggleRouting(row)"
+              @change="toggleRouting(row as GovernanceAlertRoutingRow)"
             />
           </template>
         </el-table-column>
@@ -124,7 +124,7 @@
               size="small"
               :icon="Edit"
               :disabled="!routingRuntimeEnabled || !row?.routeCode"
-              @click="openEdit(row)"
+              @click="openEdit(row as GovernanceAlertRoutingRow)"
             >
               {{ t('alertRoutingPanel.actionEdit') }}
             </el-button>

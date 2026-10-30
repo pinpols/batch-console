@@ -94,7 +94,10 @@
         <el-table-column :label="t('configSecretsTab.colActions')" width="160" fixed="right">
           <template #default="{ row }">
             <div class="table-actions">
-              <RowActions :actions="secretRowActions(row)" :inline-limit="1" />
+              <RowActions
+                :actions="secretRowActions(row as ConsoleSecretVersionResponse)"
+                :inline-limit="1"
+              />
             </div>
           </template>
         </el-table-column>
@@ -156,7 +159,7 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, computed } from 'vue'
+  import { ref, computed, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage, ElMessageBox } from 'element-plus'
 
@@ -172,6 +175,7 @@
   import { useTenantStore } from '@/stores/tenant'
   import { useAuthStore } from '@/stores/auth'
   import { useTenantReload } from '@/composables/useTenantReload'
+  import { useTenantRequestScope } from '@/composables/useTenantRequestScope'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import TablePagerBar from '@/components/table/TablePagerBar.vue'
   import CopyableText from '@/components/common/CopyableText.vue'
@@ -200,19 +204,30 @@
   )
   const secretDetail = ref<ConsoleSecretVersionResponse | null>(null)
 
+  const listScope = useTenantRequestScope()
+  const detailScope = useTenantRequestScope()
+  const actionScope = useTenantRequestScope()
   async function loadSecrets() {
-    await runLoadSecrets(async () => {
-      secretRows.value = await listSecrets(tenant.tenantId)
-    }).catch(() => {
+    const request = listScope.begin()
+    if (!request.tenantId) return
+    await runLoadSecrets(
+      async () => {
+        const data = await listSecrets(request.tenantId)
+        if (listScope.isCurrent(request)) secretRows.value = data
+      },
+      () => listScope.isCurrent(request),
+    ).catch(() => {
+      if (!listScope.isCurrent(request)) return
       secretRows.value = []
     })
   }
 
   async function viewSecret(row: ConsoleSecretVersionResponse) {
-    secretDetail.value = (await getSecretVersion(
-      row.id,
-      tenant.tenantId,
-    )) as ConsoleSecretVersionResponse
+    const request = detailScope.begin()
+    if (!request.tenantId || (row.tenantId && row.tenantId !== request.tenantId)) return
+    const data = await getSecretVersion(row.id, request.tenantId)
+    if (!detailScope.isCurrent(request)) return
+    secretDetail.value = data as ConsoleSecretVersionResponse
     secretDetailVisible.value = true
   }
 
@@ -249,6 +264,8 @@
   }
 
   async function confirmRevoke(row: ConsoleSecretVersionResponse) {
+    const request = actionScope.begin()
+    if (!request.tenantId || (row.tenantId && row.tenantId !== request.tenantId)) return
     try {
       await confirmDanger({
         verb: t('configSecretsTab.revokeConfirmTitle'),
@@ -259,6 +276,7 @@
         consequence: t('configSecretsTab.revokeConfirmText'),
         irreversible: true,
       })
+      if (!actionScope.isCurrent(request)) return
       const { value: reason } = await ElMessageBox.prompt(
         t('configSecretsTab.revokeReasonPrompt'),
         t('configSecretsTab.revokeReasonTitle'),
@@ -274,7 +292,9 @@
           },
         },
       )
-      await revokeSecretVersion(row.id, { tenantId: tenant.tenantId, reason: reason.trim() })
+      if (!actionScope.isCurrent(request)) return
+      await revokeSecretVersion(row.id, { tenantId: request.tenantId, reason: reason.trim() })
+      if (!actionScope.isCurrent(request)) return
       ElMessage.success(t('configSecretsTab.revokeDoneToast'))
       await loadSecrets()
     } catch {
@@ -283,12 +303,15 @@
   }
 
   async function confirmRotate(row: ConsoleSecretVersionResponse) {
+    const request = actionScope.begin()
+    if (!request.tenantId || (row.tenantId && row.tenantId !== request.tenantId)) return
     try {
       await confirmDanger({
         verb: t('configSecretsTab.rotateConfirmTitle'),
         target: '',
         consequence: t('configSecretsTab.rotateConfirmText', { name: row.secretRef }),
       })
+      if (!actionScope.isCurrent(request)) return
       const { value: secretPayloadJson } = await ElMessageBox.prompt(
         t('configSecretsTab.rotatePayloadPrompt'),
         t('configSecretsTab.rotatePayloadTitle'),
@@ -307,12 +330,14 @@
           },
         },
       )
+      if (!actionScope.isCurrent(request)) return
       await rotateSecret({
-        tenantId: tenant.tenantId,
+        tenantId: request.tenantId,
         secretRef: row.secretRef,
         secretName: row.secretName,
         secretPayloadJson,
       })
+      if (!actionScope.isCurrent(request)) return
       ElMessage.success(t('configSecretsTab.rotateDoneToast'))
       await loadSecrets()
     } catch {
@@ -320,6 +345,17 @@
     }
   }
 
+  watch(
+    () => tenant.tenantId,
+    () => {
+      secretRows.value = []
+      secretDetail.value = null
+      secretDetailVisible.value = false
+      loadingSecrets.value = false
+      loadSecretsError.value = null
+    },
+    { flush: 'sync' },
+  )
   useTenantReload(() => {
     secretPage.value = 1
     void loadSecrets()

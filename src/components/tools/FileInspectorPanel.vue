@@ -73,7 +73,7 @@
   import { ref } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { SearchCode as FileSearch } from '@lucide/vue'
-  import type { UploadFile, UploadFiles, UploadRawFile } from 'element-plus'
+  import type { UploadFile, UploadRawFile, UploadUserFile } from 'element-plus'
   import { ElMessage } from 'element-plus'
   import CopyableText from '@/components/common/CopyableText.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
@@ -98,11 +98,13 @@
     if (!raw) return
     selectedFile.value = raw
     checksum.value = ''
-    const bytes = new Uint8Array(await raw.slice(0, SAMPLE_BYTES).arrayBuffer())
+    const sample = raw.slice(0, SAMPLE_BYTES)
+    const sampleBuffer = await sample.arrayBuffer()
+    const bytes = new Uint8Array(sampleBuffer)
     fileInfo.value = { name: raw.name, size: raw.size, inspection: inspectFileSample(bytes) }
   }
 
-  function replaceFile(files: File[], _uploadFiles: UploadFiles) {
+  function replaceFile(files: File[], _uploadFiles: UploadUserFile[]) {
     const raw = files[0] as UploadRawFile | undefined
     if (raw) void inspect({ name: raw.name, size: raw.size, raw } as UploadFile)
   }

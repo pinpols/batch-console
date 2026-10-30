@@ -91,7 +91,7 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, reactive, toRefs } from 'vue'
+  import { ref, reactive, toRefs, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
   const { t } = useI18n({ useScope: 'global' })
@@ -99,6 +99,7 @@
   import { selfServiceRerunRequest } from '@/api/selfServiceJobs'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
+  import { useTenantRequestScope } from '@/composables/useTenantRequestScope'
   import { useJobCodeSearch } from '@/composables/useJobCodeSearch'
   import { useInstanceNoSearch } from '@/composables/useInstanceNoSearch'
   import { useFormValidate, rules } from '@/composables/useFormValidate'
@@ -110,14 +111,18 @@
   const { jobCodeLoading, jobCodeOptions, loadDefaultJobCodes, queryJobCodes, clearOptions } =
     useJobCodeSearch()
 
-  const { jobCode: jobCodeRef, bizDate: bizDateRef } = toRefs(rerunForm)
+  const {
+    jobCode: jobCodeRef,
+    bizDate: bizDateRef,
+    targetInstanceNo: targetInstanceNoRef,
+  } = toRefs(rerunForm)
   const {
     instanceLoading,
     instanceOptions,
     loadInstances,
     queryInstances,
     clearOptions: clearInstanceOptions,
-  } = useInstanceNoSearch(jobCodeRef, bizDateRef)
+  } = useInstanceNoSearch(jobCodeRef, bizDateRef, targetInstanceNoRef)
 
   const { formRef: rerunFormRef, validate: validateRerunForm } = useFormValidate()
   const rerunFormRules: FormRules = {
@@ -133,27 +138,39 @@
     rerunFormRef.value?.clearValidate()
   }
 
+  const submitScope = useTenantRequestScope()
   async function submitRerun() {
-    if (!(await validateRerunForm())) return
+    if (rerunLoading.value || !tenant.tenantId) return
+    const request = submitScope.begin()
+    if (!(await validateRerunForm()) || !submitScope.isCurrent(request)) return
     rerunLoading.value = true
     try {
       await selfServiceRerunRequest({
-        tenantId: tenant.tenantId,
+        tenantId: request.tenantId,
         jobCode: rerunForm.jobCode,
         bizDate: rerunForm.bizDate,
         ...(rerunForm.targetInstanceNo ? { targetInstanceNo: rerunForm.targetInstanceNo } : {}),
         ...(rerunForm.reason ? { reason: rerunForm.reason } : {}),
       })
+      if (!submitScope.isCurrent(request)) return
       ElMessage.success(t('selfServiceRerunTab.submittedToast'))
       rerunForm.jobCode = ''
       rerunForm.bizDate = ''
       rerunForm.targetInstanceNo = ''
       rerunForm.reason = ''
     } finally {
-      rerunLoading.value = false
+      if (submitScope.isCurrent(request)) rerunLoading.value = false
     }
   }
 
+  watch(
+    () => tenant.tenantId,
+    () => {
+      resetRerunForm()
+      rerunLoading.value = false
+    },
+    { flush: 'sync' },
+  )
   useTenantReload(() => {
     clearOptions()
     clearInstanceOptions()

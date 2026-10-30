@@ -79,3 +79,7 @@
 - 设计变量：`src/styles/tokens-handoff.css`，规则见 `docs/engineering/design-tokens.md`
 
 如果共享组件的能力或实际目录发生变化，应先更新实现并同步修订本节引用，避免文档指向过期入口。
+
+## 审查方法与证据
+
+具体UI、交互与视觉的常见问题、反例和复核步骤由[UI审查Skill](../../.agents/skills/frontend-ui-ia-review/SKILL.md)及其[检查表](../../.agents/skills/frontend-ui-ia-review/references/common-ui-checks.md)维护。沿当前页面任务检查正常/加载/空/错/提交/权限、长数据、中英文/主题/窄屏和键盘场景，记录实际角色、视口、数据与构建身份。纯视觉建议、现行规范偏差、可用性问题和确认Bug分别陈述；历史截图或静态门禁不能证明当前页面已验收。

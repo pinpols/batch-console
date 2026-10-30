@@ -188,3 +188,7 @@ sudo nginx -t
 - [统一文档站](../engineering/unified-documentation-site.md)：文档来源变量与路径规范。
 - [Nginx auth_request 模块](https://nginx.org/en/docs/http/ngx_http_auth_request_module.html)：2xx 放行，401/403 拒绝，其它状态作为错误处理。
 - [Ubuntu Nginx 安装与配置](https://ubuntu.com/server/docs/how-to/web-services/install-nginx/)：发行版安装和 systemd 管理。
+
+### 缺失静态制品的回归
+
+裸机与容器共用同一nginx模板。验收增加一个确定不存在的assets路径，期望404且内容不是SPA入口；前端history路径仍返回入口。缺失版本/清单的分支由`npm run test:nginx-routing`在隔离临时制品中验证，生产只回读现有version.json和清单。固定名称图标及manifest保留no-cache，静态404不映射成200。

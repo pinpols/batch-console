@@ -20,7 +20,6 @@ test.describe('keyboard flow — P0 页面', () => {
   test('Dialog 打开 → ESC 关闭', async ({ page }) => {
     await page.goto('/governance/queues')
     await page.getByRole('button', { name: '新建队列' }).click()
-    await page.waitForTimeout(400)
     const dialog = page.locator('.el-dialog:visible, .el-drawer:visible').first()
     await expect(dialog).toBeVisible({ timeout: 8000 })
     await page.keyboard.press('Escape')
@@ -30,7 +29,6 @@ test.describe('keyboard flow — P0 页面', () => {
   test('Dialog 打开后 Tab 焦点应在 Dialog 内部(不溢出)', async ({ page }) => {
     await page.goto('/governance/queues')
     await page.getByRole('button', { name: '新建队列' }).click()
-    await page.waitForTimeout(400)
     const dialog = page.locator('.el-dialog:visible, .el-drawer:visible').first()
     await expect(dialog).toBeVisible({ timeout: 8000 })
     const focusScope = page.locator('.el-overlay-dialog:visible, .el-drawer:visible').first()
@@ -51,7 +49,7 @@ test.describe('keyboard flow — P0 页面', () => {
 
   test('命令面板 ⌘K / Ctrl+K 打开与关闭', async ({ page }) => {
     await page.goto('/ops/summary')
-    await page.waitForTimeout(500)
+    await expect(page.locator('.layout-shell-lock, .layout-default').first()).toBeVisible()
     await page.locator('body').click()
     const palette = page.getByPlaceholder(/搜索页面/).first()
     await page.keyboard.press('Meta+K')
@@ -88,7 +86,7 @@ test.describe('aria-label 兜底验证 — 关键 icon-only 操作有可达名',
   test('表格行 Edit/Delete icon button 应通过 tooltip 提供 aria 信息', async ({ page }) => {
     await enterDemoApp(page)
     await page.goto('/governance/queues')
-    await page.waitForTimeout(800)
+    await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached()
     // 找 .table-actions 内的 circle button,确认每个 button 至少有 tooltip 或 aria-label
     const rowBtns = page.locator('.table-actions .el-button.is-circle')
     const count = await rowBtns.count()

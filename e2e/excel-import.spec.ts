@@ -11,7 +11,7 @@ import { seedStorageForConfiguredOrigin } from './support/storage'
  * fixture 来源：
  *  - export 文件由 global-setup 运行时从后端导出至前端 test-excel-abc/（gitignore）
  *  - seed (ta) 文件权威副本在后端仓库，前端仅引用避免双份漂移：
- *      ../file-batch-system/docs/test-data/test-full-coverage-import-suite/
+ *      ../file-batch-system/test-data/tenant-config-packages/
  *
  * 任一 fixture 文件不存在（后端离线 / global-setup 未跑）时，上传链路测试
  * 会被跳过，其余 UI 测试正常运行。
@@ -19,7 +19,7 @@ import { seedStorageForConfiguredOrigin } from './support/storage'
 
 const SEED_SUITE_DIR = path.resolve(
   __dirname,
-  '../../file-batch-system/docs/test-data/test-full-coverage-import-suite',
+  '../../file-batch-system/test-data/tenant-config-packages',
 )
 
 const FIXTURES = {

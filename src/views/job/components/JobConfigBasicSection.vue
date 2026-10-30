@@ -149,8 +149,12 @@
   import type { ConsoleJobDefinitionResponse } from '@/types/console-api'
   import { fmtDatetime } from '@/utils/datetime'
 
+  type JobConfigSnapshot = Omit<Partial<ConsoleJobDefinitionResponse>, 'triggerMode'> & {
+    triggerMode?: string
+  }
+
   const props = defineProps<{
-    job: ConsoleJobDefinitionResponse
+    job: JobConfigSnapshot
     /** 已解析的 executionMode 显示文案;父组件用 meta enum 算好传入,组件本身不依赖 enum 服务 */
     executionModeLabel?: string
     /** 详情页只展示身份与审计字段，避免与调度、资源和触发 Tab 重复。 */

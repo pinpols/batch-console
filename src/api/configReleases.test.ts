@@ -9,7 +9,7 @@ vi.mock('./client', () => ({
 
 describe('configuration secret API', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
+    vi.resetAllMocks()
   })
 
   it('revokes the exact secret version with tenant and audit reason', async () => {

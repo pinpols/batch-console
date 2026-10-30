@@ -1,0 +1,233 @@
+{
+  "date": "2026-10-26",
+  "scope": "local isolated real object / IMPORT Worker / process recovery / authenticated Chromium",
+  "branch": "fix/wdi-current",
+  "frontendHead": "662d254e2f8b97f93021de548815470d2291c997",
+  "backendHead": "f3d5e400d3b5bd737124b57cf0a38e685432aab2",
+  "uncommittedWorktree": true,
+  "browserStats": {
+    "startTime": "2026-10-26T01:59:13.953Z",
+    "duration": 164326.39899999998,
+    "expected": 1,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "browserErrors": [],
+  "progress": {
+    "source": "real uploaded MinIO object and real IMPORT Worker",
+    "inputRows": 600,
+    "sourceObjectBytes": 7108,
+    "beforeCrashRows": 50,
+    "finalBusinessRows": 600,
+    "distinctBusinessRows": 600,
+    "pipelineCount": 1,
+    "sourceObjectFileRecords": 1,
+    "stages": [
+      {
+        "stage": "RECEIVE",
+        "runSeq": 1,
+        "status": "SUCCESS",
+        "errorCode": null
+      },
+      {
+        "stage": "PREPROCESS",
+        "runSeq": 1,
+        "status": "SUCCESS",
+        "errorCode": null
+      },
+      {
+        "stage": "PARSE",
+        "runSeq": 1,
+        "status": "SUCCESS",
+        "errorCode": null
+      },
+      {
+        "stage": "VALIDATE",
+        "runSeq": 1,
+        "status": "SUCCESS",
+        "errorCode": null
+      },
+      {
+        "stage": "LOAD",
+        "runSeq": 1,
+        "status": "FAILED",
+        "errorCode": "PIPELINE_ATTEMPT_INTERRUPTED"
+      },
+      {
+        "stage": "RECEIVE",
+        "runSeq": 2,
+        "status": "SUCCESS",
+        "errorCode": null
+      },
+      {
+        "stage": "PREPROCESS",
+        "runSeq": 2,
+        "status": "SUCCESS",
+        "errorCode": null
+      },
+      {
+        "stage": "PARSE",
+        "runSeq": 2,
+        "status": "SUCCESS",
+        "errorCode": null
+      },
+      {
+        "stage": "VALIDATE",
+        "runSeq": 2,
+        "status": "SUCCESS",
+        "errorCode": null
+      },
+      {
+        "stage": "LOAD",
+        "runSeq": 2,
+        "status": "SUCCESS",
+        "errorCode": null
+      },
+      {
+        "stage": "FEEDBACK",
+        "runSeq": 1,
+        "status": "SUCCESS",
+        "errorCode": null
+      }
+    ],
+    "workflowNodeStates": [
+      {
+        "nodeCode": "END",
+        "status": "SUCCESS"
+      },
+      {
+        "nodeCode": "GATEWAY",
+        "status": "SUCCESS"
+      },
+      {
+        "nodeCode": "IMPORT_JOB",
+        "status": "SUCCESS"
+      },
+      {
+        "nodeCode": "START",
+        "status": "SUCCESS"
+      }
+    ],
+    "checkpoint": [
+      {
+        "stage": "LOAD",
+        "processedCount": 600,
+        "completed": true
+      }
+    ],
+    "periodicGets": 0,
+    "observedJobPushes": 2,
+    "observedPipelinePushes": 24
+  },
+  "cleanup": {
+    "definitions": 0,
+    "nodes": 0,
+    "edges": 0,
+    "versions": 0,
+    "runs": 0,
+    "nodeRuns": 0,
+    "requests": 0,
+    "jobInstances": 0,
+    "terminalEvents": 0,
+    "terminalReceipts": 0,
+    "terminalDedupKeys": 0,
+    "calendars": 0,
+    "batchDays": 0,
+    "dayCursors": 0,
+    "dayAudits": 0,
+    "catchupControls": 0,
+    "catchupEvents": 0,
+    "tenants": 0,
+    "configurationRevisions": 0,
+    "operationAudits": 0,
+    "credentialAccounts": 0,
+    "importPipelines": 0,
+    "importSteps": 0,
+    "importCheckpoints": 0,
+    "businessTables": 0,
+    "pauseFunctions": 0,
+    "jobDefinitions": 0,
+    "instances": 0,
+    "partitions": 0,
+    "tasks": 0,
+    "stepInstances": 0,
+    "executionLogs": 0,
+    "workerReports": 0,
+    "jobEvents": 0,
+    "workerRegistry": 0,
+    "fileRowsRemaining": 0,
+    "fileAuditsRemaining": 0,
+    "channelsRemaining": 0,
+    "expectationsRemaining": 0,
+    "templatesRemaining": 0,
+    "workflowDefinitionsRemaining": 0,
+    "workflowNodesRemaining": 0,
+    "workflowEdgesRemaining": 0,
+    "workflowRunsRemaining": 0,
+    "workflowNodeRunsRemaining": 0,
+    "triggerRequestsRemaining": 0,
+    "jobInstancesRemaining": 0,
+    "workflowAuditsRemaining": 0,
+    "triggerOutboxEventsRemaining": 0,
+    "idempotencyAliasesRemaining": 0,
+    "workflowEventsRemaining": 0,
+    "eventDeliveriesRemaining": 0,
+    "eventRetriesRemaining": 0,
+    "terminalReceiptsRemaining": 0,
+    "terminalNotificationDeliveriesRemaining": 0,
+    "terminalWebhookDeliveriesRemaining": 0,
+    "dedupKeysRemaining": 0
+  },
+  "targetedJavaSuites": [
+    {
+      "class": "JobInstanceTerminalChildStateReconcilerTest",
+      "tests": 10,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "class": "TerminalPipelineStepReconcileIntegrationTest",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "class": "PlatformFileRuntimeMapperStageSkipIntegrationTest",
+      "tests": 14,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "class": "FileGovernanceOrphanUploadSessionCleanupTest",
+      "tests": 8,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "class": "FileGovernanceIntegrationTest",
+      "tests": 10,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  ],
+  "artifactsSha256": {
+    "build/runtime-jars/orchestrator.jar": "58540ec3446a590de129127c90c53f8a5514aacefde93e14f32dba1f41b70c2c",
+    "build/runtime-jars/worker-import.jar": "08248d83f1f74264c1665d3f458c8fee586ca36dd4b61dfbf253fc397bf05e90",
+    "build/runtime-jars/console.jar": "062fa7f13c87966101aaef513682176cd7fc087a4f2c024fdc21275e58cb4a3b",
+    "build/runtime-jars/trigger.jar": "1c159f265079cf5fe6fe9c635d72ec7b173f06688aa1297e2a39732b838b4342"
+  },
+  "frontendIndexSha256": "42e7c4fc810e8c2d7f9f8052ff5b185430c2d0af66e15738edbc1d48bb260817",
+  "failedDatabasesRemoved": 3,
+  "limits": [
+    "single file and partition",
+    "worker process recovery is not explicit failed Workflow node replay",
+    "local validation is not release acceptance"
+  ],
+  "runningLoadRenderedAtLeast25": true
+}

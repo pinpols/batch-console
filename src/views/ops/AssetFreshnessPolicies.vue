@@ -30,7 +30,7 @@
           />
         </el-form-item>
         <el-form-item :label="t('assetFreshness.enabled')">
-          <EnabledStatusFilter v-model="query.enabled" :aria-label="t('assetFreshness.enabled')" />
+          <EnabledStatusFilter v-model="query.enabled" :ariaLabel="t('assetFreshness.enabled')" />
         </el-form-item>
       </ListPageQueryBar>
     </div>
@@ -80,7 +80,7 @@
               :model-value="!!row.enabled"
               :loading="togglingId === row.id"
               :disabled="writesFrozen"
-              @change="(value) => toggle(row, Boolean(value))"
+              @change="(value: unknown) => toggle(row as AssetFreshnessPolicy, Boolean(value))"
             />
           </template>
         </el-table-column>
@@ -92,7 +92,7 @@
                 text
                 type="primary"
                 :disabled="writesFrozen"
-                @click="openEdit(row)"
+                @click="openEdit(row as AssetFreshnessPolicy)"
               />
             </el-tooltip>
           </template>
@@ -154,7 +154,10 @@
           </el-select>
         </el-form-item>
         <el-form-item :label="t('assetFreshness.enabled')">
-          <el-switch v-model="form.enabled" />
+          <el-switch
+            :model-value="form.enabled ?? false"
+            @update:model-value="(value: unknown) => (form.enabled = value === true)"
+          />
         </el-form-item>
       </el-form>
       <template #footer>

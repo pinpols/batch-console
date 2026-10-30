@@ -1,0 +1,41 @@
+export default {
+  title: 'Atomic 实际运行门控',
+  scope:
+    '只读展示当前反向通道所连接的单个 Worker 实际配置，不是集群汇总，也不使用下方参数目录的静态默认值。',
+  readAt: '最近成功查询时间：',
+  worker: 'Worker：{code} · 类型：{type}',
+  executor: '执行器',
+  enabled: '实际开关',
+  gates: '实际安全门控',
+  on: '已开启',
+  off: '已关闭',
+  unknown: '未知',
+  notApplicable: '不适用',
+  loadError: '实际运行配置读取失败，请重试。',
+  executors: {
+    shell: 'Shell',
+    sql: 'SQL',
+    http: 'HTTP',
+    storedProc: '存储过程',
+  },
+  fields: {
+    commandWhitelistSize: '允许命令数',
+    dialect: '数据库方言',
+    enforceAllowlist: '强制出口白名单',
+    enforceAllowlistSource: '白名单策略来源',
+    allowlistHostsSize: '允许主机规则数',
+    allowedSchemasSize: '允许 Schema 数',
+  },
+  sources: {
+    explicit: '显式配置',
+    'prod-default': '生产环境默认',
+    'dev-default': '开发环境默认',
+    absent: '未装配',
+  },
+  unavailable: {
+    disabled: '尚未启用 Atomic Worker 反向查询通道，实际门控状态不可用。',
+    unreachable: '无法连接 Atomic Worker，实际门控状态不可用。',
+    empty: 'Atomic Worker 返回空响应，实际门控状态不可用。',
+    other: '实际门控状态不可用；没有把静态默认值当成运行状态。',
+  },
+}

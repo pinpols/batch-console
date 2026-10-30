@@ -1,0 +1,4 @@
+interface:
+  display_name: "前端部署与运行时"
+  short_description: "核对前端Docker、Nginx、环境变量、PWA及构建部署入口的一致性"
+  default_prompt: "使用 $frontend-deploy-runtime 处理本次授权的前端部署或运行时任务，核对环境与验证边界。"

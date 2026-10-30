@@ -11,6 +11,7 @@
   import { useDesignerStore } from '../store/useDesignerStore'
   import { useJobCodeOptions } from '@/composables/useJobCodeOptions'
   import { useJobDefinitionDependencies } from '@/composables/useJobDefinitionDependencies'
+  import { useMetaWindowsQuery } from '@/composables/queries/useConsoleMeta'
   import { edgeTypeOf } from '../canvas/edgePresentation'
   import type { DesignerNode } from '../types'
 
@@ -19,9 +20,11 @@
   const store = useDesignerStore()
   const { loading, options, load } = useJobCodeOptions()
   const jobDependencies = useJobDefinitionDependencies()
+  const { data: windowOptions } = useMetaWindowsQuery()
 
   interface JobAttrs {
     jobCode?: string
+    windowCode?: string
     maxRetries?: number
     timeoutSeconds?: number
     skipExpression?: string
@@ -31,6 +34,7 @@
     const a = (n.attrs ?? {}) as Record<string, unknown>
     return {
       jobCode: typeof a.jobCode === 'string' ? a.jobCode : '',
+      windowCode: typeof a.windowCode === 'string' ? a.windowCode : '',
       maxRetries: typeof a.maxRetries === 'number' ? a.maxRetries : undefined,
       timeoutSeconds: typeof a.timeoutSeconds === 'number' ? a.timeoutSeconds : undefined,
       skipExpression: typeof a.skipExpression === 'string' ? a.skipExpression : '',
@@ -39,28 +43,34 @@
 
   const local = ref<JobAttrs>(readAttrs(props.node))
   const localName = ref(props.node.nodeName)
-  const linkedJobCode = computed(() => String(props.node.attrs?.jobCode ?? '').trim())
+  const linkedJobCode = computed(() => {
+    const rawJobCode = String(props.node.attrs?.jobCode ?? '')
+    return rawJobCode.trim()
+  })
   const hasJobBinding = computed(() => linkedJobCode.value.length > 0)
   const currentFlowDependencies = computed(() => {
     const nodeById = new Map(store.nodes.map((node) => [node.id, node]))
-    return store.edges
-      .filter((edge) => edge.source === props.node.id || edge.target === props.node.id)
-      .map((edge) => {
-        const incoming = edge.target === props.node.id
-        const relatedNode = nodeById.get(incoming ? edge.source : edge.target)
-        if (!relatedNode) return null
-        return {
-          id: relatedNode.id,
-          direction: incoming ? 'incoming' : 'outgoing',
-          label:
-            relatedNode.nodeName === relatedNode.nodeCode
-              ? relatedNode.nodeCode
-              : `${relatedNode.nodeName} (${relatedNode.nodeCode})`,
-          edgeType: edgeTypeOf(edge),
-          enabled: edge.attrs?.enabled !== false,
-        }
-      })
-      .filter((relation): relation is NonNullable<typeof relation> => relation !== null)
+    const connectedEdges = store.edges.filter(
+      (edge) => edge.source === props.node.id || edge.target === props.node.id,
+    )
+    const dependencyCandidates = connectedEdges.map((edge) => {
+      const incoming = edge.target === props.node.id
+      const relatedNode = nodeById.get(incoming ? edge.source : edge.target)
+      if (!relatedNode) return null
+      return {
+        id: relatedNode.id,
+        direction: incoming ? 'incoming' : 'outgoing',
+        label:
+          relatedNode.nodeName === relatedNode.nodeCode
+            ? relatedNode.nodeCode
+            : `${relatedNode.nodeName} (${relatedNode.nodeCode})`,
+        edgeType: edgeTypeOf(edge),
+        enabled: edge.attrs?.enabled !== false,
+      }
+    })
+    return dependencyCandidates.filter(
+      (relation): relation is NonNullable<typeof relation> => relation !== null,
+    )
   })
   const currentFlowIncoming = computed(() =>
     currentFlowDependencies.value.filter((relation) => relation.direction === 'incoming'),
@@ -75,6 +85,11 @@
     }
     return m
   })
+
+  function localizedFieldError(field: string): string | undefined {
+    const messageKey = fieldErrors.value.get(field)
+    return messageKey ? t(messageKey) : undefined
+  }
 
   watch(
     () => [props.node.id, props.node.nodeName, JSON.stringify(props.node.attrs ?? {})],
@@ -144,7 +159,7 @@
     </el-form-item>
     <el-form-item
       :label="t('workflowDesignerMvp.field.jobCode')"
-      :error="fieldErrors.get('jobCode') ? t(fieldErrors.get('jobCode')!) : undefined"
+      :error="localizedFieldError('jobCode')"
       required
     >
       <el-select
@@ -158,6 +173,23 @@
         @change="writeAttr('jobCode', $event)"
       >
         <el-option v-for="c in options" :key="c" :label="c" :value="c" />
+      </el-select>
+    </el-form-item>
+    <el-form-item :label="t('workflowDesignerMvp.field.windowCode')">
+      <el-select
+        v-model="local.windowCode"
+        clearable
+        filterable
+        :disabled="props.readonly"
+        :placeholder="t('workflowDesignerMvp.field.windowCodePlaceholder')"
+        @change="writeAttr('windowCode', $event)"
+      >
+        <el-option
+          v-for="window in windowOptions ?? []"
+          :key="window.value"
+          :label="window.label ?? window.value"
+          :value="window.value"
+        />
       </el-select>
     </el-form-item>
     <el-form-item :label="t('workflowDesignerMvp.field.maxRetries')">

@@ -10,8 +10,6 @@ import {
 
 function row(overrides: Partial<ConsoleBatchDayResponse>): ConsoleBatchDayResponse {
   return {
-    tenantId: 'ta',
-    calendarCode: 'DEFAULT',
     bizDate: '2026-09-01',
     dayStatus: 'OPEN',
     slaStatus: 'NORMAL',
@@ -21,6 +19,7 @@ function row(overrides: Partial<ConsoleBatchDayResponse>): ConsoleBatchDayRespon
     inFlightJobCount: 0,
     lateCount: 0,
     catchupCount: 0,
+    catchupSummary: [],
     openAt: '2026-09-01T00:00:00Z',
     ...overrides,
   }

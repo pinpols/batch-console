@@ -22,7 +22,7 @@
   --color-info: #1668e3;
 
   /**
-   * Pipeline stage 调色板 — 17 个 stage 各自语义化色,用于 PipelineDefinitionList 中
+   * Pipeline stage 调色板 — 17 个 stage 各自语义化色,用于 FilePipelineObservability 中
    * 步骤 icon / 时间轴 节点配色,**仅业务图标用**,不是 UI 主题色。
    * 柔和化(2026-06-04):原 Tailwind-500 饱和度偏高,17 色并排成"彩虹"略刺眼;
    * 整体降饱和约 25%、微提亮,色相保持原序与可辨识度,仅作 pipeline 图标用。
@@ -48,7 +48,7 @@
   /**
    * Workflow DAG 设计器节点配色 token(P8 视觉统一)。
    * 每类节点一对 base / light:base 作描边 + 文字,light 作填充背景。
-   * START 绿 / END 红 / JOB 蓝 / GATEWAY 橙 / FILE_STEP 青绿(与 START 区分)。
+   * START 绿 / END 红 / JOB 蓝 / GATEWAY 橙。
    * 另含交互态:selected(选中描边)/ error(校验失败描边 + 浅底)。
    */
   --wf-node-start: #54a772;

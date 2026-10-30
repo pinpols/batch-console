@@ -1,4 +1,4 @@
-import type { BatchDayReplaySubmitRequest } from '@/api/batchDayReplay'
+import type { BatchDayReplayRangeRequest, BatchDayReplaySubmitRequest } from '@/api/batchDayReplay'
 
 export type BatchDayReplayFormError = 'missingRequired' | 'missingJobCodes' | 'missingVersionIds'
 
@@ -31,13 +31,13 @@ export function buildBatchDayReplayRequest(
   }
 
   if (request.scope === 'OUTPUTS_ONLY') {
-    request.versionIds = Array.from(
-      new Set(
-        splitTokens(versionIdsText)
-          .map(Number)
-          .filter((value) => Number.isSafeInteger(value) && value > 0),
-      ),
+    const versionTokens = splitTokens(versionIdsText)
+    const numericVersionIds = versionTokens.map(Number)
+    const validVersionIds = numericVersionIds.filter(
+      (value) => Number.isSafeInteger(value) && value > 0,
     )
+    const uniqueVersionIds = new Set(validVersionIds)
+    request.versionIds = Array.from(uniqueVersionIds)
     if (request.versionIds.length === 0) {
       return { error: 'missingVersionIds' }
     }
@@ -59,9 +59,19 @@ export function isReplayPreviewCurrent(
   return previewRequestKey !== null && previewRequestKey === batchDayReplayRequestKey(request)
 }
 
+export function batchDayReplayRangeRequestKey(request: BatchDayReplayRangeRequest): string {
+  return JSON.stringify(request)
+}
+
+export function isReplayRangePreviewCurrent(
+  request: BatchDayReplayRangeRequest,
+  previewRequestKey: string | null,
+): boolean {
+  return previewRequestKey !== null && previewRequestKey === batchDayReplayRangeRequestKey(request)
+}
+
 function splitTokens(value: string): string[] {
-  return value
-    .split(/[\s,]+/)
-    .map((item) => item.trim())
-    .filter(Boolean)
+  const tokens = value.split(/[\s,]+/)
+  const trimmedTokens = tokens.map((item) => item.trim())
+  return trimmedTokens.filter(Boolean)
 }

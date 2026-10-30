@@ -50,17 +50,18 @@ const completionKey = `${STORAGE_KEYS.onboardingDone}:2026-10-v2:user-1%3Atenant
 beforeEach(() => {
   storage.clear()
   modalElements.length = 0
-  driverConstructorMock.mockClear()
-  driverDriveMock.mockClear()
-  driverDestroyMock.mockClear()
+  driverConstructorMock.mockReset()
+  driverDriveMock.mockReset()
+  driverDestroyMock.mockReset()
+  driverConstructorMock.mockImplementation(() => ({ drive: driverDriveMock, destroy: driverDestroyMock }))
 })
 
 describe('useOnboardingTour', () => {
-  it('shouldShowOnboarding:首次访问(localStorage 无标记)→ true', () => {
+  it('首次访问且无完成标记时展示引导', () => {
     expect(shouldShowOnboarding(identity)).toBe(true)
   })
 
-  it('shouldShowOnboarding:已完成(localStorage 标 1)→ false', () => {
+  it('已完成引导时不再展示', () => {
     storage.set(completionKey, '1')
     expect(shouldShowOnboarding(identity)).toBe(false)
   })

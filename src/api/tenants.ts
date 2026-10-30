@@ -79,7 +79,6 @@ export interface TenantConfigInitResult {
   errorMessage?: string
   jobDefinitions?: ConfigInitItemStats
   workflowDefinitions?: ConfigInitItemStats
-  pipelineDefinitions?: ConfigInitItemStats
   fileChannels?: ConfigInitItemStats
   fileTemplates?: ConfigInitItemStats
   resourceQueues?: ConfigInitItemStats
@@ -94,7 +93,12 @@ export interface ConfigInitItemStats {
   updated: number
   skipped: number
   failed: number
-  details?: { code?: string; action: string; errorMessage?: string }[]
+  migrated?: number
+  details?: {
+    code?: string
+    action: 'CREATED' | 'UPDATED' | 'SKIPPED' | 'FAILED' | 'MIGRATED' | string
+    errorMessage?: string
+  }[]
 }
 
 export interface UpdateTenantRequest {

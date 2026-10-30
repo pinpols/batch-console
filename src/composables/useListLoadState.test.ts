@@ -40,4 +40,31 @@ describe('useListLoadState', () => {
     await run(async () => 'ok')
     expect(error.value).toBe(null)
   })
+  it('旧请求失败不覆盖新请求的加载和错误状态，但仍向调用方抛错', async () => {
+    const { loading, error, run } = useListLoadState()
+    let current = true
+    let rejectOld!: (error: Error) => void
+    const old = run(
+      () =>
+        new Promise((_, reject) => {
+          rejectOld = reject
+        }),
+      () => current,
+    )
+    current = false
+    let resolveNew!: (value: string) => void
+    const next = run(
+      () =>
+        new Promise<string>((resolve) => {
+          resolveNew = resolve
+        }),
+    )
+    rejectOld(new Error('old request'))
+    await expect(old).rejects.toThrow('old request')
+    expect(loading.value).toBe(true)
+    expect(error.value).toBeNull()
+    resolveNew('current')
+    await expect(next).resolves.toBe('current')
+    expect(loading.value).toBe(false)
+  })
 })

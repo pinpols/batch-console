@@ -175,7 +175,11 @@
       {
         validator: (_r, v: unknown, cb) => {
           const text = typeof v === 'string' ? v.trim() : ''
-          if (text && text.length > 256) return cb(new Error(t('common.maxLength', { max: 256 })))
+          if (text && text.length > 256) {
+            const errorMessage = t('common.maxLength', { max: 256 })
+            const validationError = new Error(errorMessage)
+            return cb(validationError)
+          }
           return cb()
         },
         trigger: 'blur',

@@ -186,7 +186,8 @@
     if (ot) rows = rows.filter((x) => String(x.operationType ?? '') === ot)
     const res = execApplied.result.trim()
     if (res) rows = rows.filter((x) => String(x.operationResult ?? '') === res)
-    const t = execApplied.traceId.trim().toLowerCase()
+    const trimmedTraceId = execApplied.traceId.trim()
+    const t = trimmedTraceId.toLowerCase()
     if (t)
       rows = rows.filter((x) =>
         String(x.traceId ?? '')

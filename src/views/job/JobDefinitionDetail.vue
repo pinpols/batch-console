@@ -2,7 +2,7 @@
   <PageContainer>
     <PageHeader
       :title="pageTitle"
-      :description="job ? `${job.jobType} / ${job.scheduleType}` : ''"
+      :description="job ? `${job.jobType} / ${job.executionMode || 'FULL'}` : ''"
       back-to="/jobs/definitions"
     >
       <template #actions>
@@ -76,6 +76,12 @@
 
           <el-tab-pane :label="t('jobDefinitionDetail.tabSchedule')" name="schedule">
             <div class="tab-panel">
+              <el-alert
+                :title="t('jobDefinitionDetail.workflowScheduleHint')"
+                type="info"
+                :closable="false"
+                show-icon
+              />
               <el-descriptions :column="2" border size="small">
                 <el-descriptions-item :label="t('jobConfigBasic.fieldScheduleType')">
                   {{ job.scheduleType || '—' }}
@@ -100,6 +106,9 @@
                 </el-descriptions-item>
               </el-descriptions>
               <div v-if="canMutateConfig" class="panel-actions">
+                <el-button type="primary" @click="router.push('/workflow/definitions')">
+                  {{ t('jobDefinitionDetail.maintainWorkflowDefinition') }}
+                </el-button>
                 <el-button @click="calendarMiniVisible = true">
                   {{ t('jobDefinitionDetail.btnNewCalendar') }}
                 </el-button>
@@ -152,12 +161,6 @@
           <el-tab-pane :label="t('jobDefinitionDetail.tabTrigger')" name="trigger">
             <div class="tab-panel">
               <el-descriptions :column="2" border size="small">
-                <el-descriptions-item :label="t('jobConfigBasic.fieldTriggerMode')">
-                  {{ job.triggerMode || '—' }}
-                </el-descriptions-item>
-                <el-descriptions-item :label="t('jobConfigBasic.fieldScheduleType')">
-                  {{ job.scheduleType || '—' }}
-                </el-descriptions-item>
                 <el-descriptions-item :label="t('jobConfigBasic.fieldDefaultParams')" :span="2">
                   <JsonPreview :data="job.defaultParams" />
                 </el-descriptions-item>
@@ -232,6 +235,20 @@
                   :label="t('jobDefinitionDetail.colType')"
                   width="120"
                 />
+                <el-table-column :label="t('jobDefinitionDetail.workflowRelation')" width="150">
+                  <template #default="{ row }">
+                    <el-tag
+                      size="small"
+                      :type="row.singleJobDefinitionId === job.id ? 'primary' : 'success'"
+                    >
+                      {{
+                        row.singleJobDefinitionId === job.id
+                          ? t('jobDefinitionDetail.defaultSingleJobWorkflow')
+                          : t('jobDefinitionDetail.composedWorkflow')
+                      }}
+                    </el-tag>
+                  </template>
+                </el-table-column>
                 <el-table-column
                   prop="version"
                   :label="t('jobDefinitionDetail.colVersion')"
@@ -514,6 +531,10 @@
     return metaEnumsData.value?.[group]?.find((o) => o.value === value)?.label ?? value
   }
 
+  function isUnsupportedFileTabJobType(jobType: string | null | undefined): boolean {
+    return jobType !== 'IMPORT' && jobType !== 'EXPORT'
+  }
+
   async function load() {
     if (!Number.isFinite(jobId.value) || jobId.value <= 0) {
       job.value = null
@@ -524,8 +545,7 @@
       job.value = await jobApi.getDefinition(jobId.value, tenantId.value)
       if (
         activeTab.value === 'files' &&
-        job.value.jobType !== 'IMPORT' &&
-        job.value.jobType !== 'EXPORT'
+        isUnsupportedFileTabJobType(job.value.jobType)
       ) {
         activeTab.value = 'basic'
       }
@@ -594,6 +614,7 @@
     try {
       const result = await workflowApi.listDefinitions({
         tenantId: job.value.tenantId,
+        relatedJobCode: job.value.jobCode,
         page: 1,
         pageSize: 50,
       })
@@ -654,7 +675,10 @@
     }
     triggering.value = true
     try {
-      await jobApi.trigger(job.value.jobCode, job.value.tenantId, JSON.parse(payloadText))
+      const workflowDefinitionId = job.value.defaultWorkflowDefinitionId ?? 0
+      const requestTenantId = job.value.tenantId
+      const triggerPayload = JSON.parse(payloadText)
+      await jobApi.trigger(workflowDefinitionId, requestTenantId, triggerPayload)
       ElMessage.success(t('jobDefinitionDetail.triggerSubmitted'))
       runsLoaded.value = false
       if (activeTab.value === 'runs') await loadRuns()
@@ -706,7 +730,7 @@
   watch(
     () => job.value?.jobType,
     (jobType) => {
-      if (activeTab.value === 'files' && jobType !== 'IMPORT' && jobType !== 'EXPORT') {
+      if (activeTab.value === 'files' && isUnsupportedFileTabJobType(jobType)) {
         activeTab.value = 'basic'
       }
     },

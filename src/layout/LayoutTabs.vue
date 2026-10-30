@@ -41,7 +41,7 @@
                   <el-dropdown
                     trigger="click"
                     popper-class="page-tab-dropdown-popper"
-                    @command="(c) => tabCloseCommand(c, tab.key)"
+                    @command="(c: string) => tabCloseCommand(c, tab.key)"
                   >
                     <span class="page-tab__kebab" :aria-label="t('nav.closeTabsBatchAria')">
                       <el-icon><MoreFilled /></el-icon>
@@ -89,7 +89,7 @@
             <el-dropdown
               trigger="click"
               popper-class="page-tab-dropdown-popper"
-              @command="(c) => tabCloseCommand(c, tab.key)"
+              @command="(c: string) => tabCloseCommand(c, tab.key)"
             >
               <span class="page-tab__kebab" :aria-label="t('nav.closeTabsBatchAria')">
                 <el-icon><MoreFilled /></el-icon>

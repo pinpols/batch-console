@@ -1,0 +1,32 @@
+{
+  "status": {
+    "available": true,
+    "unavailableReason": null,
+    "workerCode": "atomic-node-1",
+    "workerType": "ATOMIC",
+    "shell": {
+      "enabled": true,
+      "commandWhitelistSize": 2
+    },
+    "sql": {
+      "enabled": true,
+      "dialect": "PostgreSQL"
+    },
+    "http": {
+      "enabled": true,
+      "enforceAllowlist": true,
+      "enforceAllowlistSource": "explicit",
+      "allowlistHostsSize": 2
+    },
+    "storedProc": {
+      "enabled": true,
+      "allowedSchemasSize": 1
+    }
+  },
+  "permissions": {
+    "admin": 200,
+    "tenantAdmin": 200,
+    "auditor": 403,
+    "tenantUser": 403
+  }
+}

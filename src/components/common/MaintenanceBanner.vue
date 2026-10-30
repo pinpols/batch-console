@@ -69,7 +69,8 @@
   const etaText = computed(() => {
     const eta = app.maintenance.etaAt
     if (!eta) return ''
-    const target = new Date(eta).getTime()
+    const etaDate = new Date(eta)
+    const target = etaDate.getTime()
     if (Number.isNaN(target)) return ''
     const diffMs = target - now.value
     if (diffMs <= 0) return t('maintenance.etaPast')
@@ -81,13 +82,15 @@
 
   const startText = computed(() => {
     if (app.maintenance.active || !app.maintenance.startsAt) return ''
-    const target = new Date(app.maintenance.startsAt).getTime()
+    const startsAtDate = new Date(app.maintenance.startsAt)
+    const target = startsAtDate.getTime()
     if (Number.isNaN(target)) return ''
     const diffMs = target - now.value
     if (diffMs <= 0) return t('maintenance.startImminent')
     const mins = Math.ceil(diffMs / 60_000)
     if (mins < 60) return t('maintenance.startsInMinutes', { n: mins })
-    return t('maintenance.startsInHours', { n: Math.ceil(mins / 60) })
+    const hoursUntilStart = Math.ceil(mins / 60)
+    return t('maintenance.startsInHours', { n: hoursUntilStart })
   })
 </script>
 

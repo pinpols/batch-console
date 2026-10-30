@@ -9,17 +9,22 @@
     />
 
     <el-form label-width="88px" class="form-section" @submit.prevent="submit">
-      <el-form-item :label="t('selfServicePanel.triggerJobCodeLabel')">
+      <el-form-item :label="t('selfServicePanel.triggerWorkflowCodeLabel')">
         <el-select
-          v-model="jobCode"
+          v-model="workflowCode"
           filterable
           :loading="listLoading"
-          :placeholder="t('selfServicePanel.triggerJobCodePlaceholder')"
+          :placeholder="t('selfServicePanel.triggerWorkflowCodePlaceholder')"
           class="query-w-full"
         >
-          <el-option v-for="t in triggers" :key="t.jobCode" :label="t.jobCode" :value="t.jobCode">
+          <el-option
+            v-for="t in triggers"
+            :key="t.workflowCode"
+            :label="t.workflowCode"
+            :value="t.workflowCode"
+          >
             <span class="opt-row">
-              <span>{{ t.jobCode }}</span>
+              <span>{{ t.workflowCode }}</span>
               <el-tag size="small" effect="plain" :type="t.paused ? 'info' : 'success'">
                 {{
                   t.paused
@@ -47,7 +52,12 @@
         <el-button native-type="button" :disabled="submitting" @click="resetTriggerForm">
           {{ t('common.reset') }}
         </el-button>
-        <el-button type="primary" native-type="submit" :loading="submitting" :disabled="!jobCode">
+        <el-button
+          type="primary"
+          native-type="submit"
+          :loading="submitting"
+          :disabled="!workflowCode"
+        >
           {{ t('selfServicePanel.triggerSubmit') }}
         </el-button>
       </el-form-item>
@@ -56,11 +66,12 @@
 </template>
 
 <script setup lang="ts">
-  import { ref } from 'vue'
+  import { ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
+  import { useTenantRequestScope } from '@/composables/useTenantRequestScope'
   import {
     listTriggers,
     pauseTrigger,
@@ -69,7 +80,7 @@
   } from '@/api/triggers'
 
   interface TriggerRow {
-    jobCode: string
+    workflowCode: string
     paused?: boolean
   }
 
@@ -79,53 +90,76 @@
   const listLoading = ref(false)
   const submitting = ref(false)
   const triggers = ref<TriggerRow[]>([])
-  const jobCode = ref<string>('')
+  const workflowCode = ref<string>('')
   const action = ref<'pause' | 'resume'>('pause')
 
+  const loadScope = useTenantRequestScope()
+  const submitScope = useTenantRequestScope()
   async function loadTriggers() {
-    if (!tenant.tenantId) return
+    const request = loadScope.begin()
+    if (!request.tenantId) return
     listLoading.value = true
     try {
       const raw = await listTriggers()
-      const items = extractTriggers(raw)
+      if (!loadScope.isCurrent(request)) return
+      const tenantRows = raw.filter((row) => row.tenantId === request.tenantId)
+      const items = extractTriggers(tenantRows)
       triggers.value = items
     } catch {
+      if (!loadScope.isCurrent(request)) return
       triggers.value = []
     } finally {
-      listLoading.value = false
+      if (loadScope.isCurrent(request)) listLoading.value = false
     }
   }
 
   /** 固定数组契约；缺失作业编码的条目不能成为运维动作目标。 */
   function extractTriggers(rows: TriggerStatusResponse[]): TriggerRow[] {
     return rows.flatMap((row) => {
-      const code = row.jobCode?.trim()
-      return code ? [{ jobCode: code, paused: row.status?.toUpperCase() === 'PAUSED' }] : []
+      const code = row.workflowCode?.trim()
+      if (!code) return []
+      const normalizedStatus = row.status?.toUpperCase()
+      return [{ workflowCode: code, paused: normalizedStatus === 'PAUSED' }]
     })
   }
 
   function resetTriggerForm() {
-    jobCode.value = ''
+    workflowCode.value = ''
     action.value = 'pause'
   }
 
   async function submit() {
-    if (!jobCode.value || !tenant.tenantId) return
+    if (!workflowCode.value || !tenant.tenantId || submitting.value) return
+    const request = submitScope.begin()
+    const selectedWorkflow = workflowCode.value
+    const selectedAction = action.value
     submitting.value = true
     try {
-      if (action.value === 'pause') {
-        await pauseTrigger(jobCode.value, tenant.tenantId)
-        ElMessage.success(t('selfServicePanel.triggerSuccessPause', { code: jobCode.value }))
+      if (selectedAction === 'pause') {
+        await pauseTrigger(selectedWorkflow, request.tenantId)
+        if (!submitScope.isCurrent(request)) return
+        ElMessage.success(t('selfServicePanel.triggerSuccessPause', { code: selectedWorkflow }))
       } else {
-        await resumeTrigger(jobCode.value, tenant.tenantId)
-        ElMessage.success(t('selfServicePanel.triggerSuccessResume', { code: jobCode.value }))
+        await resumeTrigger(selectedWorkflow, request.tenantId)
+        if (!submitScope.isCurrent(request)) return
+        ElMessage.success(t('selfServicePanel.triggerSuccessResume', { code: selectedWorkflow }))
       }
       void loadTriggers()
     } finally {
-      submitting.value = false
+      if (submitScope.isCurrent(request)) submitting.value = false
     }
   }
 
+  watch(
+    () => tenant.tenantId,
+    () => {
+      resetTriggerForm()
+      triggers.value = []
+      listLoading.value = false
+      submitting.value = false
+    },
+    { flush: 'sync' },
+  )
   useTenantReload(loadTriggers)
 </script>
 

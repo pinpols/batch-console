@@ -3,7 +3,7 @@
  *
  * 当前实现:
  * - START / END / JOB 渲染各自专用 Vue 节点(StartNode / EndNode / JobNode)
- * - GATEWAY / FILE_STEP 使用专用或通用节点渲染，nodeType 与扩展字段透传
+ * - GATEWAY 使用专用或通用节点渲染，nodeType 与扩展字段透传
  * - nodeCode 同时作为 X6 node id,保证幂等且与 BE 字段对齐
  */
 
@@ -19,13 +19,15 @@ const KNOWN_NODE_TYPES: ReadonlySet<DesignerNodeType> = new Set<DesignerNodeType
   'START',
   'END',
   'JOB',
-  'FILE_STEP',
   'GATEWAY',
 ])
 
 function normalizeNodeType(raw: string): DesignerNodeType {
   const upper = (raw ?? '').toUpperCase()
-  return KNOWN_NODE_TYPES.has(upper as DesignerNodeType) ? (upper as DesignerNodeType) : 'JOB'
+  if (!KNOWN_NODE_TYPES.has(upper as DesignerNodeType)) {
+    throw new Error(`Unsupported Workflow node type: ${raw}`)
+  }
+  return upper as DesignerNodeType
 }
 
 export function definitionToGraph(

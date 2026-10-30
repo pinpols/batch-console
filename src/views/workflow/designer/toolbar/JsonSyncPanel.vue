@@ -57,7 +57,8 @@
       if (manualEdit.value) return
       syncingFromStore.value = true
       try {
-        jsonText.value = formatJson(graphToDefinition(snap))
+        const definition = graphToDefinition(snap)
+        jsonText.value = formatJson(definition)
         parseError.value = null
       } finally {
         // 微任务后清 flag,避免本轮 textarea v-model 反向触发
@@ -78,19 +79,21 @@
       parseError.value = (e as Error).message ?? 'parse error'
       return
     }
-    if (
-      !parsed ||
-      typeof parsed !== 'object' ||
-      !Array.isArray((parsed as { nodes?: unknown }).nodes) ||
-      !Array.isArray((parsed as { edges?: unknown }).edges)
-    ) {
+    const parsedIsObject = Boolean(parsed) && typeof parsed === 'object'
+    const parsedShape = parsed as { nodes?: unknown; edges?: unknown }
+    const hasNodeArray = parsedIsObject && Array.isArray(parsedShape.nodes)
+    const hasRequiredArrays = hasNodeArray && Array.isArray(parsedShape.edges)
+    if (!hasRequiredArrays) {
       parseError.value = t('workflowDesignerJson.parseShapeError')
       return
     }
     parseError.value = null
     applyingToStore.value = true
     try {
-      store.reset(definitionToGraph(parsed as WorkflowDefinitionJson))
+      const graph = definitionToGraph(parsed as WorkflowDefinitionJson)
+      store.reset(graph)
+    } catch (error) {
+      parseError.value = (error as Error).message ?? 'unsupported workflow definition'
     } finally {
       queueMicrotask(() => {
         applyingToStore.value = false

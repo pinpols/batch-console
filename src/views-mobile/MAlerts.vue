@@ -216,14 +216,17 @@
     if (filter.value === 'open') list = list.filter((r) => r.status === 'OPEN')
     else if (filter.value === 'acked') list = list.filter((r) => r.status === 'ACKED')
     else if (filter.value === 'closed') list = list.filter((r) => r.status === 'CLOSED')
-    const kw = keyword.value.trim().toLowerCase()
+    const trimmedKeyword = keyword.value.trim()
+    const kw = trimmedKeyword.toLowerCase()
     if (kw) {
+      const matchesKeyword = (value: string | null | undefined) =>
+        value?.toLowerCase().includes(kw) ?? false
       list = list.filter(
         (r) =>
-          r.title?.toLowerCase().includes(kw) ||
-          r.serviceName?.toLowerCase().includes(kw) ||
-          r.alertType?.toLowerCase().includes(kw) ||
-          r.traceId?.toLowerCase().includes(kw),
+          matchesKeyword(r.title) ||
+          matchesKeyword(r.serviceName) ||
+          matchesKeyword(r.alertType) ||
+          matchesKeyword(r.traceId),
       )
     }
     return list

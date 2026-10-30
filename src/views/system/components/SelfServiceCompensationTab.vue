@@ -34,13 +34,9 @@
         />
         <div class="field-hint">{{ t('selfServiceCommon.bizDateHint') }}</div>
       </el-form-item>
-      <el-form-item :label="t('selfServiceCompensationTab.typeLabel')">
+      <el-form-item :label="t('selfServiceCompensationTab.typeLabel')" prop="compensationType">
         <el-select
           v-model="compForm.compensationType"
-          filterable
-          allow-create
-          default-first-option
-          clearable
           :placeholder="t('selfServiceCompensationTab.typePlaceholder')"
           class="query-w-full"
         >
@@ -53,12 +49,30 @@
         </el-select>
         <div class="field-hint">{{ t('selfServiceCompensationTab.typeHint') }}</div>
       </el-form-item>
-      <el-form-item :label="t('selfServiceCommon.targetInstanceLabel')">
-        <el-input
+      <el-form-item :label="t('selfServiceCommon.targetInstanceLabel')" prop="targetInstanceNo">
+        <el-select
           v-model="compForm.targetInstanceNo"
-          :placeholder="t('selfServiceCommon.targetInstanceOptional')"
-        />
-        <div class="field-hint">{{ t('selfServiceCommon.targetInstanceHint') }}</div>
+          filterable
+          remote
+          reserve-keyword
+          :placeholder="t('selfServiceCommon.targetInstanceDisabledHint')"
+          :disabled="!compForm.jobCode || !compForm.bizDate"
+          :remote-method="queryInstances"
+          :loading="instanceLoading"
+          @focus="loadInstances()"
+          class="query-w-full"
+        >
+          <el-option
+            v-for="opt in instanceOptions"
+            :key="opt.instanceNo"
+            :label="opt.instanceNo"
+            :value="opt.instanceNo"
+          >
+            <span>{{ opt.instanceNo }}</span>
+            <el-tag size="small" effect="plain" class="u-ml-8">{{ opt.status }}</el-tag>
+          </el-option>
+        </el-select>
+        <div class="field-hint">{{ t('selfServiceCompensationTab.targetInstanceHint') }}</div>
       </el-form-item>
       <el-form-item :label="t('selfServiceCommon.reasonLabel')">
         <el-input
@@ -87,7 +101,7 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, reactive, computed } from 'vue'
+  import { ref, reactive, computed, toRefs, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
   const { t } = useI18n({ useScope: 'global' })
@@ -95,7 +109,9 @@
   import { selfServiceCompensationRequest } from '@/api/selfServiceJobs'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
+  import { useTenantRequestScope } from '@/composables/useTenantRequestScope'
   import { useJobCodeSearch } from '@/composables/useJobCodeSearch'
+  import { useInstanceNoSearch } from '@/composables/useInstanceNoSearch'
   import { useFormValidate, rules } from '@/composables/useFormValidate'
 
   const tenant = useTenantStore()
@@ -110,23 +126,29 @@
 
   const compensationTypeOptions = computed(() => [
     { value: 'JOB', label: t('selfServiceCompensationTab.optJob') },
-    { value: 'STEP', label: t('selfServiceCompensationTab.optStep') },
-    { value: 'PARTITION', label: t('selfServiceCompensationTab.optPartition') },
-    { value: 'FILE', label: t('selfServiceCompensationTab.optFile') },
-    { value: 'BATCH', label: t('selfServiceCompensationTab.optBatch') },
-    { value: 'DLQ', label: t('selfServiceCompensationTab.optDlq') },
   ])
 
   const { jobCodeLoading, jobCodeOptions, loadDefaultJobCodes, queryJobCodes, clearOptions } =
     useJobCodeSearch()
+  const {
+    jobCode: jobCodeRef,
+    bizDate: bizDateRef,
+    targetInstanceNo: targetInstanceNoRef,
+  } = toRefs(compForm)
+  const {
+    instanceLoading,
+    instanceOptions,
+    loadInstances,
+    queryInstances,
+    clearOptions: clearInstanceOptions,
+  } = useInstanceNoSearch(jobCodeRef, bizDateRef, targetInstanceNoRef)
 
   const { formRef: compFormRef, validate: validateCompForm } = useFormValidate()
   const compFormRules: FormRules = {
     jobCode: [rules.required(t('selfServiceCommon.ruleJobCode'), 'change')],
     bizDate: [rules.required(t('selfServiceCommon.ruleBizDate'), 'change')],
-    // compensationType 必选:BE 执行补偿时强制要求,留空会创建出无法审批的补偿单
-    // (审批时报「必须指定补偿类型」且无从补救)。
     compensationType: [rules.required(t('selfServiceCommon.ruleCompensationType'), 'change')],
+    targetInstanceNo: [rules.required(t('selfServiceCommon.ruleTargetInstance'), 'change')],
   }
 
   function resetCompForm() {
@@ -136,20 +158,25 @@
     compForm.targetInstanceNo = ''
     compForm.reason = ''
     compFormRef.value?.clearValidate()
+    clearInstanceOptions()
   }
 
+  const submitScope = useTenantRequestScope()
   async function submitCompensation() {
-    if (!(await validateCompForm())) return
+    if (compLoading.value || !tenant.tenantId) return
+    const request = submitScope.begin()
+    if (!(await validateCompForm()) || !submitScope.isCurrent(request)) return
     compLoading.value = true
     try {
       await selfServiceCompensationRequest({
-        tenantId: tenant.tenantId,
+        tenantId: request.tenantId,
         jobCode: compForm.jobCode,
         bizDate: compForm.bizDate,
-        ...(compForm.compensationType ? { compensationType: compForm.compensationType } : {}),
-        ...(compForm.targetInstanceNo ? { targetInstanceNo: compForm.targetInstanceNo } : {}),
+        compensationType: 'JOB',
+        targetInstanceNo: compForm.targetInstanceNo,
         ...(compForm.reason ? { reason: compForm.reason } : {}),
       })
+      if (!submitScope.isCurrent(request)) return
       ElMessage.success(t('selfServiceCompensationTab.submittedToast'))
       compForm.jobCode = ''
       compForm.bizDate = ''
@@ -157,11 +184,20 @@
       compForm.targetInstanceNo = ''
       compForm.reason = ''
     } finally {
-      compLoading.value = false
+      if (submitScope.isCurrent(request)) compLoading.value = false
     }
   }
 
+  watch(
+    () => tenant.tenantId,
+    () => {
+      resetCompForm()
+      compLoading.value = false
+    },
+    { flush: 'sync' },
+  )
   useTenantReload(clearOptions)
+  useTenantReload(clearInstanceOptions)
 </script>
 
 <style scoped></style>

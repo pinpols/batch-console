@@ -2,6 +2,9 @@
   <PageContainer>
     <PageHeader>
       <template #actions>
+        <el-button v-if="canTriggerWorkflows" @click="bulkTriggerVisible = true">
+          {{ t('workflowDefinitionList.bulk.open') }}
+        </el-button>
         <el-button v-if="canMutateConfig" type="primary" :icon="Plus" @click="goCreate">
           {{ t('workflowDefinitionList.headerCreate') }}
         </el-button>
@@ -11,8 +14,19 @@
       </template>
     </PageHeader>
 
+    <BulkActionBar :count="bulkSelection.count.value" @clear="bulkSelection.clear()">
+      <el-button type="primary" :disabled="!canTriggerWorkflows" @click="bulkTriggerVisible = true">
+        {{ t('workflowDefinitionList.bulk.open') }}
+      </el-button>
+    </BulkActionBar>
+    <WorkflowBulkTriggerDialog v-model="bulkTriggerVisible" :tenant-id="tenant.tenantId"
+      :can-trigger="canTriggerWorkflows" :targets="bulkSelection.selected.value" />
+    <WorkflowMonitoringPolicyDialog v-model="monitoringVisible" :workflow-id="monitoringTarget?.id"
+      :workflow-code="monitoringTarget?.workflowCode ?? ''" :can-edit="canMutateConfig" />
+
     <SectionCard>
       <ProTable
+        ref="bulkTable"
         class="workflow-definition-table"
         :data="rows"
         :loading="tableBlocking"
@@ -24,6 +38,8 @@
         :on-retry="load"
         :has-active-filters="hasActiveFilters"
         table-layout="fixed"
+        row-key="id"
+        @selection-change="bulkSelection.onSelectionChange"
       >
         <template #toolbar>
           <OpsListToolbar
@@ -87,6 +103,17 @@
                 :placeholder="t('workflowDefinitionList.typePlaceholder')"
               />
             </el-form-item>
+            <el-form-item :label="t('workflowDefinitionList.categoryLabel')">
+              <el-select
+                class="query-w-160"
+                v-model="filters.singleJobWorkflow"
+                clearable
+                :placeholder="t('workflowDefinitionList.categoryPlaceholder')"
+              >
+                <el-option :label="t('workflowDefinitionList.optSingleJob')" :value="true" />
+                <el-option :label="t('workflowDefinitionList.optComposed')" :value="false" />
+              </el-select>
+            </el-form-item>
             <el-form-item :label="t('workflowDefinitionList.versionLabel')">
               <el-input-number
                 class="query-w-140"
@@ -100,6 +127,8 @@
           </ListPageQueryBar>
         </template>
 
+        <el-table-column v-if="canTriggerWorkflows" type="selection" width="48"
+          :selectable="(row: ConsoleWorkflowDefinitionResponse) => row.enabled === true && row.tenantId === tenant.tenantId" />
         <el-table-column
           prop="workflowCode"
           :label="t('workflowDefinitionList.colCode')"
@@ -122,6 +151,20 @@
           </template>
         </el-table-column>
         <el-table-column
+          :label="t('workflowDefinitionList.colRelation')"
+          width="140"
+        >
+          <template #default="{ row }">
+            <el-tag size="small" :type="row.singleJobDefinitionId ? 'primary' : 'success'">
+              {{
+                row.singleJobDefinitionId
+                  ? t('workflowDefinitionList.singleJobWorkflow')
+                  : t('workflowDefinitionList.composedWorkflow')
+              }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column
           prop="version"
           :label="t('workflowDefinitionList.colVersion')"
           width="80"
@@ -140,6 +183,16 @@
             <StatusTag :value="String(row.enabled)" category="yn" />
           </template>
         </el-table-column>
+        <el-table-column :label="t('workflowDefinitionList.colSchedule')" width="110">
+          <template #default="{ row }">
+            <StatusTag
+              v-if="isScheduled(row as ConsoleWorkflowDefinitionResponse)"
+              :value="String(row.scheduleEnabled !== false)"
+              category="yn"
+            />
+            <span v-else class="muted">—</span>
+          </template>
+        </el-table-column>
         <DatetimeColumn
           prop="updatedAt"
           :label="t('workflowDefinitionList.colUpdatedAt')"
@@ -147,7 +200,7 @@
         />
         <el-table-column :label="t('workflowDefinitionList.colActions')" width="220" fixed="right">
           <template #default="{ row }">
-            <RowActions :actions="rowActions(row)" :inline-limit="2" />
+            <RowActions :actions="rowActions(row as ConsoleWorkflowDefinitionResponse)" :inline-limit="2" />
           </template>
         </el-table-column>
       </ProTable>
@@ -274,6 +327,98 @@
       </el-tabs>
     </el-drawer>
 
+    <el-dialog v-model="triggerVisible" :title="t('workflowDefinitionList.triggerTitle')" width="440px">
+      <el-form label-position="top">
+        <el-form-item :label="t('workflowDefinitionList.triggerBizDate')" required>
+          <el-date-picker
+            v-model="triggerBizDate"
+            type="date"
+            value-format="YYYY-MM-DD"
+            :placeholder="t('workflowDefinitionList.triggerBizDatePlaceholder')"
+            class="w-full"
+          />
+        </el-form-item>
+        <el-alert :title="t('workflowDefinitionList.triggerHint')" type="info" :closable="false" />
+      </el-form>
+      <template #footer>
+        <el-button @click="triggerVisible = false">{{ t('common.cancel') }}</el-button>
+        <el-button type="primary" :loading="triggerBusy" :disabled="!triggerBizDate" @click="submitTrigger">
+          {{ t('workflowDefinitionList.actionTrigger') }}
+        </el-button>
+      </template>
+    </el-dialog>
+
+    <el-dialog
+      v-model="scheduleVisible"
+      :title="t('workflowDefinitionList.scheduleTitle')"
+      width="560px"
+      :close-on-click-modal="false"
+    >
+      <el-form v-loading="scheduleLoading" label-position="top">
+        <el-form-item :label="t('workflowDefinitionList.scheduleType')" required>
+          <el-select
+            v-model="scheduleForm.scheduleType"
+            class="w-full"
+            @change="onScheduleTypeChange"
+          >
+            <el-option :label="t('workflowDefinitionList.scheduleManual')" value="MANUAL" />
+            <el-option :label="t('workflowDefinitionList.scheduleCron')" value="CRON" />
+            <el-option :label="t('workflowDefinitionList.scheduleFixedRate')" value="FIXED_RATE" />
+            <el-option :label="t('workflowDefinitionList.scheduleEvent')" value="EVENT" />
+          </el-select>
+        </el-form-item>
+        <el-form-item
+          v-if="['CRON', 'FIXED_RATE'].includes(scheduleForm.scheduleType)"
+          :label="t('workflowDefinitionList.scheduleExpression')"
+          required
+        >
+          <el-input v-model="scheduleForm.scheduleExpr" :placeholder="scheduleExprPlaceholder" />
+        </el-form-item>
+        <el-form-item :label="t('workflowDefinitionList.scheduleTimezone')">
+          <el-input v-model="scheduleForm.timezone" placeholder="UTC" />
+        </el-form-item>
+        <el-form-item :label="t('workflowDefinitionList.scheduleTriggerMode')">
+          <el-select v-model="scheduleForm.triggerMode" class="w-full">
+            <el-option v-for="mode in triggerModeOptions" :key="mode" :label="mode" :value="mode" />
+          </el-select>
+        </el-form-item>
+        <el-form-item :label="t('workflowDefinitionList.scheduleCalendar')">
+          <el-input v-model="scheduleForm.calendarCode" clearable />
+        </el-form-item>
+        <el-form-item :label="t('workflowDefinitionList.scheduleDependency')">
+          <el-select
+            v-model="scheduleForm.dependsOnJobCode"
+            class="w-full"
+            filterable
+            allow-create
+            clearable
+            :loading="scheduleDependencyLoading"
+          >
+            <el-option
+              v-for="jobCode in scheduleDependencyOptions"
+              :key="jobCode"
+              :label="jobCode"
+              :value="jobCode"
+            />
+          </el-select>
+        </el-form-item>
+        <el-alert
+          :title="t('workflowDefinitionList.scheduleVersionHint', { version: scheduleForm.expectedVersion })"
+          type="info"
+          :closable="false"
+        />
+      </el-form>
+      <template #footer>
+        <el-button @click="scheduleVisible = false">{{ t('common.cancel') }}</el-button>
+        <el-button
+          type="primary"
+          :loading="scheduleSaving"
+          :disabled="!canMutateConfig || isRequiredScheduleExpressionMissing()"
+          @click="saveSchedule"
+        >{{ t('common.save') }}</el-button>
+      </template>
+    </el-dialog>
+
     <el-dialog
       v-model="validateVisible"
       :title="t('workflowDefinitionList.validateTitle')"
@@ -358,7 +503,11 @@
   }
   import { confirmDanger } from '@/composables/useDangerConfirm'
   import { usePermission } from '@/composables/usePermission'
-  import { workflowApi, type DagValidationResult } from '@/api/workflow'
+  import {
+    workflowApi,
+    type DagValidationResult,
+    type WorkflowScheduleUpdateRequest,
+  } from '@/api/workflow'
   import { instanceApi } from '@/api/instance'
   import { fmtDatetime } from '@/utils/datetime'
   import { decodeBasicEntities } from '@/utils/text'
@@ -366,6 +515,11 @@
   import OpsListToolbar from '@/components/table/OpsListToolbar.vue'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
+  import { useJobCodeOptions } from '@/composables/useJobCodeOptions'
+  import { useBulkSelection } from '@/composables/useBulkSelection'
+  import BulkActionBar from '@/components/table/BulkActionBar.vue'
+  import WorkflowBulkTriggerDialog from '@/components/workflow/WorkflowBulkTriggerDialog.vue'
+  import WorkflowMonitoringPolicyDialog from '@/components/workflow/WorkflowMonitoringPolicyDialog.vue'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
@@ -389,7 +543,12 @@
   const router = useRouter()
   const tenant = useTenantStore()
   // VIEWER 角色 toggle/archive 都属于破坏性,行内按钮需要灰显 + tooltip,而不是点了才弹 403
-  const { canMutateConfig } = usePermission()
+  const { canMutateConfig, canAccess } = usePermission()
+  const canTriggerWorkflows = computed(() => canAccess('OPERATOR'))
+  const bulkSelection = useBulkSelection<ConsoleWorkflowDefinitionResponse>()
+  const bulkTable = ref<InstanceType<typeof ProTable> | null>(null)
+  watch(bulkTable, (table) => bulkSelection.bindTable(table))
+  const bulkTriggerVisible = ref(false)
 
   const loading = ref(false)
   const loadError = ref<unknown>(null)
@@ -400,6 +559,52 @@
   const page = ref(1)
   const pageSize = ref(15)
   const actingIds = ref<Set<number>>(new Set())
+
+  function removeActingId(id: number) {
+    actingIds.value = new Set([...actingIds.value].filter((actingId) => actingId !== id))
+  }
+
+  const triggerVisible = ref(false)
+  const triggerBusy = ref(false)
+  const triggerTarget = ref<ConsoleWorkflowDefinitionResponse | null>(null)
+  const triggerBizDate = ref('')
+  const scheduleVisible = ref(false)
+  const scheduleLoading = ref(false)
+  const scheduleSaving = ref(false)
+  const scheduleDependencyLoading = ref(false)
+  const scheduleDependencyOptions = ref<string[]>([])
+  const { load: loadJobCodes } = useJobCodeOptions()
+  let scheduleLoadGeneration = 0
+  const scheduleTarget = ref<ConsoleWorkflowDefinitionResponse | null>(null)
+  const scheduleForm = reactive({
+    expectedVersion: 1,
+    scheduleType: 'MANUAL' as WorkflowScheduleUpdateRequest['scheduleType'],
+    scheduleExpr: '',
+    timezone: 'UTC',
+    triggerMode: 'MANUAL' as WorkflowScheduleUpdateRequest['triggerMode'],
+    calendarCode: '',
+    dependsOnJobCode: '',
+  })
+  const scheduleExprPlaceholder = computed(() => scheduleForm.scheduleType === 'CRON'
+    ? t('workflowDefinitionList.scheduleCronPlaceholder')
+    : t('workflowDefinitionList.scheduleRatePlaceholder'))
+  const triggerModeOptions = computed(() => {
+    if (['CRON', 'FIXED_RATE'].includes(scheduleForm.scheduleType)) return ['SCHEDULED', 'MIXED']
+    if (scheduleForm.scheduleType === 'EVENT') return ['EVENT', 'MIXED']
+    return ['MANUAL', 'API', 'MIXED']
+  })
+
+  function onScheduleTypeChange(type: string) {
+    if (type === 'CRON' || type === 'FIXED_RATE') scheduleForm.triggerMode = 'SCHEDULED'
+    else if (type === 'EVENT') scheduleForm.triggerMode = 'EVENT'
+    else scheduleForm.triggerMode = 'MANUAL'
+  }
+
+  function isRequiredScheduleExpressionMissing(): boolean {
+    return ['CRON', 'FIXED_RATE'].includes(scheduleForm.scheduleType)
+      && !scheduleForm.scheduleExpr.trim()
+  }
+
   const detailVisible = ref(false)
   const detailRow = ref<WorkflowDefinitionDetailResponse | null>(null)
   const activeDetailTab = ref<'overview' | 'runs' | 'dag' | 'dsl'>('overview')
@@ -459,7 +664,9 @@
     void router.push(`/monitor/workflow-runs/${row.id}`)
   }
   const validateVisible = ref(false)
-  useDrawerAutoClose([detailVisible, validateVisible])
+  const monitoringVisible = ref(false)
+  const monitoringTarget = ref<ConsoleWorkflowDefinitionResponse | null>(null)
+  useDrawerAutoClose([detailVisible, validateVisible, monitoringVisible])
   const validateResult = ref<DagValidationResult | null>(null)
   const validateErrorCount = computed(
     () =>
@@ -477,6 +684,7 @@
     workflowName: '',
     enabled: undefined as boolean | undefined,
     workflowType: '',
+    singleJobWorkflow: undefined as boolean | undefined,
     version: undefined as number | undefined,
   })
   const hasActiveFilters = computed(
@@ -486,6 +694,7 @@
         filters.workflowName.trim() ||
         filters.enabled !== undefined ||
         filters.workflowType.trim() ||
+        filters.singleJobWorkflow !== undefined ||
         filters.version != null
       ),
   )
@@ -532,13 +741,28 @@
         primary: true,
         onClick: () => openDag(row),
       },
-      {
+      ...(!row.singleJobDefinitionId
+        ? [{
         key: 'designer',
         label: t('workflowDefinitionList.actionOpenInDesigner'),
         onClick: () => openInDesigner(row),
+      } as RowAction]
+        : []),
+      ...(row.singleJobDefinitionId
+        ? [{
+            key: 'job-definition',
+            label: t('workflowDefinitionList.actionJobDefinition'),
+            onClick: () => router.push(`/jobs/definitions/${row.singleJobDefinitionId}`),
+          } as RowAction]
+        : []),
+      {
+        key: 'trigger',
+        label: t('workflowDefinitionList.actionTrigger'),
+        disabled: !row.enabled || !canTriggerWorkflows.value,
+        loading: triggerBusy.value && triggerTarget.value?.id === row.id,
+        onClick: () => openTrigger(row),
       },
-      // Polish 阶段:行版本 ≥ 2 才显示"版本对比"入口(BE 暂无 versions 端点,
-      // 故仅展示当前版本 vs 空,后续 BE 加端点后可直接接入)
+      // 有历史版本才提供版本对比入口；目标和起始版本在比较页中从后端目录选择。
       ...(row.version >= 2
         ? [
             {
@@ -563,6 +787,21 @@
         onClick: () => openDetail(row),
       },
       {
+        key: 'schedule-edit',
+        label: t('workflowDefinitionList.actionSchedule'),
+        disabled: !canMutateConfig.value,
+        loading: scheduleSaving.value && scheduleTarget.value?.id === row.id,
+        onClick: () => openSchedule(row),
+      },
+      {
+        key: 'monitoring-policy',
+        label: t('workflowDefinitionList.monitoring.action'),
+        onClick: () => {
+          monitoringTarget.value = row
+          monitoringVisible.value = true
+        },
+      },
+      {
         key: 'toggle',
         // VIEWER 角色看不写权限时,行内按钮通过 disabled 灰显(RowActions 已有 disabled 渲染样式),
         // label 后缀 *(无权限)* 让用户秒懂(避免 tooltip 在 dropdown 项里实现复杂)。
@@ -573,7 +812,19 @@
         disabled: !canMutateConfig.value,
         onClick: () => toggleRow(row),
       },
-      {
+      ...(isScheduled(row)
+        ? [{
+            key: 'schedule-toggle',
+            label: row.scheduleEnabled === false
+              ? t('workflowDefinitionList.actionResumeSchedule')
+              : t('workflowDefinitionList.actionPauseSchedule'),
+            disabled: !canMutateConfig.value,
+            loading: actingIds.value.has(row.id),
+            onClick: () => toggleScheduleRow(row),
+          } as RowAction]
+        : []),
+      ...(!row.singleJobDefinitionId
+        ? [{
         key: 'archive',
         label: t('workflowDefinitionList.actionArchive'),
         danger: true,
@@ -582,8 +833,135 @@
         disabled: !row.enabled || !canMutateConfig.value,
         loading: actingIds.value.has(row.id),
         onClick: () => removeRow(row),
-      },
+      } as RowAction]
+        : []),
     ]
+  }
+
+  async function openSchedule(row: ConsoleWorkflowDefinitionResponse) {
+    const requestGeneration = ++scheduleLoadGeneration
+    scheduleTarget.value = row
+    scheduleLoading.value = true
+    scheduleDependencyLoading.value = true
+    try {
+      const tenantId = row.tenantId ?? tenant.tenantId
+      const [detail, jobCodes] = await Promise.all([
+        workflowApi.detailById(row.id, tenantId),
+        loadJobCodes(tenantId),
+      ])
+      if (requestGeneration !== scheduleLoadGeneration) return
+      Object.assign(scheduleForm, {
+        expectedVersion: detail.version,
+        scheduleType: detail.scheduleType ?? 'MANUAL',
+        scheduleExpr: detail.scheduleExpr ?? '',
+        timezone: detail.timezone ?? 'UTC',
+        triggerMode: detail.triggerMode ?? 'MANUAL',
+        calendarCode: detail.calendarCode ?? '',
+        dependsOnJobCode: detail.dependsOnJobCode ?? '',
+      })
+      // 依赖已停用或从选项中移除时，仍保留历史配置值供用户查看。
+      if (detail.dependsOnJobCode) {
+        const configuredDependencyCode = detail.dependsOnJobCode
+        const optionsIncludingConfiguredDependency = [...jobCodes, configuredDependencyCode]
+        const uniqueDependencyOptions = new Set(optionsIncludingConfiguredDependency)
+        scheduleDependencyOptions.value = Array.from(uniqueDependencyOptions)
+      } else {
+        scheduleDependencyOptions.value = jobCodes
+      }
+      scheduleVisible.value = true
+    } catch (err: unknown) {
+      if (requestGeneration === scheduleLoadGeneration) {
+        ElMessage.error(userErrorMessage(err))
+      }
+    } finally {
+      if (requestGeneration === scheduleLoadGeneration) {
+        scheduleDependencyLoading.value = false
+        scheduleLoading.value = false
+      }
+    }
+  }
+
+  async function saveSchedule() {
+    const target = scheduleTarget.value
+    if (!target || scheduleSaving.value) return
+    scheduleSaving.value = true
+    try {
+      await workflowApi.updateSchedule(target.id, {
+        tenantId: target.tenantId ?? tenant.tenantId,
+        expectedVersion: scheduleForm.expectedVersion,
+        scheduleType: scheduleForm.scheduleType,
+        scheduleExpr: scheduleForm.scheduleType === 'MANUAL' ? null : scheduleForm.scheduleExpr,
+        timezone: scheduleForm.timezone || null,
+        triggerMode: scheduleForm.triggerMode,
+        calendarCode: scheduleForm.calendarCode || null,
+        dependsOnJobCode: scheduleForm.dependsOnJobCode || null,
+      })
+      scheduleVisible.value = false
+      ElMessage.success(t('workflowDefinitionList.scheduleSaved'))
+      await load()
+    } catch (err: unknown) {
+      ElMessage.error(userErrorMessage(err))
+    } finally {
+      scheduleSaving.value = false
+    }
+  }
+
+  function isScheduled(row: ConsoleWorkflowDefinitionResponse): boolean {
+    return ['CRON', 'FIXED_RATE'].includes(row.scheduleType ?? '') &&
+      ['SCHEDULED', 'MIXED'].includes(row.triggerMode ?? '')
+  }
+
+  async function toggleScheduleRow(row: ConsoleWorkflowDefinitionResponse) {
+    if (!canMutateConfig.value || !isScheduled(row)) return
+    actingIds.value = new Set([...actingIds.value, row.id])
+    try {
+      const enabled = row.scheduleEnabled === false
+      await workflowApi.toggleSchedule(row.id, row.tenantId ?? tenant.tenantId, enabled)
+      ElMessage.success(t(enabled
+        ? 'workflowDefinitionList.scheduleResumed'
+        : 'workflowDefinitionList.schedulePaused'))
+      await load()
+    } catch (err: unknown) {
+      ElMessage.error(userErrorMessage(err))
+    } finally {
+      removeActingId(row.id)
+    }
+  }
+
+  function openTrigger(row: ConsoleWorkflowDefinitionResponse) {
+    if (!row.enabled) return
+    triggerTarget.value = row
+    const today = new Date()
+    const year = today.getFullYear()
+    const monthText = String(today.getMonth() + 1).padStart(2, '0')
+    const dayText = String(today.getDate()).padStart(2, '0')
+    triggerBizDate.value = [year, monthText, dayText].join('-')
+    triggerVisible.value = true
+  }
+
+  async function submitTrigger() {
+    const target = triggerTarget.value
+    if (!target || !triggerBizDate.value || triggerBusy.value) return
+    triggerBusy.value = true
+    try {
+      const runId = await workflowApi.trigger(target.id, {
+        tenantId: target.tenantId ?? tenant.tenantId,
+        bizDate: triggerBizDate.value,
+        triggerType: 'MANUAL',
+      })
+      triggerVisible.value = false
+      ElMessage.success(t('workflowDefinitionList.triggerAccepted'))
+      const numericRunId = Number(runId)
+      if (Number.isSafeInteger(numericRunId) && numericRunId > 0) {
+        await router.push(`/monitor/workflow-runs/${numericRunId}`)
+      } else {
+        await load()
+      }
+    } catch (err: unknown) {
+      ElMessage.error(userErrorMessage(err))
+    } finally {
+      triggerBusy.value = false
+    }
   }
 
   async function load() {
@@ -596,6 +974,7 @@
         workflowName: filters.workflowName.trim() || undefined,
         enabled: filters.enabled,
         workflowType: filters.workflowType.trim() || undefined,
+        singleJobWorkflow: filters.singleJobWorkflow,
         version: filters.version,
         page: page.value,
         pageSize: pageSize.value,
@@ -625,6 +1004,7 @@
       filters.workflowName = ''
       filters.enabled = undefined
       filters.workflowType = ''
+      filters.singleJobWorkflow = undefined
       filters.version = undefined
       page.value = 1
       await load()
@@ -679,7 +1059,7 @@
       )
       await load()
     } finally {
-      actingIds.value = new Set([...actingIds.value].filter((id) => id !== row.id))
+      removeActingId(row.id)
     }
   }
 
@@ -690,7 +1070,7 @@
       validateResult.value = result ?? null
       validateVisible.value = true
     } finally {
-      actingIds.value = new Set([...actingIds.value].filter((id) => id !== row.id))
+      removeActingId(row.id)
     }
   }
 
@@ -715,7 +1095,7 @@
       }
       await load()
     } finally {
-      actingIds.value = new Set([...actingIds.value].filter((id) => id !== row.id))
+      removeActingId(row.id)
     }
   }
 
@@ -726,6 +1106,7 @@
   })
 
   useTenantReload(() => {
+    bulkSelection.clear()
     page.value = 1
     void load()
   })

@@ -26,3 +26,10 @@ description: 修改或审查前端 Docker、Nginx、环境变量、PWA、构建�
 - 无后端综合门禁使用 `npm run verify:local`；它不能替代 Docker 运行态、Lighthouse 或 staging 浏览器验收。
 - 线上或 staging 验证要记录镜像/tag、后端地址、健康检查、Lighthouse/Trivy 等证据。
 - 版本标签只能晋级同一 commit 已通过 staging 的不可变镜像；未构建镜像或未跑 staging 时，不要宣称部署链路已验证。
+
+## 本地进程与发布脚本
+
+- `scripts/dev-stack.sh`、`docs-serve.sh` 和 `kill-fe.sh` 使用 `docs-lib.sh` 确认本仓 Vite/VitePress 端口归属；`dev-server.sh` 有按端口强制停止进程的旧实现，启停前核对 PID、命令行和工作树，不把未知或其他仓进程当本仓服务。
+- `scripts/gen-pwa-icons.mjs` 生成图标文件，`check:version`、`check:env` 和 `scripts/check-security-headers.mjs` 分别核版本/环境事实源与真实响应头。安全头检查需要显式 `FRONTEND_BASE_URL`，静态配置不能替代运行响应证据。
+- `scripts/prepare-platform-release.mjs` 由配对后端联合版本流程调用，参数是 bump 类型、目标版本和 `RELEASE_DATE`；会改版本来源和根 Changelog。版本准备、镜像构建、staging 晋级和 tag/生产发布是独立动作，使用当前发布 Runbook 判断范围。
+- 旧常驻部署分支同步脚本已归档，当前部署与应用代码共同维护在 main；脚本与配置归属见 `docs/engineering/script-skill-routing.md`。

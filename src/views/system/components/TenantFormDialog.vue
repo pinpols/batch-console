@@ -128,26 +128,33 @@
   // 编辑态下 tenantId / username / password 不校验(灰显或不显示);
   // 新建态下要走完整规则
   const formRules = computed<FormRules>(() => {
+    const tenantNameRequiredMessage = t('tenantFormDialog.ruleTenantName')
+    const tenantNameRequiredRule = rules.required(tenantNameRequiredMessage)
+    const tenantNameMaximumRule = rules.maxLength(256)
     const base: FormRules = {
-      tenantName: [rules.required(t('tenantFormDialog.ruleTenantName')), rules.maxLength(256)],
+      tenantName: [tenantNameRequiredRule, tenantNameMaximumRule],
     }
     if (!editing.value) {
+      const tenantIdRequiredMessage = t('tenantFormDialog.ruleTenantId')
+      const tenantIdRequiredRule = rules.required(tenantIdRequiredMessage)
+      const tenantIdPattern = /^[a-z0-9][a-z0-9-]{0,62}[a-z0-9]$/
+      const tenantIdPatternMessage = t('tenantFormDialog.ruleTenantIdPattern')
+      const tenantIdPatternRule = rules.pattern(tenantIdPattern, tenantIdPatternMessage)
+      const usernameRequiredMessage = t('tenantFormDialog.ruleUsername')
+      const usernameRequiredRule = rules.required(usernameRequiredMessage)
+      const usernamePattern = /^[a-zA-Z0-9][a-zA-Z0-9._-]+$/
+      const usernamePatternMessage = t('tenantFormDialog.ruleUsernamePattern')
+      const usernamePatternRule = rules.pattern(usernamePattern, usernamePatternMessage)
+      const usernameMinimumRule = rules.minLength(2)
+      const passwordRequiredMessage = t('tenantFormDialog.rulePassword')
+      const passwordRequiredRule = rules.required(passwordRequiredMessage)
+      const passwordMinimumRule = rules.minLength(12)
       Object.assign(base, {
-        tenantId: [
-          rules.required(t('tenantFormDialog.ruleTenantId')),
-          rules.pattern(
-            /^[a-z0-9][a-z0-9-]{0,62}[a-z0-9]$/,
-            t('tenantFormDialog.ruleTenantIdPattern'),
-          ),
-        ],
-        username: [
-          rules.required(t('tenantFormDialog.ruleUsername')),
-          rules.pattern(/^[a-zA-Z0-9][a-zA-Z0-9._-]+$/, t('tenantFormDialog.ruleUsernamePattern')),
-          rules.minLength(2),
-        ],
+        tenantId: [tenantIdRequiredRule, tenantIdPatternRule],
+        username: [usernameRequiredRule, usernamePatternRule, usernameMinimumRule],
         // BE 实际接受 ≥8,FE 加严到 ≥12 与「批量新增」「BE BatchCreateTenantRequest」对齐,
         // 避免单租户用 8 位弱密码后批量场景又要求 12 的不一致体验
-        password: [rules.required(t('tenantFormDialog.rulePassword')), rules.minLength(12)],
+        password: [passwordRequiredRule, passwordMinimumRule],
       })
     }
     return base

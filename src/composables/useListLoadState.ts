@@ -24,16 +24,19 @@ export function useListLoadState() {
   const loading = ref(false)
   const error = ref<unknown>(null)
 
-  async function run<T>(fn: () => Promise<T>): Promise<T | undefined> {
+  async function run<T>(
+    fn: () => Promise<T>,
+    isCurrent: () => boolean = () => true,
+  ): Promise<T | undefined> {
     loading.value = true
     error.value = null
     try {
       return await fn()
     } catch (err) {
-      error.value = err
+      if (isCurrent()) error.value = err
       throw err
     } finally {
-      loading.value = false
+      if (isCurrent()) loading.value = false
     }
   }
 

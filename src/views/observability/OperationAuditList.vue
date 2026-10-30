@@ -20,14 +20,9 @@
         :data="rows"
         :loading="tableBlocking"
         :total="total"
-        pagination-mode="cursor"
-        :has-more="hasMore"
-        :has-prev="cursorStack.length > 0"
         v-model:page="page"
         v-model:page-size="pageSize"
-        @change="resetCursorAndLoad"
-        @cursor-next="nextPage"
-        @cursor-prev="prevPage"
+        @change="load"
         :error="loadError"
         :on-retry="load"
       >
@@ -182,7 +177,7 @@
 <script setup lang="ts">
   import { reactive, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
-  import { RouterLink } from 'vue-router'
+  import { RouterLink, useRoute } from 'vue-router'
   import { ChartNoAxesCombined, FileClock } from '@lucide/vue'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
@@ -214,13 +209,9 @@
   const total = ref(0)
   const page = ref(1)
   const pageSize = ref(15)
-  const cursor = ref<string | null>(null)
-  const nextCursor = ref<string | null>(null)
-  const cursorStack = ref<(string | null)[]>([])
-  const hasMore = ref(false)
   const timeRange = ref<[string, string] | null>(null)
 
-  // 共 11 个聚合根类型,跟后端 @AuditAction 的 aggregateType 一一对应
+  // 聚合类型与后端操作审计写入保持一致。
   const aggregateTypeOptions = [
     'alert',
     'approval',
@@ -233,12 +224,14 @@
     'alert_routing',
     'config_release',
     'tenant',
+    'NOTIFICATION_DELIVERY',
   ]
 
+  const route = useRoute()
   const filters = reactive({
     action: '',
-    aggregateType: '',
-    aggregateId: '',
+    aggregateType: typeof route.query.aggregateType === 'string' ? route.query.aggregateType : '',
+    aggregateId: typeof route.query.aggregateId === 'string' ? route.query.aggregateId : '',
     operatorId: '',
     result: '',
     traceId: '',
@@ -262,12 +255,9 @@
         endTime: filters.endTime || undefined,
         pageNo: page.value,
         pageSize: pageSize.value,
-        cursor: cursor.value ?? '',
       })
       rows.value = resp.items ?? []
       total.value = resp.total ?? 0
-      nextCursor.value = resp.nextCursor ?? null
-      hasMore.value = Boolean(resp.hasMore)
     } catch (err) {
       loadError.value = err
       throw err
@@ -276,37 +266,9 @@
     }
   }
 
-  function resetCursor() {
-    cursor.value = null
-    nextCursor.value = null
-    cursorStack.value = []
-    hasMore.value = false
-    page.value = 1
-  }
-
-  async function resetCursorAndLoad() {
-    resetCursor()
-    await load()
-  }
-
-  async function nextPage() {
-    if (!hasMore.value || !nextCursor.value) return
-    cursorStack.value.push(cursor.value)
-    cursor.value = nextCursor.value
-    page.value += 1
-    await load()
-  }
-
-  async function prevPage() {
-    const prev = cursorStack.value.pop()
-    cursor.value = prev ?? null
-    page.value = Math.max(1, page.value - 1)
-    await load()
-  }
-
   function search() {
     return runSearch(() => {
-      resetCursor()
+      page.value = 1
       return load()
     })
   }
@@ -322,7 +284,7 @@
       filters.startTime = ''
       filters.endTime = ''
       timeRange.value = null
-      resetCursor()
+      page.value = 1
       return load()
     })
   }

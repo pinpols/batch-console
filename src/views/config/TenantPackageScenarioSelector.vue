@@ -5,7 +5,7 @@
         <h3>{{ t('tenantPackageImportWizard.templateScopeTitle') }}</h3>
         <p>{{ t('tenantPackageImportWizard.templateScopeHint') }}</p>
       </div>
-      <el-checkbox :model-value="model.includes('ALL')" @change="toggleAll">
+      <el-checkbox :model-value="model.includes('ALL')" @change="(checked: unknown) => toggleAll(checked === true)">
         {{ t('tenantPackageImportWizard.scenarioAll') }}
       </el-checkbox>
     </div>
@@ -21,7 +21,7 @@
           :model-value="isGroupChecked(group.options)"
           :indeterminate="isGroupIndeterminate(group.options)"
           :disabled="model.includes('ALL')"
-          @change="(checked) => toggleGroup(group.options, checked)"
+          @change="(checked: unknown) => toggleGroup(group.options, checked === true)"
         >
           {{ t(group.titleKey) }}
         </el-checkbox>
@@ -34,7 +34,7 @@
             :key="option.value"
             :model-value="isSelected(option.value)"
             :disabled="model.includes('ALL')"
-            @change="(checked) => toggleScenario(option.value, checked)"
+            @change="(checked: unknown) => toggleScenario(option.value, checked === true)"
           >
             {{ t(option.formatKey ?? option.labelKey) }}
           </el-checkbox>

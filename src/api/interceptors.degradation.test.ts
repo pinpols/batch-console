@@ -40,6 +40,7 @@ function makeClient() {
 }
 
 beforeEach(() => {
+  vi.resetAllMocks()
   storage.clear()
   storage.set(STORAGE_KEYS.session, '1')
   storage.set(STORAGE_KEYS.tenantId, 'tenant-a')
@@ -48,7 +49,7 @@ beforeEach(() => {
 })
 
 afterEach(() => {
-  vi.clearAllMocks()
+  vi.resetAllMocks()
   vi.useRealTimers()
 })
 

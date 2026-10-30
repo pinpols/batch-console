@@ -41,10 +41,12 @@
   const visible = computed(() => app.isDegraded && !dismissed.value)
   const localizedSources = computed(() =>
     app.activeDegradationSources.map((source) => {
-      const key = `degradation.source${source
-        .split(/[-_.]/)
-        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-        .join('')}`
+      const sourceParts = source.split(/[-_.]/)
+      const localizedSourceParts = sourceParts.map(
+        (part) => part.charAt(0).toUpperCase() + part.slice(1),
+      )
+      const sourceKeySuffix = localizedSourceParts.join('')
+      const key = `degradation.source${sourceKeySuffix}`
       return te(key) ? t(key) : source
     }),
   )

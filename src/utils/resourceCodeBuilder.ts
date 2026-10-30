@@ -18,7 +18,8 @@ export interface BizValidationResult {
 
 /** 输入 normalize:`daily-report` → `DAILY_REPORT`(用户随便打,工具收敛) */
 export function normalizeBiz(raw: string): string {
-  return raw.toUpperCase().replace(/[^A-Z0-9_]/g, '_')
+  const uppercaseText = raw.toUpperCase()
+  return uppercaseText.replace(/[^A-Z0-9_]/g, '_')
 }
 
 /** biz 名称校验。biz 必须先经 normalizeBiz 处理 */

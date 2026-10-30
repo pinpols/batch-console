@@ -54,9 +54,12 @@
   const router = useRouter()
   const tenant = useTenantStore()
   const VALID = new Set(['general', 'catch-up'])
-  const activeTab = ref<'general' | 'catch-up'>(
-    VALID.has(String(route.query.tab)) ? (route.query.tab as 'general' | 'catch-up') : 'general',
-  )
+  const routeTabText = String(route.query.tab)
+  const routeTabIsValid = VALID.has(routeTabText)
+  const initialTab: 'general' | 'catch-up' = routeTabIsValid
+    ? (route.query.tab as 'general' | 'catch-up')
+    : 'general'
+  const activeTab = ref<'general' | 'catch-up'>(initialTab)
 
   watch(activeTab, (tab) => {
     void router.replace({ query: { ...route.query, tab } })

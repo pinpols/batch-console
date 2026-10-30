@@ -37,8 +37,9 @@
     defineProps<{
       options?: readonly MetaOption[]
       enumKey?: string
+      excludeValues?: readonly string[]
     }>(),
-    { options: () => [] },
+    { options: () => [], excludeValues: () => [] },
   )
 
   const model = defineModel<string | number | boolean | null | undefined>()
@@ -52,10 +53,14 @@
   const { data: metaEnums } = useConsoleMetaEnumsQuery()
 
   const resolvedOptions = computed<readonly MetaOption[]>(() => {
-    if (props.options.length > 0) return props.options
-    if (!shouldAutoFetch.value) return props.options
-    const groups = metaEnums.value as Record<string, MetaOption[]> | undefined
-    return groups?.[props.enumKey as string] ?? []
+    let options = props.options
+    if (options.length === 0 && shouldAutoFetch.value) {
+      const groups = metaEnums.value as Record<string, MetaOption[]> | undefined
+      options = groups?.[props.enumKey as string] ?? []
+    }
+    if (props.excludeValues.length === 0) return options
+    const excluded = new Set(props.excludeValues)
+    return options.filter((option) => !excluded.has(option.value))
   })
 
   function formatLabel(opt: MetaOption): string {

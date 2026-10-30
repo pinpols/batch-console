@@ -7,6 +7,13 @@
       </el-button>
     </div>
 
+    <el-alert
+      v-if="loadError"
+      :title="t('jobRelatedFiles.loadError')"
+      type="error"
+      :closable="false"
+    />
+
     <el-table v-loading="loading" :data="rows" size="small" empty-text=" " class="related-table">
       <el-table-column prop="fileName" :label="t('jobRelatedFiles.colFileName')" min-width="240">
         <template #default="{ row }">
@@ -38,7 +45,10 @@
       />
     </div>
 
-    <p v-if="!loading && rows.length === 0" class="related-empty">
+    <p
+      v-if="tenantId && jobCode && !loading && !loadError && rows.length === 0"
+      class="related-empty"
+    >
       {{ t('jobRelatedFiles.empty') }}
     </p>
   </div>
@@ -72,14 +82,24 @@
   const { t } = useI18n({ useScope: 'global' })
 
   const loading = ref(false)
+  const loadError = ref(false)
   const rows = ref<ConsoleFileRecordResponse[]>([])
   const total = ref(0)
   const page = ref(1)
   const pageSize = 5
+  let requestSequence = 0
 
   async function load() {
-    if (!props.tenantId || !props.jobCode) return
+    const sequence = ++requestSequence
+    if (!props.tenantId || !props.jobCode) {
+      rows.value = []
+      total.value = 0
+      loading.value = false
+      loadError.value = false
+      return
+    }
     loading.value = true
+    loadError.value = false
     try {
       const res = await fileApi.listRelatedToJob(
         props.tenantId,
@@ -87,13 +107,16 @@
         page.value,
         pageSize,
       )
+      if (sequence !== requestSequence) return
       rows.value = res.items ?? []
       total.value = res.total ?? 0
     } catch {
+      if (sequence !== requestSequence) return
+      loadError.value = true
       rows.value = []
       total.value = 0
     } finally {
-      loading.value = false
+      if (sequence === requestSequence) loading.value = false
     }
   }
 
@@ -105,7 +128,11 @@
   // 父切换 jobCode 时重新拉
   watch(
     () => [props.tenantId, props.jobCode],
-    () => reload(),
+    () => {
+      rows.value = []
+      total.value = 0
+      reload()
+    },
     { immediate: true },
   )
 

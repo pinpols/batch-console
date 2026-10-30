@@ -14,7 +14,7 @@ export interface DashboardDistributionMetric {
 export interface DashboardBundle {
   jobs: DashboardLineMetric
   alerts: DashboardLineMetric
-  sla: DashboardLineMetric
+  sla: DashboardLineMetric & { totalWithSla: number }
   triggerTypes: DashboardDistributionMetric
   workerLoads: DashboardDistributionMetric
 }
@@ -57,13 +57,13 @@ function normalizeDistribution(
   nameKeys: string[],
   valueKeys: string[],
 ): DashboardDistributionMetric {
+  const metricCandidates = rows.map((row) => ({
+    name: pickString(row, nameKeys),
+    value: pickNumber(row, valueKeys),
+  }))
+  const visibleMetrics = metricCandidates.filter((item) => item.name || item.value > 0)
   return {
-    items: rows
-      .map((row) => ({
-        name: pickString(row, nameKeys),
-        value: pickNumber(row, valueKeys),
-      }))
-      .filter((item) => item.name || item.value > 0),
+    items: visibleMetrics,
   }
 }
 
@@ -95,19 +95,23 @@ export function normalizeDashboardBundle(input: {
   slaStats: DashboardPayload
 }): DashboardBundle {
   const { jobStats, triggerStats, alertStats, workerStats, slaStats } = input
-  const jobRows = pickArray(asObject(jobStats), ['dailyTrend', 'trend', 'items', 'series'])
-  const alertRows = pickArray(asObject(alertStats), ['dailyTrend', 'trend', 'items'])
-  const slaRows = pickArray(asObject(slaStats), ['dailyTrend', 'trend', 'items'])
-  const triggerRows = pickArray(asObject(triggerStats), [
+  const jobStatsObject = asObject(jobStats)
+  const jobRows = pickArray(jobStatsObject, ['dailyTrend', 'trend', 'items', 'series'])
+  const alertStatsObject = asObject(alertStats)
+  const alertRows = pickArray(alertStatsObject, ['dailyTrend', 'trend', 'items'])
+  const slaStatsObject = asObject(slaStats)
+  const slaRows = pickArray(slaStatsObject, ['dailyTrend', 'trend', 'items'])
+  const triggerStatsObject = asObject(triggerStats)
+  const triggerRows = pickArray(triggerStatsObject, [
     'triggerTypeDistribution',
     'distribution',
     'items',
   ])
-  const workerRows = [
-    ...pickArray(asObject(workerStats), ['groupDistribution']),
-    ...pickArray(asObject(workerStats), ['statusDistribution']),
-    ...pickArray(asObject(workerStats), ['items']),
-  ]
+  const workerStatsObject = asObject(workerStats)
+  const workerGroupRows = pickArray(workerStatsObject, ['groupDistribution'])
+  const workerStatusRows = pickArray(workerStatsObject, ['statusDistribution'])
+  const workerItemRows = pickArray(workerStatsObject, ['items'])
+  const workerRows = [...workerGroupRows, ...workerStatusRows, ...workerItemRows]
 
   return {
     jobs: {
@@ -126,11 +130,12 @@ export function normalizeDashboardBundle(input: {
       },
     },
     sla: {
+      totalWithSla: pickNumber(slaStatsObject, ['totalWithSla']),
       labels: normalizeLabels(slaRows),
       series: {
         onTime: slaRows.map((row) => pickNumber(row, ['onTimeCount', 'onTime', 'successCount'])),
         violation: slaRows.map((row) =>
-          pickNumber(row, ['violationCount', 'violations', 'breachCount']),
+          pickNumber(row, ['breached', 'violationCount', 'violations', 'breachCount']),
         ),
       },
     },

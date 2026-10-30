@@ -1,0 +1,107 @@
+{
+  "date": "2026-10-26",
+  "scope": "17 bounded frontend/backend capability items and complete document/script governance; cumulative local real integration evidence, not staging or production acceptance",
+  "requirements": {
+    "G01": "verified within recorded local acceptance scope",
+    "G02": "verified within recorded local acceptance scope",
+    "G03": "verified within recorded local acceptance scope",
+    "G04": "verified within recorded local acceptance scope",
+    "G05": "verified within recorded local acceptance scope",
+    "G06": "verified within recorded local acceptance scope",
+    "G07": "verified within recorded local acceptance scope",
+    "G08": "verified within recorded local acceptance scope",
+    "G09": "verified within recorded local acceptance scope",
+    "G10": "verified within recorded local acceptance scope",
+    "G11": "verified within recorded local acceptance scope",
+    "G12": "verified within recorded local acceptance scope",
+    "B01": "verified within recorded local acceptance scope",
+    "P00": "verified within recorded local acceptance scope",
+    "P01": "verified within recorded local acceptance scope",
+    "P02": "verified within recorded local acceptance scope",
+    "P03": "verified within recorded local acceptance scope"
+  },
+  "evidenceSha256": {
+    "batch-day-governance-2026-10-25/verified-state.json": "1c96eaaa2d0cce3614100e64704bd70aec1751bd2959d00e6af7c9bc3b424cc8",
+    "scheduler-dependency-waits-2026-10-26/consumption-evidence.json": "2cbbcdd992cc867538579b5368ea9c784e276e83e9ca85b027aeb1d0c4b8f252",
+    "scheduler-dependency-waits-2026-10-26/release-consumption-evidence.json": "0f16f33393fae2604c79810fd6338c6c46595eb30f51989bbf698b32965cacaa",
+    "job-pause-resume-2026-10-26/real-worker-evidence.json": "5d3b4267cd09f1737b03737f6af780c6bfafce44dfa1f406a43219512b1c64ff",
+    "workflow-control-dag-2026-10-26/real-evidence.json": "5d675678157ae95b30d4e859f67f934b07e42c868b1506156a8143228f2bbce2",
+    "atomic-runtime-2026-10-26/verified-available.json": "b8a6566effceb9e758bc3547153eea14a8de128ea1db4a952b2628cd0e3f3e85",
+    "atomic-runtime-2026-10-26/verified-unavailable.json": "63aaa10a12b0a5ec4ea7ac9352fa0f75a346840fb8c5dd027e8d46875f5ea89f",
+    "dispatch-worker-progress-2026-10-26/real-evidence.json": "aad69cc025d0c1ae3186961e76c36b436a3f440aa2c977760567f07217f44e27",
+    "result-version-governance-2026-10-26/real-evidence.json": "ac61be3c34580cf19471a326a0ff2ac015ac9315dd3eac91b6b8272dd0a97442",
+    "atomic-config-2026-10-26/real-evidence.json": "3b7c89922819ea6ffb6ea63fffd29676c8ab495e2c1829ff2a7347d5186c65fd",
+    "oidc-identity-2026-10-26/real-evidence.json": "80535da40f7d8f329047669248e0588013cf96f7bac34fd03b66827210ac73af",
+    "forensic-export-2026-10-26/real-evidence.json": "4121f859afe79a810c23ec0675287826c632a3e3caf0b530d8e823ce119f2b85",
+    "worker-claimed-task-diagnostics-2026-10-26/real-evidence.json": "15716bcb89dcf1501c404511e4af53539c104575d0a93e4469ccddc36489d0b7",
+    "workflow-definition-versions-2026-10-26/real-evidence.json": "f9bb96039a941dd66e6a92bd352f49de21e6ba7d07c99314753b40798b4456e8",
+    "manual-file-upload-2026-10-26/file-group-binding-evidence.json": "b3325a8cc21d6cb5b9e5d0e3d01485edcd7e1b096f1d99ac3f988a5740ccb50d",
+    "persistent-waits-2026-10-26/real-evidence.json": "ff8a2ee7894e4e9d5c7a83b7db391a9fe33c24b3d0a52a4d236a2a95db7e4754",
+    "workflow-dag-branches-2026-10-26/real-evidence.json": "d34830f4773c936b3a89f3f3a0883929e379f7663b273f8e3de62f8aaf0206d5",
+    "process-worker-progress-2026-10-26/atomic-shared-fixture-regression.json": "2d79030ca3a74964762afec6e13811d2bc8b8a75a99f39efb1fc18f12b57633d",
+    "import-worker-progress-2026-10-26/real-evidence.json": "b6418c3180955824e7f695138cfdc421e699e6bf5c41487526ba9e8435d04d81",
+    "workflow-whole-replay-export-2026-10-26/real-evidence.json": "9c75d7428f5d9213aa1b5f21594ef3acdc2eb6b6af4ef640161bc80f6fe5fe2f",
+    "process-worker-progress-2026-10-26/real-evidence.json": "bcf86f99ea676eb9bc09f28d6acb042850ad668229247a0c7bc1647bf962ecf1",
+    "workflow-failed-node-replay-2026-10-26/real-evidence.json": "85a70ac8472c1212caa1664b10f4421212c989ece93ca8c6bdf53a351f872032",
+    "quartz-daily-progress-2026-10-26/real-evidence.json": "71f8240436220efe4bf9564d1d3466b0396dd0ecacbe8ef32152003cbe427318",
+    "multi-calendar-daily-progress-2026-10-26/real-evidence.json": "cc6e4cfa1ae54a206be47cd7bcdc7f4c348e8478e408abec321c252a4355b315"
+  },
+  "governance": {
+    "baseline": 328,
+    "delta": 75,
+    "sources": 403,
+    "candidates": 368,
+    "uncovered": 0,
+    "originalSourceDriftRevalidated": 51,
+    "currentSkillsValidated": 12
+  },
+  "finalGates": {
+    "verifyLocal": "exit 0",
+    "unitFiles": 198,
+    "unitTests": 1134,
+    "productionVulnerabilities": 0,
+    "docsBuild": "exit 0",
+    "publicationTests": 4,
+    "docsCheck": "exit 0",
+    "changelogCheck": "exit 0"
+  },
+  "finalRuntime": {
+    "dispatchTests": 1,
+    "retries": 0,
+    "runnerExitCode": 0,
+    "cleanupCounters": 77,
+    "isolatedDispatchDatabaseResidue": 0,
+    "exclusivePortsReleased": [
+      18181,
+      18182,
+      18183,
+      5181
+    ]
+  },
+  "sourceCompatibility": {
+    "currentDispatchSourceHashes": "matched",
+    "backendMainSourcesNewerThanAcceptedBuild": 0,
+    "consoleOperations": 431,
+    "consolePaths": 383,
+    "endpointMissingExtraDuplicate": 0
+  },
+  "worktrees": {
+    "frontend": {
+      "branch": "fix/wdi-current",
+      "head": "662d254e2f8b97f93021de548815470d2291c997",
+      "uncommitted": true
+    },
+    "backend": {
+      "branch": "fix/wdi-current",
+      "head": "f3d5e400d3b5bd737124b57cf0a38e685432aab2",
+      "uncommitted": true
+    }
+  },
+  "acceptedBuildSha256": {
+    "index.html": "6eb2bdf2699fc502fc2b58d6509e6c68e6123cca73914561f89837783d44aa8b",
+    "console.jar": "d5ecdc5ecb761f2728fcfa1dbf1787afe07c5fbd93d2de5745c73a222d28314a",
+    "orchestrator.jar": "58540ec3446a590de129127c90c53f8a5514aacefde93e14f32dba1f41b70c2c",
+    "trigger.jar": "1c159f265079cf5fe6fe9c635d72ec7b173f06688aa1297e2a39732b838b4342",
+    "worker-dispatch.jar": "fc94640d7836d9d66cae944823ffc7e00a4c76caec1b8a8df2e8d31fee82edef"
+  }
+}

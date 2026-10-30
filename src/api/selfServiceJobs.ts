@@ -16,8 +16,8 @@ export function selfServiceCompensationRequest(body: {
   tenantId: string
   jobCode: string
   bizDate: string
-  compensationType?: string
-  targetInstanceNo?: string
+  compensationType: 'JOB'
+  targetInstanceNo: string
   reason?: string
 }) {
   return post<string>('/api/console/self-service/jobs/compensation-request', body)

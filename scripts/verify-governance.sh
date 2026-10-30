@@ -25,6 +25,7 @@ gate_run FE_READABILITY_CALLS "新增调用现场深层嵌套" npm run check:rea
 gate_run FE_READABILITY_CALLS_TEST "调用现场门禁正反例" npm run test:readability-calls
 gate_run FE_BASELINE_EXPANSION "治理基线扩张审批与反例" bash -c 'npm run check:baseline-expansion && npm run test:baseline-expansion'
 BATCH_GATE_GROUP=testing gate_run FE_TEST_FIXTURE_SOURCES "测试 fixture 事实来源" npm run check:test-fixture-sources
+BATCH_GATE_GROUP=testing gate_run FE_TYPECHECK_SCOPE_TEST "类型检查源码范围正反例" npm run test:typecheck
 gate_run FE_UI_COMPLEXITY "UI 复杂度预算" npm run check:ui-complexity
 gate_run FE_WORKFLOWS "Workflow 治理" npm run check:workflows
 gate_run FE_SHELL "Shell 治理" npm run check:shell

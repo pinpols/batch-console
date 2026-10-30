@@ -40,10 +40,9 @@ test.describe('API Key management CRUD (API Key 增删)', () => {
     const secretModal = page.locator('[role="dialog"]').filter({ hasText: 'API Key 已创建' })
     if (await isVisible(secretModal, 5000)) {
       // 1. 等动画完成再操作,避免 not-stable 报错
-      await page.waitForTimeout(400)
       // 2. 复制(grantPermissions 已给 clipboard 权限,这里应该真复制成功)
       const copyBtn = secretModal.getByRole('button', { name: /复制密钥|已复制/ }).first()
-      if (await copyBtn.count()) await copyBtn.click({ force: true })
+      if (await copyBtn.count()) await copyBtn.click()
       // 3. 等"已复制"状态生效(close 按钮才会从 disabled → enabled)
       await expect(secretModal.getByRole('button', { name: /我已保存,关闭/ })).toBeEnabled({
         timeout: 3000,
@@ -64,7 +63,6 @@ test.describe('API Key management CRUD (API Key 增删)', () => {
     if (await keywordInput.count()) {
       await keywordInput.fill(uniqueName)
       await keywordInput.press('Enter')
-      await page.waitForTimeout(1500)
     }
     await expect(page.getByRole('cell', { name: uniqueName })).toBeVisible({ timeout: 15000 })
 
@@ -75,7 +73,6 @@ test.describe('API Key management CRUD (API Key 增删)', () => {
         .forEach((el) => (el as HTMLElement).remove())
       document.body.classList.remove('el-popup-parent--hidden')
     })
-    await page.waitForTimeout(200)
     const row = page.locator('tr', { hasText: uniqueName })
     const detailBtn = row.getByRole('button', { name: '详情' })
     if (await isVisible(detailBtn, 2000)) {

@@ -13,50 +13,90 @@ export interface InstanceOption {
  * 用于「自助重跑 / 自助补偿」里的「目标实例号」下拉。jobCode 或 bizDate 变化
  * 会清空已选 instanceNo,避免错位提交。
  */
-export function useInstanceNoSearch(jobCode: Ref<string>, bizDate: Ref<string>) {
+export function useInstanceNoSearch(
+  jobCode: Ref<string>,
+  bizDate: Ref<string>,
+  selectedInstanceNo?: Ref<string>,
+) {
   const tenant = useTenantStore()
   const instanceLoading = ref(false)
   const instanceOptions = ref<InstanceOption[]>([])
+  let requestGeneration = 0
 
   async function load(keyword = '') {
-    if (!jobCode.value || !bizDate.value) {
-      instanceOptions.value = []
+    const requestedTenantId = tenant.tenantId
+    const requestedJobCode = jobCode.value
+    const requestedBizDate = bizDate.value
+    const generation = ++requestGeneration
+    if (!requestedTenantId || !requestedJobCode || !requestedBizDate) {
+      clearOptions()
       return
     }
     instanceLoading.value = true
     try {
       const res = await queryJobInstances({
-        tenantId: tenant.tenantId,
-        jobCode: jobCode.value,
-        startDate: bizDate.value,
-        endDate: bizDate.value,
+        tenantId: requestedTenantId,
+        jobCode: requestedJobCode,
+        startDate: requestedBizDate,
+        endDate: requestedBizDate,
         page: 1,
         pageSize: 30,
       })
-      const q = keyword.trim().toLowerCase()
-      instanceOptions.value = (res.records ?? [])
-        .map((r) => ({
-          instanceNo: r.instanceNo,
-          status: r.instanceStatus,
-          batchNo: r.batchNo,
-        }))
-        .filter((r) => r.instanceNo)
-        .filter((r) => !q || r.instanceNo.toLowerCase().includes(q))
+      if (!isCurrentRequest(generation, requestedTenantId, requestedJobCode, requestedBizDate)) {
+        return
+      }
+      const trimmedKeyword = keyword.trim()
+      const q = trimmedKeyword.toLowerCase()
+      const records = res.records ?? []
+      const optionCandidates = records.map((record) => ({
+        instanceNo: record.instanceNo,
+        status: record.instanceStatus,
+        batchNo: record.batchNo,
+      }))
+      const selectableOptions = optionCandidates.filter((option) => option.instanceNo)
+      instanceOptions.value = selectableOptions.filter(
+        (option) => !q || option.instanceNo.toLowerCase().includes(q),
+      )
     } catch {
-      instanceOptions.value = []
+      if (isCurrentRequest(generation, requestedTenantId, requestedJobCode, requestedBizDate)) {
+        instanceOptions.value = []
+      }
     } finally {
-      instanceLoading.value = false
+      if (generation === requestGeneration) instanceLoading.value = false
     }
   }
 
   function clearOptions() {
+    requestGeneration += 1
     instanceOptions.value = []
+    if (selectedInstanceNo) selectedInstanceNo.value = ''
+    instanceLoading.value = false
+  }
+
+  function isCurrentRequest(
+    generation: number,
+    requestedTenantId: string,
+    requestedJobCode: string,
+    requestedBizDate: string,
+  ) {
+    return (
+      generation === requestGeneration &&
+      tenant.tenantId === requestedTenantId &&
+      jobCode.value === requestedJobCode &&
+      bizDate.value === requestedBizDate
+    )
   }
 
   // jobCode / bizDate 变化清候选,避免上一组的实例号留在 UI 上
   watch([jobCode, bizDate], () => {
     clearOptions()
   })
+  watch(
+    () => tenant.tenantId,
+    () => {
+      clearOptions()
+    },
+  )
 
   return {
     instanceLoading,

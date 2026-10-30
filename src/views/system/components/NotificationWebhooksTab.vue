@@ -40,7 +40,7 @@
           <el-form-item :label="t('notificationCommon.enabledLabel')">
             <EnabledStatusFilter
               v-model="webhookFilterDraft.enabled"
-              :aria-label="t('notificationCommon.enabledLabel')"
+              :ariaLabel="t('notificationCommon.enabledLabel')"
             />
           </el-form-item>
         </ListPageQueryBar>
@@ -72,7 +72,10 @@
       <el-table-column :label="t('notificationCommon.colActions')" width="220" fixed="right">
         <template #default="{ row }">
           <div class="table-actions">
-            <RowActions :actions="webhookRowActions(row)" :inline-limit="1" />
+            <RowActions
+              :actions="webhookRowActions(row as WebhookSubscription)"
+              :inline-limit="1"
+            />
           </div>
         </template>
       </el-table-column>
@@ -168,7 +171,7 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, reactive, computed } from 'vue'
+  import { ref, reactive, computed, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage, ElMessageBox } from 'element-plus'
 
@@ -189,6 +192,7 @@
   import { toPageResult } from '@/api/adapters'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
+  import { useTenantRequestScope } from '@/composables/useTenantRequestScope'
   import ProTable from '@/components/table/ProTable.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
   import RowActions, { type RowAction } from '@/components/common/RowActions.vue'
@@ -236,15 +240,29 @@
     ],
   }
 
+  const listScope = useTenantRequestScope()
+  const formScope = useTenantRequestScope()
+  const deleteScope = useTenantRequestScope()
+  const detailScope = useTenantRequestScope()
+  let openedForm: ReturnType<typeof formScope.begin> | null = null
   async function loadWebhooks() {
-    await runLoadingWebhooks(async () => {
-      webhookRows.value = await listWebhooks(tenant.tenantId)
-    }).catch(() => {
+    const request = listScope.begin()
+    if (!request.tenantId) return
+    await runLoadingWebhooks(
+      async () => {
+        const data = await listWebhooks(request.tenantId)
+        if (listScope.isCurrent(request)) webhookRows.value = data
+      },
+      () => listScope.isCurrent(request),
+    ).catch(() => {
+      if (!listScope.isCurrent(request)) return
       webhookRows.value = []
     })
   }
 
   function openWebhookCreate() {
+    if (!tenant.tenantId) return
+    openedForm = formScope.begin()
     webhookEditingId.value = null
     webhookForm.name = ''
     webhookForm.callbackUrl = ''
@@ -255,6 +273,8 @@
   }
 
   function openWebhookEdit(row: WebhookSubscription) {
+    if (!tenant.tenantId || (row.tenantId && row.tenantId !== tenant.tenantId)) return
+    openedForm = formScope.begin()
     webhookEditingId.value = row.id
     webhookForm.name = row.name
     webhookForm.callbackUrl = row.callbackUrl
@@ -288,13 +308,14 @@
   }
 
   async function saveWebhook() {
-    if (!(await validateWebhookForm())) return
+    const request = openedForm
+    if (savingWebhook.value || !request || !formScope.isCurrent(request)) return
+    if (!(await validateWebhookForm()) || !formScope.isCurrent(request)) return
     savingWebhook.value = true
     try {
-      const eventTypeList = webhookForm.eventTypes
-        .split(',')
-        .map((s) => s.trim())
-        .filter(Boolean)
+      const rawEventTypes = webhookForm.eventTypes.split(',')
+      const trimmedEventTypes = rawEventTypes.map((eventType) => eventType.trim())
+      const eventTypeList = trimmedEventTypes.filter(Boolean)
       const baseBody = {
         callbackUrl: webhookForm.callbackUrl,
         eventTypes: eventTypeList,
@@ -302,19 +323,22 @@
         enabled: webhookForm.enabled,
       }
       if (webhookEditingId.value) {
-        await updateWebhook(webhookEditingId.value, tenant.tenantId, baseBody)
+        await updateWebhook(webhookEditingId.value, request.tenantId, baseBody)
       } else {
-        await createWebhook(tenant.tenantId, { name: webhookForm.name, ...baseBody })
+        await createWebhook(request.tenantId, { name: webhookForm.name, ...baseBody })
       }
+      if (!formScope.isCurrent(request)) return
       ElMessage.success(t('notificationCommon.savedToast'))
       webhookFormVisible.value = false
       await loadWebhooks()
     } finally {
-      savingWebhook.value = false
+      if (formScope.isCurrent(request)) savingWebhook.value = false
     }
   }
 
   async function confirmDeleteWebhook(row: WebhookSubscription) {
+    const request = deleteScope.begin()
+    if (!request.tenantId || (row.tenantId && row.tenantId !== request.tenantId)) return
     try {
       await confirmDanger({
         verb: t('notificationCommon.deleteVerb'),
@@ -324,7 +348,9 @@
         consequence: t('notificationWebhooksTab.deleteConsequence'),
         irreversible: false,
       })
-      await deleteWebhook(row.id, tenant.tenantId)
+      if (!deleteScope.isCurrent(request)) return
+      await deleteWebhook(row.id, request.tenantId)
+      if (!deleteScope.isCurrent(request)) return
       ElMessage.success(t('notificationCommon.deletedToast'))
       await loadWebhooks()
     } catch {
@@ -333,7 +359,11 @@
   }
 
   async function viewWebhookLogs(row: WebhookSubscription) {
-    webhookDeliveryLogs.value = await listWebhookDeliveryLogs(tenant.tenantId, row.id)
+    const request = detailScope.begin()
+    if (!request.tenantId || (row.tenantId && row.tenantId !== request.tenantId)) return
+    const data = await listWebhookDeliveryLogs(request.tenantId, row.id)
+    if (!detailScope.isCurrent(request)) return
+    webhookDeliveryLogs.value = data
     webhookLogVisible.value = true
   }
 
@@ -377,6 +407,21 @@
     })
   }
 
+  watch(
+    () => tenant.tenantId,
+    () => {
+      webhookRows.value = []
+      webhookDeliveryLogs.value = []
+      webhookFormVisible.value = false
+      webhookLogVisible.value = false
+      webhookForm.secret = ''
+      openedForm = null
+      savingWebhook.value = false
+      loadingWebhooks.value = false
+      loadWebhooksError.value = null
+    },
+    { flush: 'sync' },
+  )
   useTenantReload(() => {
     webhookPage.value = 1
     void loadWebhooks()

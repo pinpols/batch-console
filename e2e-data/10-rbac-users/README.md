@@ -1,28 +1,14 @@
-# 10 — RBAC 用户矩阵
+# 账号与角色历史输入
 
-## 目的
-测每个角色访问系统时该有的可见性 + 拒绝行为(403 toast、按钮禁用、列表空过滤)。
+本页是保留输入与当前测试入口的目录说明。执行范围与准备/清理规则见[本目录总览](../README.md)和[执行说明](../EXEC-MATRIX.md)。
 
-## 用户矩阵(待 BE 同事建)
+## 保留资产
 
-| 用户名 | 密码 | 角色 | 租户 | 用途 |
-|---|---|---|---|---|
-| `admin` | `admin123` | ROLE_ADMIN | system | 全量验证(已存在) |
-| `tadmin-ta` | `Admin@123abc` | ROLE_TENANT_ADMIN | ta | 测本租户管理与跨租户拒绝 |
-| `op-ta` | `Op@2026` | ROLE_TENANT_USER | ta | 测只读与受控自助操作 |
-| `auditor` | `Au@2026` | ROLE_AUDITOR | system | 测审计页可见 + 写操作禁 |
+- [`users.json`](./users.json)：历史用户样本，其中旧角色和口令只用于追溯当时测试输入。
+- [历史用户 SQL](../archive/10-rbac-users/seed-users.sql)与[提示脚本](../archive/10-rbac-users/seed-users.sh)。
 
-## 创建脚本(待写)
-```bash
-./create-test-users.sh
-```
-Admin token + POST `/api/console/users` 批量建。
+## 当前入口与适用性
 
-## 测试用例
-- 用租户用户登录，定义页写操作应隐藏或禁用
-- 用租户用户登录，`/system/users` 权限自查可访问，管理页不可达
-- 用租户用户登录，可看到 `/self-service` 与本租户只读页面
-- 角色越权调写接口 → 401 → toast 提示而非踢出登录(回归 5/10 修的 bug)
+当前仅使用 `ROLE_ADMIN`、`ROLE_AUDITOR`、`ROLE_TENANT_ADMIN`、`ROLE_TENANT_USER`，权限依据见[角色与页面矩阵](../../docs/user-guide/role-page-matrix.md)。账户可通过当前 [`src/api/userAccounts.ts`](../../src/api/userAccounts.ts)的创建和批量流程管理；不能沿用归档脚本“没有创建 API，只能 SQL”的结论。
 
-## FE 触发路径
-任何菜单/按钮——核心是验证 nav menus 按 role 过滤 + 写按钮 disabled 状态
+测试账号由当前 setup/专属 helper 配置，场景见 [`rbac-matrix.spec.ts`](../../e2e/rbac-matrix.spec.ts)、[`rbac-denial.spec.ts`](../../e2e/rbac-denial.spec.ts)。历史 JSON、旧角色及密码哈希占位不作为当前账号准备指令。

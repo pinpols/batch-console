@@ -198,8 +198,13 @@
       { min: 12, message: t('myAccount.ruleNewPasswordMinLen'), trigger: 'blur' },
       {
         validator: (_r, v: string, cb) => {
-          if (v && v === form.oldPassword) cb(new Error(t('myAccount.ruleNewSameAsOld')))
-          else cb()
+          if (v && v === form.oldPassword) {
+            const errorMessage = t('myAccount.ruleNewSameAsOld')
+            const validationError = new Error(errorMessage)
+            cb(validationError)
+          } else {
+            cb()
+          }
         },
         trigger: 'blur',
       },
@@ -208,8 +213,13 @@
       { required: true, message: t('myAccount.ruleConfirmRequired'), trigger: 'blur' },
       {
         validator: (_r, v: string, cb) => {
-          if (v !== form.newPassword) cb(new Error(t('myAccount.ruleConfirmMismatch')))
-          else cb()
+          if (v !== form.newPassword) {
+            const errorMessage = t('myAccount.ruleConfirmMismatch')
+            const validationError = new Error(errorMessage)
+            cb(validationError)
+          } else {
+            cb()
+          }
         },
         trigger: 'blur',
       },
@@ -225,7 +235,8 @@
   }
 
   async function submit() {
-    if (!(await formRef.value?.validate().catch(() => false))) return
+    const formIsValid = await formRef.value?.validate().catch(() => false)
+    if (!formIsValid) return
     submitting.value = true
     const wasMustChangePassword = auth.userInfo?.mustChangePassword === true
     try {

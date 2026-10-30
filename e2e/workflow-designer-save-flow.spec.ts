@@ -28,7 +28,27 @@ test.describe('@workflow-designer-save 工作流设计器保存流', () => {
     const stamp = Date.now()
     const startCode = `start_${stamp}`
     const jobCode = `job_${stamp}`
+    const jobDefinitionCode = `e2e-job-${stamp}`
     const endCode = `end_${stamp}`
+    const jobResponse = await page.request.post('/api/console/job-definitions', {
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Tenant-Id': 'ta',
+        'Idempotency-Key': `e2e-wfd-save-job-${stamp}`,
+        ...(await csrfHeaders(page.request)),
+      },
+      data: {
+        tenantId: 'ta',
+        jobCode: jobDefinitionCode,
+        jobName: `E2E workflow save job ${stamp}`,
+        jobType: 'GENERAL',
+        scheduleType: 'MANUAL',
+        enabled: true,
+      },
+    })
+    const jobPayload = (await jobResponse.json()) as { data?: unknown; code?: string }
+    expect(jobResponse.ok(), JSON.stringify(jobPayload)).toBe(true)
+
     const createResponse = await page.request.post('/api/console/workflow-definitions', {
       headers: {
         'Content-Type': 'application/json',
@@ -48,7 +68,7 @@ test.describe('@workflow-designer-save 工作流设计器保存流', () => {
             nodeCode: jobCode,
             nodeName: '作业',
             nodeType: 'JOB',
-            relatedJobCode: `e2e_job_${stamp}`,
+            relatedJobCode: jobDefinitionCode,
             enabled: true,
           },
           { nodeCode: endCode, nodeName: '结束', nodeType: 'END', enabled: true },
@@ -107,7 +127,6 @@ test.describe('@workflow-designer-save 工作流设计器保存流', () => {
     const autoLayoutBtn = page.getByRole('button', { name: '自动布局' }).first()
     await expect(autoLayoutBtn).toBeEnabled()
     await autoLayoutBtn.click()
-    await page.waitForTimeout(800)
     await expectNodesInsideCanvas(page)
     await expectEdgesRendered(page, 2)
 
@@ -218,7 +237,7 @@ async function mainCanvasNodeCount(page: import('@playwright/test').Page): Promi
 }
 
 async function expectNodesInsideCanvas(page: import('@playwright/test').Page) {
-  const result = await page.evaluate(() => {
+  const currentLayout = () => page.evaluate(() => {
     const canvas = document.querySelector('.dag-canvas__graph')?.getBoundingClientRect()
     const nodes = Array.from(document.querySelectorAll('.dag-canvas__graph .x6-node'))
       .filter((node) => !node.closest('.x6-widget-minimap'))
@@ -234,12 +253,11 @@ async function expectNodesInsideCanvas(page: import('@playwright/test').Page) {
     ).length
     return { canvas: true, outside }
   })
-  expect(result.canvas, '工作流画布不存在').toBe(true)
-  expect(result.outside, '自动布局后仍有节点被画布裁切').toBe(0)
+  await expect.poll(currentLayout, { message: '画布存在且自动布局节点均在画布内' }).toEqual({ canvas: true, outside: 0 })
 }
 
 async function expectEdgesRendered(page: import('@playwright/test').Page, expected: number) {
-  const rendered = await page.evaluate(() => {
+  const renderedEdgeCount = () => page.evaluate(() => {
     const canvas = document.querySelector('.dag-canvas__graph')?.getBoundingClientRect()
     if (!canvas) return 0
     return Array.from(document.querySelectorAll('.dag-canvas__graph .x6-edge')).filter((edge) => {
@@ -262,5 +280,5 @@ async function expectEdgesRendered(page: import('@playwright/test').Page, expect
       })
     }).length
   })
-  expect(rendered, '自动布局后连线没有实际渲染').toBe(expected)
+  await expect.poll(renderedEdgeCount, { message: '自动布局后连线实际渲染' }).toBe(expected)
 }

@@ -2,6 +2,12 @@
   <PageContainer>
     <PageHeader>
       <template #actions>
+        <el-button
+          v-if="canReadGovernance"
+          :disabled="!filters.calendarCode"
+          @click="governanceVisible = true"
+          >{{ t('batchDayGovernance.title') }}</el-button
+        >
         <el-button v-if="canReplay" @click="router.push('/ops/batch-day-replay')">
           {{ t('batchDayList.replayAction') }}
         </el-button>
@@ -86,11 +92,7 @@
         <header class="batch-calendar__toolbar">
           <div class="batch-calendar__month-group">
             <h2 class="batch-calendar__month">{{ calendarMonthLabel }}</h2>
-            <div
-              v-if="!loading && !loadError && calendarSummary.days === 0"
-              class="batch-calendar__empty-hint"
-              role="status"
-            >
+            <div v-if="showEmptyMonthHint" class="batch-calendar__empty-hint" role="status">
               <el-tooltip :content="t('batchDayList.emptyMonthDescription')" placement="bottom">
                 <span class="batch-calendar__empty-message" tabindex="0">
                   <el-icon aria-hidden="true"><Info /></el-icon>
@@ -141,17 +143,14 @@
               :class="{
                 'batch-calendar__day--outside': !isCurrentMonth(date),
                 'batch-calendar__day--today': isToday(date),
-                'batch-calendar__day--has-data': Boolean(calendarDay(calendarDateKey(date))),
+                'batch-calendar__day--has-data': Boolean(calendarDayForDate(date)),
               }"
-              :disabled="!calendarDay(calendarDateKey(date))"
+              :disabled="!calendarDayForDate(date)"
               :aria-label="calendarAccessibleLabel(date)"
               @click.stop="openCalendarDay(date)"
             >
               <span class="batch-calendar__date">{{ date.getDate() }}</span>
-              <template
-                v-for="day in [calendarDay(calendarDateKey(date))]"
-                :key="calendarDateKey(date)"
-              >
+              <template v-for="day in [calendarDayForDate(date)]" :key="calendarDateKey(date)">
                 <template v-if="day">
                   <StatusTag :value="String(day.dayStatus ?? '')" category="batchDay" />
                   <span class="batch-calendar__counts">
@@ -273,10 +272,17 @@
         </el-table-column>
       </ProTable>
     </div>
+    <BatchDayGovernanceDrawer
+      v-if="canReadGovernance"
+      v-model="governanceVisible"
+      :calendar-code="filters.calendarCode"
+      @changed="load"
+    />
   </PageContainer>
 </template>
 
 <script setup lang="ts">
+  import BatchDayGovernanceDrawer from './components/BatchDayGovernanceDrawer.vue'
   import { CalendarDays } from '@lucide/vue'
   import { ref, reactive, computed, watch } from 'vue'
   import { useRouter } from 'vue-router'
@@ -307,9 +313,13 @@
   } from './batchDayPresentation'
 
   const router = useRouter()
-  const { canAccess } = usePermission()
+  const { canAccess, hasPermission } = usePermission()
   const canReplay = computed(() => canAccess('OPERATOR'))
   const tenant = useTenantStore()
+  const governanceVisible = ref(false)
+  const canReadGovernance = computed(() =>
+    ['ROLE_ADMIN', 'ROLE_AUDITOR', 'ROLE_TENANT_ADMIN'].some(hasPermission),
+  )
   const loading = ref(false)
   const { filterBusy, tableBlocking, runSearch, runReset, runRefresh } =
     useListFilterFeedback(loading)
@@ -359,7 +369,10 @@
   }
 
   function isToday(date: Date): boolean {
-    return calendarDateKey(date) === calendarDateKey(businessCalendarDate())
+    const visibleDateKey = calendarDateKey(date)
+    const currentBusinessDate = businessCalendarDate()
+    const currentBusinessDateKey = calendarDateKey(currentBusinessDate)
+    return visibleDateKey === currentBusinessDateKey
   }
 
   function calendarAccessibleLabel(date: Date): string {
@@ -388,6 +401,11 @@
     return calendarIndex.value.get(day)
   }
 
+  function calendarDayForDate(date: Date): ConsoleBatchDayResponse | undefined {
+    const dateKey = calendarDateKey(date)
+    return calendarDay(dateKey)
+  }
+
   function openCalendarDay(date: Date) {
     const dateKey = calendarDateKey(date)
     if (calendarDay(dateKey)) goWindow(dateKey)
@@ -402,6 +420,9 @@
   })
 
   const loadError = ref<unknown>(null)
+  const showEmptyMonthHint = computed(
+    () => !loading.value && !loadError.value && calendarSummary.value.days === 0,
+  )
   async function load() {
     const cal = filters.calendarCode.trim()
     if (!cal) {

@@ -18,12 +18,11 @@ test.describe('Webhook CRUD', () => {
   })
 
   test('新增 Webhook → 列表出现 → 删除清理', async ({ page }) => {
-    uniqueName = `test-webhook-${Date.now()}_${Math.random().toString(36).slice(2, 6)}`
+    uniqueName = `e2e-webhook-${Date.now()}_${Math.random().toString(36).slice(2, 6)}`
     // —— 新增 ——
     const addBtn = page.getByRole('button', { name: /^新增/ }).first()
     await addBtn.click()
     await expect(page.getByText(/新增 Webhook/).first()).toBeVisible()
-    await page.waitForTimeout(400) // 等 dialog 进场动画
 
     // 名称 / URL / 事件类型 — 用 form-item filter 定位,避开 getByLabel 在列表筛选区的歧义
     const dialog = page.locator('.el-dialog:visible, .el-drawer:visible')

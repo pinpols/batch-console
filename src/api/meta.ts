@@ -37,9 +37,9 @@ function normalizeOption(item: unknown): MetaOption | null {
 }
 
 function toOptions(payload: unknown): MetaOption[] {
-  return Array.isArray(payload)
-    ? payload.map((item) => normalizeOption(item)).filter((item): item is MetaOption => !!item)
-    : []
+  if (!Array.isArray(payload)) return []
+  const normalizedOptions = payload.map((item) => normalizeOption(item))
+  return normalizedOptions.filter((item): item is MetaOption => !!item)
 }
 
 /**
@@ -47,26 +47,37 @@ function toOptions(payload: unknown): MetaOption[] {
  * 返回的就是 envelope 的 `data` 字段内容,不要再 `.data` 一次,否则全空。
  */
 export async function getMetaEnums(): Promise<Record<string, MetaOption[]>> {
-  const data = toObject(await get<unknown>('/api/console/meta/enums'))
-  return Object.fromEntries(Object.entries(data).map(([key, value]) => [key, toOptions(value)]))
+  const payload = await get<unknown>('/api/console/meta/enums')
+  const data = toObject(payload)
+  const enumEntries = Object.entries(data)
+  const optionEntries: Array<[string, MetaOption[]]> = enumEntries.map(([key, value]) => [
+    key,
+    toOptions(value),
+  ])
+  return Object.fromEntries(optionEntries)
 }
 
 export async function getMetaQueues(tenantId: string): Promise<MetaOption[]> {
-  return toOptions(await get<unknown>('/api/console/meta/queues', { tenantId }))
+  const payload = await get<unknown>('/api/console/meta/queues', { tenantId })
+  return toOptions(payload)
 }
 
 export async function getMetaCalendars(tenantId: string): Promise<MetaOption[]> {
-  return toOptions(await get<unknown>('/api/console/meta/calendars', { tenantId }))
+  const payload = await get<unknown>('/api/console/meta/calendars', { tenantId })
+  return toOptions(payload)
 }
 
 export async function getMetaWindows(tenantId: string): Promise<MetaOption[]> {
-  return toOptions(await get<unknown>('/api/console/meta/windows', { tenantId }))
+  const payload = await get<unknown>('/api/console/meta/windows', { tenantId })
+  return toOptions(payload)
 }
 
 export async function getMetaWorkerGroups(tenantId: string): Promise<MetaOption[]> {
-  return toOptions(await get<unknown>('/api/console/meta/worker-groups', { tenantId }))
+  const payload = await get<unknown>('/api/console/meta/worker-groups', { tenantId })
+  return toOptions(payload)
 }
 
 export async function getMetaBizTypes(tenantId: string): Promise<MetaOption[]> {
-  return toOptions(await get<unknown>('/api/console/meta/biz-types', { tenantId }))
+  const payload = await get<unknown>('/api/console/meta/biz-types', { tenantId })
+  return toOptions(payload)
 }

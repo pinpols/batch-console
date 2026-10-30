@@ -16,7 +16,7 @@ const useRealBE = process.env.E2E_REAL_BE === '1'
 
 const BACKEND_SEED_SUITE_DIR = path.resolve(
   __dirname,
-  '../../file-batch-system/docs/test-data/test-full-coverage-import-suite',
+  '../../file-batch-system/test-data/tenant-config-packages',
 )
 
 const FIXTURE_DIRS = [

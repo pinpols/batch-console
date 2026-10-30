@@ -1,10 +1,10 @@
-import { get, post, put } from '@/api/client'
+import { apiClient, get, post, put } from '@/api/client'
 import type { components } from '@/types/api.generated'
+import { positiveLongId } from '@/utils/positiveLongId'
 
 export type ConfigType =
   | 'JOB_DEFINITION'
   | 'WORKFLOW_DEFINITION'
-  | 'PIPELINE_DEFINITION'
   | 'FILE_CHANNEL'
   | 'FILE_TEMPLATE'
   | 'RESOURCE_QUEUE'
@@ -20,6 +20,7 @@ export type TenantConfigMatrixRequest = components['schemas']['TenantConfigMatri
 export type TenantConfigDiffPreviewResponse =
   components['schemas']['TenantConfigDiffPreviewResponse']
 export type TenantConfigMatrixResponse = components['schemas']['TenantConfigMatrixResponse']
+export type TenantConfigCopyResponse = components['schemas']['TenantConfigBatchInitResponse']
 
 /** 运营概览 — GET /api/console/ops/summary?tenantId= */
 export function getOpsSummary(tenantId: string) {
@@ -65,7 +66,6 @@ export function upsertArchivePolicy(
 const CONFIG_TYPE_TO_KEY: Record<ConfigType, string> = {
   JOB_DEFINITION: 'jobDefinitions',
   WORKFLOW_DEFINITION: 'workflowDefinitions',
-  PIPELINE_DEFINITION: 'pipelineDefinitions',
   FILE_CHANNEL: 'fileChannels',
   FILE_TEMPLATE: 'fileTemplates',
   RESOURCE_QUEUE: 'resourceQueues',
@@ -93,12 +93,18 @@ export function batchInitTenantConfig(body: {
   const allowedKeys = configTypes?.length
     ? new Set(configTypes.map((t) => CONFIG_TYPE_TO_KEY[t]))
     : null
-  const flattened: Record<string, unknown> = { targetTenantIds, mode, dryRun }
+  const flattened: Record<string, unknown> = {}
   for (const [k, v] of Object.entries(spec)) {
     if (allowedKeys && !allowedKeys.has(k)) continue
     flattened[k] = v
   }
-  return post<unknown>('/api/console/config/tenant-init', flattened)
+  // 手写配置正文不能覆盖界面已经选择的写入目标、覆盖模式或试运行边界。
+  return post<TenantConfigCopyResponse>('/api/console/config/tenant-init', {
+    ...flattened,
+    targetTenantIds,
+    mode,
+    dryRun,
+  })
 }
 
 /** GET /api/console/ops/kafka-lag */
@@ -120,11 +126,29 @@ export function cleanupOutbox(tenantId: string, retainDays?: number) {
   })
 }
 
+/** 重投结果以服务端实际重置行数为准，不能将 HTTP 成功等同于事件已重置。 */
+export interface OutboxRepublishResult {
+  tenantId: string
+  requestedCount: number
+  resetCount: number
+}
+
 /** POST /api/console/ops/outbox/republish */
-export function republishOutbox(tenantId: string, eventIds?: number[]) {
-  return post<unknown>('/api/console/ops/outbox/republish', eventIds ?? [], {
-    params: { tenantId },
-  })
+export async function republishOutbox(tenantId: string, eventIds: Array<number | string> = []) {
+  const ids = eventIds.map(positiveLongId)
+  if (!ids.length || ids.some((id) => id === null)) {
+    throw new Error('Invalid outbox event ID')
+  }
+  // 仅拼接校验过的十进制整数，保留 JSON 数字契约和 64 位精度。
+  const body = `[${ids.join(',')}]`
+  const response = await apiClient.post<OutboxRepublishResult>(
+    '/api/console/ops/outbox/republish',
+    body,
+    {
+      params: { tenantId },
+    },
+  )
+  return response.data
 }
 
 /** POST /api/console/config/tenant-copy */
@@ -136,7 +160,7 @@ export function copyTenantConfig(body: {
   mode?: 'SKIP_EXISTING' | 'UPSERT'
   dryRun?: boolean
 }) {
-  return post<unknown>('/api/console/config/tenant-copy', body)
+  return post<TenantConfigCopyResponse>('/api/console/config/tenant-copy', body)
 }
 
 /** POST /api/console/config/tenant-copy/preview */

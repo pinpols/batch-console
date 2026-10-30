@@ -4,10 +4,12 @@ export function jobTypePillStyle(value?: string | null): Record<string, string> 
     PROCESS: 'var(--color-primary)',
     IMPORT: '#0891b2',
     EXPORT: 'var(--color-warning)',
-    WORKFLOW: '#7c3aed',
     GENERAL: 'var(--color-text-secondary)',
   }
-  const color = palette[String(value || 'GENERAL').toUpperCase()] ?? palette.GENERAL
+  const typeValue = value || 'GENERAL'
+  const typeText = String(typeValue)
+  const normalizedType = typeText.toUpperCase()
+  const color = palette[normalizedType] ?? palette.GENERAL
   return {
     color,
     background: `color-mix(in srgb, ${color} 12%, transparent)`,

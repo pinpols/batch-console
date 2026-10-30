@@ -1,4 +1,4 @@
-import type { Directive } from 'vue'
+import type { ObjectDirective } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import type { Role } from '@/types'
 
@@ -22,7 +22,7 @@ function hasPermissions(required?: string | string[]) {
   return permissions.some((permission) => auth.hasPermission(permission))
 }
 
-export const permissionDirective: Directive<HTMLElement, PermissionValue> = {
+export const permissionDirective: ObjectDirective<HTMLElement, PermissionValue> = {
   mounted(el, binding) {
     const auth = useAuthStore()
     const value = binding.value

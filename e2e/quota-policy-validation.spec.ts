@@ -37,7 +37,6 @@ test.describe('quota policy 表单校验', () => {
     const dialog1 = await openDialog(page, '新增策略')
     await fieldInput(dialog1, '策略编码').fill('e2e-residue')
     await cancelDialog(dialog1)
-    await page.waitForTimeout(200)
     const dialog2 = await openDialog(page, '新增策略')
     expect(await fieldInput(dialog2, '策略编码').inputValue()).toBe('')
     await cancelDialog(dialog2)

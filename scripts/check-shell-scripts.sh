@@ -15,6 +15,10 @@ command -v shellcheck >/dev/null 2>&1 || {
 
 bash_files=()
 while IFS= read -r -d '' file; do
+  [[ -f "$file" ]] || continue
+  case "$file" in
+    scripts/archive/*|e2e-data/archive/*|e2e/archive/*) continue ;;
+  esac
   shebang="$(head -n 1 "$file")"
   case "$shebang" in
     *zsh*)
@@ -24,7 +28,7 @@ while IFS= read -r -d '' file; do
       ;;
     *) bash_files+=("$file") ;;
   esac
-done < <(git ls-files -z -- '*.sh')
+done < <(git ls-files --cached --others --exclude-standard --deduplicate -z -- '*.sh' '.husky/pre-commit' '.husky/pre-push')
 
 for file in "${bash_files[@]}"; do bash -n "$file"; done
 if ((${#bash_files[@]} > 0)); then

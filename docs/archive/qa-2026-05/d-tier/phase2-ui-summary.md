@@ -1,5 +1,7 @@
 # Phase 2 — UI 全量 e2e 报告
 
+> **历史归档**：本文是 2026-05 QA campaign 的历史记录，端点、角色、环境、数量、PASS/SKIP 和待办均只反映执行当时的状态。当前测试与验收见[测试指南](../../../testing/README.md)和[CI 手册](../../../runbook/ci.md)。
+
 > 生成: 2026-05-18
 > 范围: `npx playwright test` 排除 `ai-chat.spec.ts`(用户明确不测 AI)
 > 71 个 spec 文件 / 531 个 test case

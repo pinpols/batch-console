@@ -110,7 +110,7 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, reactive, computed } from 'vue'
+  import { ref, reactive, computed, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
 
@@ -118,6 +118,7 @@
   import { searchByTag, listTagKeys } from '@/api/tags'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
+  import { useTenantRequestScope } from '@/composables/useTenantRequestScope'
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
   import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
   import StatusTag from '@/components/common/StatusTag.vue'
@@ -162,45 +163,73 @@
 
   // autocomplete 回调:按输入前缀模糊匹配已注册 tagKey
   function suggestTagKeys(queryString: string, cb: (items: { value: string }[]) => void) {
-    const q = queryString.trim().toLowerCase()
+    const trimmedQuery = queryString.trim()
+    const q = trimmedQuery.toLowerCase()
     const matched = q ? tagKeys.value.filter((k) => k.toLowerCase().includes(q)) : tagKeys.value
-    cb(matched.slice(0, 20).map((v) => ({ value: v })))
+    const suggestions = matched.slice(0, 20).map((value) => ({ value }))
+    cb(suggestions)
   }
 
+  const searchScope = useTenantRequestScope()
+  const keysScope = useTenantRequestScope()
   async function doSearch() {
+    const request = searchScope.begin()
+    if (!request.tenantId) return
     if (!searchForm.tagKey.trim()) {
       ElMessage.warning(t('tagSearchTab.tagKeyRequired'))
       return
     }
-    await runSearchTag(async () => {
-      const data = await searchByTag(
-        tenant.tenantId,
-        searchForm.tagKey,
-        searchForm.tagValue || undefined,
-      )
-      searchResults.value = Array.isArray(data) ? (data as Record<string, unknown>[]) : []
-      hasSearched.value = true
-    }).catch(() => {
+    await runSearchTag(
+      async () => {
+        const data = await searchByTag(
+          request.tenantId,
+          searchForm.tagKey,
+          searchForm.tagValue || undefined,
+        )
+        if (!searchScope.isCurrent(request)) return
+        searchResults.value = Array.isArray(data) ? (data as Record<string, unknown>[]) : []
+        hasSearched.value = true
+      },
+      () => searchScope.isCurrent(request),
+    ).catch(() => {
+      if (!searchScope.isCurrent(request)) return
       searchResults.value = []
       hasSearched.value = true
     })
   }
 
   async function loadKeys() {
+    const request = keysScope.begin()
+    if (!request.tenantId) return
     try {
-      const data = await listTagKeys(tenant.tenantId)
+      const data = await listTagKeys(request.tenantId)
+      if (!keysScope.isCurrent(request)) return
       // BE 可能返回 string[] 也可能 {key}[],归一成 string[]
-      tagKeys.value = (Array.isArray(data) ? data : []).map((x) => {
+      const tagKeyRows = Array.isArray(data) ? data : []
+      const normalizedTagKeys = tagKeyRows.map((x) => {
         if (typeof x === 'string') return x
         if (x && typeof x === 'object' && 'key' in x)
           return String((x as Record<string, unknown>).key ?? '')
         return String(x ?? '')
       })
+      tagKeys.value = normalizedTagKeys
     } catch {
+      if (!keysScope.isCurrent(request)) return
       tagKeys.value = []
     }
   }
 
+  watch(
+    () => tenant.tenantId,
+    () => {
+      searchResults.value = []
+      tagKeys.value = []
+      hasSearched.value = false
+      searching.value = false
+      searchError.value = null
+    },
+    { flush: 'sync' },
+  )
   useTenantReload(() => {
     searchResults.value = []
     tagKeys.value = []

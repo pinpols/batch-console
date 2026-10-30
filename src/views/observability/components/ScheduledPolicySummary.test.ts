@@ -11,7 +11,7 @@ const messages = {
     dependencyCompletionHint: '从依赖就绪后计算',
     nextDay: '计划日次日',
     sameDay: '计划日当日',
-    manualScheduleHintShort: '仅耗时监控',
+    manualScheduleHintShort: '启动与完成规则未配置',
     disabled: '已关闭',
     secondsValue: '{seconds} 秒',
     minutesValue: '{minutes} 分钟',
@@ -51,12 +51,12 @@ describe('ScheduledPolicySummary', () => {
   it('shows fixed-rate standalone jobs as runtime-only', () => {
     const wrapper = render({
       scheduleType: 'FIXED_RATE',
-      startGraceSeconds: 300,
+      startGraceSeconds: 0,
       completionDeadlineLocalTime: null,
       completionDeadlineSeverity: 'ERROR',
     })
 
-    expect(wrapper.text()).toBe('仅耗时监控')
+    expect(wrapper.text()).toBe('启动与完成规则未配置')
   })
 
   it('shows dependency completion window for dependency-driven jobs', () => {
@@ -78,8 +78,22 @@ describe('ScheduledPolicySummary', () => {
   it('does not present deadline rules as applicable to manual jobs', () => {
     const wrapper = render({ scheduleType: 'MANUAL' })
 
-    expect(wrapper.text()).toBe('仅耗时监控')
+    expect(wrapper.text()).toBe('启动与完成规则未配置')
     expect(wrapper.text()).not.toContain('启动过晚')
     expect(wrapper.text()).not.toContain('完成过晚')
+  })
+
+  it('MANUAL 已配置的 Workflow 就绪规则显示启动和相对完成窗口', () => {
+    const wrapper = render({ startGraceSeconds: 60, dependencyCompletionWindowSeconds: 120 })
+    expect(wrapper.text()).toContain('启动过晚')
+    expect(wrapper.text()).toContain('完成过晚')
+    expect(wrapper.text()).toContain('2 分钟')
+    expect(wrapper.text()).not.toContain('启动与完成规则未配置')
+  })
+
+  it('MANUAL 已配置的绝对完成钟点保留业务日期偏移', () => {
+    const wrapper = render({ completionDeadlineLocalTime: '04:00:00', completionDeadlineDayOffset: 1 })
+    expect(wrapper.text()).toContain('计划日次日 04:00')
+    expect(wrapper.text()).not.toContain('启动与完成规则未配置')
   })
 })

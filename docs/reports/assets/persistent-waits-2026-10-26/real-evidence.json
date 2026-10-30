@@ -1,0 +1,50 @@
+{
+  "date": "2026-10-26",
+  "branch": "fix/wdi-current",
+  "test": {
+    "file": "e2e/persistent-waits-real.spec.ts",
+    "browser": "Chromium",
+    "passed": 1,
+    "failed": 0,
+    "retries": 0
+  },
+  "persistedRows": [
+    { "waitType": "CAPACITY_ADMISSION", "waitStatus": "WAITING" },
+    { "waitType": "READINESS", "waitStatus": "PENDING" }
+  ],
+  "query": {
+    "consolePageTotal": 2,
+    "typeAndStatusFilter": "passed",
+    "pageSizeOneAcrossTwoPages": "passed",
+    "consoleReturnedPayloadField": false,
+    "privatePayloadMarkerExcludedFromResponseAndPage": true
+  },
+  "access": {
+    "admin": 200,
+    "tenantAdminOwnTenant": 200,
+    "tenantAdminCrossTenant": 403,
+    "auditorOwnTenant": 200,
+    "auditorCrossTenant": 200,
+    "tenantUser": 403,
+    "anonymous": 401
+  },
+  "ui": {
+    "adminShowsBothWaitTypes": true,
+    "tenantAdminShowsBothWaitTypes": true,
+    "auditorShowsBothWaitTypes": true,
+    "tenantUserWaitPanelHidden": true,
+    "rowKey": "waitType:id"
+  },
+  "cleanup": {
+    "readinessRowsRemaining": 0,
+    "capacityRowsRemaining": 0,
+    "workflowDefinitions": 0,
+    "workflowRunsAndRelatedRows": 0,
+    "tenants": 0,
+    "roleAccounts": 0
+  },
+  "limits": [
+    "Local WDI integrated acceptance; not production release acceptance.",
+    "Validates safe read projection and role boundaries; does not validate scheduling transitions."
+  ]
+}

@@ -14,6 +14,9 @@ import { createIdempotencyKey } from '@/utils/idempotency'
 
 export type BatchDayReplaySubmitRequest = components['schemas']['BatchDayReplaySubmitRequest']
 export type BatchDayReplayPreview = components['schemas']['BatchDayReplayPreview']
+export type BatchDayReplayRangeRequest = components['schemas']['BatchDayReplayRangeRequest']
+export type ReplayOperationPreview = components['schemas']['ReplayOperationPreview']
+export type ReplayOperation = components['schemas']['ReplayOperation']
 export type BatchDayReplayScope = BatchDayReplaySubmitRequest['scope']
 export type ReplayExecutionMode = NonNullable<BatchDayReplaySubmitRequest['executionMode']>
 export type ReplayCandidateSource = NonNullable<BatchDayReplaySubmitRequest['candidateSource']>
@@ -57,50 +60,160 @@ export const batchDayReplayApi = {
     businessKey: string,
     limit = 50,
   ): Promise<ResultVersion[]> {
-    return unwrap(
-      await get<InnerEnvelope<ResultVersion[]>>('/api/console/result-versions', {
-        tenantId,
-        businessKey,
-        limit,
-      }),
+    const response = await get<InnerEnvelope<ResultVersion[]>>('/api/console/result-versions', {
+      tenantId,
+      businessKey,
+      limit,
+    })
+    return unwrap(response)
+  },
+  async effectiveResultVersion(
+    tenantId: string,
+    businessKey: string,
+  ): Promise<ResultVersion | null> {
+    const response = await get<InnerEnvelope<ResultVersion | null> | ResultVersion | null>(
+      '/api/console/result-versions/effective',
+      { tenantId, businessKey },
+      { _silent: true } as AxiosRequestConfig & { _silent: boolean },
     )
+    if (response && typeof response === 'object' && 'code' in response) {
+      const envelope = response as InnerEnvelope<ResultVersion | null>
+      if (envelope.code !== 'SUCCESS') throw new Error(envelope.message || envelope.code)
+      return envelope.data
+    }
+    return response as ResultVersion | null
+  },
+  async resultVersionDetail(id: number, tenantId: string): Promise<ResultVersion> {
+    const response = await get<InnerEnvelope<ResultVersion>>(
+      `/api/console/result-versions/${id}?tenantId=${encodeURIComponent(tenantId)}`,
+    )
+    return unwrap(response)
+  },
+  async promoteResultVersion(id: number, tenantId: string): Promise<ResultVersion> {
+    return this.resultVersionAction(id, tenantId, 'promote')
+  },
+  async rejectResultVersion(id: number, tenantId: string): Promise<ResultVersion> {
+    return this.resultVersionAction(id, tenantId, 'reject')
+  },
+  async resultVersionAction(
+    id: number,
+    tenantId: string,
+    action: 'promote' | 'reject',
+  ): Promise<ResultVersion> {
+    const config: AxiosRequestConfig = {
+      headers: { 'Idempotency-Key': createIdempotencyKey() },
+    }
+    const response = await post<InnerEnvelope<ResultVersion>>(
+      `/api/console/result-versions/${id}/${action}?tenantId=${encodeURIComponent(tenantId)}`,
+      undefined,
+      config,
+    )
+    return unwrap(response)
   },
   async preview(req: BatchDayReplaySubmitRequest): Promise<BatchDayReplayPreview> {
-    return unwrap(
-      await post<InnerEnvelope<BatchDayReplayPreview>>(
-        '/api/console/ops/batch-day-replay/sessions/preview',
-        req,
-      ),
+    const response = await post<InnerEnvelope<BatchDayReplayPreview>>(
+      '/api/console/ops/batch-day-replay/sessions/preview',
+      req,
     )
+    return unwrap(response)
+  },
+  async previewRange(req: BatchDayReplayRangeRequest): Promise<ReplayOperationPreview> {
+    const response = await post<InnerEnvelope<ReplayOperationPreview>>(
+      '/api/console/ops/batch-day-replay/operations/date-range/preview',
+      req,
+    )
+    return unwrap(response)
   },
   async submit(req: BatchDayReplaySubmitRequest): Promise<BatchDayReplaySession> {
-    return unwrap(
-      await post<InnerEnvelope<BatchDayReplaySession>>(
-        '/api/console/ops/batch-day-replay/sessions',
-        req,
-      ),
+    const response = await post<InnerEnvelope<BatchDayReplaySession>>(
+      '/api/console/ops/batch-day-replay/sessions',
+      req,
     )
+    return unwrap(response)
+  },
+  async submitRange(req: BatchDayReplayRangeRequest): Promise<ReplayOperation> {
+    const config: AxiosRequestConfig = {
+      headers: { 'Idempotency-Key': createIdempotencyKey() },
+    }
+    const response = await post<InnerEnvelope<ReplayOperation>>(
+      '/api/console/ops/batch-day-replay/operations/date-range',
+      req,
+      config,
+    )
+    return unwrap(response)
+  },
+  async resolveRangeSubmitOutcome(req: BatchDayReplayRangeRequest): Promise<ReplayOperation> {
+    return this.submitRange(req)
+  },
+  async operationDetail(operationId: number, tenantId?: string): Promise<ReplayOperation> {
+    const qs = tenantId ? `?tenantId=${encodeURIComponent(tenantId)}` : ''
+    const response = await get<InnerEnvelope<ReplayOperation>>(
+      `/api/console/ops/batch-day-replay/operations/${operationId}${qs}`,
+    )
+    return unwrap(response)
+  },
+  async operationSessions(operationId: number, tenantId?: string): Promise<BatchDayReplaySession[]> {
+    const qs = tenantId ? `?tenantId=${encodeURIComponent(tenantId)}` : ''
+    const response = await get<InnerEnvelope<BatchDayReplaySession[]>>(
+      `/api/console/ops/batch-day-replay/operations/${operationId}/sessions${qs}`,
+    )
+    return unwrap(response)
+  },
+  async operations(opts: { tenantId?: string; limit?: number } = {}): Promise<ReplayOperation[]> {
+    const response = await get<InnerEnvelope<ReplayOperation[]>>(
+      '/api/console/ops/batch-day-replay/operations',
+      opts,
+      { _silent: true } as AxiosRequestConfig & { _silent: boolean },
+    )
+    return unwrap(response)
+  },
+  async approveOperation(
+    operationId: number,
+    approver: string,
+    tenantId?: string,
+  ): Promise<ReplayOperation> {
+    const config: AxiosRequestConfig = {
+      headers: { 'Idempotency-Key': createIdempotencyKey() },
+    }
+    const qs = new URLSearchParams({ approver })
+    if (tenantId) qs.set('tenantId', tenantId)
+    const response = await post<InnerEnvelope<ReplayOperation>>(
+      `/api/console/ops/batch-day-replay/operations/${operationId}/approve?${qs.toString()}`,
+      undefined,
+      config,
+    )
+    return unwrap(response)
+  },
+  async cancelOperation(operationId: number, tenantId?: string): Promise<ReplayOperation> {
+    const config: AxiosRequestConfig = {
+      headers: { 'Idempotency-Key': createIdempotencyKey() },
+    }
+    const qs = tenantId ? `?tenantId=${encodeURIComponent(tenantId)}` : ''
+    const response = await post<InnerEnvelope<ReplayOperation>>(
+      `/api/console/ops/batch-day-replay/operations/${operationId}/cancel${qs}`,
+      null,
+      config,
+    )
+    return unwrap(response)
   },
   async resolveSubmitOutcome(req: BatchDayReplaySubmitRequest): Promise<BatchDayReplaySession> {
     const config: AxiosRequestConfig = {
       headers: { 'Idempotency-Key': createIdempotencyKey() },
     }
-    return unwrap(
-      await post<InnerEnvelope<BatchDayReplaySession>>(
-        '/api/console/ops/batch-day-replay/sessions',
-        req,
-        config,
-      ),
+    const response = await post<InnerEnvelope<BatchDayReplaySession>>(
+      '/api/console/ops/batch-day-replay/sessions',
+      req,
+      config,
     )
+    return unwrap(response)
   },
   async list(opts: { tenantId?: string; status?: string; limit?: number } = {}) {
-    return unwrap(
-      await get<InnerEnvelope<BatchDayReplaySession[]>>(
-        '/api/console/ops/batch-day-replay/sessions',
-        opts,
-        { _silent: true } as AxiosRequestConfig & { _silent: boolean },
-      ),
+    const response = await get<InnerEnvelope<BatchDayReplaySession[]>>(
+      '/api/console/ops/batch-day-replay/sessions',
+      opts,
+      { _silent: true } as AxiosRequestConfig & { _silent: boolean },
     )
+    return unwrap(response)
   },
   async approve(
     sessionId: number,
@@ -109,29 +222,26 @@ export const batchDayReplayApi = {
   ): Promise<BatchDayReplaySession> {
     const qs = new URLSearchParams({ approver })
     if (tenantId) qs.set('tenantId', tenantId)
-    return unwrap(
-      await post<InnerEnvelope<BatchDayReplaySession>>(
-        `/api/console/ops/batch-day-replay/sessions/${sessionId}/approve?${qs.toString()}`,
-        null,
-      ),
+    const response = await post<InnerEnvelope<BatchDayReplaySession>>(
+      `/api/console/ops/batch-day-replay/sessions/${sessionId}/approve?${qs.toString()}`,
+      undefined,
     )
+    return unwrap(response)
   },
   async cancel(sessionId: number, tenantId?: string): Promise<BatchDayReplaySession> {
     const qs = tenantId ? `?tenantId=${encodeURIComponent(tenantId)}` : ''
-    return unwrap(
-      await post<InnerEnvelope<BatchDayReplaySession>>(
-        `/api/console/ops/batch-day-replay/sessions/${sessionId}/cancel${qs}`,
-        null,
-      ),
+    const response = await post<InnerEnvelope<BatchDayReplaySession>>(
+      `/api/console/ops/batch-day-replay/sessions/${sessionId}/cancel${qs}`,
+      null,
     )
+    return unwrap(response)
   },
   async detail(sessionId: number, tenantId?: string): Promise<BatchDayReplaySession> {
     const qs = tenantId ? `?tenantId=${encodeURIComponent(tenantId)}` : ''
-    return unwrap(
-      await get<InnerEnvelope<BatchDayReplaySession>>(
-        `/api/console/ops/batch-day-replay/sessions/${sessionId}${qs}`,
-      ),
+    const response = await get<InnerEnvelope<BatchDayReplaySession>>(
+      `/api/console/ops/batch-day-replay/sessions/${sessionId}${qs}`,
     )
+    return unwrap(response)
   },
   async entries(
     sessionId: number,
@@ -142,10 +252,26 @@ export const batchDayReplayApi = {
     if (opts.limit != null) qs.set('limit', String(opts.limit))
     if (opts.tenantId) qs.set('tenantId', opts.tenantId)
     const suffix = qs.toString() ? `?${qs}` : ''
-    return unwrap(
-      await get<InnerEnvelope<BatchDayReplayEntry[]>>(
-        `/api/console/ops/batch-day-replay/sessions/${sessionId}/entries${suffix}`,
-      ),
+    const response = await get<InnerEnvelope<BatchDayReplayEntry[]>>(
+      `/api/console/ops/batch-day-replay/sessions/${sessionId}/entries${suffix}`,
     )
+    return unwrap(response)
+  },
+  async retryFailedSubmission(
+    sessionId: number,
+    entryId: number,
+    tenantId: string,
+    reason: string,
+  ): Promise<BatchDayReplaySession> {
+    const config: AxiosRequestConfig = {
+      headers: { 'Idempotency-Key': createIdempotencyKey() },
+    }
+    const query = new URLSearchParams({ tenantId, reason })
+    const response = await post<InnerEnvelope<BatchDayReplaySession>>(
+      `/api/console/ops/batch-day-replay/sessions/${sessionId}/entries/${entryId}/retry-submission?${query.toString()}`,
+      null,
+      config,
+    )
+    return unwrap(response)
   },
 }

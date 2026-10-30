@@ -158,11 +158,7 @@
                           ? t('workerManagement.cancellable')
                           : t('workerManagement.notCancellable')
                       }}</span>
-                      <span>{{
-                        t('workerManagement.recommendedTimeout', {
-                          value: fmtDuration(capability.recommendedTimeoutMillis),
-                        })
-                      }}</span>
+                      <span>{{ recommendedTimeoutText(capability.recommendedTimeoutMillis) }}</span>
                     </div>
                   </div>
                 </div>
@@ -182,11 +178,14 @@
                 </div>
                 <span class="wk-card__load">{{ row.currentLoad ?? 0 }}</span>
               </div>
-              <div v-if="workerActionsForStatus(row.status).length" class="wk-card__actions">
+              <div class="wk-card__actions">
+                <el-button size="small" plain :icon="Eye" @click="openClaimedTasks(row)">
+                  {{ t('workerManagement.actionClaimedTasks') }}
+                </el-button>
                 <el-button
                   v-if="canWorkerAction(row.status, 'drain')"
                   size="small"
-                  :disabled="writesFrozen"
+                  :disabled="!canMutateConfig"
                   plain
                   type="warning"
                   @click="drain(row)"
@@ -196,7 +195,7 @@
                 <el-button
                   v-if="canWorkerAction(row.status, 'offline')"
                   size="small"
-                  :disabled="writesFrozen"
+                  :disabled="!canMutateConfig"
                   plain
                   type="danger"
                   @click="offline(row)"
@@ -206,7 +205,7 @@
                 <el-button
                   v-if="canWorkerAction(row.status, 'takeover')"
                   size="small"
-                  :disabled="writesFrozen"
+                  :disabled="!canMutateConfig"
                   plain
                   @click="takeover(row)"
                 >
@@ -215,7 +214,7 @@
                 <el-button
                   v-if="canWorkerAction(row.status, 'warmup')"
                   size="small"
-                  :disabled="writesFrozen"
+                  :disabled="!canMutateConfig"
                   plain
                   type="success"
                   @click="warmup(row)"
@@ -332,6 +331,60 @@
 
     <el-drawer
       :append-to-body="true"
+      v-model="claimedTasksVisible"
+      :title="t('workerManagement.claimedTasksTitle')"
+      size="920px"
+    >
+      <div v-if="claimedTasksWorker" class="claimed-tasks-context">
+        {{ t('workerManagement.claimedTasksWorker', { code: claimedTasksWorker }) }}
+        <span v-if="!claimedTasksLoading"> · {{ claimedTaskRows.length }}</span>
+      </div>
+      <el-alert
+        v-if="claimedTasksError"
+        type="error"
+        :closable="false"
+        show-icon
+        :title="t('workerManagement.claimedTasksLoadFailed')"
+      />
+      <el-table v-else v-loading="claimedTasksLoading" :data="claimedTaskRows" size="small" stripe>
+        <el-table-column prop="id" :label="t('workerManagement.claimedTaskId')" width="100" />
+        <el-table-column
+          prop="jobInstanceId"
+          :label="t('workerManagement.claimedTaskJob')"
+          width="120"
+        />
+        <el-table-column
+          prop="jobPartitionId"
+          :label="t('workerManagement.claimedTaskPartition')"
+          width="120"
+        />
+        <el-table-column :label="t('workerManagement.claimedTaskTypeSeq')" width="160">
+          <template #default="{ row }">{{ row.taskType }} / {{ row.taskSeq }}</template>
+        </el-table-column>
+        <el-table-column
+          prop="taskStatus"
+          :label="t('workerManagement.claimedTaskStatus')"
+          width="130"
+        />
+        <el-table-column
+          prop="errorCode"
+          :label="t('workerManagement.claimedTaskErrorCode')"
+          min-width="140"
+        />
+        <el-table-column :label="t('workerManagement.claimedTaskStarted')" min-width="170">
+          <template #default="{ row }">{{ fmtDatetime(row.startedAt) }}</template>
+        </el-table-column>
+        <el-table-column :label="t('workerManagement.claimedTaskUpdated')" min-width="170">
+          <template #default="{ row }">{{ fmtDatetime(row.updatedAt) }}</template>
+        </el-table-column>
+        <template #empty>
+          {{ t('workerManagement.claimedTasksEmpty') }}
+        </template>
+      </el-table>
+    </el-drawer>
+
+    <el-drawer
+      :append-to-body="true"
       v-model="channelDetailVisible"
       :title="t('workerManagement.channelDetailTitle')"
       size="640px"
@@ -381,7 +434,13 @@
     useConsoleMetaEnumsQuery,
     useMetaWorkerGroupsQuery,
   } from '@/composables/queries/useConsoleMeta'
-  import { drainWorker, forceWorkerOffline, takeoverWorker, warmupWorker } from '@/api/workers'
+  import {
+    drainWorker,
+    forceWorkerOffline,
+    listWorkerClaimedTasks,
+    takeoverWorker,
+    warmupWorker,
+  } from '@/api/workers'
   import { getMetaEnums, type MetaOption } from '@/api/meta'
   import { queryFileChannels } from '@/api/fileChannelsQuery'
   import { toPageResult } from '@/api/adapters'
@@ -389,6 +448,9 @@
   import { uniqueFieldValues } from '@/utils/queryFormOptions'
   import { useTenantStore } from '@/stores/tenant'
   import { useWriteAvailability } from '@/composables/useWriteAvailability'
+  import { useTenantRequestScope } from '@/composables/useTenantRequestScope'
+  import { usePermission } from '@/composables/usePermission'
+  import { useAuthStore } from '@/stores/auth'
   import PageContainer from '@/components/common/PageContainer.vue'
   import MetaSelect from '@/components/common/MetaSelect.vue'
   import StatusSegment, { type StatusSegmentItem } from '@/components/table/StatusSegment.vue'
@@ -401,13 +463,20 @@
   import JsonPreview from '@/components/common/JsonPreview.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
   import TablePagerBar from '@/components/table/TablePagerBar.vue'
-  import type { ConsoleWorkerRegistryResponse } from '@/types/console-api'
-  import { canWorkerAction, workerActionsForStatus } from './workerActions'
+  import type {
+    ConsoleWorkerClaimedTaskResponse,
+    ConsoleWorkerRegistryResponse,
+  } from '@/types/console-api'
+  import { canWorkerAction, workerActionsForStatus, type WorkerAction } from './workerActions'
   import type { ConsoleFileChannelResponse } from '@/types/console-api'
   import { fmtDatetime, fmtDuration } from '@/utils/datetime'
 
   const tenant = useTenantStore()
-  const { writesFrozen, ensureWriteAvailable } = useWriteAvailability()
+  const { ensureWriteAvailable } = useWriteAvailability()
+  const { canMutateConfig } = usePermission()
+  const auth = useAuthStore()
+  const actionScope = useTenantRequestScope()
+  const channelScope = useTenantRequestScope()
   const queryClient = useQueryClient()
   const activeTab = ref('workers')
 
@@ -473,7 +542,7 @@
     { value: '', label: t('common.all'), tone: 'neutral' },
     ...workerStatusOptions.value.map((option) => {
       const value = String(option.value)
-      const tone =
+      const tone: StatusSegmentItem['tone'] =
         value === 'ONLINE'
           ? 'success'
           : value === 'DRAINING'
@@ -493,13 +562,14 @@
     if (s) {
       // 支持 CSV 多值,如 OpsSummary「离线 Worker」卡片传 "OFFLINE,DECOMMISSIONED"
       // 与计数语义(OFFLINE + DECOMMISSIONED)对齐
-      const wanted = new Set(
-        s
-          .split(',')
-          .map((t) => t.trim().toUpperCase())
-          .filter(Boolean),
-      )
-      r = r.filter((x) => wanted.has(String(x.status ?? '').toUpperCase()))
+      const requestedStatuses = s.split(',')
+      const normalizedStatuses = requestedStatuses.map((status) => {
+        const trimmedStatus = status.trim()
+        return trimmedStatus.toUpperCase()
+      })
+      const nonEmptyStatuses = normalizedStatuses.filter(Boolean)
+      const wanted = new Set(nonEmptyStatuses)
+      r = r.filter((worker) => wanted.has(normalizedWorkerStatus(worker.status)))
     }
     const k = workerFilters.keyword.trim()
     if (k) r = r.filter((x) => String(x.workerCode ?? '').includes(k))
@@ -526,17 +596,23 @@
   })
 
   // 状态统计卡(还原设计 workercards):按全量(未过滤)数据聚合,点击联动状态筛选
+  function normalizedWorkerStatus(status: string | null | undefined): string {
+    const statusText = String(status ?? '')
+    return statusText.toUpperCase()
+  }
+
   const workerStats = computed(() => {
     const all = allWorkerData.value ?? []
-    const by = (s: string) => all.filter((x) => String(x.status ?? '').toUpperCase() === s).length
+    const by = (status: string) =>
+      all.filter((worker) => normalizedWorkerStatus(worker.status) === status).length
     const offlineRows = all.filter((worker) =>
-      ['OFFLINE', 'DECOMMISSIONED'].includes(String(worker.status ?? '').toUpperCase()),
+      ['OFFLINE', 'DECOMMISSIONED'].includes(normalizedWorkerStatus(worker.status)),
     )
-    const offlineCodeList = offlineRows
-      .slice(0, 4)
-      .map((worker) =>
-        String(worker.workerCode ?? worker.workerGroup ?? t('workerManagement.unknownWorker')),
-      )
+    const offlineCodeList = offlineRows.slice(0, 4).map((worker) => {
+      const workerName = worker.workerCode ?? worker.workerGroup
+      const displayedWorkerName = workerName ?? t('workerManagement.unknownWorker')
+      return String(displayedWorkerName)
+    })
     if (offlineRows.length > 4) {
       offlineCodeList.push(
         t('workerManagement.moreOfflineWorkers', { count: offlineRows.length - 4 }),
@@ -584,28 +660,42 @@
 
   /** 卡片描边跟状态走(dump:Draining=warning 边、离线=danger 边) */
   function cardStateClass(status: string | null | undefined) {
-    const s = String(status ?? '').toUpperCase()
+    const s = normalizedWorkerStatus(status)
     if (s === 'DRAINING') return 'wk-card--draining'
     if (s === 'OFFLINE' || s === 'DECOMMISSIONED') return 'wk-card--offline'
     return ''
   }
 
+  function recommendedTimeoutText(timeoutMillis: number): string {
+    const formattedTimeout = fmtDuration(timeoutMillis)
+    return t('workerManagement.recommendedTimeout', { value: formattedTimeout })
+  }
+
   // mini bar 口径:相对当前筛选结果中的负载峰值(后端无容量分母,不编造 x/y)
   const workerLoadPeak = computed(() =>
-    filteredWorkers.value.reduce((m, x) => Math.max(m, Number(x.currentLoad ?? 0)), 0),
+    filteredWorkers.value.reduce((peak, worker) => {
+      const currentLoad = Number(worker.currentLoad ?? 0)
+      return Math.max(peak, currentLoad)
+    }, 0),
   )
 
   function loadBarWidth(row: ConsoleWorkerRegistryResponse): string {
     const peak = workerLoadPeak.value
     const load = Number(row.currentLoad ?? 0)
-    if (!peak || !Number.isFinite(load) || load <= 0) return '0%'
-    return `${Math.min(100, Math.round((load / peak) * 100))}%`
+    const loadCanBeDisplayed = Boolean(peak) && Number.isFinite(load) && load > 0
+    if (!loadCanBeDisplayed) return '0%'
+    const loadPercent = Math.round((load / peak) * 100)
+    const boundedLoadPercent = Math.min(100, loadPercent)
+    return `${boundedLoadPercent}%`
   }
 
   /** 心跳相对时间(设计「♥ 3s 前」) */
   function relTime(iso: string | null | undefined): string {
     if (!iso) return '—'
-    const diff = Date.now() - new Date(iso).getTime()
+    const currentTime = Date.now()
+    const heartbeatDate = new Date(iso)
+    const heartbeatTime = heartbeatDate.getTime()
+    const diff = currentTime - heartbeatTime
     if (!Number.isFinite(diff) || diff < 0) return '—'
     const s = Math.floor(diff / 1000)
     if (s < 60) return t('workerManagement.hbSecondsAgo', { n: s })
@@ -641,7 +731,9 @@
   const live = useSseAutoReload({
     domain: 'workers',
     reload: async () => {
-      if (workerLoadError.value && Date.now() - workerErrorAt.value < 5_000) return false
+      const recentWorkerLoadErrorSuppressesReload =
+        workerLoadError.value && Date.now() - workerErrorAt.value < 5_000
+      if (recentWorkerLoadErrorSuppressesReload) return false
       try {
         await refetchWorkers()
       } finally {
@@ -651,8 +743,26 @@
     scope: () => tenant.tenantId,
   })
 
+  /** Worker 身份与当前租户、状态共同确定确认目标，不沿用切换前的卡片。 */
+  function captureWorkerAction(row: ConsoleWorkerRegistryResponse, action: WorkerAction) {
+    const scope = actionScope.begin()
+    const operator = auth.userInfo?.username ?? auth.userInfo?.userId
+    const isCurrentContext = () =>
+      actionScope.isCurrent(scope) &&
+      canMutateConfig.value &&
+      operator === (auth.userInfo?.username ?? auth.userInfo?.userId)
+    const isCurrent = () =>
+      isCurrentContext() &&
+      (allWorkerData.value ?? []).some(
+        (worker) => worker.workerCode === row.workerCode && canWorkerAction(worker.status, action),
+      )
+    return { tenantId: scope.tenantId, isCurrent, isCurrentContext }
+  }
+
   async function drain(row: ConsoleWorkerRegistryResponse) {
     if (!ensureWriteAvailable()) return
+    const context = captureWorkerAction(row, 'drain')
+    if (!context.isCurrent()) return
     try {
       await confirmDanger({
         verb: t('workerManagement.drainConfirmTitle'),
@@ -661,9 +771,11 @@
         confirmButtonText: t('common.confirm'),
         cancelButtonText: t('common.cancel'),
       })
-      await drainWorker(row.workerCode, { tenantId: tenant.tenantId, reason: 'console drain' })
+      if (!context.isCurrent()) return
+      await drainWorker(row.workerCode, { tenantId: context.tenantId, reason: 'console drain' })
+      if (!context.isCurrentContext()) return
       ElMessage.success(t('workerManagement.drainSuccess', { code: row.workerCode }))
-      await queryClient.invalidateQueries({ queryKey: ['workers', tenant.tenantId] })
+      await queryClient.invalidateQueries({ queryKey: ['workers', context.tenantId] })
     } catch {
       /* cancel */
     }
@@ -671,6 +783,8 @@
 
   async function takeover(row: ConsoleWorkerRegistryResponse) {
     if (!ensureWriteAvailable()) return
+    const context = captureWorkerAction(row, 'takeover')
+    if (!context.isCurrent()) return
     try {
       await ElMessageBox.confirm(
         t('workerManagement.takeoverConfirmText', { code: row.workerCode }),
@@ -681,12 +795,14 @@
           cancelButtonText: t('common.cancel'),
         },
       )
+      if (!context.isCurrent()) return
       await takeoverWorker(row.workerCode, {
-        tenantId: tenant.tenantId,
+        tenantId: context.tenantId,
         reason: 'console takeover',
       })
+      if (!context.isCurrentContext()) return
       ElMessage.success(t('workerManagement.takeoverSuccess', { code: row.workerCode }))
-      await queryClient.invalidateQueries({ queryKey: ['workers', tenant.tenantId] })
+      await queryClient.invalidateQueries({ queryKey: ['workers', context.tenantId] })
     } catch {
       /* cancel */
     }
@@ -694,10 +810,13 @@
 
   async function warmup(row: ConsoleWorkerRegistryResponse) {
     if (!ensureWriteAvailable()) return
+    const context = captureWorkerAction(row, 'warmup')
+    if (!context.isCurrent()) return
     try {
-      await warmupWorker(row.workerCode, tenant.tenantId)
+      await warmupWorker(row.workerCode, context.tenantId)
+      if (!context.isCurrentContext()) return
       ElMessage.success(t('workerManagement.warmupSuccess', { code: row.workerCode }))
-      await queryClient.invalidateQueries({ queryKey: ['workers', tenant.tenantId] })
+      await queryClient.invalidateQueries({ queryKey: ['workers', context.tenantId] })
     } catch {
       /* cancel */
     }
@@ -705,6 +824,8 @@
 
   async function offline(row: ConsoleWorkerRegistryResponse) {
     if (!ensureWriteAvailable()) return
+    const context = captureWorkerAction(row, 'offline')
+    if (!context.isCurrent()) return
     try {
       await confirmDanger({
         verb: t('workerManagement.offlineVerb'),
@@ -712,12 +833,14 @@
         consequence: t('workerManagement.offlineConsequence'),
         irreversible: true,
       })
+      if (!context.isCurrent()) return
       await forceWorkerOffline(row.workerCode, {
-        tenantId: tenant.tenantId,
+        tenantId: context.tenantId,
         reason: 'console offline',
       })
+      if (!context.isCurrentContext()) return
       ElMessage.success(t('workerManagement.offlineSuccess', { code: row.workerCode }))
-      await queryClient.invalidateQueries({ queryKey: ['workers', tenant.tenantId] })
+      await queryClient.invalidateQueries({ queryKey: ['workers', context.tenantId] })
     } catch {
       /* cancel */
     }
@@ -743,9 +866,51 @@
   const channelTypeOptions = ref<MetaOption[]>([])
   const channelDetailVisible = ref(false)
   const channelDetailRow = ref<ConsoleFileChannelResponse | null>(null)
+  const claimedTasksVisible = ref(false)
+  const claimedTasksLoading = ref(false)
+  const claimedTasksError = ref(false)
+  const claimedTasksWorker = ref('')
+  const claimedTaskRows = ref<ConsoleWorkerClaimedTaskResponse[]>([])
+  let claimedTasksRequestSequence = 0
   const channelTotal = ref(0)
   const channelPage = ref(1)
   const channelPageSize = ref(15)
+
+  async function openClaimedTasks(row: ConsoleWorkerRegistryResponse) {
+    const sequence = ++claimedTasksRequestSequence
+    const tenantId = tenant.tenantId
+    claimedTasksVisible.value = true
+    claimedTasksWorker.value = row.workerCode
+    claimedTaskRows.value = []
+    claimedTasksError.value = false
+    if (!tenantId) {
+      claimedTasksError.value = true
+      return
+    }
+    claimedTasksLoading.value = true
+    try {
+      const rows = await listWorkerClaimedTasks(row.workerCode, tenantId)
+      if (sequence !== claimedTasksRequestSequence || tenant.tenantId !== tenantId) return
+      claimedTaskRows.value = rows ?? []
+    } catch {
+      if (sequence === claimedTasksRequestSequence) claimedTasksError.value = true
+    } finally {
+      if (sequence === claimedTasksRequestSequence) claimedTasksLoading.value = false
+    }
+  }
+
+  watch(
+    () => tenant.tenantId,
+    () => {
+      claimedTasksRequestSequence += 1
+      claimedTaskRows.value = []
+      claimedTasksWorker.value = ''
+      claimedTasksLoading.value = false
+      claimedTasksError.value = false
+      claimedTasksVisible.value = false
+    },
+    { flush: 'sync' },
+  )
 
   const channelFilters = reactive({ channelCode: '', channelType: '' })
 
@@ -766,14 +931,19 @@
   }
 
   async function loadChannels() {
-    if (!tenant.tenantId) return
+    const scope = channelScope.begin()
+    if (!scope.tenantId) return
+    const isCurrent = () => channelScope.isCurrent(scope)
     await runLoadChannels(async () => {
-      allChannelRows.value = await queryFileChannels(tenant.tenantId)
+      const channels = await queryFileChannels(scope.tenantId)
+      if (!isCurrent()) return
       const enums = await getMetaEnums()
+      if (!isCurrent()) return
+      allChannelRows.value = channels
       channelTypeOptions.value = enums.channelType ?? []
       channelPage.value = 1
       sliceChannelPage()
-    })
+    }, isCurrent)
   }
 
   function onChannelSearch() {
@@ -803,233 +973,32 @@
   })
 
   watch(
+    () => tenant.tenantId,
+    () => {
+      allChannelRows.value = []
+      channelRows.value = []
+      channelTypeOptions.value = []
+      channelTotal.value = 0
+      channelPage.value = 1
+      channelLoading.value = false
+      channelLoadError.value = null
+      channelDetailVisible.value = false
+      channelDetailRow.value = null
+    },
+    { flush: 'sync' },
+  )
+
+  watch(
     [activeTab, () => tenant.tenantId],
     ([tab, tenantId]) => {
-      if (tab === 'channels' && tenantId) void loadChannels()
+      if (tab === 'channels' && tenantId) {
+        void loadChannels().catch(() => {
+          // 被动加载失败已由渠道表格错误态呈现，避免额外产生未处理的拒绝。
+        })
+      }
     },
     { immediate: true },
   )
 </script>
 
-<style scoped>
-  .worker-empty-actions {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    flex-wrap: wrap;
-  }
-
-  .worker-empty-meta {
-    width: 100%;
-    margin-top: 4px;
-    text-align: center;
-    font-size: 12px;
-    color: var(--color-text-tertiary);
-  }
-
-  /* ── 照设计 proto-workers dump(docs/redesign/proto-workers.html) ── */
-  /* 统计卡:横排 色点 + 标签 + spacer + mono 22px 数值,卡底 r12 padding 14 18 */
-  .wk-stats {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 14px;
-    width: 100%;
-    min-width: 0;
-    margin-bottom: 18px;
-  }
-
-  .wk-offline-notice {
-    margin: 12px 0;
-  }
-
-  .wk-stat {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    min-width: 0;
-    padding: 14px 18px;
-    background: var(--color-bg-card);
-    border: 1px solid var(--color-border);
-    border-radius: 12px;
-    cursor: pointer;
-    font-family: inherit;
-    text-align: left;
-    transition:
-      border-color 120ms ease,
-      background 120ms ease;
-  }
-
-  .wk-stat:hover {
-    border-color: var(--color-border-strong, rgba(255, 255, 255, 0.16));
-    background: color-mix(in srgb, var(--color-bg-card) 94%, var(--color-primary) 6%);
-  }
-
-  .wk-stat.is-active {
-    border-color: var(--color-primary);
-  }
-
-  .wk-stat__dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    flex-shrink: 0;
-  }
-
-  .wk-stat__label {
-    color: var(--color-text-secondary);
-    font-size: 13px;
-  }
-
-  .wk-stat__spacer,
-  .wk-card__spacer {
-    flex: 1;
-  }
-
-  .wk-stat__num {
-    font-family: var(--font-mono);
-    font-size: 22px;
-    font-weight: 600;
-    color: var(--color-text-primary);
-  }
-
-  /* Worker 卡片:r14 padding 16 18,auto-fill 网格 */
-  .wk-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 14px;
-    margin-top: 4px;
-  }
-
-  .wk-card {
-    display: flex;
-    flex-direction: column;
-    padding: 16px 18px;
-    background: var(--color-bg-card);
-    border: 1px solid var(--color-border);
-    border-radius: 14px;
-    box-shadow: var(--shadow-card);
-  }
-
-  .wk-card--draining {
-    border-color: var(--color-warning);
-  }
-
-  .wk-card--offline {
-    border-color: var(--color-danger);
-  }
-
-  .wk-card__head {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    min-width: 0;
-  }
-
-  .wk-card__id {
-    min-width: 0;
-    flex: 1;
-  }
-
-  .wk-card__code {
-    font-family: var(--font-mono);
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--color-text-primary);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .wk-card__group {
-    margin-top: 2px;
-    font-size: 11.5px;
-    color: var(--color-text-tertiary);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .wk-card__capabilities {
-    display: grid;
-    gap: 4px;
-    margin-top: 8px;
-    color: var(--color-text-secondary);
-    font-size: 11px;
-  }
-
-  .wk-card__capability {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px 8px;
-    min-width: 0;
-  }
-
-  .wk-card__task-type {
-    color: var(--color-text-primary);
-    font-family: var(--font-mono);
-  }
-
-  .wk-card__meta {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-top: 14px;
-  }
-
-  .wk-card__hb {
-    font-family: var(--font-mono);
-    font-size: 11px;
-    color: var(--color-text-tertiary);
-  }
-
-  /* 负载行:mini bar(5px 圆角轨道)+ 真实负载数(mono,右对齐) */
-  .wk-card__loadrow {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-top: 12px;
-  }
-
-  .wk-card__bar {
-    flex: 1;
-    height: 5px;
-    border-radius: 3px;
-    background: var(--color-bg-elevated);
-    overflow: hidden;
-  }
-
-  .wk-card__bar-fill {
-    height: 100%;
-    border-radius: 3px;
-    background: var(--color-primary);
-  }
-
-  .wk-card__load {
-    font-family: var(--font-mono);
-    font-size: 11px;
-    color: var(--color-text-secondary);
-    min-width: 24px;
-    text-align: right;
-  }
-
-  .wk-card__actions {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    flex-wrap: wrap;
-    margin-top: 14px;
-    padding-top: 13px;
-    border-top: 1px solid var(--color-border);
-  }
-
-  .wk-card__actions .el-button + .el-button {
-    margin-left: 0;
-  }
-
-  @media (max-width: 900px) {
-    .wk-stats {
-      grid-template-columns: 1fr;
-    }
-  }
-</style>
+<style scoped src="./WorkerManagement.css"></style>

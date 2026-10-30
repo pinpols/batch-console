@@ -60,17 +60,16 @@ describe('definitionToGraph', () => {
     })
   })
 
-  it('GATEWAY node normalizes type and preserves passthrough attrs', () => {
+  it('rejects unsupported node types and preserves valid passthrough attrs', () => {
     const snap = definitionToGraph({
       nodes: [
         { nodeCode: 'g', nodeType: 'GATEWAY', gatewayStrategy: 'XOR' },
-        { nodeCode: 'x', nodeType: 'unknown-type' },
       ],
       edges: [],
     })
     expect(snap.nodes[0].nodeType).toBe('GATEWAY')
     expect(snap.nodes[0].attrs?.gatewayStrategy).toBe('XOR')
-    // 未知节点类型回退到 JOB,避免画布因异常枚举中断渲染。
-    expect(snap.nodes[1].nodeType).toBe('JOB')
+    expect(() => definitionToGraph({ nodes: [{ nodeCode: 'x', nodeType: 'FILE_STEP' }], edges: [] }))
+      .toThrow('Unsupported Workflow node type: FILE_STEP')
   })
 })

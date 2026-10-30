@@ -185,7 +185,9 @@
     const qi = p.indexOf('?')
     if (qi < 0) return { path: p, query: {} }
     const query: Record<string, string> = {}
-    new URLSearchParams(p.slice(qi + 1)).forEach((v, k) => {
+    const queryString = p.slice(qi + 1)
+    const searchParams = new URLSearchParams(queryString)
+    searchParams.forEach((v, k) => {
       query[k] = v
     })
     return { path: p.slice(0, qi), query }

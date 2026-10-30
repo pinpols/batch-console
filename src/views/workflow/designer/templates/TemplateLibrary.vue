@@ -45,7 +45,8 @@
       }
     }
     // 套模板 = 加载新内容,必须标脏(reset 会把 dirty 置 false,这里补回)
-    store.reset(definitionToGraph(tpl.definition))
+    const graph = definitionToGraph(tpl.definition)
+    store.reset(graph)
     store.markDirty()
     emit('applied', tpl.key)
     close()

@@ -1,7 +1,7 @@
 {
   "bomFormat": "CycloneDX",
   "specVersion": "1.6",
-  "serialNumber": "urn:uuid:e7b647c2-bfba-7c49-a6dd-06be07f17786",
+  "serialNumber": "urn:uuid:bbac0879-37d3-2610-8112-7eb6892c84da",
   "version": 1,
   "metadata": {
     "component": {
@@ -7128,6 +7128,27 @@
     },
     {
       "type": "library",
+      "bom-ref": "pkg:npm/@types/node@24.19.2",
+      "name": "@types/node",
+      "version": "24.19.2",
+      "purl": "pkg:npm/@types/node@24.19.2",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "scope": "optional",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@types/node/-/node-24.19.2.tgz"
+        }
+      ]
+    },
+    {
+      "type": "library",
       "bom-ref": "pkg:npm/@types/resolve@1.20.2",
       "name": "@types/resolve",
       "version": "1.20.2",
@@ -11706,10 +11727,10 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/follow-redirects@1.16.0",
+      "bom-ref": "pkg:npm/follow-redirects@1.16.2",
       "name": "follow-redirects",
-      "version": "1.16.0",
-      "purl": "pkg:npm/follow-redirects@1.16.0",
+      "version": "1.16.2",
+      "purl": "pkg:npm/follow-redirects@1.16.2",
       "licenses": [
         {
           "license": {
@@ -11721,7 +11742,7 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/follow-redirects/-/follow-redirects-1.16.0.tgz"
+          "url": "https://registry.npmjs.org/follow-redirects/-/follow-redirects-1.16.2.tgz"
         }
       ]
     },
@@ -14331,10 +14352,10 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/markdown-it@15.0.2",
+      "bom-ref": "pkg:npm/markdown-it@15.0.3",
       "name": "markdown-it",
-      "version": "15.0.2",
-      "purl": "pkg:npm/markdown-it@15.0.2",
+      "version": "15.0.3",
+      "purl": "pkg:npm/markdown-it@15.0.3",
       "licenses": [
         {
           "license": {
@@ -14346,7 +14367,7 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/markdown-it/-/markdown-it-15.0.2.tgz"
+          "url": "https://registry.npmjs.org/markdown-it/-/markdown-it-15.0.3.tgz"
         }
       ]
     },
@@ -17901,6 +17922,27 @@
     },
     {
       "type": "library",
+      "bom-ref": "pkg:npm/undici-types@7.24.6",
+      "name": "undici-types",
+      "version": "7.24.6",
+      "purl": "pkg:npm/undici-types@7.24.6",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "scope": "optional",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/undici-types/-/undici-types-7.24.6.tgz"
+        }
+      ]
+    },
+    {
+      "type": "library",
       "bom-ref": "pkg:npm/unicode-canonical-property-names-ecmascript@2.0.1",
       "name": "unicode-canonical-property-names-ecmascript",
       "version": "2.0.1",
@@ -19943,6 +19985,7 @@
         "pkg:npm/@types/markdown-it@14.2.0",
         "pkg:npm/@types/mdast@4.0.4",
         "pkg:npm/@types/mdurl@2.0.0",
+        "pkg:npm/@types/node@24.19.2",
         "pkg:npm/@types/resolve@1.20.2",
         "pkg:npm/@types/trusted-types@2.0.7",
         "pkg:npm/@types/unist@3.0.3",
@@ -20161,7 +20204,7 @@
         "pkg:npm/flat-cache@6.1.23",
         "pkg:npm/flatted@3.4.4",
         "pkg:npm/focus-trap@7.8.0",
-        "pkg:npm/follow-redirects@1.16.0",
+        "pkg:npm/follow-redirects@1.16.2",
         "pkg:npm/for-each@0.3.5",
         "pkg:npm/form-data@4.0.6",
         "pkg:npm/fs-extra@9.1.0",
@@ -20286,7 +20329,7 @@
         "pkg:npm/magic-string-ast@1.0.3",
         "pkg:npm/magicast@0.5.5",
         "pkg:npm/mark.js@8.11.1",
-        "pkg:npm/markdown-it@15.0.2",
+        "pkg:npm/markdown-it@15.0.3",
         "pkg:npm/marked@16.4.2",
         "pkg:npm/math-intrinsics@1.1.0",
         "pkg:npm/mdast-util-to-hast@13.2.1",
@@ -20456,6 +20499,7 @@
         "pkg:npm/ufo@1.6.4",
         "pkg:npm/unbox-primitive@1.1.0",
         "pkg:npm/undici@6.29.0",
+        "pkg:npm/undici-types@7.24.6",
         "pkg:npm/unicode-canonical-property-names-ecmascript@2.0.1",
         "pkg:npm/unicode-match-property-ecmascript@2.0.0",
         "pkg:npm/unicode-match-property-value-ecmascript@2.2.1",

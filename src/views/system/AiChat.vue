@@ -256,7 +256,7 @@
             <el-table-column prop="modelName" :label="t('aiChat.colModel')" min-width="150" />
             <el-table-column :label="t('common.detail')" width="120" fixed="right">
               <template #default="{ row }">
-                <el-button size="small" :icon="Eye" @click="openAuditDetail(row)">
+                <el-button size="small" :icon="Eye" @click="openAuditDetail(row as AiAuditLogResponse)">
                   {{ t('common.detail') }}
                 </el-button>
               </template>
@@ -294,16 +294,7 @@
             <CopyableText :text="selectedAudit.traceId || '—'" />
           </el-descriptions-item>
           <el-descriptions-item :label="t('aiChat.auditUsage')">
-            {{
-              t('aiChat.auditUsageValue', {
-                prompt: selectedAudit.promptTokens ?? '—',
-                completion: selectedAudit.completionTokens ?? '—',
-                cost:
-                  selectedAudit.estimatedCostUsd == null
-                    ? '—'
-                    : formatAiUsd(selectedAudit.estimatedCostUsd),
-              })
-            }}
+            {{ selectedAuditUsage }}
           </el-descriptions-item>
         </el-descriptions>
         <section class="audit-detail__section">
@@ -457,6 +448,17 @@
   } = useListFilterFeedback(auditLoading)
   const auditRows = ref<AiAuditLogResponse[]>([])
   const selectedAudit = ref<AiAuditLogResponse | null>(null)
+  const selectedAuditUsage = computed(() => {
+    const audit = selectedAudit.value
+    if (!audit) return ''
+
+    const cost = audit.estimatedCostUsd == null ? '—' : formatAiUsd(audit.estimatedCostUsd)
+    return t('aiChat.auditUsageValue', {
+      prompt: audit.promptTokens ?? '—',
+      completion: audit.completionTokens ?? '—',
+      cost,
+    })
+  })
   const auditDetailOpen = ref(false)
   const auditTotal = ref(0)
   const auditPage = ref(1)
@@ -561,7 +563,11 @@
 
   async function loadMoreConversations() {
     const cursor = historyNextCursor.value
-    if (!cursor || !historyHasMore.value || historyLoading.value || historyMoreLoading.value) return
+    const cannotLoadMoreConversations =
+      !cursor || !historyHasMore.value || historyLoading.value || historyMoreLoading.value
+    if (cannotLoadMoreConversations) {
+      return
+    }
     const sequence = historyRequestSequence
     const tenantId = tenant.tenantId
     historyMoreLoading.value = true
@@ -618,27 +624,22 @@
     const sequence = ++turnRequestSequence
     const tenantId = tenant.tenantId
     const selectedSessionId = sessionId.value
+    const isCurrentTurn = () =>
+      sequence === turnRequestSequence &&
+      tenant.tenantId === tenantId &&
+      sessionId.value === selectedSessionId
     historyTurnsLoading.value = true
     try {
       const turns = await listAiTurns(selectedSessionId, {
         beforeTurnNo: oldestTurnNo.value,
         limit: 50,
       })
-      if (
-        sequence !== turnRequestSequence ||
-        tenant.tenantId !== tenantId ||
-        sessionId.value !== selectedSessionId
-      )
-        return
+      if (!isCurrentTurn()) return
       chat.prepend(turns, t('aiChat.emptyAnswer'))
       oldestTurnNo.value = turns.length ? Math.min(...turns.map((turn) => turn.turnNo)) : null
       hasOlderTurns.value = turns.length === 50
     } catch (error) {
-      if (
-        sequence === turnRequestSequence &&
-        tenant.tenantId === tenantId &&
-        sessionId.value === selectedSessionId
-      ) {
+      if (isCurrentTurn()) {
         if (isMissingConversation(error)) markConversationUnavailable(selectedSessionId)
         else historyError.value = true
       }

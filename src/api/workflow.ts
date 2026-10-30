@@ -13,6 +13,8 @@ export interface WorkflowDefinitionQuery {
   workflowName?: string
   enabled?: boolean
   workflowType?: string
+  relatedJobCode?: string
+  singleJobWorkflow?: boolean
   version?: number
   page: number
   pageSize: number
@@ -27,7 +29,29 @@ export type WorkflowEdgeSaveItem = components['schemas']['WorkflowDefinitionSave
 /** 创建 / 更新工作流的完整请求体——复用 OpenAPI 生成类型。重新生成:`npm run gen:api`。 */
 export type SaveWorkflowRequest = components['schemas']['WorkflowDefinitionSaveRequest']
 
+export interface WorkflowTriggerRequest {
+  tenantId: string
+  bizDate: string
+  triggerType?: string
+  payload?: string
+}
+
+export type WorkflowScheduleUpdateRequest = components['schemas']['WorkflowScheduleUpdateRequest']
+export type ScheduledOccurrenceCatchUpRequest =
+  components['schemas']['ScheduledOccurrenceCatchUpRequest']
+export type ScheduledOccurrenceCatchUpResponse =
+  components['schemas']['ScheduledOccurrenceCatchUpResponse']
+export type WorkflowTriggerStatusResponse = components['schemas']['WorkflowTriggerStatusResponse']
+export type WorkflowMonitoringPolicyRequest = components['schemas']['WorkflowMonitoringPolicyRequest']
+export type WorkflowMonitoringPolicyResponse = components['schemas']['WorkflowMonitoringPolicyResponse']
+
 export const workflowApi = {
+  getMonitoringPolicy: (id: number, tenantId: string): Promise<WorkflowMonitoringPolicyResponse> =>
+    get<WorkflowMonitoringPolicyResponse>(`/api/console/workflow-definitions/${id}/monitoring-policy`, { tenantId }),
+
+  saveMonitoringPolicy: (id: number, body: WorkflowMonitoringPolicyRequest): Promise<WorkflowMonitoringPolicyResponse> =>
+    put<WorkflowMonitoringPolicyResponse>(`/api/console/workflow-definitions/${id}/monitoring-policy`, body),
+
   /** 工作流定义列表直接使用后端过滤和分页，避免随定义数量增长聚合全量页。 */
   listDefinitions: async (
     query: WorkflowDefinitionQuery,
@@ -42,6 +66,8 @@ export const workflowApi = {
         workflowName: query.workflowName,
         enabled: query.enabled,
         workflowType: query.workflowType,
+        relatedJobCode: query.relatedJobCode,
+        singleJobWorkflow: query.singleJobWorkflow,
         version: query.version,
       },
     )
@@ -77,18 +103,51 @@ export const workflowApi = {
   create: (body: SaveWorkflowRequest): Promise<WorkflowDefinitionDetailResponse> =>
     post<WorkflowDefinitionDetailResponse>('/api/console/workflow-definitions', body),
 
-  /**
-   * 更新已有 workflow（全量替换 nodes + edges，返回最新 detail）
-   */
-  update: (id: number, body: SaveWorkflowRequest): Promise<WorkflowDefinitionDetailResponse> =>
-    put<WorkflowDefinitionDetailResponse>(`/api/console/workflow-definitions/${id}`, body),
-
   detailById: (id: number, tenantId: string): Promise<WorkflowDefinitionDetailResponse> =>
     get<WorkflowDefinitionDetailResponse>(`/api/console/workflow-definitions/${id}`, { tenantId }),
 
   /** PATCH 切换启用 / 禁用 */
   toggle: (id: number, tenantId: string, enabled: boolean): Promise<void> =>
     patch<void>(`/api/console/workflow-definitions/${id}`, { tenantId, enabled }),
+
+  /** 单独暂停或恢复定时触发，不影响手工/API 执行准入。 */
+  toggleSchedule: (id: number, tenantId: string, enabled: boolean): Promise<void> =>
+    patch<void>(`/api/console/workflow-definitions/${id}/schedule-enabled`, {
+      tenantId,
+      enabled,
+    }),
+
+  updateSchedule: (
+    id: number,
+    body: WorkflowScheduleUpdateRequest,
+  ): Promise<WorkflowDefinitionDetailResponse> =>
+    put<WorkflowDefinitionDetailResponse>(`/api/console/workflow-definitions/${id}/schedule`, body),
+
+  /** 以顶层运行启动 Workflow；客户端负责注入幂等键。 */
+  trigger: (id: number, body: WorkflowTriggerRequest, idempotencyKey?: string): Promise<string> => {
+    const url = `/api/console/workflow-definitions/${id}/trigger`
+    if (!idempotencyKey) return post<string>(url, body)
+    return post<string>(url, body, {
+      headers: { 'Idempotency-Key': idempotencyKey, 'X-Tenant-Id': body.tenantId },
+    })
+  },
+
+  triggerStatus: (id: number, tenantId: string, idempotencyKey: string) =>
+    get<WorkflowTriggerStatusResponse>(
+      `/api/console/workflow-definitions/${id}/trigger-status`,
+      { tenantId },
+      { headers: { 'Idempotency-Key': idempotencyKey, 'X-Tenant-Id': tenantId } },
+    ),
+
+  /** 审计并补跑一条业务日已关闭时被拒绝的定时触发。 */
+  catchUpScheduledOccurrence: (
+    id: number,
+    body: ScheduledOccurrenceCatchUpRequest,
+  ): Promise<ScheduledOccurrenceCatchUpResponse> =>
+    post<ScheduledOccurrenceCatchUpResponse>(
+      `/api/console/workflow-definitions/${id}/scheduled-occurrences/catch-up`,
+      body,
+    ),
 
   /**
    * 触发后端 DAG 静态校验（ADR-025）。返回 15 条规则的结构化 finding；

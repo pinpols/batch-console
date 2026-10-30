@@ -1,26 +1,13 @@
-# 07 — Outbox 卡住消息
+# Outbox 场景资料
 
-## 测的接口
-- POST `/api/console/ops/outbox/republish`
-- POST `/api/console/ops/outbox/cleanup`
+本页是保留输入与当前测试入口的目录说明。执行范围与准备/清理规则见[本目录总览](../README.md)和[执行说明](../EXEC-MATRIX.md)。
 
-## 数据
-**只能 BE SQL seed**(FE 不会主动产生 STUCK 状态):
+## 保留资产
 
-```sql
--- 让 BE 同事执行(seed-outbox.sql 待补)
-INSERT INTO outbox_event (
-  event_id, aggregate_id, event_type, payload,
-  status, retry_count, created_at
-) VALUES
-  ('test-stuck-1', 'job-001', 'JOB_TRIGGERED', '{}', 'STUCK', 5, NOW() - INTERVAL '2 hours'),
-  ('test-stuck-2', 'job-002', 'JOB_FAILED',     '{}', 'STUCK', 5, NOW() - INTERVAL '1 hour');
-```
+- [历史 Outbox 造数 SQL](../archive/07-outbox-stuck/seed-outbox-stuck.sql)。
 
-## FE 触发路径
-**观测查询 → 综合查询 → Outbox tab**(或 ops 域内入口)
+## 当前入口与适用性
 
-## 验证点
-- 列表能筛 STUCK
-- 行内 republish:状态切回 PENDING
-- 顶部 cleanup:批量软删
+现行场景见 [`alert-outbox-ops.spec.ts`](../../e2e/alert-outbox-ops.spec.ts)、[`flows/08-outbox-stuck-republish.spec.ts`](../../e2e/flows/08-outbox-stuck-republish.spec.ts)。状态、重试、重发布和清理的契约以后端与 [`src/api/ops.ts`](../../src/api/ops.ts)为准。
+
+目录名称沿用历史场景名；它不声明后端具有 `STUCK` 状态。直接插入 Outbox/重试表的旧 SQL 已归档，不能作为当前可重复、无副作用的准备步骤。

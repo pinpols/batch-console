@@ -16,6 +16,38 @@ const PG_CONTAINER = process.env.PG_CONTAINER || 'batch-postgres-primary'
 const POSTGRES_USER = process.env.POSTGRES_USER || 'batch_user'
 const PLATFORM_DB = process.env.PLATFORM_DB || 'batch_platform'
 
+const insertStuckEventSql = (eventKey: string) => `
+  INSERT INTO batch.outbox_event (
+    tenant_id, aggregate_type, aggregate_id, event_type, event_key,
+    payload_json, publish_status, publish_attempt, next_publish_at, trace_id
+  ) VALUES (
+    'ta', 'JOB_INSTANCE', 1001, 'JOB_TRIGGERED', '${eventKey}',
+    '{"jobCode":"TA_INC_ORDER_AGG","bizDate":"2026-05-01"}'::jsonb,
+    'FAILED', 5, NOW() + INTERVAL '1 day', '${eventKey}-trace'
+  );
+
+  INSERT INTO batch.event_outbox_retry (
+    tenant_id, outbox_event_id, event_key, retry_attempt, retry_status,
+    retry_reason, next_retry_at, trace_id
+  )
+  SELECT tenant_id, id, event_key, publish_attempt, 'FAILED',
+         'e2e isolated stuck event', next_publish_at, trace_id
+    FROM batch.outbox_event
+   WHERE tenant_id = 'ta' AND event_key = '${eventKey}';
+`
+
+const cleanupStuckEventSql = (eventKey: string) => `
+  DELETE FROM batch.event_delivery_log delivery
+   USING batch.outbox_event event
+   WHERE delivery.outbox_event_id = event.id
+     AND event.tenant_id = 'ta' AND event.event_key = '${eventKey}';
+  DELETE FROM batch.event_outbox_retry retry
+   USING batch.outbox_event event
+   WHERE retry.outbox_event_id = event.id
+     AND event.tenant_id = 'ta' AND event.event_key = '${eventKey}';
+  DELETE FROM batch.outbox_event WHERE tenant_id = 'ta' AND event_key = '${eventKey}';
+`
+
 function psql(sql: string) {
   const result = spawnSync(
     'docker',
@@ -47,39 +79,13 @@ test.describe.serial('Flow 08: outbox stuck → republish → delivered', () => 
 
   test.beforeAll(async () => {
     ctx = await adminCtx()
-    psql(`
-      INSERT INTO batch.outbox_event (
-        tenant_id, aggregate_type, aggregate_id, event_type, event_key,
-        payload_json, publish_status, publish_attempt, next_publish_at, trace_id
-      ) VALUES (
-        'ta', 'JOB_INSTANCE', 1001, 'JOB_TRIGGERED', '${eventKey}',
-        '{"jobCode":"TA_INC_ORDER_AGG","bizDate":"2026-05-01"}'::jsonb,
-        'FAILED', 5, NOW() + INTERVAL '1 day', '${eventKey}-trace'
-      );
-
-      INSERT INTO batch.event_outbox_retry (
-        tenant_id, outbox_event_id, event_key, retry_attempt, retry_status,
-        retry_reason, next_retry_at, trace_id
-      )
-      SELECT tenant_id, id, event_key, publish_attempt, 'FAILED',
-             'e2e isolated stuck event', next_publish_at, trace_id
-        FROM batch.outbox_event
-       WHERE tenant_id = 'ta' AND event_key = '${eventKey}';
-    `)
+    const insertEventFixtureSql = insertStuckEventSql(eventKey)
+    psql(insertEventFixtureSql)
   })
   test.afterAll(async () => {
     log.flushIfFailed(failed, 'flow-08-outbox')
-    psql(`
-      DELETE FROM batch.event_delivery_log delivery
-       USING batch.outbox_event event
-       WHERE delivery.outbox_event_id = event.id
-         AND event.tenant_id = 'ta' AND event.event_key = '${eventKey}';
-      DELETE FROM batch.event_outbox_retry retry
-       USING batch.outbox_event event
-       WHERE retry.outbox_event_id = event.id
-         AND event.tenant_id = 'ta' AND event.event_key = '${eventKey}';
-      DELETE FROM batch.outbox_event WHERE tenant_id = 'ta' AND event_key = '${eventKey}';
-    `)
+    const cleanupEventFixtureSql = cleanupStuckEventSql(eventKey)
+    psql(cleanupEventFixtureSql)
     await ctx.dispose()
   })
 

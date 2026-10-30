@@ -33,6 +33,31 @@ function runSql(sql: string): string {
   ).trim()
 }
 
+const insertConversationSql = (id: string, owner: string, title: string) => `
+  BEGIN;
+  SELECT set_config('app.tenant_id', 'ta', true);
+  INSERT INTO batch.console_ai_conversation
+    (id, tenant_id, owner_user_id, title, context_version, expires_at)
+  VALUES ('${id}', 'ta', '${owner}', '${title}', 'v1', CURRENT_TIMESTAMP + INTERVAL '1 hour');
+  COMMIT;
+`
+
+const updateConversationExpirySql = (id: string, expiry: 'past' | 'future') => `
+  BEGIN;
+  SELECT set_config('app.tenant_id', 'ta', true);
+  UPDATE batch.console_ai_conversation
+     SET expires_at = ${expiry === 'past' ? "CURRENT_TIMESTAMP - INTERVAL '1 minute'" : "CURRENT_TIMESTAMP + INTERVAL '1 hour'"}
+   WHERE tenant_id = 'ta' AND id = '${id}';
+  COMMIT;
+`
+
+const deleteConversationSql = (id: string) => `
+  BEGIN;
+  SELECT set_config('app.tenant_id', 'ta', true);
+  DELETE FROM batch.console_ai_conversation WHERE tenant_id = 'ta' AND id = '${id}';
+  COMMIT;
+`
+
 test('expired AI conversation rejects history and send without losing the draft', async ({
   page,
   network,
@@ -57,9 +82,8 @@ test('expired AI conversation rejects history and send without losing the draft'
 
   const id = `e2e-ai-expiry-${randomUUID()}`
   const title = 'E2E expired conversation'
-  runSql(
-    `BEGIN; SELECT set_config('app.tenant_id', 'ta', true); INSERT INTO batch.console_ai_conversation (id, tenant_id, owner_user_id, title, context_version, expires_at) VALUES ('${id}', 'ta', '${owner}', '${title}', 'v1', CURRENT_TIMESTAMP + INTERVAL '1 hour'); COMMIT;`,
-  )
+  const insertConversationFixtureSql = insertConversationSql(id, owner, title)
+  runSql(insertConversationFixtureSql)
   try {
     network.ignoreIf(
       (entry) =>
@@ -85,9 +109,8 @@ test('expired AI conversation rejects history and send without losing the draft'
     })
     expect(missingCsrf.status()).toBe(403)
 
-    runSql(
-      `BEGIN; SELECT set_config('app.tenant_id', 'ta', true); UPDATE batch.console_ai_conversation SET expires_at = CURRENT_TIMESTAMP - INTERVAL '1 minute' WHERE tenant_id = 'ta' AND id = '${id}'; COMMIT;`,
-    )
+    const expireConversationSql = updateConversationExpirySql(id, 'past')
+    runSql(expireConversationSql)
     const missing = page.waitForResponse((response) =>
       response.url().includes(`/api/console/ai/conversations/${id}/turns`),
     )
@@ -98,17 +121,15 @@ test('expired AI conversation rejects history and send without losing the draft'
     await expect(conversation).toHaveCount(0)
     await expect(page.locator('.history-error')).toContainText('会话不存在或已过期')
 
-    runSql(
-      `BEGIN; SELECT set_config('app.tenant_id', 'ta', true); UPDATE batch.console_ai_conversation SET expires_at = CURRENT_TIMESTAMP + INTERVAL '1 hour' WHERE tenant_id = 'ta' AND id = '${id}'; COMMIT;`,
-    )
+    const restoreConversationExpirySql = updateConversationExpirySql(id, 'future')
+    runSql(restoreConversationExpirySql)
     await page.reload()
     await expect(conversation).toBeVisible()
     await conversation.locator('.conversation-list__open').click()
     await expect(page.locator('.conversation-list__open.el-button--primary')).toBeVisible()
 
-    runSql(
-      `BEGIN; SELECT set_config('app.tenant_id', 'ta', true); UPDATE batch.console_ai_conversation SET expires_at = CURRENT_TIMESTAMP - INTERVAL '1 minute' WHERE tenant_id = 'ta' AND id = '${id}'; COMMIT;`,
-    )
+    const expireConversationBeforeSendSql = updateConversationExpirySql(id, 'past')
+    runSql(expireConversationBeforeSendSql)
     const draft = '查询批量调度作业运行状态'
     await page.locator('.composer__editor textarea').fill(draft)
     const rejected = page.waitForResponse(
@@ -126,8 +147,7 @@ test('expired AI conversation rejects history and send without losing the draft'
     await expect(page.locator('.composer .history-error')).toContainText('会话不存在或已过期')
     network.assertClean('expired AI conversation')
   } finally {
-    runSql(
-      `BEGIN; SELECT set_config('app.tenant_id', 'ta', true); DELETE FROM batch.console_ai_conversation WHERE tenant_id = 'ta' AND id = '${id}'; COMMIT;`,
-    )
+    const removeConversationFixtureSql = deleteConversationSql(id)
+    runSql(removeConversationFixtureSql)
   }
 })

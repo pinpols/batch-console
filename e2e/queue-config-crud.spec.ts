@@ -19,7 +19,6 @@ test.describe('queue config CRUD (资源队列)', () => {
   test('新建队列对话框可打开 + 必填字段校验', async ({ page }) => {
     await page.getByRole('button', { name: '新建队列' }).first().click()
     await expect(page.getByText('新增资源队列')).toBeVisible()
-    await page.waitForTimeout(400)
     // 验证刚 i18n 改过的 label 都在
     const dialog = page.locator('.el-dialog:visible, .el-drawer:visible').filter({ hasText: '新增资源队列' })
     await expect(dialog.getByText('队列编码', { exact: true })).toBeVisible()
@@ -53,7 +52,6 @@ test.describe('queue config CRUD (资源队列)', () => {
       .fill(`E2E Queue ${Date.now()}`)
     const typeItem = dialog.locator('.el-form-item').filter({ hasText: '类型' }).first()
     await typeItem.locator('.el-select__wrapper, .el-select').first().click()
-    await page.waitForTimeout(300)
     const opt = page.locator('.el-select-dropdown:visible').last().locator('.el-select-dropdown__item').first()
     await expect(opt).toBeVisible({ timeout: 4000 })
     await opt.click()
@@ -81,7 +79,6 @@ test.describe('batch window CRUD (批次窗口)', () => {
   test('新建批次窗口对话框可打开', async ({ page }) => {
     await page.getByRole('button', { name: '新建批次窗口' }).first().click()
     await expect(page.getByText('新增批次窗口')).toBeVisible()
-    await page.waitForTimeout(400)
     const dialog = page.locator('.el-dialog:visible, .el-drawer:visible').filter({ hasText: '新增批次窗口' })
     await expect(dialog.getByText('窗口编码', { exact: true })).toBeVisible()
     await expect(dialog.getByText('开始时间', { exact: true })).toBeVisible()
@@ -100,7 +97,6 @@ test.describe('business calendar CRUD (业务日历)', () => {
   test('新建业务日历对话框可打开', async ({ page }) => {
     await page.getByRole('button', { name: '新建业务日历' }).first().click()
     await expect(page.getByText('新增业务日历')).toBeVisible()
-    await page.waitForTimeout(400)
     const dialog = page.locator('.el-dialog:visible, .el-drawer:visible').filter({ hasText: '新增业务日历' })
     await expect(dialog.getByText('日历编码', { exact: true })).toBeVisible()
     await expect(dialog.getByText('节假日顺延规则', { exact: true })).toBeVisible()

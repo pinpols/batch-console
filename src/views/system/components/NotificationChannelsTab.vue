@@ -40,7 +40,7 @@
           <el-form-item :label="t('notificationCommon.enabledLabel')">
             <EnabledStatusFilter
               v-model="channelFilterDraft.enabled"
-              :aria-label="t('notificationCommon.enabledLabel')"
+              :ariaLabel="t('notificationCommon.enabledLabel')"
             />
           </el-form-item>
         </ListPageQueryBar>
@@ -159,7 +159,7 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, reactive, computed } from 'vue'
+  import { ref, reactive, computed, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage, ElMessageBox } from 'element-plus'
 
@@ -179,7 +179,6 @@
   } from '@/api/notifications'
   import { toPageResult } from '@/api/adapters'
   import { useTenantStore } from '@/stores/tenant'
-  import { useTenantReload } from '@/composables/useTenantReload'
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
   import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
   import ProTable from '@/components/table/ProTable.vue'
@@ -191,6 +190,7 @@
   import RowActions, { type RowAction } from '@/components/common/RowActions.vue'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import { useListLoadState } from '@/composables/useListLoadState'
+  import { createNotificationChannelRequestFence } from './notificationChannelTenantScope'
 
   const tenant = useTenantStore()
   const { data: metaEnums } = useConsoleMetaEnumsQuery()
@@ -200,15 +200,13 @@
     pickMetaEnumGroup(metaEnums.value, 'notificationChannelType', 'channelType'),
   )
 
-  const {
-    loading: loadingChannels,
-    error: loadChannelsError,
-    run: runLoadingChannels,
-  } = useListLoadState()
+  const { loading: loadingChannels, error: loadChannelsError } = useListLoadState()
   const { filterBusy, runSearch, runReset, runRefresh } = useListFilterFeedback(loadingChannels)
   const savingChannel = ref(false)
   const channelFormVisible = ref(false)
   const channelEditingCode = ref<string | null>(null)
+  const channelFormTenantId = ref<string | null>(null)
+  const channelRequestFence = createNotificationChannelRequestFence()
   const channels = ref<Record<string, unknown>[]>([])
   const channelPage = ref(1)
   const channelPageSize = ref(15)
@@ -237,16 +235,30 @@
   }
 
   async function loadChannels() {
-    if (!tenant.tenantId) {
+    const requestedTenantId = tenant.tenantId
+    if (!requestedTenantId) {
+      channelRequestFence.invalidate()
       channels.value = []
+      loadingChannels.value = false
+      loadChannelsError.value = null
       return
     }
-    await runLoadingChannels(async () => {
-      const data = await listNotificationChannels(tenant.tenantId)
+    const requestScope = channelRequestFence.begin(requestedTenantId)
+    loadingChannels.value = true
+    loadChannelsError.value = null
+    try {
+      const data = await listNotificationChannels(requestedTenantId)
+      if (!channelRequestFence.isCurrent(requestScope, tenant.tenantId)) return
       channels.value = Array.isArray(data) ? (data as Record<string, unknown>[]) : []
-    }).catch(() => {
+    } catch (error) {
+      if (!channelRequestFence.isCurrent(requestScope, tenant.tenantId)) return
       channels.value = []
-    })
+      loadChannelsError.value = error
+    } finally {
+      if (channelRequestFence.isCurrent(requestScope, tenant.tenantId)) {
+        loadingChannels.value = false
+      }
+    }
   }
 
   // 脏数据保护
@@ -258,6 +270,7 @@
   function openChannelCreate() {
     if (!tenant.tenantId) return
     channelEditingCode.value = null
+    channelFormTenantId.value = tenant.tenantId
     channelForm.channelCode = ''
     channelForm.channelName = ''
     channelForm.channelType = ''
@@ -268,6 +281,9 @@
   }
 
   function openChannelEdit(row: Record<string, unknown>) {
+    const rowTenantId = String(row.tenantId ?? '')
+    if (!rowTenantId || rowTenantId !== tenant.tenantId) return
+    channelFormTenantId.value = rowTenantId
     channelEditingCode.value = String(row.channelCode ?? '')
     channelForm.channelCode = channelEditingCode.value
     channelForm.channelName = String(row.channelName ?? '')
@@ -322,16 +338,19 @@
   }
 
   async function saveChannel() {
-    if (!tenant.tenantId) return
+    const submittedTenantId = channelFormTenantId.value
+    if (!submittedTenantId || submittedTenantId !== tenant.tenantId) return
     if (!(await validateChannelForm())) return
+    if (submittedTenantId !== channelFormTenantId.value || submittedTenantId !== tenant.tenantId) return
     savingChannel.value = true
     try {
       const body = { ...channelForm }
       if (channelEditingCode.value) {
-        await updateNotificationChannel(channelEditingCode.value, tenant.tenantId, body)
+        await updateNotificationChannel(channelEditingCode.value, submittedTenantId, body)
       } else {
-        await createNotificationChannel(tenant.tenantId, body)
+        await createNotificationChannel(submittedTenantId, body)
       }
+      if (tenant.tenantId !== submittedTenantId) return
       ElMessage.success(t('notificationCommon.savedToast'))
       channelDirty.markPristine()
       channelFormVisible.value = false
@@ -342,9 +361,10 @@
   }
 
   async function testChannel(row: Record<string, unknown>) {
-    if (!tenant.tenantId) return
+    const rowTenantId = String(row.tenantId ?? '')
+    if (!rowTenantId || rowTenantId !== tenant.tenantId) return
     try {
-      await testNotificationChannel(String(row.channelCode), tenant.tenantId)
+      await testNotificationChannel(String(row.channelCode), rowTenantId)
       ElMessage.success(t('notificationChannelsTab.testSent'))
     } catch {
       ElMessage.error(t('notificationChannelsTab.testFailed'))
@@ -352,7 +372,8 @@
   }
 
   async function confirmDeleteChannel(row: Record<string, unknown>) {
-    if (!tenant.tenantId) return
+    const rowTenantId = String(row.tenantId ?? '')
+    if (!rowTenantId || rowTenantId !== tenant.tenantId) return
     try {
       await confirmDanger({
         verb: t('notificationCommon.deleteVerb'),
@@ -360,7 +381,8 @@
         consequence: t('notificationChannelsTab.deleteConsequence'),
         irreversible: false,
       })
-      await deleteNotificationChannel(String(row.channelCode), tenant.tenantId)
+      if (tenant.tenantId !== rowTenantId) return
+      await deleteNotificationChannel(String(row.channelCode), rowTenantId)
       ElMessage.success(t('notificationCommon.deletedToast'))
       await loadChannels()
     } catch {
@@ -408,10 +430,21 @@
     })
   }
 
-  useTenantReload(() => {
+  watch(() => tenant.tenantId, (tenantId) => {
+    channelRequestFence.invalidate()
+    channels.value = []
     channelPage.value = 1
-    void loadChannels()
-  })
+    if (channelFormTenantId.value !== tenantId) {
+      channelFormVisible.value = false
+      channelFormTenantId.value = null
+      channelEditingCode.value = null
+    }
+    if (tenantId) void loadChannels()
+    else {
+      loadingChannels.value = false
+      loadChannelsError.value = null
+    }
+  }, { immediate: true })
 
   defineExpose({ openChannelCreate })
 </script>

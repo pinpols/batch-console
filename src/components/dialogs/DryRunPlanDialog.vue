@@ -44,9 +44,11 @@
       <el-divider>{{ t('dryRunDialog.resultDivider') }}</el-divider>
       <el-alert
         :title="
-          result.success
-            ? t('dryRunDialog.passed')
-            : t('dryRunDialog.foundIssues', { n: errorCount })
+          !result.success
+            ? t('dryRunDialog.foundIssues', { n: errorCount })
+            : hasWarn
+              ? t('dryRunDialog.completedWithWarnings', { n: warningCount })
+              : t('dryRunDialog.passed')
         "
         :type="hasError ? 'error' : hasWarn ? 'warning' : 'success'"
         show-icon
@@ -66,11 +68,15 @@
         </el-table-column>
         <el-table-column prop="scope" :label="t('dryRunDialog.colCategory')" width="100" />
         <el-table-column prop="code" :label="t('dryRunDialog.colCode')" width="200" />
-        <el-table-column
-          prop="message"
-          :label="t('dryRunDialog.colMessage')"
-          show-overflow-tooltip
-        />
+        <el-table-column prop="message" :label="t('dryRunDialog.colMessage')" show-overflow-tooltip>
+          <template #default="{ row }">
+            {{
+              row.code === 'EXEC_SQL_PLAN_UNAVAILABLE'
+                ? t('dryRunDialog.sqlPlanUnavailable')
+                : row.message
+            }}
+          </template>
+        </el-table-column>
       </el-table>
     </div>
 
@@ -140,6 +146,7 @@
   const hasError = computed(() => allFindings.value.some((f) => f.severity === 'ERROR'))
   const hasWarn = computed(() => allFindings.value.some((f) => f.severity === 'WARN'))
   const errorCount = computed(() => allFindings.value.filter((f) => f.severity === 'ERROR').length)
+  const warningCount = computed(() => allFindings.value.filter((f) => f.severity === 'WARN').length)
 
   function tagType(lvl: string): 'success' | 'warning' | 'danger' {
     if (lvl === 'ERROR') return 'danger'
@@ -175,6 +182,8 @@
       const errs = (result.value.findings ?? []).filter((f) => f.severity === 'ERROR').length
       if (errs > 0) {
         ElMessage.warning(t('dryRunDialog.foundIssues', { n: errs }))
+      } else if (warningCount.value > 0) {
+        ElMessage.warning(t('dryRunDialog.completedWithWarnings', { n: warningCount.value }))
       } else {
         ElMessage.success(t('dryRunDialog.passed'))
       }

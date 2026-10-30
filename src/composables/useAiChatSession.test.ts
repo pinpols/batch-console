@@ -532,7 +532,7 @@ describe('useAiChatSession', () => {
         modelName: 'vision-model',
         promptTokens: 10,
         completionTokens: 5,
-        estimatedCostUsd: '0.001',
+        estimatedCostUsd: 0.001,
         createdAt: '2026-10-02T00:00:00Z',
         completedAt: '2026-10-02T00:00:01Z',
         attachments: [],

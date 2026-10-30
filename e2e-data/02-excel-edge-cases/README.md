@@ -1,23 +1,15 @@
-# 02 — Excel 边界用例
+# Excel 异常输入
 
-测 Excel 导入器的错误回显与韧性。**待补**:从 ta 包改坏 3 份。
+本页是保留输入与当前测试入口的目录说明。执行范围与准备/清理规则见[本目录总览](../README.md)和[执行说明](../EXEC-MATRIX.md)。
 
-## 计划文件
+## 保留资产
 
-| 文件 | 错在哪 | 期望 FE 行为 |
-|---|---|---|
-| `bad-missing-required-col.xlsx` | jobCode 列缺失 | 预览时整 sheet 报"缺必填列",阻断 |
-| `bad-invalid-enum.xlsx` | executionMode 写成 `INCR`(非合法 enum) | 行级红字,展示 BE 错误 + 行号 |
-| `bad-too-large.xlsx` | 5000+ 行 | 上传成功但提示"超大文件,建议拆分";导入分批 |
-| `alert-routings-quick-import.xlsx` | 5 条合法路由 | POST `/config/alert-routings/excel/quick-import` 200 |
+- [`bad-missing-required-col.xlsx`](./bad-missing-required-col.xlsx)：历史缺少 `job_code` 列输入。
+- [`bad-invalid-enum.xlsx`](./bad-invalid-enum.xlsx)：历史非法 `schedule_type` 枚举输入。
+- [`bad-too-large.xlsx`](./bad-too-large.xlsx)：历史大行数输入。
 
-## 怎么生成
-```bash
-# (TBD) 写脚本基于 ta 包派生:
-# - 删 jobCode 列
-# - 把第 3 行 executionMode 改 INCR
-# - 复制行扩到 5500
-```
+## 当前入口与适用性
 
-## FE 触发路径
-**配置管理 → Excel 维护** (`/config/excel/job-definitions` 等)
+测试路径见 [`excel-import.spec.ts`](../../e2e/excel-import.spec.ts)与 [`import-business-ui.spec.ts`](../../e2e/import-business-ui.spec.ts)。缺列、枚举和大小约束以当前后端模板与校验器为准；不把旧文件的行数或生成器注释当作当前服务上限。
+
+原始 [`generate.py`](../archive/02-excel-edge-cases/generate.py)已归档，仅用于追溯样本的派生方法。重新生成前先核对模板结构，不能直接覆盖本目录受版本控制的输入。

@@ -1,31 +1,20 @@
 import { ElMessageBox } from 'element-plus'
-import { h } from 'vue'
+import { h, watch } from 'vue'
+import { useTenantStore } from '@/stores/tenant'
+import { useAuthStore } from '@/stores/auth'
+import { useAppStore } from '@/stores/app'
 import { i18n } from '@/locales'
 
 /**
- * 销毁性 / 危险性操作的统一二次确认。
+ * 危险操作统一展示动作、对象、后果及可恢复性，并将确认绑定到打开时的业务上下文。
  *
- * 解决 P0 问题:全站 19 处 ElMessageBox.confirm 文案模糊(只说"删除?"不说后果),
- * 用户已经麻木地点确认。这里强制要求"动词 + 对象 + 后果 + 是否可恢复"四段。
- *
- * 用法:
- *   await confirmDanger({
- *     verb: '永久吊销',
- *     target: `API Key 「${row.keyName}」`,
- *     consequence: '该 Key 立即失效,所有正在使用此密钥的请求会被拒绝',
- *     irreversible: true,
- *   })
- *   // 用户点取消会 throw,外层 try/catch 即可
- *
- * 行为:
- *   - irreversible=true:标题加"⚠️ 不可恢复",confirm 按钮红色,需类型确认 token(可选)
- *   - irreversible=false:warning 风格,confirm 按钮主色
- *   - 标题与按钮文案自动从 verb + target 拼出
+ * 调用方在确认后继续执行，取消或上下文变化时收到同一取消拒绝；最终权限、状态与幂等
+ * 仍由服务端裁决。不可恢复操作使用错误色，不能点击遮罩关闭。
  */
 export interface DangerConfirmOptions {
   /** 动词:"删除" / "吊销" / "强制下线" / "终止" / "归档" 等 */
   verb: string
-  /** 操作对象的人话描述,如 `API Key 「acme-prod」` 或 `工作流「订单清算」` */
+  /** 操作对象的业务描述,如 `API Key 「acme-prod」` 或 `工作流「订单清算」` */
   target: string
   /** 后果(用户能感知的影响),一句话说清,可省略 */
   consequence?: string
@@ -39,9 +28,9 @@ export interface DangerConfirmOptions {
 
 /**
  * 弹出危险确认框。用户点取消会 reject(throw),外层用 try/catch 处理。
- * 用户点确认 resolve void,继续后续业务逻辑。
+ * 用户点确认 resolve void,上下文仍有效时继续后续业务逻辑；租户、主体、权限或维护状态变化按取消处理。
  */
-export function confirmDanger(opts: DangerConfirmOptions): Promise<void> {
+export async function confirmDanger(opts: DangerConfirmOptions): Promise<void> {
   const t = i18n.global.t
   const {
     verb,
@@ -77,17 +66,42 @@ export function confirmDanger(opts: DangerConfirmOptions): Promise<void> {
     ),
   ])
 
-  return ElMessageBox.confirm(content, title, {
-    type: irreversible ? 'error' : 'warning',
-    confirmButtonText:
-      confirmButtonText ??
-      (irreversible ? t('dangerConfirm.confirmVerb', { verb }) : t('dangerConfirm.confirm')),
-    cancelButtonText,
-    confirmButtonClass: irreversible ? 'el-button--danger' : '',
-    // 不可恢复操作:不让点 mask 关闭(避免误操作)
-    closeOnClickModal: !irreversible,
-    closeOnPressEscape: true,
-    showClose: true,
-    dangerouslyUseHTMLString: false,
-  }).then(() => undefined)
+  const tenant = useTenantStore()
+  const auth = useAuthStore()
+  const app = useAppStore()
+  let contextChanged = false
+  // 确认只对打开时的上下文有效；同步观察可识别 A→B→A 和短暂维护窗口。
+  const stop = watch(
+    [
+      () => tenant.tenantId,
+      () => auth.isLoggedIn,
+      () => auth.userInfo?.userId,
+      () => auth.userInfo?.username,
+      () => JSON.stringify([...(auth.userInfo?.permissions ?? [])].sort()),
+      () => app.writesFrozen,
+    ],
+    () => {
+      contextChanged = true
+    },
+    { flush: 'sync' },
+  )
+  try {
+    await ElMessageBox.confirm(content, title, {
+      type: irreversible ? 'error' : 'warning',
+      confirmButtonText:
+        confirmButtonText ??
+        (irreversible ? t('dangerConfirm.confirmVerb', { verb }) : t('dangerConfirm.confirm')),
+      cancelButtonText,
+      confirmButtonClass: irreversible ? 'el-button--danger' : '',
+      // 不可恢复操作:不让点 mask 关闭(避免误操作)
+      closeOnClickModal: !irreversible,
+      closeOnPressEscape: true,
+      showClose: true,
+      dangerouslyUseHTMLString: false,
+    })
+    // 与 Element Plus 用户取消保持同一拒绝契约，调用方不能继续执行旧确认。
+    if (contextChanged || app.writesFrozen) return Promise.reject('cancel')
+  } finally {
+    stop()
+  }
 }

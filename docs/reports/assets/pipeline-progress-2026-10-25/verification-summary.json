@@ -1,0 +1,44 @@
+{
+  "baseline": {
+    "frontend": "662d254",
+    "backend": "f3d5e400d",
+    "branch": "fix/wdi-current",
+    "includesUncommittedChanges": true
+  },
+  "backend": {
+    "passed": 23,
+    "command": "./mvnw -o -ntp -pl batch-console-api -am -Dtest=PipelineProgressQueryServiceTest,JobExecutionQueryServiceTest,ConsoleFilePipelineProgressBridgeTest,JobStepInstanceRelatedPipelineMapperIntegrationTest -Dsurefire.failIfNoSpecifiedTests=false -DforkCount=1 test"
+  },
+  "frontend": {
+    "passed": 44,
+    "files": 6
+  },
+  "browserFixtures": {
+    "passed": 3,
+    "skipped": 0,
+    "retries": 0
+  },
+  "realTransportSqlFixture": {
+    "passed": 1,
+    "skipped": 0,
+    "retries": 0,
+    "durationMs": 13355.134,
+    "workerExecutionVerified": false,
+    "livePeriodicGets": 0,
+    "cleanupAllZero": true
+  },
+  "regressionEvidence": {
+    "dirtyGetVsFullPush": "meaningful browser red received 3 instead of pushed 88, then green",
+    "jobTerminalCache": "red expected null but received 99; terminal Job no longer samples live cache",
+    "pipelineTerminalCache": "red invoked live RPC after terminal; terminal Pipeline now stops live sampling",
+    "deepLink": "tab switch had no exact pipelineInstanceId; now exact ID retained across run/stage tabs",
+    "unknownRowsEta": "red returned 3 minutes when rowsProcessed=null; now returns unknown"
+  },
+  "remaining": [
+    "actual Worker execution and recovery",
+    "Orchestrator source cache claim/lease fencing",
+    "Workflow activeSteps and actual pipeline stage alignment",
+    "real Quartz plan coverage",
+    "remaining G01-G12/B01 capability matrix work"
+  ]
+}

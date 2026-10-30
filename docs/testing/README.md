@@ -2,11 +2,47 @@
 
 > 本文是前端测试的**单一权威入口**:测试分层、可复用 helper、可复制的测试案例模板、运行方式、CI 门禁、常见坑。
 > 写新测试前**先读「§3 可复用 helper」+「§4 测试案例模板」**,直接套模板,别重造轮子。
-> 一条龙上线前验收见 `/fe-acceptance` skill;本文聚焦「怎么写测试 + 体系全貌」。
+> 真实环境验收使用 `frontend-testing-ci` 与 `bash scripts/local/fe-acceptance.sh`；本文聚焦测试方法与证据边界。
 
 ---
 
+Pipeline完整SSE的真实传输与SQL投影验证使用`E2E_SKIP_GLOBAL_SETUP=1 npm run test:e2e:pipeline-progress:real`，该入口不代表Worker实际执行；环境与精确清理见[runtime-progress夹具说明](../../e2e/fixtures/runtime-progress/README.md)。
+
+DISPATCH真实字节传输与未知结果恢复使用`E2E_SKIP_GLOBAL_SETUP=1 npm run test:e2e:dispatch-worker-progress:real`，额外提供本地真实对象上游`E2E_DISPATCH_OBJECT_UPSTREAM`；正式NAS适配器到独占目录，进程中断后先验证未知结果阻断，再核实未发布并经不同身份申请／审批恢复。真实传输、页面推送、字节／SHA／回执、权限与清理分别留证，不能把local／test profile的NAS stub当真实传输；详见[runtime-progress说明](../../e2e/fixtures/runtime-progress/README.md)。
+
+当前运行DAG/每日进度真实验收：`npm run test:e2e:progress:real`，真实API操作Workflow暂停/恢复并由运行详情SSE呈现冻结图；运维总览展示手工业务日统计。本控制图无Job/Worker，日期不代表Quartz计划或当前业务日；环境要求与独占身份/清理流程见 [runtime-progress夹具说明](../../e2e/fixtures/runtime-progress/README.md)。这是一条定向真实业务链，不代替Worker、Quartz或全量发布验收。
+
+真实Atomic Worker作业进度闭环：`E2E_SKIP_GLOBAL_SETUP=1 npm run test:e2e:worker-progress:real`。该场景真实创建并触发Workflow作业、启动独占Worker，经Kafka/Orchestrator执行只读SQL，核对运行DAG、关联Job实时状态、租户每日统计及零残留；DAG显示状态使用关联实例的实际状态，同时保留Workflow节点自身状态。不能与SQL推进Pipeline的传输验收混为一谈。认证、端口、数据库及清理要求见 [runtime-progress夹具说明](../../e2e/fixtures/runtime-progress/README.md)。
+
+Atomic 执行器运行态验收：设置`E2E_ATOMIC_RUNTIME_MODE=available`并提供真实Worker地址`E2E_ATOMIC_WORKER_URL`，或设置`E2E_ATOMIC_RUNTIME_MODE=unavailable`并在真实Console配置中禁用反向查询；同时指定`E2E_BASE_URL`、`E2E_CLOSURE_PG_CONTAINER/USER/DATABASE`并启用真实认证，然后运行`E2E_SKIP_GLOBAL_SETUP=1 npm run test:e2e:atomic-runtime:real`。场景核对 Worker/Console 状态、四角色读取权限、禁用时的降级提示与隐藏明细，并精确清理独占数据；结果写入上海本地日期目录`docs/reports/assets/atomic-runtime-YYYY-MM-DD/`。详细夹具与运行包要求见[runtime-progress夹具说明](../../e2e/fixtures/runtime-progress/README.md)。
+
+批次日治理真实验收：`E2E_SKIP_GLOBAL_SETUP=1 npm run test:e2e:batch-day:real`，验证六种治理动作、自动补扫控制、四角色、终态冲突、提交成功后丢响应/刷新原键重试、独立数据库审计及零残留。环境与夹具边界见 [说明](../../e2e/fixtures/runtime-progress/README.md)。它不证明Worker执行或Quartz日计划闭环。
+
+结果版本治理真实验收：`E2E_SKIP_GLOBAL_SETUP=1 npm run test:e2e:result-versions:real`，验证 Console 安全元数据投影、提升/归档持久化、四角色写权限、跨租户读取拒绝、操作审计和精确零残留；原始载荷仍保留在数据库业务存储中，不由 Console 版本接口返回。环境变量、隔离身份和 SQL 清理边界见 [runtime-progress夹具说明](../../e2e/fixtures/runtime-progress/README.md)，证据写入日期目录 `docs/reports/assets/result-version-governance-YYYY-MM-DD/`。
+
+Workflow 历史版本真实验收：`E2E_SKIP_GLOBAL_SETUP=1 npm run test:e2e:workflow-versions:real`，真实保存并回读版本快照，核对版本选择、租户隔离、切租户时丢弃迟到响应和精确清理；环境与临时租户要求见 [runtime-progress夹具说明](../../e2e/fixtures/runtime-progress/README.md)。
+
+持久等待查询真实验收：`E2E_SKIP_GLOBAL_SETUP=1 npm run test:e2e:persistent-waits:real`，由独占SQL夹具写入真实 PostgreSQL 的 readiness 与容量等待记录，再经过 Orchestrator Mapper、Console BFF 和调度快照页读回；核对四角色、租户边界、过滤分页、载荷不泄露及零残留。环境要求和精确清理见 [runtime-progress夹具说明](../../e2e/fixtures/runtime-progress/README.md)。
+
+跨日历与作业依赖等待真实验收：`E2E_SKIP_GLOBAL_SETUP=1 npm run test:e2e:scheduler-waits:real`，在随机租户内经真实 API 创建上下游作业与 Workflow DAG，由 Orchestrator 产生关联父 Workflow 的依赖等待；经真实 Orchestrator、Console BFF 和调度快照页核对两类等待、管理员带原因的待协调操作、只读角色、越租户拒绝、私有载荷隔离和零残留。环境要求与精确清理由 [runtime-progress夹具说明](../../e2e/fixtures/runtime-progress/README.md)维护。
+
+人工文件入站真实验收：`E2E_SKIP_GLOBAL_SETUP=1 npm run test:e2e:manual-upload:real`，从文件列表页选择文件组/Workflow目标、业务日、必需文件和模板，上传内容到MinIO并确认到达；独立核对对象内容、文件大小、审计和唯一关联Workflow。验证ADMIN/TENANT_ADMIN可操作、AUDITOR/TENANT_USER拒绝，以及文件、通道、审计、对象和账号零残留。当前目标为START→END控制图，真实文件Worker阶段与恢复由IMPORT Worker进度场景另行验收；详见[人工上传报告](../reports/2026-10-26-manual-file-upload.md)和[runtime-progress夹具说明](../../e2e/fixtures/runtime-progress/README.md)。
+
+真实IMPORT对象文件与恢复验收：`E2E_SKIP_GLOBAL_SETUP=1 npm run test:e2e:import-worker-progress:real`，要求独占WDI数据库/命名空间与显式对象前缀。真实上传对象经过BUNDLE_IMPORT作业、固定IMPORT Pipeline和Worker业务写入，LOAD中途只停止本例子进程，再核对租约回收、checkpoint续跑、阶段推送及无重复行；与SQL推进Pipeline的传输场景分开报告。环境和清理边界见[runtime-progress夹具说明](../../e2e/fixtures/runtime-progress/README.md)。
+
 ## 1. 测试分层(各层职责 + 何时用)
+
+PROCESS阶段与恢复入口为`E2E_SKIP_GLOBAL_SETUP=1 npm run test:e2e:process-worker-progress:real`。显式提供独立业务库`E2E_PROCESS_BUSINESS_DATABASE`，与平台PG库分离；正式WAP插件、COMMIT中断恢复、业务唯一性及金额、阶段图／推送分别验证。SQL准备和双库回收边界见runtime-progress夹具说明，不把平台库旧暂存表当成业务库结构。
+
+整轮Workflow审批重放与EXPORT恢复使用 `E2E_SKIP_GLOBAL_SETUP=1 npm run test:e2e:whole-workflow-replay:real`。真实声明的只读JDBC插件、原图冻结、独立产物与目标GENERATE中断恢复分开核对；没有在线Worker时必须阻断，不能向登记表注入安全声明。环境、RLS输入、对象隔离与精确清理见runtime-progress夹具说明。
+
+失败节点重放与分支／汇合图的真实验收入口为 `E2E_SKIP_GLOBAL_SETUP=1 npm run test:e2e:workflow-node-replay:real`。分别验证 SQL 失败形成未知结果后拒绝预览，以及真实 HTTP GET 的已知503失败经页面预览、另一身份审批和 Worker 执行恢复为200；回读源失败、目标成功和审批／重放关联。SQL 只准备或补齐本例业务输入，不能直接推进运行状态；环境、权限、清理与证据边界见 [runtime-progress 夹具说明](../../e2e/fixtures/runtime-progress/README.md)。
+
+双业务作业并行和条件／失败分支使用 `E2E_SKIP_GLOBAL_SETUP=1 npm run test:e2e:workflow-dag-branches:real`。独占 Atomic Worker 实际调用本地 HTTP 目标；等待两个作业同时在途，再依次放行响应核对ALL汇合；另一场景检查条件未命中跳过、已知失败进入FAILURE处理分支且根运行保留失败。状态来自实际服务，HTTP响应有界暂缓只用于观察中间状态；环境和清理沿用同一夹具要求。
+
+多定义／多日历与FIXED_RATE日统计使用 `E2E_SKIP_GLOBAL_SETUP=1 npm run test:e2e:multi-calendar-progress:real`，要求真实Trigger启用Quartz。两条单次CRON与一条86400秒FIXED_RATE使用两个日历，检查同业务日计划1/3→3/3、计划／请求／根运行独立分母、日期切换和次日缺少批次日cutoff时不显示完整比例。它不创建Job或Worker；实际技术任务进度由Worker验收入口提供，不能把三个控制Workflow解释成三个业务Job。环境与清理边界见runtime-progress夹具说明。
+
+行为改动先把用户可观察结果和关键失败路径写成验收条件；风险允许时先补目标测试并确认它先失败，再实现。按最小有效层级选择测试：纯逻辑用单测，状态/交互用浏览器或相应组件路径，真实后端契约与关键业务流用真实 API 的 E2E。文档、格式和机械变更不强制测试先行；mock/fixture 证据不等同真实后端验收。
 
 | 层             | 工具       | 位置                                                               | 验证什么                                                               | 何时写                             |
 | -------------- | ---------- | ------------------------------------------------------------------ | ---------------------------------------------------------------------- | ---------------------------------- |
@@ -17,7 +53,9 @@
 
 测试数量持续变化，不在文档固化瞬时数字；以 `vitest` / `playwright --list` 的实际收集结果为准。
 
-**移动端不写自动化测试**(`src/views-mobile/` 是桌面 API 的轻壳,逻辑复用已被桌面单测覆盖;手势无法稳定复现)。详见根 `AGENTS.md §移动端测试范围`。
+统一文档发布回归使用 `npm run test:docs-publication`，检查原始字节、完整块、重复／自定义章节锚点和主题跳转目的地；`npm run docs:build` 自动先执行该回归，再编译并检查体积。主题与分卷修改还需真实浏览器验证旧锚点、末卷、前后卷和目录导航；方法及权威源边界见[统一文档站](../engineering/unified-documentation-site.md)。
+
+移动页面不重复桌面已有的业务自动化；共享逻辑由共享模块和桌面测试覆盖。移动端独立业务逻辑、专属回归与视口/无障碍问题应补针对性测试，真机手势和软键盘另作环境验收。详见根 `AGENTS.md` 的测试边界。
 
 ---
 
@@ -49,6 +87,17 @@ scripts/
   test-unit.sh test-e2e.sh check-api-drift.sh check-i18n-messages.mjs
   local/fe-acceptance.sh   # 一条龙验收 wrapper
 ```
+
+### 类型检查覆盖
+
+`npm run typecheck` 分别检查 `tsconfig.app.json` 的应用 TS/Vue 源码与测试，以及
+`tsconfig.node.json` 的 Vite 配置；`npm run build` 复用相同入口。根 `tsconfig.json`
+只有 project references，不能直接用默认的 `vue-tsc --noEmit` 证明源码已被检查。
+Vite 配置继承 Vue 的基础编译配置，并显式加载 Node 类型；应用的严格检查和源码范围保留。
+
+`npm run test:typecheck` 在临时目录复用真实配置及 npm 检查命令，验证正确源码与路径别名
+通过，再分别注入 TS、Vue 和 Vite 配置类型错误并断言阻断。测试结束删除自有临时目录，
+不向应用源码写入探针。该正反例已接入 PR/Full Gate 的治理检查。
 
 ### 测试配置事实来源
 
@@ -133,7 +182,7 @@ test('新建 XXX → 校验必填 → 提交 → toast', async ({ page }) => {
   await page.goto('/xxx/list')
   const dialog = await openDialog(page, { name: /新建/ })
   await expectRequiredBlocked(dialog) // 必填拦截
-  await dialog.getByLabel('名称').fill(`e2e-xxx-${Date.now()}`) // 命名带 e2e 前缀,teardown 自动清
+  await dialog.getByLabel('名称').fill(`e2e-xxx-${Date.now()}`) // 保存创建身份，在 finally 精确清理并核对残留
   await submitForm(dialog)
   await expectSuccessToast(page, /成功/)
 })
@@ -159,28 +208,21 @@ await expect(page.locator('.error-state, .el-result')).toBeVisible() // 有错�
 
 ### 4.5 RBAC(角色可见性)
 
-用 `e2e/.auth/role-*.json` 切换 storageState;global-setup 会幂等查找或创建 admin/tenantAdmin/auditor/tenantUser/user 五类账号,校正角色与启用状态,必要时完成重置密码和首次改密。角色准备失败会终止 suite,RBAC 矩阵不得条件跳过。参考 `e2e/rbac-matrix.spec.ts` / `rbac-denial.spec.ts`。
+用 `e2e/.auth/role-*.json` 切换 storageState;global-setup 会幂等查找或创建 admin/tenantAdmin/auditor/tenantUser 等测试账号（user 是兼容账号名，不是第五类业务角色）,校正角色与启用状态,必要时完成重置密码和首次改密。角色准备失败会终止 suite,RBAC 矩阵不得条件跳过。参考 `e2e/rbac-matrix.spec.ts` / `rbac-denial.spec.ts`。
 
 ### 4.6 跨页业务流
 
 - API 序列:`e2e/flows/*.spec.ts`(如 `09-config-release-lifecycle`、`10-tenant-copy`)。
 - UI 序列:`e2e/flows-ui/*.spec.ts`(如 `01-trigger-instance-ui`)。
 
-### 4.7 ★ 设计器(X6,绕原生 DnD)—— 见 `e2e/workflow-designer-save-flow.spec.ts`
+### 4.7 设计器保存与隔离数据
 
-**原生 HTML5 DnD,Playwright 驱不动**,所以**不要**靠拖拽建图。可靠做法:
+参考 `e2e/workflow-designer-save-flow.spec.ts`：用 API 创建带唯一 e2e 前缀的 Job 与合法 Workflow，再进入设计器，通过显式属性修改、撤销/重做、自动布局和保存验证持久化往返。原生 HTML5 DnD 不作为普通保存回归的唯一建图手段。
 
-- 借**既有合法 workflow** 进设计器 + 工具栏「自动布局」改图(`store.moveNode` → dirty 但仍合法),或「模板/快速节点」(`store.addNode`/`store.reset`)落图;
-- `beforeEach` 里**主动释放设计锁**(锁按会话持有,跨运行不释放,否则撞「只读」被 skip):
-  ```ts
-  for (let id = 1; id <= 15; id++)
-    await page.request
-      .delete(`/api/console/workflow-definitions/${id}/lock?tenantId=ta`, {
-        headers: { 'X-Tenant-Id': 'ta', 'Idempotency-Key': `e2e-rellock-${id}-${Date.now()}` },
-      })
-      .catch(() => 0)
-  ```
-- 保存走 `graphToDefinition → PUT /full`,刷新后断言节点数不变(持久化往返)。
+- 写请求使用 `e2e/support/app.ts` 的 `csrfHeaders()` 与本轮幂等键。
+- 保留创建对象 ID 和当前租户；只清理本轮自建数据及其锁，不循环删除固定 ID 范围的公共锁。
+- 独立图意外只读、登录或保存失败应让用例失败；不能改成 skip 或换用公共 seed 图掩盖。
+- 保存后重新查询/刷新，断言节点、引用与期望字段已持久化，不能只看成功 toast。
 
 ### 4.8 断言深度模式(flows-ui 深化经验,稳健不 flaky)
 
@@ -197,7 +239,7 @@ await expect(page.locator('.error-state, .el-result')).toBeVisible() // 有错�
   await deliveryTab.click({ force: true })
   await expect(deliveryTab).toHaveAttribute('aria-selected', 'true') // el-tabs 激活态
   ```
-- **数据相关交互保持 best-effort**:`if (await isVisible(btn)) { ... }`,有数据才点;别硬断言某行/某按钮存在(seed 波动会 flaky)。
+- **可选数据与必验数据分开**：可选历史数据可说明缺失原因；业务验收应自行准备所需对象、等待行与动作就绪并断言结果，不能用 `isVisible()` 的即时空结果跳过操作。按当前页面的直显／菜单布局定位动作，避免未加载时误选另一条路径。
 
 ---
 
@@ -214,7 +256,7 @@ npm run test:e2e:all         # 发布验收全量套件，包含 @slow
 npm run test:e2e:smoke       # 冒烟三件套(smoke/cross-navigation/navigation)
 npm run test:e2e:monitoring:real # 真实 Prometheus/Alertmanager + Console 告警页面联测(需先启动本地观测栈和后端)
 npm run test:e2e:ui          # Playwright UI 模式调试
-npx playwright test e2e/xxx.spec.ts --reporter=list   # 单 spec
+node scripts/run-playwright.mjs test e2e/xxx.spec.ts --reporter=list # 单 spec
 
 # 静态门禁
 npm run typecheck            # vue-tsc
@@ -226,7 +268,7 @@ npm run gen:api:check        # BE OpenAPI 漂移
 npm run verify:local
 
 # 真实环境上线前验收(治理→覆盖率→build→e2e→preview→真实使用审计)
-bash scripts/local/fe-acceptance.sh           # 或 /fe-acceptance
+bash scripts/local/fe-acceptance.sh
 bash scripts/local/fe-acceptance.sh --skip-e2e-full
 ```
 
@@ -328,7 +370,7 @@ E2E_USAGE_DB_RECONCILIATION=1 E2E_SKIP_GLOBAL_SETUP=1 E2E_BASE_URL=http://127.0.
 | e2e 报「storageState token is expired」或角色账号准备失败              | 登录态过期,或脱离 global-setup 直跑(如手写 `chromium.launch + storageState` 的一次性脚本) | **必须走 `npx playwright test` / `npm run test:e2e`** —— 它每次自动准备角色账号并刷新 `e2e/.auth/*.json`;**别用独立脚本直接吃陈旧 storageState**;确认 BE 在 `BC_API_BASE` 指定地址(默认 18080)且 admin/admin123 可登录 |
 | `toHaveURL` 断言失败但页面其实正常(如 `/scheduler/catch-up-approvals`) | 该路径是**别名,会重定向**(→ `/approvals?tab=catch-up`)                                    | URL 断言写成接受重定向:`toHaveURL(/\/(scheduler\/catch-up-approvals\|approvals)/)`                                                                                                                                     |
 | tab 切换后 `LIST_OR_EMPTY.first()` 报 `Received: hidden`               | 多 tab pane 下 `.first()` 命中**隐藏的非激活 pane**(`display:none`)                       | 切 tab 后改断 `tab` 的 `aria-selected='true'`,别断隐藏 pane 的表(见 §4.8)                                                                                                                                              |
-| 设计器 e2e 进去撞「只读 banner」被 skip                                | **设计锁按会话持有,跨运行不自动释放**                                                     | `beforeEach` 主动 DELETE 锁(见 §4.7)                                                                                                                                                                                   |
+| 设计器 e2e 进入只读状态                                                | **设计锁按会话持有,跨运行不自动释放**                                                     | 确认目标属于本轮创建的隔离图、当前账号和锁状态；不删除公共或他人设计锁（见 §4.7）                                                                                                                                      |
 | 设计器 dev 偶发「View with name 'vue-shape-view' does not exist」      | vite **optimizeDeps 把 x6 系预打包成多实例**(dev-only;prod rollup 单实例无此问题)         | `vite.config optimizeDeps.include` 必须含 `@antv/x6` + `@antv/x6-vue-shape` + `@antv/x6/es/plugin/minimap`;`--force` 重启后**首次**加载可能撞 504 churn,优化器稳定后正常                                               |
 | 设计器拖节点崩 `clientToLocalPoint is not a function`                  | X6 v3 公开 API 是 `graph.clientToLocal(x,y)`(`clientToLocalPoint` 仅在 `graph.coord`)     | 已修;新代码用 `clientToLocal`                                                                                                                                                                                          |
 | 暗色下白卡                                                             | 组件用了 `var(--color-xxx, #浅色)` 但该 token **未在 `html.dark` 定义**                   | 在 `tokens.css` 的 `:root` + `html.dark` **成对**定义;审计:见本仓 token 缺口扫法                                                                                                                                       |
@@ -340,11 +382,11 @@ E2E_USAGE_DB_RECONCILIATION=1 E2E_SKIP_GLOBAL_SETUP=1 E2E_BASE_URL=http://127.0.
 
 ## 8. CI 门禁(e2e 不在 PR gate 跑)
 
-| Workflow           | 触发                | 内容                                                           |
-| ------------------ | ------------------- | -------------------------------------------------------------- |
-| `pr-gate.yml`      | PR / push main      | lint / typecheck / i18n / api-drift / **unit** / build / audit |
-| `full-ci-gate.yml` | PR / push main / 每周一 02:00 UTC / 手动 | PR 运行范围适配的静态、单测与安全检查；非 PR 事件再跑 Docker/Trivy + Lighthouse |
-| `staging-gate.yml` | 手动       | Playwright against explicitly configured staging frontend/API origins + required-scenario report and Lighthouse           |
+| Workflow           | 触发                                     | 内容                                                                                                            |
+| ------------------ | ---------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `pr-gate.yml`      | PR / push main                           | lint / typecheck / i18n / api-drift / **unit** / build / audit                                                  |
+| `full-ci-gate.yml` | PR / push main / 每周一 02:00 UTC / 手动 | PR 运行范围适配的静态、单测与安全检查；非 PR 事件再跑 Docker/Trivy + Lighthouse                                 |
+| `staging-gate.yml` | `v*` tag / 手动                          | Playwright against explicitly configured staging frontend/API origins + required-scenario report and Lighthouse |
 
 **关键**:Playwright e2e **只在 staging-gate**跑。该 workflow 不部署到 staging；必须配置前端/API origin 与测试凭据，发布必验场景缺失或跳过会失败，可选场景跳过会进入报告。E2E 失败阻断该 staging 验收 job，不 block PR 合并。配置契约可用 `npm run test:e2e:config` 本地验证；只有目标 staging 上的实际运行才能证明真实环境验收通过。
 
@@ -357,7 +399,7 @@ E2E_USAGE_DB_RECONCILIATION=1 E2E_SKIP_GLOBAL_SETUP=1 E2E_BASE_URL=http://127.0.
 - mock:顶层 `vi.mock('./client', ...)` → `vi.mocked(get)`;清理用 `beforeEach{ mockReset() }`。
 - 需 DOM 顶部加 `// @vitest-environment jsdom`。
 - e2e 测试数据**命名带 `e2e` 前缀**(global-teardown 按 prefix 清);非破坏性优先。
-- 容忍策略:环境问题 `test.skip(true,'原因')` 不 fail suite。
+- 容忍策略：仅依赖可选业务数据的非发布必验场景允许说明原因后跳过。后端不可达、登录失败、角色准备失败和发布必验数据缺失必须失败；不要以 skip 掩盖基础设施或覆盖缺口。
 
 ### 9.1 测试数据与配置来源
 
@@ -375,10 +417,24 @@ E2E_USAGE_DB_RECONCILIATION=1 E2E_SKIP_GLOBAL_SETUP=1 E2E_BASE_URL=http://127.0.
 
 ## 10. 已知覆盖与缺口(诚实)
 
-**覆盖好**:CRUD / 列表 / 表单校验 / RBAC / 错误态 / 全站零 4xx-5xx 巡检 / i18n 切换稳定性 / 主要业务流(flows)。
+已有套件覆盖CRUD、列表、表单校验、RBAC、错误态、网络错误巡检、i18n和主要业务流；实际通过范围以当前目标环境的结果为准，套件存在不代表全站当前已验收。
 
 **缺口 / flaky(留 follow-up)**:
 
-- **设计器(X6)**:原生 DnD 测不了,只能走 store/模板/自动布局驱动;save-flow spec 依赖设计锁 + 登录态新鲜,环境不满足时 skip(非 fail)。
+- **设计器(X6)**：普通浏览器回归优先使用独立合法图、模板和显式编辑验证保存往返，原生 DnD 仍需专项验证；`workflow-designer-save-flow.spec.ts` 创建自身 e2e Job/Workflow，设计锁或登录基础条件失败必须暴露，不能跳过后宣称保存链路通过。
 - **暗色模式**:已补 token 缺口,但无「全站暗色逐页」自动断言,新增页仍可能引入未定义 token(写 `<style>` 时用 `tokens.css` 已有 token,勿造新的浅色 fallback)。
-- **A11y / Lighthouse**:只在 staging-gate 跑,本地不强制。
+- **A11y / Lighthouse**：浏览器可访问性随适用Playwright场景在staging验收；Lighthouse既有Full Gate的非PR路径，也有独立staging目标检查，两者环境不同。本地是否执行按变更风险选择，不能把本地构建代替目标环境结果。
+
+### Workflow定义历史版本差异真实联测
+
+`e2e/workflow-definition-versions-real.spec.ts` 通过临时唯一租户和真实认证 Console 创建、更新 Workflow 定义，经 SQL 独立读回版本快照，再从差异页选择历史版本并核对当前版本；同时验证 TENANT_ADMIN 本租户读取与跨租户拒绝，以及切租户后旧列表迟到响应不会恢复原租户的图。运行需同版 WDI Console、前端 Vite proxy 和 PostgreSQL，并显式设置 `E2E_SKIP_GLOBAL_SETUP=1`、`E2E_BASE_URL`、`BC_API_BASE` 与 `E2E_CLOSURE_PG_CONTAINER/USER/DATABASE`，再执行 `npm run test:e2e:workflow-versions:real`。用例 finally 清理两个临时租户、Workflow、版本快照和临时账号并核对零残留；不启动 Worker 或触发 Workflow。
+
+### 配置同步与终态恢复定向联测
+
+`e2e/closure-recovery-real.spec.ts` 验证真实 JWT/CSRF 下 ConfigSync 提交回执核对和终态冷热历史恢复；要求 `E2E_CLOSURE_RECOVERY_REAL=1`、`E2E_SKIP_GLOBAL_SETUP=1`，由当前环境显式提供 `E2E_USERNAME`、`E2E_PASSWORD` 和 `E2E_CLOSURE_PG_CONTAINER/USER/DATABASE`。使用同版真实后端与前端冻结构建，串行执行，不使用 API mock。
+
+每例创建唯一的三个租户；SQL 仅准备夹具和审计 UPDATE 故障，核心导入、核对和重投通过真实 API/UI 完成。`finally` 删除自身配置、收据、审计、通知冷热数据及配置 revision，断言残留为零。日志、截图和 trace 可能含测试认证材料，仅留本地输出，不提交或分享。构建 preview 可避免首次依赖优化打断场景；开发 Vite 也忽略 `output/` 的测试产物。
+
+## Nginx运行时路由回归
+
+`npm run test:nginx-routing`执行`scripts/tests/nginx-routing.test.mjs`，以Dockerfile声明的不可变基础镜像加载真实Nginx配置。验证静态存在性、history回退、固定名称缓存、相对跳转、文档和API状态；鉴权由本例替身提供，未执行真实登录或后端业务。需要本机Docker，可拉取声明的镜像；测试创建独占临时目录/容器和随机回环端口，并按本例标签精确清理。命令独立运行，未新增提交/发布阻断策略。

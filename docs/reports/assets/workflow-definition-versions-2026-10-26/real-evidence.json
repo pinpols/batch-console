@@ -1,0 +1,49 @@
+{
+  "acceptance": {
+    "result": "passed",
+    "project": "chromium",
+    "passedTests": 1,
+    "retries": 0
+  },
+  "versions": {
+    "persisted": [1, 2, 3, 4],
+    "listedDescending": [4, 3, 2, 1],
+    "current": 4,
+    "snapshots": [
+      { "version": 1, "endNodeName": "Version one" },
+      { "version": 2, "endNodeName": "Version 2" },
+      { "version": 3, "endNodeName": "Version 3" },
+      { "version": 4, "endNodeName": "Version 4" }
+    ]
+  },
+  "comparison": {
+    "selectedVersions": [2, 3],
+    "modifiedEndNodeVisible": true,
+    "selectionSynchronizedToUrl": true,
+    "restoredAfterTenantRoundTrip": true
+  },
+  "tenantIsolation": {
+    "readerOwnTenantStatus": 200,
+    "readerCrossTenantStatus": 403,
+    "alternateTenantWorkflowStatus": 404,
+    "lateOldTenantResponseDiscarded": true,
+    "canvasClearedForAlternateTenant": true
+  },
+  "cleanup": {
+    "workflowDefinitions": 0,
+    "nodes": 0,
+    "edges": 0,
+    "versions": 0,
+    "runs": 0,
+    "nodeRuns": 0,
+    "requests": 0,
+    "terminalEvents": 0,
+    "terminalReceipts": 0,
+    "calendars": 0,
+    "tenants": 0,
+    "configurationRevisions": 0,
+    "operationAudits": 0,
+    "credentialAccounts": 0,
+    "alternateTenantRowsRemaining": 0
+  }
+}

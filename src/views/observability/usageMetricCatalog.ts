@@ -133,7 +133,7 @@ export function usageMetricLabel(code: string, t: Translate): string {
   const domainKey = domainKeys[domain]
   const actionKey = actionKeys[actionParts.join('_')]
   if (!domainKey || !actionKey) return code
-  return `${t(`usageSummary.metricDomains.${domainKey}`)} / ${t(
-    `usageSummary.metricActions.${actionKey}`,
-  )}`
+  const domainLabel = t(`usageSummary.metricDomains.${domainKey}`)
+  const actionLabel = t(`usageSummary.metricActions.${actionKey}`)
+  return `${domainLabel} / ${actionLabel}`
 }

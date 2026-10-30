@@ -47,10 +47,6 @@ export const pageMetaByPath = {
     title: '编排设计器',
     description: '选择工作流后编辑节点、条件边和汇聚关系。',
   },
-  '/jobs/pipelines': {
-    title: '流水线定义',
-    description: '维护流水线定义和步骤执行顺序。',
-  },
   '/workflow/viewer': {
     title: '工作流 DAG 视图',
     description: '只读查看工作流的 DAG;编辑请进入编排设计器。',
@@ -304,14 +300,12 @@ export function pageDescription(path: PageMetaPath): string {
 }
 
 function normalizeRoutePath(path: string, parentPath = '') {
-  const raw = path.startsWith('/') ? path : `${parentPath}/${path}`
-  return (
-    raw
-      .replace(/\/+/g, '/')
-      .replace(/\/:\w+\?/g, '')
-      .replace(/\/:\w+/g, '')
-      .replace(/\/$/, '') || '/'
-  )
+  const routePath = path.startsWith('/') ? path : `${parentPath}/${path}`
+  const collapsedSlashes = routePath.replace(/\/+/g, '/')
+  const withoutOptionalParams = collapsedSlashes.replace(/\/:\w+\?/g, '')
+  const withoutParams = withoutOptionalParams.replace(/\/:\w+/g, '')
+  const withoutTrailingSlash = withoutParams.replace(/\/$/, '')
+  return withoutTrailingSlash || '/'
 }
 
 export function applyPageMetaToRoutes(routes: RouteRecordRaw[], parentPath = '') {

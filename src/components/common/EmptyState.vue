@@ -98,13 +98,15 @@
   )
 
   const computedTitle = computed(() => {
-    if (props.title?.trim()) return props.title.trim()
+    const normalizedTitle = props.title?.trim()
+    if (normalizedTitle) return normalizedTitle
     const p = presets.value[props.variant]
     return p.title || undefined
   })
 
   const computedDescription = computed(() => {
-    if (props.description?.trim()) return props.description.trim()
+    const normalizedDescription = props.description?.trim()
+    if (normalizedDescription) return normalizedDescription
     return presets.value[props.variant].description
   })
 

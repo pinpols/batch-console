@@ -170,6 +170,19 @@ export const useAppStore = defineStore('app', () => {
   })
 
   function setMaintenance(state: Partial<typeof maintenance.value>) {
+    const currentVersion = maintenance.value.version
+    const incomingVersion = state.version
+    // 轮询、管理操作和响应头共享状态，迟到的旧版本不能撤销新的维护或恢复决定。
+    if (currentVersion != null && incomingVersion != null && incomingVersion < currentVersion)
+      return
+    // 同一配置版本的定时维护只会从待开始转为生效；恢复或改期会产生新版本。
+    const revertsScheduledActivation =
+      incomingVersion != null &&
+      incomingVersion === currentVersion &&
+      maintenance.value.active &&
+      state.enabled === true &&
+      state.active === false
+    if (revertsScheduledActivation) return
     maintenance.value = {
       ...maintenance.value,
       ...state,
@@ -203,7 +216,10 @@ export const useAppStore = defineStore('app', () => {
     for (const [k, ts] of Object.entries(degradation.value.sources)) {
       if (now - ts <= DEGRADATION_TTL_MS) next[k] = ts
     }
-    if (Object.keys(next).length !== Object.keys(degradation.value.sources).length) {
+    const nextSourceCount = Object.keys(next).length
+    const currentSourceCount = Object.keys(degradation.value.sources).length
+    const hasSourcesToPrune = nextSourceCount !== currentSourceCount
+    if (hasSourcesToPrune) {
       degradation.value = { sources: next }
     }
   }

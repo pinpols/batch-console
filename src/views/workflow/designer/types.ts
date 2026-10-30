@@ -2,10 +2,10 @@
  * Workflow DAG 编辑器内部类型。
  *
  * 与后端三张工作流表的字段映射见 `file-batch-system/docs/design/workflow-dag-designer.md` §5。
- * 起止、作业、网关、文件节点由 codec 统一保真，未展示字段透传。
+ * 起止、作业、网关节点由 codec 统一保真，未展示字段透传。
  */
 
-export type DesignerNodeType = 'START' | 'END' | 'JOB' | 'FILE_STEP' | 'GATEWAY'
+export type DesignerNodeType = 'START' | 'END' | 'JOB' | 'GATEWAY'
 
 export interface DesignerNode {
   id: string

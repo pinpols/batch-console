@@ -48,7 +48,6 @@ test.describe('tag resource CRUD', () => {
     // 两者齐备后按钮解锁
     await expect(addBtn).toBeEnabled({ timeout: 8000 })
     await addBtn.click()
-    await page.waitForTimeout(400)
     // 实际打开的是 el-drawer 不是 el-dialog(gifted-bell 分支修正)
     const drawer = page.locator('.el-drawer').first()
     if (await isVisible(drawer, 2000)) {

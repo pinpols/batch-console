@@ -5,7 +5,12 @@ export function summarizeWorkerFingerprints(
   summary: WorkerFingerprintSummary[],
 ) {
   const activeRows = rows.filter((row) => row.status === 'ONLINE' || row.status === 'DRAINING')
-  const dominant = [...summary].sort((a, b) => Number(b.count) - Number(a.count))[0] ?? null
+  const dominant = [...summary]
+    .sort((left, right) => {
+      const rightCount = Number(right.count)
+      const leftCount = Number(left.count)
+      return rightCount - leftCount
+    })[0] ?? null
   const drifted = dominant
     ? activeRows.filter(
         (row) => row.buildId !== dominant.buildId || row.sdkVersion !== dominant.sdkVersion,

@@ -54,4 +54,55 @@ describe('useJobCodeOptions', () => {
     expect(await loadingA).toEqual(['A_JOB'])
     expect(getMock).toHaveBeenCalledTimes(2)
   })
+  it('同一消费者切换租户后，迟到的旧请求不能覆盖新候选', async () => {
+    let resolveOld!: (rows: unknown) => void
+    getMock
+      .mockReturnValueOnce(
+        new Promise((resolve) => {
+          resolveOld = resolve
+        }),
+      )
+      .mockResolvedValueOnce([{ code: 'B_JOB' }])
+    const { load, options, loading } = useJobCodeOptions()
+    const pending = load('tenant-a')
+    await load('tenant-b')
+    resolveOld([{ code: 'A_JOB' }])
+    await pending
+    expect(options.value).toEqual(['B_JOB'])
+    expect(loading.value).toBe(false)
+  })
+
+  it('清空候选后在途请求不能重新填入旧候选', async () => {
+    let resolveOld!: (rows: unknown) => void
+    getMock.mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveOld = resolve
+      }),
+    )
+    const { load, clear, options, loading } = useJobCodeOptions()
+    const pending = load('tenant-a')
+    clear()
+    resolveOld([{ code: 'A_JOB' }])
+    await pending
+    expect(options.value).toEqual([])
+    expect(loading.value).toBe(false)
+  })
+
+  it('共享同租户在途请求的两个消费者都更新自身候选', async () => {
+    let resolveShared!: (rows: unknown) => void
+    getMock.mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveShared = resolve
+      }),
+    )
+    const first = useJobCodeOptions()
+    const second = useJobCodeOptions()
+    const a = first.load('tenant-a')
+    const b = second.load('tenant-a')
+    resolveShared([{ code: 'A_JOB' }])
+    await Promise.all([a, b])
+    expect(first.options.value).toEqual(['A_JOB'])
+    expect(second.options.value).toEqual(['A_JOB'])
+    expect(getMock).toHaveBeenCalledTimes(1)
+  })
 })

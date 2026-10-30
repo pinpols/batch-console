@@ -15,7 +15,7 @@
 
       <div v-for="row in rows" :key="row.id" class="m-card">
         <div class="m-card__row">
-          <div class="m-card__title">{{ row.jobCode }} · {{ row.bizDate }}</div>
+          <div class="m-card__title">{{ row.workflowCode }} · {{ row.bizDate }}</div>
           <span :class="['m-chip', statusChipClass(row.requestStatus)]">
             {{ resolveEnumLabel('approvalStatus', row.requestStatus) }}
           </span>

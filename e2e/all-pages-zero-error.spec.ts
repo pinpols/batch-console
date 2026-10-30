@@ -121,6 +121,7 @@ test.describe('@cross-browser 全页面零 4xx/5xx 巡检', () => {
           await link.click({ force: true }).catch(() => {})
           await page.waitForLoadState('networkidle', { timeout: 8000 }).catch(() => {})
           // 等待详情挂载 — 1s 缓冲,容忍 detail 内联请求
+          // 保留导航后的延迟异常观察窗口，不以此判定详情加载成功。
           await page.waitForTimeout(800)
         }
       }

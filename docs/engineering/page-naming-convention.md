@@ -1,4 +1,4 @@
-# 页面命名约定:URL / 代码目录 / 侧边栏分组三者一致
+# 页面命名与导航归属约定
 
 **状态**:Accepted
 **日期**:2026-05-14
@@ -27,7 +27,7 @@
 
 ## 2. 决策
 
-**新页面**必须满足:**`URL 路径`、`代码目录`、`侧边栏分组` 三者用同一个一级域(domain)前缀**。
+**新页面**先选择业务领域，并让新增 URL 和代码目录表达同一职责；导航归属映射到当前 `navigation.ts` 注册的分组 key。业务领域 slug 与产品导航 key 是不同对象，现有映射不得靠复制新分组来绕过。
 
 ### 一级域(canonical)
 
@@ -38,11 +38,15 @@
 | ------------- | ------------ | -------------------------------------------------------- | ------------------------------------------------------ |
 | `workspace`   | 工作台       | dashboard / 概览 / 审批 / 报表 / 自助服务                | OpsSummary, Approvals, Reports                         |
 | `runs`        | 运行         | 实时运行态 / 排障 / Trace / 运维诊断                     | RunsOverview, JobInstance, WorkflowRun, Trace          |
-| `jobs`        | 作业与工作流 | 定义层 / 编辑器                                          | JobDefinition, Pipeline, WorkflowDef, WorkflowDesigner |
+| `jobs`        | 作业与工作流 | 定义层 / 编辑器；系统 Pipeline 只读 | JobDefinition, WorkflowDef, WorkflowDesigner |
 | `files`       | 文件         | 模板 / 渠道 / 实时文件 / 到达组 / 管道观测               | FileList, FileTemplate, FileChannel, ArrivalGroup      |
 | `scheduling`  | 调度         | Worker / 触发器 / 调度快照 / 批次日 / 配额               | WorkerManagement, TriggerList, SchedulerSnapshot       |
 | `admin`       | 配置与系统   | 租户 / 账户 / API Key / 参数 / 发布 / 变更 / 标签 / 审计 | TenantList, UserAccountList, ConfigReleaseList         |
 | `alerting`    | 告警与投递   | 告警 / 告警路由 / 通知 / Outbox                          | AlertList, AlertRouting, NotificationManagement        |
+
+### 当前导航映射
+
+原领域表用于新页面职责选择；实际分组以 `navigationGroupOrder` 和中英文 `nav.group` 为准：`workspace→workspace`、`runs→monitor`、`jobs→definitions`、`files→files`、`scheduling→scheduling`、`admin→system`、`alerting→alerting`。这些 key 分别显示为工作台、运行监控、准备作业、文件管理、调度与资源、平台管理、告警与投递，不据名称推断权限。
 
 ### 命名规则
 
@@ -52,7 +56,7 @@
 | 代码目录   | `src/views/{一级域}/`                  | `src/views/alerting/AlertList.vue` |
 | 侧边栏分组 | `nav.group.{一级域}` 的 i18n key       | `nav.group.alerting: '告警与投递'` |
 
-**三者用同一个 slug,不要在 URL 用 `alerting` 但代码放 `system/` 又把入口放"配置与系统"组。**
+新增路径和模块应清楚表达同一业务域，导航用上表映射保持产品分组一致。存量 URL、模块与导航有已知历史映射；移动入口或兼容重定向不能据此机械改名。
 
 ---
 
@@ -83,7 +87,7 @@
 
 - [ ] 选择了 7 个一级域之一,理由是 **\_**
 - [ ] URL `/<一级域>/<...>` 与 `src/views/<一级域>/` 目录一致
-- [ ] `navigation.ts` 把入口挂在同名分组下
+- [ ] `navigation.ts` 按明确的领域→导航 key 映射登记入口，没有凭空新增平行分组
 - [ ] `pageMeta.ts` 加了 title/description 中文兜底
 - [ ] `locales/zh-CN.ts` + `en-US.ts` 加了双语 `page.<pathKey>.title/description`
 - [ ] 路由 `meta.pathKey` 由 `applyPageMetaToRoutes` 自动派生(无需手填)
@@ -94,15 +98,17 @@
 
 新页面如果"不知道挂哪一域",**默认按这棵决策树**:
 
-```
-新页面在做什么?
-├─ 用户实时看的运行态、排障、Trace          → runs
-├─ 用户编辑定义、流程、模板                  → jobs
-├─ 用户处理文件流(模板、到达、追踪)         → files
-├─ 用户调度资源(Worker/触发器/批次/配额)     → scheduling
-├─ 用户管理账号、租户、Key、系统参数、发布    → admin
-├─ 用户响应告警、通知、Outbox                → alerting
-└─ 上面都不像、是大盘 / 审批 / 报表           → workspace
+```mermaid
+%%{init: {"flowchart":{"curve":"linear","nodeSpacing":32,"rankSpacing":48},"sequence":{"mirrorActors":false}}}%%
+flowchart TB
+  PAGE{"页面主要职责"}
+  PAGE -->|"运行与排障"| RUNS["runs"]
+  PAGE -->|"编辑定义与流程"| JOBS["jobs"]
+  PAGE -->|"文件流与模板"| FILES["files"]
+  PAGE -->|"调度资源"| SCHED["scheduling"]
+  PAGE -->|"账号与系统管理"| ADMIN["admin"]
+  PAGE -->|"告警与通知"| ALERT["alerting"]
+  PAGE -->|"大盘、审批与报表"| WORK["workspace"]
 ```
 
 实在还判不出来:**提到产品评审、不要自己开新一级域**。一级域必须保持 ≤7。

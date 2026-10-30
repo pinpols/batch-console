@@ -83,7 +83,7 @@ const MENU_EXPECTATIONS: Record<
   },
   tenantUser: {
     count: 23,
-    includes: ['/self-service', '/system/api-keys', '/jobs/pipelines'],
+    includes: ['/self-service', '/system/api-keys'],
     excludes: ['/files/templates', '/config/releases', '/observability/audits'],
   },
 }

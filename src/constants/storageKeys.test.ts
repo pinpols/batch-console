@@ -18,6 +18,10 @@ describe('STORAGE_KEYS', () => {
       sidebarCollapsed: 'batch-console:sidebar-collapsed',
       focusMode: 'batch-console:focus-mode',
       mobileInstallHintDismissedAt: 'batch-console:m-install-hint-dismissed-at',
+      workflowBulkTriggerDraftPrefix: 'batch-console:workflow-bulk-trigger:',
+      batchDayCatchUpRecoveryPrefix: 'batch-console:batch-day-catch-up:',
+      batchDayGovernanceRecoveryPrefix: 'batch-console:batch-day-governance:',
+      configSyncRecoveryPrefix: 'batch-console:config-sync-recovery:',
     })
   })
 })

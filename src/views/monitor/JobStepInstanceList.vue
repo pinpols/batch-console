@@ -160,13 +160,18 @@
     try {
       const instanceIdText = filterInstanceId.value.trim()
       const parsedInstanceId = Number(instanceIdText)
+      const tenantId = tenant.tenantId
+      const pageNo = page.value
+      const requestedPageSize = pageSize.value
+      const hasValidInstanceId = instanceIdText !== '' && Number.isFinite(parsedInstanceId)
+      const jobInstanceId = hasValidInstanceId ? parsedInstanceId : undefined
+      const stepStatus = filterStepStatus.value.trim() || undefined
       const result = await queryJobStepInstancePage({
-        tenantId: tenant.tenantId,
-        pageNo: page.value,
-        pageSize: pageSize.value,
-        jobInstanceId:
-          instanceIdText && Number.isFinite(parsedInstanceId) ? parsedInstanceId : undefined,
-        stepStatus: filterStepStatus.value.trim() || undefined,
+        tenantId,
+        pageNo,
+        pageSize: requestedPageSize,
+        jobInstanceId,
+        stepStatus,
       })
       rows.value = result.items ?? []
       total.value = result.total ?? 0

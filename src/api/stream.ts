@@ -1,5 +1,7 @@
 import { post } from '@/api/client'
 import { readStoredTenantId } from '@/api/interceptors'
+import { createIdempotencyKey } from '@/utils/idempotency'
+import type { WorkflowExecutionProgress } from '@/api/workflowRuns'
 import type { AxiosRequestConfig } from 'axios'
 
 type SseStreamType =
@@ -10,16 +12,17 @@ type SseStreamType =
   | 'workflow-definitions'
   | 'workflow-runs'
   | 'alerts'
-  | 'pipeline-definitions'
   | 'pipeline-progress'
 
 /**
- * 用 Authorization 交换一次性 SSE ticket(后端 5 分钟过期、使用后立删)。
- * EventSource 不能自带 Authorization 头,因此须先换 ticket 再以 `?ticket=` 连流。
+ * 通过当前 HttpOnly Cookie 会话换取一次性 SSE ticket，有效期由后端控制。
+ * 先换票再以 `?ticket=` 连流；前端不读取或保存认证 token。
  */
 export async function fetchStreamTicket(): Promise<string> {
   const res = await post<{ ticket: string }>('/api/console/auth/stream/ticket', {}, {
     _silent: true,
+    // 新连接申请新票；同次HTTP重试仍由客户端保留本请求的键。
+    headers: { 'Idempotency-Key': createIdempotencyKey() },
   } as AxiosRequestConfig)
   return res.ticket
 }
@@ -36,11 +39,17 @@ function resolvePath(domain: SseStreamType): string {
     : `/api/console/${domain}/events`
 }
 
-function buildStreamUrl(path: string, ticket: string): string {
+function buildStreamUrl(
+  path: string,
+  ticket: string,
+  tenantId = readStoredTenantId(),
+  extra: Record<string, string> = {},
+): string {
   const base =
     typeof import.meta.env.VITE_API_BASE_URL === 'string' ? import.meta.env.VITE_API_BASE_URL : ''
-  const qs = new URLSearchParams({ tenantId: readStoredTenantId(), ticket })
-  return `${base}${path}?${qs.toString()}`
+  const qs = new URLSearchParams({ ...extra, tenantId, ticket })
+  // 根地址“/”不能与“/api”拼成协议相对地址“//api”，所有流共用同一边界。
+  return `${base.replace(/\/+$/, '')}${path}?${qs.toString()}`
 }
 
 /**
@@ -53,7 +62,8 @@ export async function createSseStream(
   onError?: (e: Event) => void,
 ): Promise<EventSource> {
   const ticket = await fetchStreamTicket()
-  const url = buildStreamUrl(resolvePath(domain), ticket)
+  const path = resolvePath(domain)
+  const url = buildStreamUrl(path, ticket)
   const es = new EventSource(url)
   const forward = (e: MessageEvent) =>
     onMessage(typeof e.data === 'string' ? e.data : String(e.data ?? ''))
@@ -133,4 +143,198 @@ export async function createLogStream(
     es.close()
   }
   return es
+}
+
+export interface WorkflowExecutionStreamHandlers {
+  snapshot: (snapshot: WorkflowExecutionProgress) => void
+  ready: () => void
+  error: () => void
+  reset: () => void
+}
+
+/** 运行进度流携带完整快照；租户在换票之前固定，避免跨租户串流。 */
+export async function createWorkflowExecutionStream(
+  runId: number,
+  tenantId: string,
+  handlers: WorkflowExecutionStreamHandlers,
+): Promise<EventSource> {
+  const ticket = await fetchStreamTicket()
+  const url = buildStreamUrl(
+    `/api/console/workflow-runs/${runId}/execution-progress/events`,
+    ticket,
+    tenantId,
+  )
+  const es = new EventSource(url)
+  es.addEventListener('ready', () => handlers.ready())
+  es.addEventListener('reset-required', () => handlers.reset())
+  const fail = () => {
+    es.close()
+    handlers.error()
+  }
+  es.addEventListener('workflow-execution-error', fail)
+  es.addEventListener('workflow-execution-progress', (event: MessageEvent) => {
+    try {
+      const data = (JSON.parse(event.data) as { data?: WorkflowExecutionProgress }).data
+      if (
+        !data ||
+        data.workflowRunId !== runId ||
+        data.tenantId !== tenantId ||
+        !Array.isArray(data.nodes) ||
+        !Array.isArray(data.edges) ||
+        !Number.isFinite(Date.parse(data.generatedAt))
+      ) {
+        fail()
+        return
+      }
+      handlers.snapshot(data)
+    } catch {
+      fail()
+    }
+  })
+  es.onerror = fail
+  return es
+}
+
+/** 业务日聚合按选定日期隔离，在线直接接收五层完整计数。 */
+export async function createDailyProgressStream(
+  bizDate: string,
+  tenantId: string,
+  handlers: import('@/types/progress').ProgressStreamHandlers<
+    import('@/api/dailyProgress').DailyProgress
+  >,
+): Promise<EventSource> {
+  const ticket = await fetchStreamTicket()
+  const url = buildStreamUrl('/api/console/dashboard/daily-progress/events', ticket, tenantId, {
+    bizDate,
+  })
+  const source = new EventSource(url)
+  const fail = () => {
+    source.close()
+    handlers.error()
+  }
+  source.addEventListener('ready', handlers.ready)
+  source.addEventListener('reset-required', handlers.reset)
+  source.addEventListener('daily-progress-error', fail)
+  source.addEventListener('daily-progress', (event: MessageEvent) => {
+    try {
+      const data = (
+        JSON.parse(event.data) as { data?: import('@/api/dailyProgress').DailyProgress }
+      ).data
+      if (
+        !data ||
+        data.tenantId !== tenantId ||
+        data.bizDate !== bizDate ||
+        !Array.isArray(data.counts) ||
+        !data.coverage ||
+        !Number.isFinite(Date.parse(data.generatedAt))
+      ) {
+        fail()
+        return
+      }
+      handlers.snapshot(data)
+    } catch {
+      fail()
+    }
+  })
+  source.onerror = fail
+  return source
+}
+
+/** 作业完整阶段/计数快照，与Workflow和业务日复用范围校验及失联回退。 */
+export async function createJobExecutionStream(
+  jobId: number,
+  tenantId: string,
+  handlers: import('@/types/progress').ProgressStreamHandlers<
+    import('@/api/jobProgress').JobExecutionProgress
+  >,
+): Promise<EventSource> {
+  const ticket = await fetchStreamTicket()
+  const source = new EventSource(
+    buildStreamUrl(
+      `/api/console/job-instances/${jobId}/execution-progress/events`,
+      ticket,
+      tenantId,
+    ),
+  )
+  const fail = () => {
+    source.close()
+    handlers.error()
+  }
+  source.addEventListener('ready', handlers.ready)
+  source.addEventListener('reset-required', handlers.reset)
+  source.addEventListener('job-execution-progress-error', fail)
+  source.addEventListener('job-execution-progress', (event: MessageEvent) => {
+    try {
+      const data = (
+        JSON.parse(event.data) as { data?: import('@/api/jobProgress').JobExecutionProgress }
+      ).data
+      if (
+        !data ||
+        data.tenantId !== tenantId ||
+        data.jobInstanceId !== jobId ||
+        !Array.isArray(data.stages) ||
+        !Array.isArray(data.counts) ||
+        !Number.isFinite(Date.parse(data.generatedAt))
+      ) {
+        fail()
+        return
+      }
+      handlers.snapshot(data)
+    } catch {
+      fail()
+    }
+  })
+  source.onerror = fail
+  return source
+}
+
+/** 完整Pipeline页范围快照；范围固定在换票前，不使用dirty事件触发GET。 */
+export async function createPipelineProgressSnapshotStream(
+  scope: string,
+  tenantId: string,
+  handlers: import('@/types/progress').ProgressStreamHandlers<
+    import('@/api/pipelineProgress').PipelineProgressSnapshot
+  >,
+): Promise<EventSource> {
+  const ticket = await fetchStreamTicket()
+  const source = new EventSource(
+    buildStreamUrl('/api/console/pipeline-progress/events', ticket, tenantId, {
+      pipelineInstanceIds: scope,
+    }),
+  )
+  const fail = () => {
+    source.close()
+    handlers.error()
+  }
+  source.addEventListener('ready', handlers.ready)
+  source.addEventListener('reset-required', handlers.reset)
+  source.addEventListener('pipeline-progress-snapshot-error', fail)
+  source.addEventListener('pipeline-progress-snapshot', (event: MessageEvent) => {
+    try {
+      const data = (
+        JSON.parse(event.data) as {
+          data?: import('@/api/pipelineProgress').PipelineProgressSnapshot
+        }
+      ).data
+      const ids = data?.pipelines
+        ?.map((p) => p.pipelineInstanceId)
+        .sort((a, b) => a - b)
+        .join(',')
+      if (
+        !data ||
+        data.tenantId !== tenantId ||
+        ids !== scope ||
+        !data.pipelines.every((p) => Array.isArray(p.steps) && Array.isArray(p.stageCodes)) ||
+        !Number.isFinite(Date.parse(data.generatedAt))
+      ) {
+        fail()
+        return
+      }
+      handlers.snapshot(data)
+    } catch {
+      fail()
+    }
+  })
+  source.onerror = fail
+  return source
 }

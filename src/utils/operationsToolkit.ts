@@ -20,7 +20,11 @@ export function listSupportedTimezones(fallback: readonly string[]): string[] {
   ).supportedValuesOf
   if (!supportedValuesOf) return [...fallback]
   try {
-    return Array.from(new Set([...fallback, ...supportedValuesOf('timeZone')])).sort()
+    const runtimeTimezones = supportedValuesOf('timeZone')
+    const allTimezones = [...fallback, ...runtimeTimezones]
+    const uniqueTimezones = new Set(allTimezones)
+    const timezoneList = Array.from(uniqueTimezones)
+    return timezoneList.sort()
   } catch {
     return [...fallback]
   }
@@ -33,19 +37,25 @@ export function convertWallTime(
 ): { instant: string; rows: TimezoneConversionRow[] } | null {
   const instant = wallTimeToApiInstant(wallTime, sourceTimezone)
   if (!instant) return null
-  const year = dayjs(instant).tz(sourceTimezone).year()
+  const sourceDateTime = dayjs(instant).tz(sourceTimezone)
+  const year = sourceDateTime.year()
   return {
     instant,
     rows: targetTimezones.map((timezone) => {
-      const value = dayjs(instant).tz(timezone)
+      const targetDateTime = dayjs(instant).tz(timezone)
       const januaryOffset = dayjs.tz(`${year}-01-15 12:00:00`, timezone).utcOffset()
       const julyOffset = dayjs.tz(`${year}-07-15 12:00:00`, timezone).utcOffset()
+      const wallTime = apiInstantToWallTime(instant, timezone)
+      const offset = targetDateTime.format('Z')
+      const offsetVariesThisYear = januaryOffset !== julyOffset
+      const currentOffset = targetDateTime.utcOffset()
+      const higherSeasonalOffset = Math.max(januaryOffset, julyOffset)
       return {
         timezone,
-        wallTime: apiInstantToWallTime(instant, timezone),
-        offset: value.format('Z'),
-        offsetVariesThisYear: januaryOffset !== julyOffset,
-        higherSeasonalOffset: value.utcOffset() === Math.max(januaryOffset, julyOffset),
+        wallTime,
+        offset,
+        offsetVariesThisYear,
+        higherSeasonalOffset: currentOffset === higherSeasonalOffset,
       }
     }),
   }
@@ -98,24 +108,23 @@ export function inspectFileSample(bytes: Uint8Array): FileSampleInspection {
   const lineEndingKinds = [crlf, lf, cr].filter((count) => count > 0).length
   const lineEnding: FileSampleInspection['lineEnding'] =
     lineEndingKinds > 1 ? 'MIXED' : crlf ? 'CRLF' : lf ? 'LF' : cr ? 'CR' : 'NONE'
-  const lines = text
-    .replace(/^\uFEFF/, '')
-    .split(/\r\n|\n|\r/)
-    .slice(0, 20)
+  const textWithoutBom = text.replace(/^\uFEFF/, '')
+  const allLines = textWithoutBom.split(/\r\n|\n|\r/)
+  const lines = allLines.slice(0, 20)
   const nonEmptyLines = lines.filter((line) => line.trim())
   const candidates = [',', '\t', ';', '|'] as const
-  const ranked = candidates
-    .map((delimiter) => {
-      const counts = nonEmptyLines.slice(0, 8).map((line) => countOccurrences(line, delimiter))
-      const first = counts[0] ?? 0
-      return {
-        delimiter,
-        count: first,
-        consistent: first > 0 && counts.every((count) => count === first),
-      }
-    })
-    .filter((candidate) => candidate.consistent)
-    .sort((a, b) => b.count - a.count)
+  const delimiterStats = candidates.map((delimiter) => {
+    const sampleLines = nonEmptyLines.slice(0, 8)
+    const counts = sampleLines.map((line) => countOccurrences(line, delimiter))
+    const first = counts[0] ?? 0
+    return {
+      delimiter,
+      count: first,
+      consistent: first > 0 && counts.every((count) => count === first),
+    }
+  })
+  const consistentDelimiters = delimiterStats.filter((candidate) => candidate.consistent)
+  const ranked = consistentDelimiters.sort((a, b) => b.count - a.count)
 
   return {
     encoding,
@@ -129,8 +138,15 @@ export function inspectFileSample(bytes: Uint8Array): FileSampleInspection {
 }
 
 export async function sha256Hex(file: File): Promise<string> {
-  const digest = await crypto.subtle.digest('SHA-256', await file.arrayBuffer())
-  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('')
+  const fileBytes = await file.arrayBuffer()
+  const digest = await crypto.subtle.digest('SHA-256', fileBytes)
+  const digestByteView = new Uint8Array(digest)
+  const digestBytes = Array.from(digestByteView)
+  const hexBytes = digestBytes.map((byte) => {
+    const hexByte = byte.toString(16)
+    return hexByte.padStart(2, '0')
+  })
+  return hexBytes.join('')
 }
 
 export type RetryTimelineItem = {
@@ -157,25 +173,50 @@ export function buildRetryTimeline(input: {
   let earliest = start
   let nominal = start
   let latest = start
-  const jitter = Math.max(0, Math.min(input.jitterRatio, 1))
-  for (let attempt = 1; attempt <= Math.max(0, Math.floor(input.maxRetries)); attempt += 1) {
-    const rawDelay =
-      input.policy === 'EXPONENTIAL'
-        ? input.fixedDelaySeconds * Math.pow(Math.max(1, input.multiplier), attempt - 1)
-        : input.fixedDelaySeconds
-    const delaySeconds = Math.min(Math.max(0, input.maxDelaySeconds), Math.max(0, rawDelay))
-    const earliestDelay =
-      delaySeconds <= 0 ? 0 : Math.max(1, Math.floor(delaySeconds * (1 - jitter)))
-    const latestDelay = delaySeconds <= 0 ? 0 : Math.max(1, Math.ceil(delaySeconds * (1 + jitter)))
+  const jitterRatioAtMostOne = Math.min(input.jitterRatio, 1)
+  const jitter = Math.max(0, jitterRatioAtMostOne)
+  const flooredMaxRetries = Math.floor(input.maxRetries)
+  const maxRetries = Math.max(0, flooredMaxRetries)
+  for (let attempt = 1; attempt <= maxRetries; attempt += 1) {
+    let rawDelay: number
+    if (input.policy === 'EXPONENTIAL') {
+      const fixedDelaySeconds = input.fixedDelaySeconds
+      const multiplierAtLeastOne = Math.max(1, input.multiplier)
+      const exponentialFactor = Math.pow(multiplierAtLeastOne, attempt - 1)
+      rawDelay = fixedDelaySeconds * exponentialFactor
+    } else {
+      rawDelay = input.fixedDelaySeconds
+    }
+    const nonNegativeMaximumDelay = Math.max(0, input.maxDelaySeconds)
+    const nonNegativeRawDelay = Math.max(0, rawDelay)
+    const delaySeconds = Math.min(nonNegativeMaximumDelay, nonNegativeRawDelay)
+    let earliestDelay: number
+    if (delaySeconds <= 0) {
+      earliestDelay = 0
+    } else {
+      const flooredEarliestDelay = Math.floor(delaySeconds * (1 - jitter))
+      earliestDelay = Math.max(1, flooredEarliestDelay)
+    }
+    let latestDelay: number
+    if (delaySeconds <= 0) {
+      latestDelay = 0
+    } else {
+      const ceiledLatestDelay = Math.ceil(delaySeconds * (1 + jitter))
+      latestDelay = Math.max(1, ceiledLatestDelay)
+    }
     earliest = earliest.add(earliestDelay, 'second')
-    nominal = nominal.add(Math.floor(delaySeconds), 'second')
+    const nominalDelaySeconds = Math.floor(delaySeconds)
+    nominal = nominal.add(nominalDelaySeconds, 'second')
     latest = latest.add(latestDelay, 'second')
+    const earliestAt = earliest.toISOString()
+    const nominalAt = nominal.toISOString()
+    const latestAt = latest.toISOString()
     rows.push({
       attempt,
       delaySeconds,
-      earliestAt: earliest.toISOString(),
-      nominalAt: nominal.toISOString(),
-      latestAt: latest.toISOString(),
+      earliestAt,
+      nominalAt,
+      latestAt,
     })
   }
   return rows

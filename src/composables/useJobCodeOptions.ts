@@ -25,52 +25,55 @@ export function useJobCodeOptions() {
   const loading = ref(false)
   const options = ref<string[]>([])
 
+  let generation = 0
+
   async function load(tenantId: string): Promise<string[]> {
-    if (cache && cache.tenantId === tenantId && Date.now() - cache.ts < STALE_MS) {
-      options.value = cache.codes
-      return cache.codes
-    }
-    const pending = inflight.get(tenantId)
-    if (pending) {
-      loading.value = true
-      try {
-        options.value = await pending
-        return options.value
-      } finally {
-        loading.value = false
-      }
+    const requestGeneration = ++generation
+    const cached = cache
+    const cachedCodesAreFreshForTenant =
+      cached && cached.tenantId === tenantId && Date.now() - cached.ts < STALE_MS
+    if (cachedCodesAreFreshForTenant) {
+      options.value = cached.codes
+      loading.value = false
+      return cached.codes
     }
     loading.value = true
-    const request = (async () => {
-      try {
-        const res = await jobApi.listCodes(tenantId)
-        const codes = Array.isArray(res)
-          ? Array.from(
-              new Set(
-                res
-                  .map((item) => item?.code)
-                  .filter((code): code is string => typeof code === 'string' && code.length > 0),
-              ),
-            )
-          : []
-        cache = { tenantId, ts: Date.now(), codes }
-        options.value = codes
-        return codes
-      } catch {
-        options.value = []
-        return []
-      } finally {
-        loading.value = false
-        inflight.delete(tenantId)
-      }
-    })()
-    inflight.set(tenantId, request)
-    return request
+    let pending = inflight.get(tenantId)
+    if (!pending) {
+      const request = (async () => {
+        try {
+          const res = await jobApi.listCodes(tenantId)
+          const listedCodes = Array.isArray(res) ? res.map((item) => item?.code) : []
+          const nonEmptyCodes = listedCodes.filter(
+            (code): code is string => typeof code === 'string' && code.length > 0,
+          )
+          const codes = Array.from(new Set(nonEmptyCodes))
+          cache = { tenantId, ts: Date.now(), codes }
+          return codes
+        } catch {
+          return []
+        } finally {
+          inflight.delete(tenantId)
+        }
+      })()
+      inflight.set(tenantId, request)
+      pending = request
+    }
+    try {
+      const codes = await pending
+      // 网络请求可被同租户组件共享，每个消费者仍独立核对当前展示目标。
+      if (requestGeneration === generation) options.value = codes
+      return codes
+    } finally {
+      if (requestGeneration === generation) loading.value = false
+    }
   }
 
   function clear() {
+    generation += 1
     cache = null
     options.value = []
+    loading.value = false
   }
 
   return { loading, options, load, clear }

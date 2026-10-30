@@ -1,0 +1,4 @@
+interface:
+  display_name: "前端国际化与可访问性"
+  short_description: "核查中英文文案、表单提示、键盘及ARIA语义与安全HTML呈现"
+  default_prompt: "使用 $frontend-i18n-accessibility 处理指定页面的文案、国际化、可访问性或安全呈现问题。"

@@ -25,20 +25,24 @@ function optionalBoolean(value: unknown): boolean | undefined {
 export function toWorkflowSaveNodes(nodes: WorkflowNode[]) {
   return nodes.map((node) => {
     const raw = node as Record<string, unknown>
+    const entries = Object.entries(raw)
+    const persistedEntries = entries.filter(
+      ([key]) => key !== 'pipelineCode' && key !== 'relatedPipelineCode',
+    )
+    const params = Object.fromEntries(persistedEntries)
+    const nodeParams = JSON.stringify(params)
     return {
       nodeCode: node.nodeCode,
       nodeName: node.nodeName ?? node.nodeCode,
       nodeType: node.nodeType,
       relatedJobCode: optionalString(raw.jobCode) ?? optionalString(raw.relatedJobCode),
-      relatedPipelineCode:
-        optionalString(raw.pipelineCode) ?? optionalString(raw.relatedPipelineCode),
       workerGroup: optionalString(raw.workerGroup),
       windowCode: optionalString(raw.windowCode),
       nodeOrder: optionalInteger(raw.nodeOrder),
       retryPolicy: optionalString(raw.retryPolicy),
       retryMaxCount: optionalInteger(raw.maxRetries) ?? optionalInteger(raw.retryMaxCount),
       timeoutSeconds: optionalInteger(raw.timeoutSeconds),
-      nodeParams: JSON.stringify(raw),
+      nodeParams,
       crossDayDependencies: optionalString(raw.crossDayDependencies),
       crossDayDependencyTimeoutSeconds: optionalInteger(raw.crossDayDependencyTimeoutSeconds),
       enabled: optionalBoolean(raw.enabled),

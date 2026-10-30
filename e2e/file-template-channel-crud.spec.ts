@@ -14,7 +14,6 @@ test.describe('file template + channel CRUD', () => {
   test('新增模板对话框可打开 + 验证 i18n field 字段', async ({ page }) => {
     await page.getByRole('button', { name: '新建文件模板' }).first().click()
     await expect(page.getByText('新增文件模板')).toBeVisible()
-    await page.waitForTimeout(400)
     const dialog = page.locator('.el-dialog:visible, .el-drawer:visible').filter({ hasText: '新增文件模板' })
     await expect(dialog.getByText('模板编码', { exact: true })).toBeVisible()
     await expect(dialog.getByText('模板类型', { exact: true })).toBeVisible()
@@ -39,7 +38,6 @@ test.describe('file template + channel CRUD', () => {
     await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
     await page.getByRole('button', { name: '新建文件渠道' }).first().click()
     await expect(page.getByText('新增文件渠道')).toBeVisible()
-    await page.waitForTimeout(400)
     const dialog = page.locator('.el-dialog:visible, .el-drawer:visible').filter({ hasText: '新增文件渠道' })
     await expect(dialog.getByText('渠道编码', { exact: true })).toBeVisible()
     await expect(dialog.getByText('渠道类型', { exact: true })).toBeVisible()

@@ -32,11 +32,20 @@ export const workflowRunVisualCssVars = Object.fromEntries(
 export function workflowRunStatusClass(status?: string | null): WorkflowRunVisualClass | null {
   if (!status) return null
   const s = status.toUpperCase()
-  if (s === 'RUNNING') return 'running'
+  if (s === 'RUNNING' || s === 'RETRYING') return 'running'
   if (s === 'SUCCESS' || s === 'COMPLETED' || s === 'SUCCEEDED') return 'success'
   if (s === 'FAILED' || s === 'PARTIAL_FAILED') return 'failed'
-  if (s === 'WAITING' || s === 'READY' || s === 'CREATED') return 'waiting'
-  if (s === 'CANCELLED' || s === 'SKIPPED' || s === 'TERMINATED') return 'cancelled'
+  if (
+    s === 'WAITING' ||
+    s === 'READY' ||
+    s === 'CREATED' ||
+    s === 'WAITING_DEPENDENCY' ||
+    s === 'PENDING' ||
+    s === 'PAUSED'
+  )
+    return 'waiting'
+  if (s === 'NOT_EXECUTED' || s === 'CANCELLED' || s === 'SKIPPED' || s === 'TERMINATED')
+    return 'cancelled'
   return null
 }
 

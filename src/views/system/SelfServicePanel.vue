@@ -331,9 +331,9 @@
     if (!tenant.tenantId) return
     try {
       const me = auth.userInfo?.userId
-      const approvalTypes = Array.from(
-        new Set(cards.value.flatMap((card) => card.approvalTypes).filter(Boolean)),
-      )
+      const cardApprovalTypes = cards.value.flatMap((card) => card.approvalTypes)
+      const availableApprovalTypes = cardApprovalTypes.filter(Boolean)
+      const approvalTypes = Array.from(new Set(availableApprovalTypes))
       const results = await Promise.all(
         approvalTypes.map(async (approvalType) => ({
           approvalType,

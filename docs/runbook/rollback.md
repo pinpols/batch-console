@@ -1,226 +1,69 @@
-# Rollback Runbook(batch-console FE)
+# 前端发布回滚
 
-> prod / staging 出问题时,**多久能恢复服务**比根因更重要。本 runbook 列出可执行的最短路径。
+本手册以当前不可变制品与部署脚本为准。先记录当前前端 SHA、镜像 digest、后端版本、环境及影响范围，再由当班发布负责人选择已验收且契约兼容的目标。历史绿色 tag 或前端单容器健康不能单独证明整个平台可回滚。
 
-## TL;DR
+## 统一 Release Set 部署
 
-```bash
-# 一行 rollback(上一个绿 tag)
-LAST_GOOD=v0.x.y BACKEND_UPSTREAM_HOST=$BACKEND_HOST docker compose -f docker-compose.yml up -d --no-build
-# 30s 内健康检查
-curl -fs http://localhost:8080/healthz
-```
+平台使用 Release Manifest 部署时，优先按配对后端的[Compose CD 手册](../../../file-batch-system/docs/runbook/compose-cd-roadmap.md)回退同一 release set。实际命令入口是 `scripts/deploy/compose-release.sh`；前端不另造一份部署状态。
 
-预期恢复时间(MTTR):**< 2 min**(已有 image)/< 5 min(需 pull image)。
+在已部署 release bundle 的后端根目录，确认站点实际使用的以下配置已恢复：
 
----
-
-## 何时该 rollback(不是修)
-
-**先 rollback,再排查根因**。以下情况立即回退:
-
-| 触发 | 阈值 | 操作 |
-|---|---|---|
-| prod 主页 5xx | > 30s 持续 | **立即 rollback** |
-| 登录路径 404 / 白屏 | 任意持续时间 | **立即 rollback** |
-| 静态资源 404(`index.html` 引用的 chunk 找不到) | 一例即触发 | **立即 rollback** + CDN 清缓存 |
-| Lighthouse perf < 70 / a11y < 90(staging) | 任一不达标 | **不发 prod**(staging-gate 已拦) |
-| 单业务页面报错(其他正常) | 影响 < 10% PV | 先看 backlog,可热修复就修 |
-| 后端兼容性问题(BE API 变更但 FE 没同步) | 任意 | **rollback FE** + 通知 BE 暂停 deploy |
-
-判定原则:**用户感知 > 自己解释**。SPA 白屏 ≠ 后端 500 那种"能 retry 修过来",一定先回退。
-
----
-
-## 信息核对(rollback 前 30 秒)
+- `BATCH_RELEASE_ENV_FILE`：部署主机的 Compose env 文件；其中或当前环境必须提供实际站点使用的 `IMAGE_TAG`，满足基础 Compose 插值。最终运行 digest 仍由 manifest overlay 固定。
+- `BATCH_RELEASE_FRONTEND_COMPOSE_FILE`、`BATCH_RELEASE_FRONTEND_DEPLOY_COMPOSE_FILE`：该 release bundle 内的前端 Compose 文件。
+- `BATCH_RELEASE_STATE_DIR`、`BATCH_RELEASE_PROJECT_NAME`、`BATCH_RELEASE_COMPOSE_MODE`：与该环境原部署一致。
+- 运行依赖、网络、凭据和前一稳定 manifest 已保留；当前 `previous.json` 确实是预定回退目标。
 
 ```bash
-# 1. 当前在跑哪个 tag
-docker inspect batch-console --format '{{.Config.Image}} (started {{.State.StartedAt}})'
-
-# 2. 最近已验收的联合 release tag
-gh release list --limit 5
-
-# 3. 上一个绿色 staging-gate 跑的 commit
-gh run list --workflow=staging-gate.yml --status=success --limit 1 --json headSha,conclusion
-
-# 4. 当前 BE 在哪个版本(确认 API 契约对得上)
-curl -s $BACKEND_HOST/actuator/info | jq -r '.build.version'
+bash scripts/deploy/compose-release.sh --help
+# 确认上一稳定 release set、环境及配置后执行：
+bash scripts/deploy/compose-release.sh rollback staging
+# production 仅由具备发布权限的负责人按生产处置流程执行：
+# bash scripts/deploy/compose-release.sh rollback production
 ```
 
----
+脚本使用上一稳定 manifest 中的固定 digest，校验健康与运行制品，保存状态和审计。版本文件比较由 staging workflow 或下面的人工恢复验收完成。它不撤销已经完成的业务数据变化；涉及不兼容数据库迁移时先遵守后端迁移与恢复方案。没有上一稳定记录时不能猜测目标，需要从正式发布记录恢复配置后再操作。
 
-## 操作 1:Docker image tag rollback(主要路径)
+## 独立前端 Compose 部署
 
-### 前提
-- prod 用本仓 `docker-compose.yml` + `docker-compose.deploy.yml` overlay 部署
-- registry 里仍保留上 N 个已验收版本 tag；tag 在 staging 验收后由发布流程创建
+仅适用于该环境本来就独立部署前端，且已确认旧前端与当前后端契约兼容的情况。生产不可使用仅含本地构建配置的基础 Compose。
 
-### 步骤
+从发布记录取得已验收标签及其 digest，并使用该站点原有的 env 文件、项目名与网络：
 
 ```bash
-# 1) 确定回退目标
-PREV_TAG=v0.1.4                       # 上一个 staging-gate 绿的 tag
-
-# 2) Pull 旧 image(确保本机有)
-docker pull ghcr.io/pinpols/batch-console:$PREV_TAG
-
-# 3) 用 IMAGE_TAG env 切到旧 image,重启服务
-#    docker-compose.deploy.yml 必须显式传入 IMAGE_TAG；不允许默认使用 latest
-IMAGE_TAG=$PREV_TAG docker compose -f docker-compose.yml -f docker-compose.deploy.yml up -d --no-build
-
-# 4) 健康检查(30s 内必返 200)
-curl -fs --max-time 30 http://localhost:8080/healthz
-
-# 5) 人眼复检关键路径
-for path in /login / /m/ /ops/summary; do
-  code=$(curl -s -o /dev/null -w "%{http_code}" "http://localhost:8080$path")
-  echo "  $path → $code"
-done
+PREV_TAG='replace-with-staging-verified-tag'
+DEPLOY_ENV_FILE='/path/to/site.env'
+DEPLOY_PROJECT='replace-with-existing-compose-project'
+# site.env 必须包含可达的 BACKEND_UPSTREAM_HOST 和原 APP_EXTERNAL_NETWORK/HOST_PORT 等站点值。
+IMAGE_TAG="$PREV_TAG" docker compose --project-name "$DEPLOY_PROJECT" --env-file "$DEPLOY_ENV_FILE" \
+  -f docker-compose.yml -f docker-compose.deploy.yml config --quiet
+IMAGE_TAG="$PREV_TAG" docker compose --project-name "$DEPLOY_PROJECT" --env-file "$DEPLOY_ENV_FILE" \
+  -f docker-compose.yml -f docker-compose.deploy.yml pull frontend
+IMAGE_TAG="$PREV_TAG" docker compose --project-name "$DEPLOY_PROJECT" --env-file "$DEPLOY_ENV_FILE" \
+  -f docker-compose.yml -f docker-compose.deploy.yml up -d --no-build frontend
 ```
 
-**预期**:`/login` 200,`/` 302→`/login` 或 200(取决于是否带 cookie),`/healthz` 200。
+`docker-compose.deploy.yml` 当前接受显式 `IMAGE_TAG`；回退后必须把容器镜像的 RepoDigest 与发布记录比较。需要严格按 digest 部署时使用统一 Release Manifest 入口，不能把 `sha256:` 直接填到标签字段。不能通过重新 build 旧源码得到“同一个已验收制品”。
 
-本地开发 Compose 使用 `batch-console:latest` 作为本地构建标签；生产部署使用 `docker-compose.deploy.yml`，必须显式指定已验证的 `IMAGE_TAG`，不得把本地标签作为生产镜像。
+裸机静态部署按[Linux / Nginx 手册](../deploy/linux-nginx.md#回滚)原子切回完整旧发布目录，SPA 与统一文档站必须来自同一版本目录。
 
----
+## 验收恢复
 
-## 操作 2:静态资源 404(chunk 哈希丢失)
+先使用站点实际 URL，核对以下证据：
 
-**症状**:用户浏览器白屏,console 报 `Failed to load module: /assets/index-OLD.js`(404)。  
-**根因**:用户缓存了旧 `index.html`,引用的旧 chunk 已被新 build 清掉。  
-**正常**:nginx 已配 `/index.html` no-cache + `/assets/*` immutable,理论不会发生。  
-**例外**:CDN/反代层有自己的缓存策略 → 用户拿到陈旧 HTML。
+| 检查 | 恢复标准 |
+|---|---|
+| 容器与镜像 | 原部署项目的服务 healthy，实际 RepoDigest 与目标发布记录一致 |
+| `/healthz` | 200；只能证明前端存活 |
+| `/version.json` | `gitSha` 等于目标前端提交 |
+| `/login` 与静态资源 | 页面正常渲染，当前入口引用的 hash 资源全部可取 |
+| 登录、租户与主要查询 | 真实会话可用、权限与后端契约一致 |
+| `/docs/` | 未登录拒绝；登录后文档与后端鉴权可用 |
+| API 与业务链 | 真实受控查询/操作正常，不能由 SPA fallback 返回200代替 |
 
-### 处理
+若仍有 chunk 404，检查 HTML 缓存、CDN、Service Worker 与保留资源策略；优先恢复完整已验收制品。不要向运行容器临时复制旧 `dist` 或启动缺少 API、文档鉴权与安全头的临时 Nginx 作为正式恢复。
 
-```bash
-# 1) 看 nginx 容器是否真按预期返头
-curl -I http://localhost:8080/index.html | grep -i cache-control
-# 期望:Cache-Control: no-cache, no-store, must-revalidate
-curl -I http://localhost:8080/assets/index-XXX.js | grep -i cache-control
-# 期望:Cache-Control: public, max-age=31536000, immutable
+## 未恢复时与复盘
 
-# 2) 若上层有 CDN(Cloudflare/CDN77/自建 Varnish),手动 purge:
-#    - Cloudflare: Dashboard → Caching → Purge Everything
-#    - 自建 Varnish: varnishadm "ban req.url ~ /"
-#    - nginx 反代上层: 重启 nginx 释放 proxy_cache
+保存 Compose 状态、容器日志、版本信息和失败检查结果，按[前端事故手册](./frontend-incident.md)继续定位。重启、清缓存、替换配置和跨端回滚均需明确目标与影响，不能顺序盲试删除容器、未知 backup Compose 或不存在的占位页。
 
-# 3) 让旧 chunk 临时存活(灾备):上一版 dist/assets/ 临时回填到当前 dist/
-#    (粗暴但能救命)
-docker cp old-dist/assets/. $(docker ps -q -f name=batch-console):/usr/share/nginx/html/assets/
-docker exec $(docker ps -q -f name=batch-console) nginx -s reload
-```
-
----
-
-## 操作 3:BE API 契约不兼容
-
-**症状**:页面打开正常,但所有 API 调用 400/422,响应体 schema 跟 FE 期望对不上。  
-**根因**:BE 改了 OpenAPI 但 FE 没跟上(或反过来)。  
-**预防**:`pr-gate.yml` 跑 `npm run gen:api:check` 拦,通常不会漏到 prod。
-
-### 处理
-
-1. **rollback FE 到上一版**(BE 不动),恢复服务
-2. 通知 BE 团队:暂停下一次 deploy
-3. 拉一个 hotfix 分支,`npm run gen:api` 同步类型,改受影响代码,跑 `pr-gate + staging-gate`
-4. 串行 release(BE 改 → FE 跟随)
-
----
-
-## 验证 rollback 成功
-
-```bash
-# 五件套
-echo "[1/5] container running"
-docker ps --filter "name=batch-console" --format "table {{.Names}}\t{{.Status}}"
-
-echo "[2/5] /healthz"
-curl -fs http://localhost:8080/healthz
-
-echo "[3/5] /login 渲染"
-curl -s http://localhost:8080/login | grep -q '<title>' && echo "  OK" || echo "  FAIL"
-
-echo "[4/5] /api 反代通"
-curl -s -o /dev/null -w "  /api/console/auth/check → %{http_code}\n" http://localhost:8080/api/console/auth/check
-
-echo "[5/5] 静态资源 hash 匹配"
-HASH=$(curl -s http://localhost:8080/ | grep -oE 'index-[A-Za-z0-9]+\.js' | head -1)
-curl -s -o /dev/null -w "  $HASH → %{http_code}\n" http://localhost:8080/assets/$HASH
-```
-
-五项全过 → rollback 成功。任一不过 → 看下一节灾备。
-
----
-
-## 灾备:rollback 也失败时
-
-按"破坏性递增"顺序尝试:
-
-```bash
-# A) 重启容器
-docker restart batch-console
-
-# B) 重新 pull 上一版 image(本地缓存可能损坏)
-docker rm -f batch-console
-docker pull $REGISTRY/batch-console:$PREV_TAG
-docker compose up -d --force-recreate
-
-# C) 切换到 docker-compose backup(若有 prod-backup.yml)
-docker compose -f docker-compose.prod-backup.yml up -d
-
-# D) 起一个临时 nginx,挂载本机 dist 应急
-docker run -d --name batch-console-emergency \
-  -p 8080:80 \
-  -v $(pwd)/dist:/usr/share/nginx/html:ro \
-  -v $(pwd)/nginx/default.conf.template:/etc/nginx/templates/default.conf.template:ro \
-  -e BACKEND_UPSTREAM_HOST=$BACKEND_HOST \
-  nginx:1.30.5-alpine3.24
-
-# E) 终极:404 静态页占位
-docker run -d -p 8080:80 \
-  -v $(pwd)/docs/runbook/maintenance.html:/usr/share/nginx/html/index.html:ro \
-  nginx:1.30.5-alpine3.24
-```
-
-A → E 试,中间任何一步通了就停。
-
----
-
-## Post-mortem 模板(rollback 后必做)
-
-```markdown
-## YYYY-MM-DD batch-console rollback
-
-- **触发时间**:HH:MM
-- **检测来源**:Lighthouse alert / 用户反馈 / 监控告警 / oncall 巡检
-- **症状**:(一句话,如"prod /login 白屏,console 报 chunk 404")
-- **影响范围**:全量 / X% 用户 / 某 tenant
-- **触发 commit**:`abc1234` "<commit msg>"
-- **rollback 到**:tag `vX.Y.Z`
-- **MTTR**:X 分钟(检测到 → 完全恢复)
-
-### 根因
-(技术细节,3-5 行)
-
-### 为什么 CI 没拦住
-(staging-gate 跑了吗?哪一项漏了?)
-
-### Action items
-- [ ] 补 CI gate:...
-- [ ] 修复 bug:...
-- [ ] 更新本 runbook:...
-```
-
-落到 `docs/runbook/postmortems/YYYY-MM-DD-<short-desc>.md`。
-
----
-
-## 关联文件
-
-- `docker-compose.yml` — prod 部署入口
-- `Dockerfile` + `nginx/default.conf.template` — image 构建 + nginx 配置(已含 SPA cache header)
-- `.github/workflows/staging-gate.yml` — prod 前最后一关(Playwright + Lighthouse)
-- `.platform-release-manifest.json` — 联合发布版本对照值
-- `docs/runbook/release-promotion.md` — 联合版本准备与晋级入口（编排 workflow 位于配对后端仓库）
+事故记录放 `docs/reports/` 的日期报告，至少包含开始/恢复时间、目标环境、影响范围、触发 SHA、回退 SHA/digest、后端兼容性、执行命令、恢复证据和后续负责人。历史恢复耗时只作为当次记录，不承诺未来固定 MTTR。

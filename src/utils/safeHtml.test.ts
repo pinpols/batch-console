@@ -15,7 +15,8 @@ const mockedSanitize = vi.mocked(DOMPurify.sanitize)
 
 describe('purifyHtml', () => {
   beforeEach(() => {
-    mockedSanitize.mockClear()
+    mockedSanitize.mockReset()
+    mockedSanitize.mockImplementation((input) => String(input))
   })
 
   it('returns empty string for null / undefined', () => {

@@ -216,13 +216,16 @@
     if (filter.value === 'online') list = list.filter((r) => r.status === 'ONLINE')
     else if (filter.value === 'draining') list = list.filter((r) => r.status === 'DRAINING')
     else if (filter.value === 'offline') list = list.filter((r) => r.status === 'OFFLINE')
-    const kw = keyword.value.trim().toLowerCase()
+    const trimmedKeyword = keyword.value.trim()
+    const kw = trimmedKeyword.toLowerCase()
     if (kw) {
+      const matchesKeyword = (value: string | null | undefined) =>
+        value?.toLowerCase().includes(kw) ?? false
       list = list.filter(
         (r) =>
-          r.workerCode?.toLowerCase().includes(kw) ||
-          r.workerGroup?.toLowerCase().includes(kw) ||
-          r.capabilityTags?.toLowerCase().includes(kw),
+          matchesKeyword(r.workerCode) ||
+          matchesKeyword(r.workerGroup) ||
+          matchesKeyword(r.capabilityTags),
       )
     }
     return list

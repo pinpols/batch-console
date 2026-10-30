@@ -36,7 +36,8 @@ function actionText(cat: ErrorActionCategory): string {
 
 /** 仅识别 `error.xxx.yyy` 这种点分 key(允许 camelCase 段,如 rateLimit);普通文案返回 undefined。 */
 function isBizKey(raw: string): boolean {
-  return /^error\.[a-zA-Z][a-zA-Z0-9_]*(?:\.[a-zA-Z0-9_]+)+$/.test(raw.trim())
+  const candidate = raw.trim()
+  return /^error\.[a-zA-Z][a-zA-Z0-9_]*(?:\.[a-zA-Z0-9_]+)+$/.test(candidate)
 }
 
 /**
@@ -77,8 +78,7 @@ export function resolveErrorSuggestion(input: {
   status?: number
   network?: boolean
 }): string | undefined {
-  return (
-    suggestionForBizKey(input.bizKey) ??
-    suggestionForHttpStatus(input.status, { network: input.network })
-  )
+  const businessSuggestion = suggestionForBizKey(input.bizKey)
+  if (businessSuggestion != null) return businessSuggestion
+  return suggestionForHttpStatus(input.status, { network: input.network })
 }

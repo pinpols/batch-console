@@ -1,5 +1,7 @@
 # Phase 4 — 移动端真 BE 联调
 
+> **历史归档**：本文是 2026-05 QA campaign 的历史记录，端点、角色、环境、数量、PASS/SKIP 和待办均只反映执行当时的状态。当前测试与验收见[测试指南](../../../testing/README.md)和[CI 手册](../../../runbook/ci.md)。
+
 > 生成: 2026-05-18
 > 命令: `E2E_REAL_BE=1 npx playwright test e2e/mobile-smoke.spec.ts e2e/mobile-ops.spec.ts`
 > 用户原询: "移动端测了吗" + "可以"(同意跑真 BE)

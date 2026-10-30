@@ -26,7 +26,7 @@
 | 组件库治理 | 列表页筛选、空态、表格操作、详情抽屉、实时监控条、危险操作确认、TraceId 展示和权限降级页统一组件化 | 新页面优先复用 `components/` 与设计 token,重复实现必须有明确理由 |
 | 信息密度分级 | 总览看指标和异常入口,运维页看状态段和表格,分析页图表优先,配置页强调差异预览和发布记录,高危操作向导化 | 不让搜索框、输入框和说明文字挤占主体列表;高级筛选默认折叠 |
 | 权限驱动 UI | 菜单、路由、按钮、空态和错误提示基于同一权限模型 | 前端只负责可见性和解释,后端仍是最终授权边界 |
-| 门禁分层 | PR 快门禁、夜间全量、真实验收三层分工 | `verify:local` 不替代真实后端验收;staging-gate 承担真实浏览器链路 |
+| 门禁分层 | PR 快门禁、变更/低频 Full Gate、真实验收三层分工 | `verify:local` 不替代真实后端验收;staging-gate 承担真实浏览器链路 |
 | 工具链锁定 | Node、npm、Playwright 浏览器、OpenAPI 生成器和 Docker 入口锁定 | 换机器可复现优先于“本机能跑”;版本入口见 [`runtime-versions.md`](./runtime-versions.md) |
 | 小 PR 与影响清单 | 功能、治理、文档、依赖、CI 尽量拆开;每次明确影响面 | PR 需要说明 API、权限、路由/菜单、脚本、文档和用户可见变化 |
 | 文档和代码绑定 | 文档不是说明书,而是和 CI、脚本、角色矩阵、故障排查绑定 | 文档变更必须通过 `check:docs`,上线准入文档由 `check:go-live-readiness` 守护 |
@@ -44,7 +44,7 @@
    - 前端只做可用性和提示,最终授权以后端为准。
 
 3. **关键流程真环境可验收**
-   - 登录、租户切换、作业定义、Workflow / Pipeline、作业运行、审批、配置导入、Outbox、告警、文件到达和账号治理必须能在 staging 复跑。
+   - 登录、租户切换、作业定义、Workflow 编排/触发、系统 Pipeline 只读阶段、工作流与作业运行、审批、配置导入、Outbox、告警、文件到达和账号治理必须能在 staging 复跑。
    - Playwright 本地模拟接口不能声明为真实业务验收。
    - 真实验收结果写入 runbook 或阶段报告,不能只保留终端输出。
 
@@ -114,3 +114,8 @@
 - 测试体系: [`../testing/README.md`](../testing/README.md)
 - 设计 token: [`./design-tokens.md`](./design-tokens.md)
 - 权限与角色: [`../user-guide/roles-and-access.md`](../user-guide/roles-and-access.md)
+
+
+## 后端能力承接复核（2026-10-25）
+
+当前具体问题、责任与关闭条件统一见[WDI 前后端能力承接核查](../audits/frontend-backend-capability-alignment-2026-10-25.md)及[17项实施矩阵](backend-capability-alignment-plan-2026-10-25.md)。Atomic 只读门控的可用/降级模式已通过本地真实 Worker/Console 与四角色验收；readiness/容量等待的真实服务回读、其他页面角色链路、Worker故障恢复、文件Pipeline和Quartz计划仍按矩阵验收，不重复维护状态。

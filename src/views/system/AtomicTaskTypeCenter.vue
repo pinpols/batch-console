@@ -8,6 +8,8 @@
       </template>
     </PageHeader>
 
+    <AtomicRuntimePanel />
+
     <SectionCard>
       <el-alert
         type="info"
@@ -155,10 +157,38 @@
               class="atc__form"
             >
               <el-form-item v-for="p in schema.parameters" :key="p.name" :label="p.name">
-                <component
-                  :is="inputComponentFor(p)"
-                  v-model="getDraft(schema.taskType)[p.name]"
-                  v-bind="inputPropsFor(p)"
+                <el-switch
+                  v-if="p.type === 'boolean'"
+                  :model-value="getDraftBoolean(schema.taskType, p.name)"
+                  @update:model-value="
+                    (value: unknown) => setDraftValue(schema.taskType, p.name, value)
+                  "
+                />
+                <el-input-number
+                  v-else-if="p.type === 'integer' || p.type === 'number'"
+                  :model-value="getDraftNumber(schema.taskType, p.name)"
+                  controls-position="right"
+                  class="atc__num"
+                  @update:model-value="
+                    (value: unknown) => setDraftValue(schema.taskType, p.name, value)
+                  "
+                />
+                <el-input
+                  v-else
+                  :model-value="getDraftText(schema.taskType, p.name)"
+                  :type="p.type === 'list' || p.type === 'map' ? 'textarea' : 'text'"
+                  :placeholder="
+                    p.type === 'list'
+                      ? '[]'
+                      : p.type === 'map'
+                        ? '{}'
+                        : p.required
+                          ? t('common.required')
+                          : t('common.optional')
+                  "
+                  @update:model-value="
+                    (value: unknown) => setDraftValue(schema.taskType, p.name, value)
+                  "
                 />
                 <div v-if="p.description" class="atc__field-hint">
                   {{
@@ -179,6 +209,76 @@
               </el-button>
             </div>
             <JsonPreview :data="getDraft(schema.taskType)" />
+
+            <section v-if="canManageSavedConfigs" class="atc__saved-config">
+              <h3 class="atc__section-title">
+                {{ t('atomicTaskTypeCenter.sectionSavedConfigs') }}
+              </h3>
+              <p class="atc__saved-config-hint">
+                {{ t('atomicTaskTypeCenter.savedConfigHint') }}
+              </p>
+              <el-alert
+                v-if="!tenant.tenantId"
+                type="info"
+                :closable="false"
+                :title="t('atomicTaskTypeCenter.savedConfigTenantRequired')"
+              />
+              <template v-else>
+                <el-alert
+                  v-if="savedConfigLoadError"
+                  type="error"
+                  show-icon
+                  :closable="false"
+                  :title="t('atomicTaskTypeCenter.savedConfigLoadError')"
+                >
+                  <template #default>
+                    <el-button type="primary" link @click="loadSavedConfigs()">
+                      {{ t('common.retry') }}
+                    </el-button>
+                  </template>
+                </el-alert>
+                <div class="atc__saved-config-row">
+                  <el-select
+                    v-model="selectedSavedConfigId"
+                    :loading="savedConfigLoading"
+                    :placeholder="t('atomicTaskTypeCenter.savedConfigSelectPlaceholder')"
+                    clearable
+                    class="atc__saved-config-select"
+                  >
+                    <el-option
+                      v-for="item in savedConfigs"
+                      :key="String(item.id)"
+                      :label="item.name"
+                      :value="String(item.id)"
+                    />
+                  </el-select>
+                  <el-button
+                    :disabled="!selectedSavedConfigId"
+                    @click="applySavedConfig(schema.taskType)"
+                  >
+                    {{ t('atomicTaskTypeCenter.savedConfigApply') }}
+                  </el-button>
+                </div>
+                <el-form label-width="120px" size="small" class="atc__saved-config-form">
+                  <el-form-item :label="t('atomicTaskTypeCenter.savedConfigName')">
+                    <el-input
+                      v-model="savedConfigName"
+                      maxlength="128"
+                      show-word-limit
+                      :placeholder="t('atomicTaskTypeCenter.savedConfigNamePlaceholder')"
+                    />
+                  </el-form-item>
+                </el-form>
+                <el-button
+                  type="primary"
+                  :loading="savedConfigSaving"
+                  :disabled="!canSaveCurrentConfig"
+                  @click="saveCurrentConfig(schema.taskType)"
+                >
+                  {{ t('atomicTaskTypeCenter.savedConfigSave') }}
+                </el-button>
+              </template>
+            </section>
 
             <h3 class="atc__section-title">{{ t('atomicTaskTypeCenter.sectionSecurity') }}</h3>
             <el-table
@@ -221,11 +321,11 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, reactive, onUnmounted } from 'vue'
+  import AtomicRuntimePanel from './components/AtomicRuntimePanel.vue'
+  import { ref, reactive, computed, watch, onUnmounted } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
   import { RefreshCw as Refresh, Copy as DocumentCopy } from '@lucide/vue'
-  import { ElInput, ElInputNumber, ElSwitch } from 'element-plus'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
@@ -233,13 +333,17 @@
   import EmptyState from '@/components/common/EmptyState.vue'
   import JsonPreview from '@/components/common/JsonPreview.vue'
   import SensitiveFieldAlert from '@/components/common/SensitiveFieldAlert.vue'
-  import {
-    listAtomicTaskTypeSchemas,
-    type AtomicTaskTypeSchema,
-    type AtomicParamSpec,
-  } from '@/api/atomicTaskTypes'
+  import { listAtomicTaskTypeSchemas, type AtomicTaskTypeSchema } from '@/api/atomicTaskTypes'
+  import { atomicTaskConfigsApi, type AtomicTaskConfig } from '@/api/atomicTaskConfigs'
+  import { useAuthStore } from '@/stores/auth'
+  import { useTenantStore } from '@/stores/tenant'
+  import { useTenantReload } from '@/composables/useTenantReload'
+  import { detectSensitiveKeys } from '@/utils/sensitiveKeys'
+  import { prepareAtomicTaskConfig } from './atomicTaskConfigDraft'
 
   const { t, te } = useI18n({ useScope: 'global' })
+  const auth = useAuthStore()
+  const tenant = useTenantStore()
 
   // 后端 schema 字段为中文字面量;若 FE 存在对应 i18n 覆盖 key 则用之,否则回退原始 BE 值。
   function tOr(key: string, fallback: string): string {
@@ -250,26 +354,66 @@
   const loading = ref(false)
   const loadError = ref<unknown>(null)
   const activeType = ref<string>('')
+  const savedConfigs = ref<AtomicTaskConfig[]>([])
+  const savedConfigLoading = ref(false)
+  const savedConfigLoadError = ref(false)
+  const savedConfigSaving = ref(false)
+  const savedConfigName = ref('')
+  const selectedSavedConfigId = ref('')
+  let savedConfigRequestId = 0
   // 每个 taskType 维护一份独立 draft;切 tab 不丢
   const drafts = reactive<Record<string, Record<string, unknown>>>({})
-
-  function inputComponentFor(p: AtomicParamSpec) {
-    if (p.type === 'boolean') return ElSwitch
-    if (p.type === 'integer' || p.type === 'number') return ElInputNumber
-    return ElInput
-  }
-
-  function inputPropsFor(p: AtomicParamSpec) {
-    if (p.type === 'integer' || p.type === 'number') {
-      return { controlsPosition: 'right' as const, class: 'atc__num' }
-    }
-    if (p.type === 'boolean') return {}
-    return { placeholder: p.required ? t('common.required') : t('common.optional') }
-  }
+  const canManageSavedConfigs = computed(
+    () => auth.hasPermission('ROLE_ADMIN') || auth.hasPermission('ROLE_TENANT_ADMIN'),
+  )
+  const currentSensitivePaths = computed(() => {
+    const taskType = activeType.value
+    return detectSensitiveKeys(getDraft(taskType), {
+      exemptPaths: taskType === 'http' ? ['auth'] : [],
+    })
+  })
+  const canSaveCurrentConfig = computed(
+    () =>
+      canManageSavedConfigs.value &&
+      Boolean(tenant.tenantId.trim()) &&
+      Boolean(savedConfigName.value.trim()) &&
+      currentSensitivePaths.value.length === 0 &&
+      !savedConfigSaving.value,
+  )
 
   function getDraft(taskType: string) {
     if (!drafts[taskType]) drafts[taskType] = {}
     return drafts[taskType]
+  }
+
+  function getDraftBoolean(taskType: string, name: string): boolean | undefined {
+    const value = getDraft(taskType)[name]
+    return typeof value === 'boolean' ? value : undefined
+  }
+
+  function getDraftNumber(taskType: string, name: string): number | null | undefined {
+    const value = getDraft(taskType)[name]
+    return typeof value === 'number' || value === null ? value : undefined
+  }
+
+  function getDraftText(taskType: string, name: string): string | undefined {
+    const value = getDraft(taskType)[name]
+    if (typeof value === 'string') return value
+    if (Array.isArray(value) || (value !== null && typeof value === 'object')) {
+      return JSON.stringify(value)
+    }
+    return undefined
+  }
+
+  function setDraftValue(taskType: string, name: string, value: unknown) {
+    const isDraftScalarValue =
+      typeof value === 'string' ||
+      typeof value === 'number' ||
+      typeof value === 'boolean' ||
+      value === null
+    if (isDraftScalarValue) {
+      getDraft(taskType)[name] = value
+    }
   }
 
   // Debounced snapshot for SensitiveFieldAlert(避免每字符触发递归扫描)。
@@ -285,7 +429,9 @@
     snapshotTimers[taskType] = setTimeout(() => {
       // 浅拷贝 + JSON 序列化往返,确保 snapshot 是纯净对象(去 proxy)
       try {
-        draftSnapshots[taskType] = JSON.parse(JSON.stringify(live))
+        const serializedSnapshot = JSON.stringify(live)
+        const plainSnapshot = JSON.parse(serializedSnapshot)
+        draftSnapshots[taskType] = plainSnapshot
       } catch {
         draftSnapshots[taskType] = { ...live }
       }
@@ -302,7 +448,8 @@
   }
 
   async function copyJson(taskType: string) {
-    const text = JSON.stringify(getDraft(taskType), null, 2)
+    const draft = getDraft(taskType)
+    const text = JSON.stringify(draft, null, 2)
     try {
       await navigator.clipboard.writeText(text)
       ElMessage.success(t('atomicTaskTypeCenter.copySuccess'))
@@ -320,12 +467,138 @@
       if (list.length > 0 && !activeType.value) {
         activeType.value = list[0].taskType
       }
+      if (activeType.value) await loadSavedConfigs(activeType.value)
     } catch (err) {
       loadError.value = err
     } finally {
       loading.value = false
     }
   }
+
+  async function loadSavedConfigs(taskType = activeType.value, tenantId = tenant.tenantId) {
+    const requestId = ++savedConfigRequestId
+    selectedSavedConfigId.value = ''
+    savedConfigs.value = []
+    savedConfigLoadError.value = false
+    if (!tenantId || !taskType || !canManageSavedConfigs.value) {
+      savedConfigLoading.value = false
+      return
+    }
+    savedConfigLoading.value = true
+    try {
+      const result = await atomicTaskConfigsApi.list(tenantId, taskType)
+      if (
+        requestId !== savedConfigRequestId ||
+        tenant.tenantId !== tenantId ||
+        activeType.value !== taskType
+      ) {
+        return
+      }
+      savedConfigs.value = result ?? []
+    } catch {
+      if (
+        requestId === savedConfigRequestId &&
+        tenant.tenantId === tenantId &&
+        activeType.value === taskType
+      ) {
+        savedConfigLoadError.value = true
+      }
+    } finally {
+      if (requestId === savedConfigRequestId) savedConfigLoading.value = false
+    }
+  }
+
+  function applySavedConfig(taskType: string) {
+    const selected = savedConfigs.value.find(
+      (item) => String(item.id) === selectedSavedConfigId.value,
+    )
+    if (!selected || selected.taskType !== taskType || selected.tenantId !== tenant.tenantId) return
+    try {
+      const parsed: unknown = JSON.parse(selected.parameters)
+      if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
+        throw new Error('invalid parameters')
+      }
+      const sensitivePaths = detectSensitiveKeys(parsed, {
+        exemptPaths: taskType === 'http' ? ['auth'] : [],
+      })
+      if (sensitivePaths.length > 0) {
+        ElMessage.error(t('atomicTaskTypeCenter.savedConfigContainsSensitiveFields'))
+        return
+      }
+      const schema = schemas.value.find((item) => item.taskType === taskType)
+      if (!schema) throw new Error('unknown task type')
+      const prepared = prepareAtomicTaskConfig(schema, parsed as Record<string, unknown>)
+      if (prepared.invalidFields.length > 0) throw new Error('invalid parameters')
+      if (prepared.inlineCredentialFields.length > 0) {
+        ElMessage.error(t('atomicTaskTypeCenter.savedConfigContainsSensitiveFields'))
+        return
+      }
+      drafts[taskType] = prepared.parameters
+      ElMessage.success(t('atomicTaskTypeCenter.savedConfigApplied'))
+    } catch {
+      ElMessage.error(t('atomicTaskTypeCenter.savedConfigInvalid'))
+    }
+  }
+
+  async function saveCurrentConfig(taskType: string) {
+    const tenantId = tenant.tenantId.trim()
+    const name = savedConfigName.value.trim()
+    if (!tenantId || !name || !canSaveCurrentConfig.value) return
+    const schema = schemas.value.find((item) => item.taskType === taskType)
+    if (!schema) return
+    const prepared = prepareAtomicTaskConfig(schema, getDraft(taskType))
+    if (prepared.invalidFields.length > 0) {
+      ElMessage.error(
+        t('atomicTaskTypeCenter.savedConfigInvalidParameterTypes', {
+          fields: prepared.invalidFields.join(', '),
+        }),
+      )
+      return
+    }
+    if (prepared.inlineCredentialFields.length > 0) {
+      ElMessage.error(t('atomicTaskTypeCenter.savedConfigContainsSensitiveFields'))
+      return
+    }
+    const parameters = prepared.parameters
+    if (
+      detectSensitiveKeys(parameters, {
+        exemptPaths: taskType === 'http' ? ['auth'] : [],
+      }).length > 0
+    ) {
+      ElMessage.error(t('atomicTaskTypeCenter.savedConfigContainsSensitiveFields'))
+      return
+    }
+    savedConfigSaving.value = true
+    try {
+      await atomicTaskConfigsApi.create({ tenantId, taskType, name, parameters })
+      if (tenant.tenantId !== tenantId || activeType.value !== taskType) return
+      savedConfigName.value = ''
+      ElMessage.success(t('atomicTaskTypeCenter.savedConfigCreated'))
+      await loadSavedConfigs(taskType, tenantId)
+    } catch {
+      if (tenant.tenantId === tenantId && activeType.value === taskType) {
+        ElMessage.error(t('atomicTaskTypeCenter.savedConfigCreateError'))
+      }
+    } finally {
+      savedConfigSaving.value = false
+    }
+  }
+
+  watch(activeType, (taskType) => {
+    if (taskType) void loadSavedConfigs(taskType)
+  })
+  watch(
+    () => tenant.tenantId,
+    (tenantId) => {
+      if (tenantId) return
+      savedConfigRequestId += 1
+      savedConfigs.value = []
+      selectedSavedConfigId.value = ''
+      savedConfigLoadError.value = false
+      savedConfigLoading.value = false
+    },
+  )
+  useTenantReload(() => loadSavedConfigs())
 
   void load()
 </script>
@@ -385,6 +658,36 @@
   .atc__form-actions {
     display: flex;
     gap: 8px;
+  }
+
+  .atc__saved-config {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm, 12px);
+    padding: 16px;
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-content, 8px);
+  }
+
+  .atc__saved-config-hint {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: 13px;
+  }
+
+  .atc__saved-config-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .atc__saved-config-select {
+    min-width: min(320px, 100%);
+  }
+
+  .atc__saved-config-form {
+    max-width: 640px;
+    margin-bottom: -18px;
   }
 
   .atc__field-hint {

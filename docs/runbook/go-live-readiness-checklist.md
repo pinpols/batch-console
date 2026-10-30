@@ -31,7 +31,7 @@
 |---|---|---|
 | 登录与首次密码提示 | 全部角色 | 登录、语言切换、主题、必须改密提示不误阻断普通提示 |
 | 租户切换 | ADMIN / AUDITOR | 菜单、查询、缓存和当前租户显示同步刷新 |
-| 作业与流程配置 | ADMIN / TENANT_ADMIN | 作业、Workflow、Pipeline 的创建、编辑、校验、保存和权限拒绝 |
+| 作业与流程配置 | ADMIN / TENANT_ADMIN | Job 与组合 Workflow 创建/编辑/校验/触发、受管单作业图与系统 Pipeline 只读、旧入口兼容与权限拒绝 |
 | 作业运行 | 全部角色按权限 | 状态段、日期筛选、TraceId 查询、重试 / 取消 / 详情 |
 | 审批中心 | ADMIN / TENANT_ADMIN / AUDITOR | 批量审批、详情抽屉、只读角色不可审批 |
 | 配置导入 / 同步 | ADMIN / TENANT_ADMIN | 模板下载、上传预览、差异、应用、失败提示和回滚说明 |

@@ -91,3 +91,13 @@ curl -sSI http://localhost:8080/index.html
 Nginx master 与所有 worker 应均为 UID/GID 10001，`/`、`/healthz` 应返回 200；`/docs/` 还依赖后端鉴权接口可达。
 
 Compose 使用 `json-file` 日志轮转，默认每个文件 10 MiB、保留 3 份。生产平台可接入 Loki/ELK，但不得依赖容器内无限期留存。
+
+## 静态错误状态与隔离路由回归
+
+hash资源缺失、缺失version.json以及缺失icons/manifest保留404；只有普通前端路径使用history回退，不能用server级error_page把静态错误变成200的SPA HTML。固定名称的图标与manifest继续校验更新，正常hash资源保留不可变缓存。
+
+```bash
+npm run test:nginx-routing
+```
+
+该命令需要本机Docker，从Dockerfile读取带摘要的Nginx运行镜像，加载仓库实际配置，在独占容器和随机回环端口验证缺失资源、正常静态内容、前端路由、文档和API错误状态；会按需拉取声明的镜像。临时制品与鉴权替身由测试创建，清理核对本例标签。它不需要真实后端账号，也不替代完整镜像、真实鉴权、浏览器或staging验收；首红与本地结果见[当日审查](../../../file-batch-system/docs/review/frontend-backend-bug-review-2026-10-27.md#frontend-review-静态制品错误状态续审)。

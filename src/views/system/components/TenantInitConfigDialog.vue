@@ -5,7 +5,7 @@
     :title="t('tenantInitConfigDialog.title')"
     direction="rtl"
     size="640px"
-    @update:model-value="(v) => emit('update:modelValue', v)"
+    @update:model-value="(v: boolean) => emit('update:modelValue', v)"
   >
     <el-alert type="warning" :closable="false" show-icon class="mb-12">
       <template #title>
@@ -55,7 +55,7 @@
       <el-button
         plain
         :loading="saving && lastDryRun"
-        :disabled="saving && !lastDryRun"
+        :disabled="saving || !canWriteSystem"
         @click="submit(true)"
       >
         {{ t('tenantConfigShared.dryRunPreview') }}
@@ -63,7 +63,7 @@
       <el-button
         type="danger"
         :loading="saving && !lastDryRun"
-        :disabled="saving && lastDryRun"
+        :disabled="saving || !canWriteSystem"
         @click="submit(false)"
       >
         {{ t('tenantInitConfigDialog.btnRunFormal') }}
@@ -73,7 +73,7 @@
 </template>
 
 <script setup lang="ts">
-  import { reactive, ref, watch } from 'vue'
+  import { computed, onScopeDispose, reactive, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
 
@@ -83,6 +83,9 @@
   import JsonTextareaInput from '@/components/common/JsonTextareaInput.vue'
   import { ALL_CONFIG_TYPES } from './tenantConfigTypes'
   import { useFormValidate, rules } from '@/composables/useFormValidate'
+  import { assessBatchInitOutcome } from '@/utils/batchInitOutcome'
+  import { usePermission } from '@/composables/usePermission'
+  import { useAuthStore } from '@/stores/auth'
 
   const props = defineProps<{
     modelValue: boolean
@@ -95,6 +98,11 @@
   }>()
 
   const saving = ref(false)
+  const { canWriteSystem } = usePermission()
+  const auth = useAuthStore()
+  const actor = computed(() => String(auth.userInfo?.userId ?? auth.userInfo?.username ?? ''))
+  let revision = 0
+  let disposed = false
   // 用于两个按钮区分 loading 状态:点试运行时只有"试运行"按钮转,反之亦然
   const lastDryRun = ref(true)
   const form = reactive({
@@ -117,7 +125,9 @@
             JSON.parse(value)
             cb()
           } catch {
-            cb(new Error(t('tenantInitConfigDialog.errInvalidJson')))
+            const errorMessage = t('tenantInitConfigDialog.errInvalidJson')
+            const validationError = new Error(errorMessage)
+            cb(validationError)
           }
         },
         trigger: 'change',
@@ -126,8 +136,9 @@
   }
 
   watch(
-    () => props.modelValue,
-    (open) => {
+    [() => props.modelValue, () => props.targetTenantId],
+    ([open]) => {
+      revision += 1
       if (!open) return
       form.targetTenantId = props.targetTenantId
       form.configTypes = []
@@ -135,15 +146,45 @@
       form.specJson = '{}'
       lastDryRun.value = true
     },
+    { immediate: true, flush: 'sync' },
   )
+  watch(
+    form,
+    () => {
+      revision += 1
+    },
+    { flush: 'sync' },
+  )
+  watch(
+    [actor, canWriteSystem],
+    () => {
+      revision += 1
+    },
+    { flush: 'sync' },
+  )
+  onScopeDispose(() => {
+    disposed = true
+    revision += 1
+  })
 
   async function submit(dryRun: boolean) {
-    if (!(await validateInitForm())) return
-    // rule 已保证此处必合法
-    const spec: Record<string, unknown> = JSON.parse(form.specJson)
+    if (
+      saving.value ||
+      !props.modelValue ||
+      !canWriteSystem.value ||
+      !actor.value ||
+      !form.targetTenantId
+    )
+      return
+    const operationRevision = revision
+    const isCurrent = () =>
+      !disposed && props.modelValue && operationRevision === revision && canWriteSystem.value
+    // 校验也属于本次操作，提前占用防止重复点击在等待期间排出多笔写请求。
     saving.value = true
     lastDryRun.value = dryRun
     try {
+      if (!(await validateInitForm()) || !isCurrent()) return
+      const spec: Record<string, unknown> = JSON.parse(form.specJson)
       const res = await batchInitTenantConfig({
         targetTenantIds: [form.targetTenantId],
         spec,
@@ -151,8 +192,14 @@
         mode: form.mode,
         dryRun,
       })
+      if (!isCurrent()) return
       emit('result', res)
       if (!dryRun) {
+        const outcome = res ? assessBatchInitOutcome(res) : null
+        if (!outcome?.fullySuccessful) {
+          ElMessage.warning(t('tenantInitConfigDialog.toastFailed'))
+          return
+        }
         ElMessage.success(t('tenantInitConfigDialog.toastDone'))
         emit('update:modelValue', false)
       }

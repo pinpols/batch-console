@@ -4,7 +4,7 @@
 > - **页面截图**:见 [`screenshots/`](./screenshots)(01–13,作为当时视觉方案的静态记录)。
 > - **交互原型**：已退役。原型通过解析归档 HTML 并重新执行其中脚本来恢复页面；为避免保留不必要的 DOM XSS 执行链，不再提供可执行原型。
 > - **接口契约(权威)**:后端 `file-batch-system/docs/api/`(`console-api-protocol.md` + `console-api.openapi.yaml`)。本稿只定 UI/交互,**不改接口**。
-> - 当前设计入口见 [`../../../design/README.md`](../../../design/README.md)；本归档中的方案仅用于回溯当时的决策。
+> - 当前设计入口见 [设计资料](../../../../../design/README.md)；本归档中的方案仅用于回溯当时的决策。
 
 ---
 
