@@ -42,6 +42,13 @@
 - 修复：`fix/security-dependabot-alerts` 通过 overrides 将 `undici` 升至 `6.29.1` / `8.12.3`（jsdom）、vitepress 嵌套 `vite` 升至 `6.4.4+`、`minimatch` `11.0.1+`、`fast-uri` `3.1.9+`、`serialize-javascript` `7.1.3+`；同步 SBOM/许可证与根 `CHANGELOG.md`。
 - `deepmerge`（GHSA-gcqx-w48m-w2h4）：npm 最新仍为 `4.3.1`，无修复版本；经 `vite-plugin-pwa` → `workbox-build` 传递，仅构建/PWA 离线包路径、非浏览器运行时。合并后在 Security 页以 `no fix available` 关闭并保留本记录，不人工 bulk dismiss 其它项。
 - Dependabot 自动 PR：新增 `.github/dependabot.yml` 且 `open-pull-requests-limit: 0`；关闭 superseded 的机器人 PR `#348`，后续依赖升级走人工季度/安全批次。
+- 合并后若 Security 仍短暂显示 open：先核对 `repos/.../dependency-graph/sbom` 中解析版本是否已达 patched；若已达标而 alert 仍引用旧 `version_requirement`，记录 follow-up lockfile 同步 PR，必要时按治理手册对误报 alert 做有据 dismiss（`deepmerge` 用 `tolerable_risk`，已修复项在图已更新时可标 `inaccurate` 并注明 commit）。
+
+## 2026-10-31 跟进（Dependabot 仍显示 20 条 open）
+
+- 核对 `main`（`093cfc4`）依赖图 SBOM：`undici` 6.29.1 / 8.12.3、`vite` 6.4.5（vitepress 嵌套）与 8.3.4（根）、`minimatch` 11.0.3、`fast-uri` 3.1.9、`serialize-javascript` 7.1.4，均已高于公告修复版本；开放告警仍绑定旧 `version_requirement`（如 `6.4.3`、`8.11.2`、`5.1.9`），属扫描实例未刷新。
+- 跟进 PR：升级 `jsdom` 至 `30.1.3`、为 `@redocly/openapi-core` 增加 `minimatch` override，同步 lockfile 与合规快照。
+- 在 SBOM 已达标且 follow-up 合入后，对仍 open 的 20 条可修复项按 `inaccurate` 关闭并注明上述 commit；`deepmerge` 无 npm 修复版本时单独按 `tolerable_risk` 处理（若仍出现）。
 
 ## 2026-10-31 复核记录（CodeQL / 早期 Dependabot）
 
