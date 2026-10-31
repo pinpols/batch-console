@@ -1,0 +1,28 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: quarterly
+      time: "03:00"
+      timezone: Asia/Shanghai
+    commit-message:
+      prefix: chore(deps)
+    labels:
+      - dependencies
+    # 仅保留版本解析；安全与季度升级由人工批次统一开 PR，禁止机器人自动提 PR。
+    open-pull-requests-limit: 0
+    ignore:
+      - dependency-name: "*"
+        update-types: [version-update:semver-major]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: quarterly
+      time: "03:00"
+      timezone: Asia/Shanghai
+    open-pull-requests-limit: 0
+    ignore:
+      - dependency-name: "*"
+        update-types: [version-update:semver-major]

@@ -13,7 +13,7 @@
 |---|---:|
 | Runtime direct dependencies | 33 |
 | Development direct dependencies | 37 |
-| Resolved lockfile components | 934 |
+| Resolved lockfile components | 935 |
 
 ## 许可证分布
 
@@ -24,7 +24,7 @@
 | 0BSD | 1 |
 | Apache-2.0 | 28 |
 | Apache-2.0 WITH LLVM-exception | 1 |
-| BlueOak-1.0.0 | 5 |
+| BlueOak-1.0.0 | 6 |
 | BSD-2-Clause | 13 |
 | BSD-3-Clause | 12 |
 | CC-BY-4.0 | 1 |
