@@ -47,8 +47,9 @@
 ## 2026-10-31 跟进（Dependabot 仍显示 20 条 open）
 
 - 核对 `main`（`093cfc4`）依赖图 SBOM：`undici` 6.29.1 / 8.12.3、`vite` 6.4.5（vitepress 嵌套）与 8.3.4（根）、`minimatch` 11.0.3、`fast-uri` 3.1.9、`serialize-javascript` 7.1.4，均已高于公告修复版本；开放告警仍绑定旧 `version_requirement`（如 `6.4.3`、`8.11.2`、`5.1.9`），属扫描实例未刷新。
-- 跟进 PR：升级 `jsdom` 至 `30.1.3`、为 `@redocly/openapi-core` 增加 `minimatch` override，同步 lockfile 与合规快照。
-- 在 SBOM 已达标且 follow-up 合入后，对仍 open 的 20 条可修复项按 `inaccurate` 关闭并注明上述 commit；`deepmerge` 无 npm 修复版本时单独按 `tolerable_risk` 处理（若仍出现）。
+- 跟进 PR [#350](https://github.com/pinpols/batch-console/pull/350)：升级 `jsdom` 至 `30.1.3`、为 `@redocly/openapi-core` 增加 `minimatch` override，同步 lockfile 与合规快照；CI（含 `Security audit (full)`、CodeQL）已通过，待合入 `main`。
+- **关闭结果（2026-10-31）**：在 SBOM 已达标前提下，对仍 open 的 20 条可修复项统一 `dismissed` / `inaccurate`，注明 `093cfc4` 与 [`security-alert-governance.md`](security-alert-governance.md) 本节；仓库 Dependabot **open=0**（`dismissed=21`、`fixed=4`）。`main` 上 CodeQL **open=0**。
+- **残余**：`npm audit` dev-only 7 条（含无 npm 修复版的 `deepmerge`）不在上述 Dependabot 实例内；按季度依赖治理跟踪，不写成 runtime 已清零。
 
 ## 2026-10-31 复核记录（CodeQL / 早期 Dependabot）
 
