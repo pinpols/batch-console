@@ -7,6 +7,9 @@ import { expect, type APIRequestContext } from '@playwright/test'
 import type { WorkerProgressState } from './fixture'
 import { ManualFileUploadFixture } from './manualFileUploadFixture'
 
+/** 临时 Worker 启动脚本：参数全部由调用方显式传入，不在 `bash -c` 命令串里拼绝对路径。 */
+const START_WORKER_SCRIPT = resolve(__dirname, 'start-worker.sh')
+
 interface ImportDetails {
   workerHeartbeatMs: number | null
   businessRows: number
@@ -72,17 +75,23 @@ export class ImportWorkerPipelineFixture extends ManualFileUploadFixture {
     const jar = resolve(backend, 'build/runtime-jars/worker-import.jar')
     const startedAt = Date.now()
     const log = openSync(join(this.workerLogDir, `worker-${++this.workerStarts}.log`), 'w')
-    const script = [
-      'set -euo pipefail',
-      'cd "$1"',
-      'source scripts/lib/env-common.sh',
-      'batch_configure_local_jvm_control_plane_env',
-      'batch_configure_local_jvm_runtime_env',
-      'exec java --enable-native-access=ALL-UNNAMED -XX:TieredStopAtLevel=1 -XX:+UseSerialGC -Xshare:off -jar "$2" --spring.profiles.active=local --server.port=0 --batch.security.bypass-mode=false "--batch.worker.import.worker-code=$3" "--batch.worker.import.tenant-id=$4" "--batch.worker.import.consumer-group-id=$3" --batch.worker.kafka.subscribe-mode=TENANT_SCOPED "--batch.worker.kafka.tenant-allowlist=$4" --batch.worker.import.scanner.enabled=false --batch.worker.import.heartbeat-interval-millis=1000 --batch.worker.lease.renew-interval-millis=5000',
-    ].join('\n')
     const child = spawn(
       'bash',
-      ['-c', script, 'import-progress', backend, jar, this.workerCode, this.tenantId],
+      [
+        START_WORKER_SCRIPT,
+        backend,
+        jar,
+        'local',
+        'import',
+        this.workerCode,
+        this.tenantId,
+        this.workerCode,
+        '--',
+        '--batch.security.bypass-mode=false',
+        '--batch.worker.import.scanner.enabled=false',
+        '--batch.worker.import.heartbeat-interval-millis=1000',
+        '--batch.worker.lease.renew-interval-millis=5000',
+      ],
       {
         cwd: backend,
         stdio: ['ignore', log, log],

@@ -99,3 +99,7 @@ EXPORT Worker使用本例独立`java.io.tmpdir`，在本例重启间保留，避
 ### 取证导出
 
 `E2E_SKIP_GLOBAL_SETUP=1 npm run test:e2e:forensic:real` 使用本例独占租户，通过真实 ADMIN 页面生成并下载取证包；核对 TENANT_ADMIN 的 403、数据库导出日志、ZIP 内三个 JSON 文件、Manifest 范围和下载 SHA-256。页面不得呈现服务端存储路径。`E2E_FORENSIC_STORAGE_DIR` 必须与目标 Orchestrator 生效的 `batch.forensic.storage-dir` 一致；清理只删除随机租户名下的导出日志和对应 `<exportId>.zip`，不递归清空存储根目录。真实验收要求 Console 的本地绕过鉴权关闭，且通过 `spring.kafka.listener.auto-startup=false` 禁止临时 Console 加入共享消费组；后端 Orchestrator 确认是当前 WDI 代码。用生命周期锁协调其它真实验收。
+
+## 临时 Worker 启动脚本
+
+`start-worker.sh` 统一启动本例临时 Worker：位置参数依次为后端根目录、JAR、profile、worker kind、worker code、tenant ID、consumer group；`--java-opt` 传 JVM 参数，`--` 之后是 Spring 应用参数。夹具用 `spawn('bash', [start-worker.sh, ...参数])` 传参，不把绝对路径拼进 `bash -c` 命令串；脚本在 `source scripts/lib/env-common.sh` 并加载本地 JVM 环境后 `exec java`。

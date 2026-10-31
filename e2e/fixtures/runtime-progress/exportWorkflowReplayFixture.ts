@@ -8,6 +8,9 @@ import { ManualFileUploadFixture } from './manualFileUploadFixture'
 import type { WorkerProgressState } from './fixture'
 import type { WorkflowReplayFixture } from './workflowReplayFixture'
 
+/** 临时 Worker 启动脚本：参数全部由调用方显式传入，不在 `bash -c` 命令串里拼绝对路径。 */
+const START_WORKER_SCRIPT = resolve(__dirname, 'start-worker.sh')
+
 type BaseReplayState = ReturnType<WorkflowReplayFixture['replayState']>
 interface ExportDetails {
   workerHeartbeatMs: number | null
@@ -109,25 +112,23 @@ export class ExportWorkflowReplayFixture extends ManualFileUploadFixture {
     const startedAt = Date.now()
     mkdirSync(this.javaTmpDir, { recursive: true, mode: 0o700 })
     const log = openSync(join(this.workerLogDir, `worker-${++this.workerStarts}.log`), 'w')
-    const script = [
-      'set -euo pipefail',
-      'cd "$1"',
-      'source scripts/lib/env-common.sh',
-      'batch_configure_local_jvm_control_plane_env',
-      'batch_configure_local_jvm_runtime_env',
-      'exec java --enable-native-access=ALL-UNNAMED -XX:TieredStopAtLevel=1 -XX:+UseSerialGC -Xshare:off "-Djava.io.tmpdir=$5" -jar "$2" --spring.profiles.active=local --server.port=0 --batch.security.bypass-mode=false "--batch.worker.export.worker-code=$3" "--batch.worker.export.tenant-id=$4" "--batch.worker.export.consumer-group-id=$3" --batch.worker.kafka.subscribe-mode=TENANT_SCOPED "--batch.worker.kafka.tenant-allowlist=$4" --batch.worker.export.heartbeat-interval-millis=1000 --batch.worker.lease.renew-interval-millis=5000',
-    ].join('\n')
     const child = spawn(
       'bash',
       [
-        '-c',
-        script,
-        'export-replay',
+        START_WORKER_SCRIPT,
         backend,
         jar,
+        'local',
+        'export',
         this.workerCode,
         this.tenantId,
-        this.javaTmpDir,
+        this.workerCode,
+        '--java-opt',
+        `-Djava.io.tmpdir=${this.javaTmpDir}`,
+        '--',
+        '--batch.security.bypass-mode=false',
+        '--batch.worker.export.heartbeat-interval-millis=1000',
+        '--batch.worker.lease.renew-interval-millis=5000',
       ],
       { cwd: backend, stdio: ['ignore', log, log] },
     )
