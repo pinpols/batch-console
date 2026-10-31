@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-31 undici 安全更新
+
+- 升级 `undici` 至 `6.29.1` / `8.12.3`，修复 TLS 重协商、Agent TLS 选项丢失、Content-Encoding 链与 EventSource/WebSocket 相关拒绝服务漏洞；同步 SBOM 与第三方许可证快照。
+
 ## 2026-10-31 前端镜像安全更新
 
 - 运行镜像安装包含安全修复的 Brotli 库，构建时要求版本不低于 `1.2.1-r0`。
