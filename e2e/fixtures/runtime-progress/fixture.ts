@@ -8,6 +8,9 @@ import { expect, csrfHeaders } from '../../support/app'
 import { requiredEnvironment } from '../closure-recovery/fixture'
 import { WorkflowBulkFixture } from '../workflow-bulk/fixture'
 
+/** 临时 Worker 启动脚本：参数全部由调用方显式传入，不在 `bash -c` 命令串里拼绝对路径。 */
+const START_WORKER_SCRIPT = resolve(__dirname, 'start-worker.sh')
+
 /** 无Job副作用的控制图验收；业务动作走API，SQL只准备身份/回读/精确清理。 */
 export class ControlProgressFixture extends WorkflowBulkFixture {
   readonly adminName = `progress-admin-${randomUUID()}`
@@ -621,34 +624,23 @@ export class WorkerExecutionProgressFixture extends ControlProgressFixture {
       process.env[`E2E_${this.workerRuntimeKind.toUpperCase()}_WORKER_JAR`] ||
         `build/runtime-jars/worker-${this.workerRuntimeKind}.jar`,
     )
-    const script = [
-      'set -euo pipefail',
-      'BE_ROOT="$1"',
-      'JAR="$2"',
-      'WORKER_CODE="$3"',
-      'TENANT_ID="$4"',
-      'CONSUMER_GROUP="$5"',
-      'WORKER_KIND="$6"',
-      'shift 6',
-      'cd "$BE_ROOT"',
-      'source "$BE_ROOT/scripts/lib/env-common.sh"',
-      'batch_configure_local_jvm_control_plane_env',
-      'batch_configure_local_jvm_runtime_env',
-      'exec java --enable-native-access=ALL-UNNAMED -XX:TieredStopAtLevel=1 -XX:+UseSerialGC -Xshare:off -Djava.net.preferIPv4Stack=false -Djava.net.preferIPv6Addresses=false -jar "$JAR" --spring.profiles.active=local "--batch.worker.${WORKER_KIND}.worker-code=$WORKER_CODE" "--batch.worker.${WORKER_KIND}.tenant-id=$TENANT_ID" "--batch.worker.${WORKER_KIND}.consumer-group-id=$CONSUMER_GROUP" --batch.worker.kafka.subscribe-mode=TENANT_SCOPED "--batch.worker.kafka.tenant-allowlist=$TENANT_ID" --server.port=0 "$@"',
-    ].join('\n')
     const log = openSync(join(this.workerLogDir, 'worker.log'), 'w')
     const child = spawn(
       'bash',
       [
-        '-c',
-        script,
-        'worker-progress',
+        START_WORKER_SCRIPT,
         backendRoot,
         jar,
+        'local',
+        this.workerRuntimeKind,
         this.workerCode,
         this.tenantId,
         this.consumerGroup,
-        this.workerRuntimeKind,
+        '--java-opt',
+        '-Djava.net.preferIPv4Stack=false',
+        '--java-opt',
+        '-Djava.net.preferIPv6Addresses=false',
+        '--',
         ...this.workerArguments(),
       ],
       { cwd: backendRoot, stdio: ['ignore', log, log] },

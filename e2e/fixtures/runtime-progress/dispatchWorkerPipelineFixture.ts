@@ -17,6 +17,9 @@ import type { WorkerProgressState } from './fixture'
 import type { WorkflowReplayFixture } from './workflowReplayFixture'
 import { ThrottledObjectProxy } from './throttledObjectProxy'
 
+/** 临时 Worker 启动脚本：参数全部由调用方显式传入，不在 `bash -c` 命令串里拼绝对路径。 */
+const START_WORKER_SCRIPT = resolve(__dirname, 'start-worker.sh')
+
 interface DispatchState {
   sourceObjectFileCount: number
   workerHeartbeatMs: number | null
@@ -115,27 +118,25 @@ export class DispatchWorkerPipelineFixture extends ManualFileUploadFixture {
     const jar = resolve(backend, 'build/runtime-jars/worker-dispatch.jar')
     const startedAt = Date.now()
     const log = openSync(join(this.workerLogDir, `worker-${++this.workerStarts}.log`), 'w')
-    const script = [
-      'set -euo pipefail',
-      'cd "$1"',
-      'source scripts/lib/env-common.sh',
-      'batch_configure_local_jvm_control_plane_env',
-      'batch_configure_local_jvm_runtime_env',
-      // 不启用local/test：两种profile会把NAS适配器替换为stub，不能作为真实字节传输证据。
-      'exec java --enable-native-access=ALL-UNNAMED -XX:TieredStopAtLevel=1 -XX:+UseSerialGC -Xshare:off -jar "$2" --spring.profiles.active=e2e --spring.main.lazy-initialization=false --server.port=0 --batch.security.bypass-mode=false "--batch.worker.dispatch.worker-code=$3" "--batch.worker.dispatch.tenant-id=$4" "--batch.worker.dispatch.consumer-group-id=$3" --batch.worker.kafka.subscribe-mode=TENANT_SCOPED "--batch.worker.kafka.tenant-allowlist=$4" --batch.worker.dispatch.heartbeat-interval-millis=1000 --batch.worker.lease.renew-interval-millis=5000 "--batch.storage.s3.endpoint=$5" "--batch.worker.dispatch.runtime.nas-sandbox-root=$6"',
-    ].join('\n')
     const child = spawn(
       'bash',
       [
-        '-c',
-        script,
-        'dispatch-progress',
+        START_WORKER_SCRIPT,
         backend,
         jar,
+        // 不启用local/test：两种profile会把NAS适配器替换为stub，不能作为真实字节传输证据。
+        'e2e',
+        'dispatch',
         this.workerCode,
         this.tenantId,
-        this.proxyEndpoint,
-        this.nasDirectory,
+        this.workerCode,
+        '--',
+        '--spring.main.lazy-initialization=false',
+        '--batch.security.bypass-mode=false',
+        '--batch.worker.dispatch.heartbeat-interval-millis=1000',
+        '--batch.worker.lease.renew-interval-millis=5000',
+        `--batch.storage.s3.endpoint=${this.proxyEndpoint}`,
+        `--batch.worker.dispatch.runtime.nas-sandbox-root=${this.nasDirectory}`,
       ],
       { cwd: backend, stdio: ['ignore', log, log] },
     )

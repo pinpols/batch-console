@@ -36,6 +36,30 @@
 - `dismissed` 才表示人工按 `false positive`、`won't fix` 或 `used in tests` 关闭，必须记录理由和操作者。
 - 截至 2026-10-07 的 9 条关闭 CodeQL 中，6 条由随机源、转义或测试契约修复，3 条来自离线设计 HTML 原型的窄路径排除；开放 CodeQL 为 0，且不存在人工 dismiss。
 
+## 2026-10-31 复核记录
+
+本轮开放告警 8 条：CodeQL 4、Dependabot 4、Secret scanning 0。
+
+### CodeQL 20–23：`js/shell-command-injection-from-environment`
+
+- 位置：`e2e/fixtures/runtime-progress/` 下 `fixture.ts`、`importWorkerPipelineFixture.ts`、`dispatchWorkerPipelineFixture.ts`、`exportWorkflowReplayFixture.ts`，警告级。
+- 判读：不是“测试代码就不算”的误报。危险调用确实把环境推导的绝对路径（`__dirname` 推导的后端根、`E2E_*_WORKER_JAR` 指定的 JAR）传进了 `spawn('bash', ['-c', <内联脚本>, ...])`。内联脚本对位置参数做了双引号包裹，实际注入面有限，但“命令串”和“数据”混在一起，后续维护容易引入真实注入。
+- 修复：新增 `e2e/fixtures/runtime-progress/start-worker.sh`，统一负责 `cd` 后端根、`source scripts/lib/env-common.sh`、加载本地 JVM 环境后 `exec java`；四个夹具改为 `spawn('bash', [start-worker.sh, ...显式数据参数])`，不再使用 `bash -c`。JVM 参数用 `--java-opt` 传入，应用参数放在 `--` 之后；空数组用 `${arr[@]+"${arr[@]}"}` 兼容 macOS 自带 bash 3.2。
+- 定向验证：`bash -n`、`shellcheck -S warning`（`npm run check:shell`）、`npm run check:comments`、`npx eslint` 通过；用假 `java` 桩逐一核对四个夹具最终 JVM/应用参数与改造前一致，包括带空格的 NAS 目录和 `-Djava.io.tmpdir`。
+- 未执行：真实后端 runtime-progress E2E 未运行（需要独占后端、JAR、Kafka、对象存储与 NAS，见 `e2e/fixtures/runtime-progress/README.md`），不能据此写成业务验收通过。
+- 状态：代码已修复，等 PR 合并后由 main 的完整 CodeQL 扫描确认关闭。
+
+### Dependabot 1–4：`follow-redirects` / `markdown-it`
+
+- 4 条均为 runtime 依赖：axios → `follow-redirects`（High×2），`markdown-it` 直接依赖（High、Low）。
+- 判读：锁文件已在 `b3624a5`（2026-10-31）修复：`follow-redirects` 1.16.0 → 1.16.2、`markdown-it` 15.0.2 → 15.0.3（`package.json` 同步为 `^15.0.3`），均高于公告修复版本（1.16.1 / 15.0.3）。
+- 定向验证：`package-lock.json` 解析版本与 GitHub 依赖图 SBOM（`follow-redirects 1.16.2`、`markdown-it 15.0.3`）一致。
+- 状态：无需再改代码；告警等待 GitHub 下次 Dependabot 扫描自动关闭，不用人工 dismiss。
+
+### 残余风险
+
+- `npm audit` 仍有 dev-only High（`undici` 经 jsdom、`vite` 经 vitepress），当前无可用修复版本，不在 Dependabot runtime 告警内；按季度依赖治理跟踪，不能外推为 runtime 风险已清零。
+
 ## 本地与 GitHub 核查
 
 ```bash
