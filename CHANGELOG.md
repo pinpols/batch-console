@@ -4,6 +4,7 @@
 
 - 通过 overrides 升级 `undici`（`6.29.1` / jsdom `8.12.3`）、vitepress 嵌套 `vite`（`6.4.4+`）、`minimatch`、`fast-uri`、`serialize-javascript`，处理 GitHub Security 中可修复 Dependabot 告警；同步 SBOM 与第三方许可证快照。
 - 新增 `.github/dependabot.yml` 且 `open-pull-requests-limit: 0`，禁止 Dependabot 自动开 PR；季度与安全批次由人工统一提 PR。
+- 跟进：`jsdom` 升至 `30.1.3`、补 `@redocly/openapi-core` 的 `minimatch` override；依赖图已 patched 而 Security 仍显示 open 的实例按治理手册关闭。
 
 ## 2026-10-31 前端镜像安全更新
 
