@@ -1,8 +1,9 @@
 # Changelog
 
-## 2026-10-31 undici 安全更新
+## 2026-10-31 依赖安全与 Dependabot 治理
 
-- 升级 `undici` 至 `6.29.1` / `8.12.3`，修复 TLS 重协商、Agent TLS 选项丢失、Content-Encoding 链与 EventSource/WebSocket 相关拒绝服务漏洞；同步 SBOM 与第三方许可证快照。
+- 通过 overrides 升级 `undici`（`6.29.1` / jsdom `8.12.3`）、vitepress 嵌套 `vite`（`6.4.4+`）、`minimatch`、`fast-uri`、`serialize-javascript`，处理 GitHub Security 中可修复 Dependabot 告警；同步 SBOM 与第三方许可证快照。
+- 新增 `.github/dependabot.yml` 且 `open-pull-requests-limit: 0`，禁止 Dependabot 自动开 PR；季度与安全批次由人工统一提 PR。
 
 ## 2026-10-31 前端镜像安全更新
 

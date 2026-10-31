@@ -36,7 +36,14 @@
 - `dismissed` 才表示人工按 `false positive`、`won't fix` 或 `used in tests` 关闭，必须记录理由和操作者。
 - 截至 2026-10-07 的 9 条关闭 CodeQL 中，6 条由随机源、转义或测试契约修复，3 条来自离线设计 HTML 原型的窄路径排除；开放 CodeQL 为 0，且不存在人工 dismiss。
 
-## 2026-10-31 复核记录
+## 2026-10-31 复核记录（Dependabot 21 条）
+
+- 开放 Dependabot 21 条均来自 `package-lock.json`：`undici`（11）、嵌套 `vite`（5）、`fast-uri`（4）、`serialize-javascript`（1）、`minimatch`（1）、`deepmerge`（1）。
+- 修复：`fix/security-dependabot-alerts` 通过 overrides 将 `undici` 升至 `6.29.1` / `8.12.3`（jsdom）、vitepress 嵌套 `vite` 升至 `6.4.4+`、`minimatch` `11.0.1+`、`fast-uri` `3.1.9+`、`serialize-javascript` `7.1.3+`；同步 SBOM/许可证与根 `CHANGELOG.md`。
+- `deepmerge`（GHSA-gcqx-w48m-w2h4）：npm 最新仍为 `4.3.1`，无修复版本；经 `vite-plugin-pwa` → `workbox-build` 传递，仅构建/PWA 离线包路径、非浏览器运行时。合并后在 Security 页以 `no fix available` 关闭并保留本记录，不人工 bulk dismiss 其它项。
+- Dependabot 自动 PR：新增 `.github/dependabot.yml` 且 `open-pull-requests-limit: 0`；关闭 superseded 的机器人 PR `#348`，后续依赖升级走人工季度/安全批次。
+
+## 2026-10-31 复核记录（CodeQL / 早期 Dependabot）
 
 本轮开放告警 8 条：CodeQL 4、Dependabot 4、Secret scanning 0。
 
