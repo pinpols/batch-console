@@ -17901,10 +17901,10 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/undici@6.29.0",
+      "bom-ref": "pkg:npm/undici@6.29.1",
       "name": "undici",
-      "version": "6.29.0",
-      "purl": "pkg:npm/undici@6.29.0",
+      "version": "6.29.1",
+      "purl": "pkg:npm/undici@6.29.1",
       "licenses": [
         {
           "license": {
@@ -17916,7 +17916,7 @@
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/undici/-/undici-6.29.0.tgz"
+          "url": "https://registry.npmjs.org/undici/-/undici-6.29.1.tgz"
         }
       ]
     },
@@ -20498,7 +20498,7 @@
         "pkg:npm/uc.micro@3.0.0",
         "pkg:npm/ufo@1.6.4",
         "pkg:npm/unbox-primitive@1.1.0",
-        "pkg:npm/undici@6.29.0",
+        "pkg:npm/undici@6.29.1",
         "pkg:npm/undici-types@7.24.6",
         "pkg:npm/unicode-canonical-property-names-ecmascript@2.0.1",
         "pkg:npm/unicode-match-property-ecmascript@2.0.0",
