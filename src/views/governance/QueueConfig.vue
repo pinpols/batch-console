@@ -401,73 +401,7 @@
       />
     </el-drawer>
 
-    <el-drawer
-      :append-to-body="true"
-      v-model="queueDialogVisible"
-      :title="
-        queueEditingId == null ? t('queueConfig.queueCreateTitle') : t('queueConfig.queueEditTitle')
-      "
-      direction="rtl"
-      size="640px"
-      destroy-on-close
-    >
-      <el-form :model="queueForm" label-width="120px">
-        <el-form-item :label="t('queueConfig.fieldQueueCode')" required>
-          <el-input
-            v-model="queueForm.queueCode"
-            :disabled="queueEditingId != null"
-            maxlength="128"
-          />
-        </el-form-item>
-        <el-form-item :label="t('queueConfig.fieldQueueName')"
-          ><el-input v-model="queueForm.queueName" maxlength="256"
-        /></el-form-item>
-        <el-form-item :label="t('queueConfig.fieldQueueType')" required
-          ><MetaSelect v-model="queueForm.queueType" enum-key="queueType" class="query-w-full"
-        /></el-form-item>
-        <el-form-item :label="t('queueConfig.fieldMaxRunningJobs')"
-          ><el-input-number v-model="queueForm.maxRunningJobs" :min="0" :max="INT32_MAX"
-        /></el-form-item>
-        <el-form-item :label="t('queueConfig.fieldMaxRunningPartitions')"
-          ><el-input-number v-model="queueForm.maxRunningPartitions" :min="0" :max="INT32_MAX"
-        /></el-form-item>
-        <el-form-item :label="t('queueConfig.fieldMaxQps')"
-          ><el-input-number v-model="queueForm.maxQps" :min="0" :max="INT32_MAX"
-        /></el-form-item>
-        <el-form-item :label="t('queueConfig.fieldWorkerGroup')"
-          ><el-input v-model="queueForm.workerGroup" maxlength="128"
-        /></el-form-item>
-        <el-form-item :label="t('queueConfig.fieldResourceTag')"
-          ><el-input v-model="queueForm.resourceTag" maxlength="64"
-        /></el-form-item>
-        <el-form-item :label="t('queueConfig.fieldPriorityPolicy')"
-          ><MetaSelect
-            v-model="queueForm.priorityPolicy"
-            enum-key="priorityPolicy"
-            class="query-w-full"
-            clearable
-        /></el-form-item>
-        <el-form-item :label="t('queueConfig.fieldFairShareWeight')"
-          ><el-input-number v-model="queueForm.fairShareWeight" :min="1" :max="INT32_MAX"
-        /></el-form-item>
-        <el-form-item :label="t('queueConfig.fieldEnabled')"
-          ><el-switch v-model="queueForm.enabled"
-        /></el-form-item>
-        <el-form-item :label="t('queueConfig.fieldDescription')"
-          ><el-input
-            v-model="queueForm.description"
-            type="textarea"
-            maxlength="512"
-            show-word-limit
-        /></el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="queueDialogVisible = false">{{ t('common.cancel') }}</el-button>
-        <el-button type="primary" :loading="saving" @click="saveQueue">{{
-          t('common.save')
-        }}</el-button>
-      </template>
-    </el-drawer>
+    <GovernanceQueueEditor v-model="queueDialogVisible" :queue-form="queueForm" :queue-editing-id="queueEditingId" :saving="saving" @save="saveQueue" />
 
     <el-drawer
       :append-to-body="true"
@@ -519,33 +453,7 @@
           ><el-switch v-model="windowForm.allowCrossDay"
         /></el-form-item>
         <el-form-item :label="t('queueConfig.windowPreviewTitle')">
-          <div class="window-preview">
-            <template v-if="windowSchedule.mode !== 'incomplete'">
-              <div class="window-preview__track" role="img" :aria-label="windowPreviewText">
-                <span
-                  v-for="(segment, index) in windowSchedule.segments"
-                  :key="index"
-                  class="window-preview__segment"
-                  :style="{
-                    left: `${segment.start * 100}%`,
-                    width: `${(segment.end - segment.start) * 100}%`,
-                  }"
-                />
-              </div>
-              <div class="window-preview__axis" aria-hidden="true">
-                <span>00:00</span><span>12:00</span><span>24:00</span>
-              </div>
-              <p>{{ windowPreviewText }}</p>
-              <p>{{ t('queueConfig.windowPreviewZoneFallback') }}</p>
-              <p v-if="windowSchedule.fullDueCrossDay" class="window-preview__warning">
-                {{ t('queueConfig.windowPreviewFullCross') }}
-              </p>
-              <p v-if="windowSchedule.rangeInvalid" class="window-preview__warning">
-                {{ t('queueConfig.windowPreviewRangeInvalid') }}
-              </p>
-            </template>
-            <p v-else>{{ t('queueConfig.windowPreviewIncomplete') }}</p>
-          </div>
+          <WindowSchedulePreview :start-time="windowForm.startTime" :end-time="windowForm.endTime" :timezone="windowForm.timezone" :allow-cross-day="windowForm.allowCrossDay" />
         </el-form-item>
         <el-form-item :label="t('queueConfig.fieldEnabled')"
           ><el-switch v-model="windowForm.enabled"
@@ -566,60 +474,7 @@
       </template>
     </el-drawer>
 
-    <el-drawer
-      :append-to-body="true"
-      v-model="calendarDialogVisible"
-      :title="
-        calendarEditingId == null
-          ? t('queueConfig.calendarCreateTitle')
-          : t('queueConfig.calendarEditTitle')
-      "
-      direction="rtl"
-      size="640px"
-      destroy-on-close
-    >
-      <el-form :model="calendarForm" label-width="120px">
-        <el-form-item :label="t('queueConfig.fieldCalendarCode')" required>
-          <el-input
-            v-model="calendarForm.calendarCode"
-            :disabled="calendarEditingId != null"
-            maxlength="128"
-          />
-        </el-form-item>
-        <el-form-item :label="t('queueConfig.fieldCalendarName')" required
-          ><el-input v-model="calendarForm.calendarName" maxlength="256"
-        /></el-form-item>
-        <el-form-item :label="t('queueConfig.fieldTimezone')" required
-          ><el-input v-model="calendarForm.timezone" maxlength="64"
-        /></el-form-item>
-        <el-form-item :label="t('queueConfig.fieldHolidayRollRule')"
-          ><MetaSelect
-            v-model="calendarForm.holidayRollRule"
-            enum-key="holidayStrategy"
-            class="query-w-full"
-            clearable
-        /></el-form-item>
-        <el-form-item :label="t('queueConfig.fieldCatchUpPolicy')"
-          ><MetaSelect
-            v-model="calendarForm.catchUpPolicy"
-            enum-key="catchUpPolicy"
-            class="query-w-full"
-            clearable
-        /></el-form-item>
-        <el-form-item :label="t('queueConfig.fieldCatchUpMaxDays')"
-          ><el-input-number v-model="calendarForm.catchUpMaxDays" :min="0" :max="INT32_MAX"
-        /></el-form-item>
-        <el-form-item :label="t('queueConfig.fieldEnabled')"
-          ><el-switch v-model="calendarForm.enabled"
-        /></el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="calendarDialogVisible = false">{{ t('common.cancel') }}</el-button>
-        <el-button type="primary" :loading="saving" @click="saveCalendar">{{
-          t('common.save')
-        }}</el-button>
-      </template>
-    </el-drawer>
+    <GovernanceCalendarEditor v-model="calendarDialogVisible" :calendar-form="calendarForm" :calendar-editing-id="calendarEditingId" :saving="saving" @save="saveCalendar" />
 
     <el-drawer
       :append-to-body="true"
@@ -693,17 +548,18 @@
   import { useTenantRequestScope } from '@/composables/useTenantRequestScope'
   import PageContainer from '@/components/common/PageContainer.vue'
   import MetaSelect from '@/components/common/MetaSelect.vue'
+  import GovernanceQueueEditor from './GovernanceQueueEditor.vue'
+  import GovernanceCalendarEditor from './GovernanceCalendarEditor.vue'
   import { usePermission } from '@/composables/usePermission'
   import PageHeader from '@/components/common/PageHeader.vue'
   // 三类治理资源的写接口均为 ROLE_ADMIN;租户管理员仅可读取业务日历。
   const { canAccess, canWriteSystem: canMutateConfig } = usePermission()
   // 计数字段按后端 int32 上限约束，避免超界值在 Jackson 反序列化阶段返回 400。
-  const INT32_MAX = 2147483647
   import TablePagerBar from '@/components/table/TablePagerBar.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
   import GovernanceFilterBar from './components/GovernanceFilterBar.vue'
   import HolidayMonthView from './HolidayMonthView.vue'
-  import { windowPreview } from './windowPreview'
+  import WindowSchedulePreview from './WindowSchedulePreview.vue'
   import { userErrorMessage } from '@/utils/userErrorMessage'
 
   const tenant = useTenantStore()
@@ -815,21 +671,7 @@
     enabled: true,
     description: '',
   })
-  const windowSchedule = computed(() =>
-    windowPreview(windowForm.startTime, windowForm.endTime, windowForm.allowCrossDay),
-  )
-  const windowPreviewText = computed(() => {
-    const values = {
-      start: windowForm.startTime,
-      end: windowForm.endTime,
-      timezone: windowForm.timezone,
-    }
-    if (windowSchedule.value.mode === 'full-day')
-      return t('queueConfig.windowPreviewFullDay', values)
-    if (windowSchedule.value.mode === 'overnight')
-      return t('queueConfig.windowPreviewOvernight', values)
-    return t('queueConfig.windowPreviewSameDay', values)
-  })
+
 
   const calendarForm = reactive({
     calendarCode: '',
@@ -1435,36 +1277,6 @@
 </script>
 
 <style scoped>
-  .window-preview {
-    width: 100%;
-    line-height: 1.5;
-  }
-  .window-preview__track {
-    position: relative;
-    height: 12px;
-    border-radius: 999px;
-    overflow: hidden;
-    background: var(--color-bg-subtle);
-    border: 1px solid var(--color-border);
-  }
-  .window-preview__segment {
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    background: var(--color-primary);
-  }
-  .window-preview__axis {
-    display: flex;
-    justify-content: space-between;
-    color: var(--color-text-secondary);
-    font-size: var(--font-size-sm);
-  }
-  .window-preview p {
-    margin: var(--space-xs) 0 0;
-  }
-  .window-preview__warning {
-    color: var(--color-warning);
-  }
   .governance-workspace {
     display: flex;
     margin-bottom: var(--space-md);

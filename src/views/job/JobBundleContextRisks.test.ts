@@ -111,6 +111,8 @@ const pass = {
   template: '<section><slot /><slot name="actions" /><slot name="footer" /></section>',
 }
 const stubs = {
+  JobBundlePrefillDialog: false,
+  JobBundleRecoveryPanel: false,
   PageContainer: pass,
   PageHeader: pass,
   SectionCard: pass,
@@ -236,6 +238,26 @@ beforeEach(() => {
   mocks.validate.mockReset().mockResolvedValue(true)
   mocks.refetch.mockReset().mockResolvedValue({})
 })
+
+describe('作业向导的配置包预填', () => {
+  it('关闭后保留输入，重新打开并应用后更新表单', async () => {
+    const wrapper = shallowMount(DefinitionWizard, { global: { stubs } })
+    await flushPromises()
+    await click(wrapper, 'jobDefinitionWizard.importBundleJson')
+    const payload = JSON.stringify({ jobDefinitions: [{ jobCode: 'PREFILLED', jobName: 'Prefilled job' }] })
+    wrapper.findComponent({ name: 'JsonTextareaInput' }).vm.$emit('update:modelValue', payload)
+    await flushPromises()
+    await click(wrapper, 'common.cancel')
+    await click(wrapper, 'jobDefinitionWizard.importBundleJson')
+    expect(wrapper.findComponent({ name: 'JsonTextareaInput' }).props('modelValue')).toBe(payload)
+    await click(wrapper, 'jobDefinitionWizard.prefillConfirm')
+    const model = wrapper.findComponent({ name: 'JobConfigBasicForm' }).props('model')
+    expect(model.jobCode).toBe('PREFILLED')
+    expect(model.jobName).toBe('Prefilled job')
+    expect(wrapper.text()).not.toContain('jobDefinitionWizard.prefillConfirm')
+  })
+})
+
 describe('作业包导入的响应归属', () => {
   it.each(['tenant', 'actor', 'permission', 'maintenance', 'input', 'reopen', 'unmount'])(
     '%s 后的旧成功不提示、不关闭新面板、不刷新新上下文',
