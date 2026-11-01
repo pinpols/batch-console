@@ -28,7 +28,7 @@ E2E_SKIP_GLOBAL_SETUP=1 E2E_FIXTURE_RECOVERY_REAL=1 node scripts/run-playwright.
 
 ## readiness 与容量持久等待查询验收
 
-`E2E_SKIP_GLOBAL_SETUP=1 npm run test:e2e:persistent-waits:real` 使用 `PersistentWaitFixture`。SQL夹具只插入本例随机租户、Workflow ID 和随机请求号下的 readiness/容量等待记录；容量行包含一个仅供脱敏检查的私有载荷标记，Console响应和截图不得包含该值。查询经过真实 Orchestrator PostgreSQL Mapper 与 Console BFF，UI在现有“调度快照”持久等待页签展示两类记录，并检查 ADMIN、TENANT_ADMIN、AUDITOR 可读，TENANT_USER/匿名拒绝以及租户用户越租户403。清理按已保存Workflow ID、随机请求号和用户名精确执行，父夹具再删除触发请求、Workflow、账户、日历和租户，全部残留必须为0。
+`E2E_SKIP_GLOBAL_SETUP=1 npm run test:e2e:persistent-waits:real` 使用 `PersistentWaitFixture`。SQL 夹具为 readiness、容量等待和作业依赖等待分别创建本例随机请求；作业等待使用与原请求身份一致的 dry-run 载荷，避免真实恢复器因无效载荷取消等待。容量行包含一个仅供脱敏检查的私有载荷标记，Console 响应和截图不得包含该值。查询经过真实 Orchestrator PostgreSQL Mapper 与 Console BFF，UI 在现有“调度快照”展示等待关系，并检查 ADMIN、TENANT_ADMIN、AUDITOR 可读，TENANT_USER/匿名拒绝以及租户用户越租户 403。清理按已保存 Workflow ID、随机请求号和用户名精确执行，父夹具再删除其余触发请求、Workflow、账户、日历和租户，全部残留必须为 0。
 
 `E2E_SKIP_GLOBAL_SETUP=1 npm run test:e2e:scheduler-waits:real` 使用 `SchedulerWaitFixture`。SQL准备跨日历等待；作业等待通过真实 API 创建上下游作业定义，再触发包含下游作业节点的 Workflow DAG，由 Orchestrator 生成并持久化关联父 Workflow 的 `trigger_request` 与等待记录，且不建立 Job 实例。浏览器在现有“调度快照”页验证两类等待，并由 ADMIN 提交带原因的 `SKIP` 请求；随后隔离日期分别让调度器消费 `SKIP` 和 `RELEASE`：回读前者的等待/批次日均为 `SKIPPED`，后者等待为 `OPENED`、批次日为 `OPEN`，并验证操作理由和操作者持久化。另核对 TENANT_ADMIN/AUDITOR只读、租户用户和匿名拒绝、租户管理员越租户拒绝及作业载荷不泄露。清理先删等待、批次日与操作审计，再由父夹具终止Workflow并删除父子触发请求、定义、账号、日历和租户，最后检查零残留。
 

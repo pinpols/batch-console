@@ -5,14 +5,17 @@ SET LOCAL app.tenant_id = :'tenant_id';
 
 INSERT INTO batch.trigger_request
   (tenant_id, request_id, trigger_type, job_code, workflow_definition_id, biz_date,
-   dedup_key, request_payload_hash, request_status, trace_id)
+   dedup_key, request_payload_hash, request_status, trace_id, dry_run)
 VALUES
   (:'tenant_id', :'readiness_request_id', 'MANUAL', NULL,
    :'workflow_definition_id'::bigint, :'biz_date'::date,
-   :'readiness_request_id', 'e2e-readiness-hash', 'ACCEPTED', 'e2e-readiness-trace'),
+   :'readiness_request_id', 'e2e-readiness-hash', 'ACCEPTED', 'e2e-readiness-trace', false),
   (:'tenant_id', :'capacity_request_id', 'MANUAL', NULL,
    :'workflow_definition_id'::bigint, :'biz_date'::date,
-   :'capacity_request_id', 'e2e-capacity-hash', 'ACCEPTED', 'e2e-capacity-trace');
+   :'capacity_request_id', 'e2e-capacity-hash', 'ACCEPTED', 'e2e-capacity-trace', false),
+  (:'tenant_id', :'job_wait_request_id', 'MANUAL', 'upstream-a', NULL,
+   :'biz_date'::date, :'job_wait_request_id', 'e2e-job-wait-hash', 'ACCEPTED',
+   'e2e-job-wait-trace', true);
 
 INSERT INTO batch.readiness_wait
   (tenant_id, workflow_definition_id, workflow_code, calendar_code, schedule_version,
@@ -34,12 +37,19 @@ VALUES
    jsonb_build_object('privateMarker', 'PERSISTENT_WAIT_PRIVATE_PAYLOAD', 'tenantId', :'tenant_id'),
    'WAITING', 3, current_timestamp + interval '2 minutes');
 
+-- 作业等待使用独立的原请求和匹配的完整身份，允许真实恢复器检查后继续等待上游。
 -- 与 readiness 的 upstream-a 拼成同业务日链 source-job → upstream-a → workflow。
 INSERT INTO batch.job_dependency_waiting_launch
   (tenant_id, request_id, job_code, biz_date, dependency_snapshot, launch_payload, wait_status)
-VALUES (:'tenant_id', :'readiness_request_id', 'upstream-a', :'biz_date'::date,
+VALUES (:'tenant_id', :'job_wait_request_id', 'upstream-a', :'biz_date'::date,
         '[{"upstreamJobCode":"source-job","bizDateAlignment":"SAME_DAY"}]'::jsonb,
-        '{}'::jsonb, 'WAITING');
+        jsonb_build_object(
+          'tenantId', :'tenant_id', 'requestId', :'job_wait_request_id',
+          'jobCode', 'upstream-a', 'triggerType', 'MANUAL', 'dryRun', true,
+          'bizDate', jsonb_build_array(extract(year from :'biz_date'::date)::int,
+                                      extract(month from :'biz_date'::date)::int,
+                                      extract(day from :'biz_date'::date)::int),
+          'traceId', 'e2e-job-wait-trace', 'params', '{}'::jsonb), 'WAITING');
 
 SELECT json_build_object(
   'readinessCount', (SELECT count(*) FROM batch.readiness_wait
