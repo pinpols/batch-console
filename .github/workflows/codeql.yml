@@ -1,4 +1,4 @@
-name: codeql
+name: Frontend / CodeQL security analysis
 
 on:
   pull_request:

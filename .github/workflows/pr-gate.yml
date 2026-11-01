@@ -1,4 +1,4 @@
-name: pr-gate
+name: Frontend / Pull request gate
 
 # PR 必过门禁 — fast feedback(< 10 min)
 # 内容:lint / typecheck / OpenAPI drift / i18n / unit / build / npm audit

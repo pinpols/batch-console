@@ -1,4 +1,4 @@
-name: build-image
+name: Frontend / Build and publish image
 
 # 前端镜像构建 + 推送 ghcr.io/pinpols/batch-console。
 # main push:构建 sha + latest 多架构不可变镜像。
@@ -61,6 +61,7 @@ jobs:
     timeout-minutes: 75
     outputs:
       should_build: ${{ steps.gate.outputs.should_build }}
+      backend_sha: ${{ steps.gate.outputs.backend_sha }}
     steps:
       - name: Checkout frontend history
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -104,6 +105,8 @@ jobs:
           has_code_changes . && frontend_changed=true || true
           has_code_changes backend-sim-source && backend_changed=true || true
 
+          target_sha=$(git -C backend-sim-source rev-parse HEAD)
+          echo "backend_sha=${target_sha}" >> "$GITHUB_OUTPUT"
           echo "validation day: ${validation_day}"
           echo "frontend code changed: ${frontend_changed}"
           echo "backend code changed: ${backend_changed}"
@@ -135,7 +138,7 @@ jobs:
             for _ in $(seq 1 60); do
               job_state=$(gh api --paginate \
                 "repos/${BACKEND_REPOSITORY}/actions/runs/${sim_run_id}/jobs?per_page=100" \
-                --jq '.jobs[] | select(.name == "sim-and-strict") | [.status, .conclusion] | @tsv' \
+                --jq '.jobs[] | select(.name == "sim-and-strict" or .name == "Run simulation and strict validation") | [.status, .conclusion] | @tsv' \
                 2>/dev/null | tail -n 1 || true)
               status=$(printf '%s' "$job_state" | cut -f1)
               conclusion=$(printf '%s' "$job_state" | cut -f2)
@@ -153,11 +156,15 @@ jobs:
               echo "::error::后端 daily sim-strict 等待超时: run=${sim_run_id}"
               exit 1
             }
+
+            validated_sha=$(gh run view "$sim_run_id" --repo "$BACKEND_REPOSITORY" --json headSha --jq '.headSha')
+            bash scripts/ci/check-backend-validation-coverage.sh backend-sim-source "$validated_sha" "$target_sha"
           fi
 
           echo 'should_build=true' >> "$GITHUB_OUTPUT"
 
   release-acceptance:
+    name: Verify staging acceptance before release
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-26.04
     timeout-minutes: 45
@@ -186,6 +193,7 @@ jobs:
           exit 1
 
   build:
+    name: Build and publish frontend image
     needs: nightly-sim-gate
     outputs:
       image_digest: ${{ steps.image.outputs.digest }}
@@ -212,7 +220,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           repository: pinpols/file-batch-system
-          ref: ${{ inputs.backend_ref || 'main' }}
+          ref: ${{ inputs.backend_ref || needs.nightly-sim-gate.outputs.backend_sha || 'main' }}
           path: backend-docs-source
           persist-credentials: false
 
@@ -290,6 +298,7 @@ jobs:
           cache-to: type=gha,mode=max
 
   promote-release:
+    name: Promote validated release image
     if: startsWith(github.ref, 'refs/tags/v')
     needs: release-acceptance
     runs-on: ubuntu-26.04
@@ -309,6 +318,7 @@ jobs:
         run: docker buildx imagetools create --tag "$RELEASE_IMAGE" "$SOURCE_IMAGE"
 
   release-sourcemaps:
+    name: Upload release source maps
     if: startsWith(github.ref, 'refs/tags/v')
     needs: promote-release
     runs-on: ubuntu-26.04
