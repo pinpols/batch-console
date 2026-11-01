@@ -7,15 +7,20 @@
  *       都按预期落在日志里,且敏感字段已脱敏。
  */
 import axios from 'axios'
+import type { InternalAxiosRequestConfig } from 'axios'
 import { ElMessage } from 'element-plus'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { applyApiInterceptors } from './interceptors'
+import { advanceAuthSession, initializeSharedAuthRevision } from './authSession'
 import { clearLogs, getLogs } from '@/utils/logger'
 import { STORAGE_KEYS } from '@/constants/storageKeys'
+import { AUTH_COOKIE_LOCK_NAME } from '@/constants/authCookieLock'
 import { stubLocalStorage } from '@/test-utils/localStorage'
 
 // localStorage + location + window stubs(node env 没有)
 const storage = stubLocalStorage()
+// 默认覆盖无 Web Locks 的兼容路径；锁行为在专项用例中注入。
+vi.stubGlobal('navigator', {})
 vi.stubGlobal('location', { pathname: '/ops/summary', hash: '' })
 if (typeof window === 'undefined') {
   vi.stubGlobal('window', { addEventListener: vi.fn(), location: { href: '/' } })
@@ -36,9 +41,297 @@ function makeClient() {
   return client
 }
 
+describe('登出请求的会话边界', () => {
+  it('共享会话已变更时拒绝旧标签的业务写请求', async () => {
+    initializeSharedAuthRevision()
+    const client = makeClient()
+    const adapter = vi.fn()
+    client.defaults.adapter = adapter
+    storage.set(STORAGE_KEYS.authSessionRevision, 'another-session')
+    await expect(client.post('/api/console/jobs', {})).rejects.toMatchObject({ staleSession: true })
+    expect(adapter).not.toHaveBeenCalled()
+  })
+
+  it('同源标签中的旧登出响应结束后才发送新登录请求', async () => {
+    const originalNavigator = Object.getOwnPropertyDescriptor(globalThis, 'navigator')
+    let lastLock: Promise<unknown> = Promise.resolve()
+    const requestLock = vi.fn((_name: string, _options: unknown, operation: () => Promise<unknown>) => {
+      const next = lastLock.then(operation, operation)
+      lastLock = next.catch(() => undefined)
+      return next
+    })
+    Object.defineProperty(globalThis, 'navigator', {
+      configurable: true,
+      value: { locks: { request: requestLock } },
+    })
+    let finishLogout!: () => void
+    let logoutStarted!: () => void
+    const started = new Promise<void>((resolve) => { logoutStarted = resolve })
+    let loginStarted = false
+    const oldTab = makeClient()
+    const newTab = makeClient()
+    oldTab.defaults.adapter = async (config) => {
+      logoutStarted()
+      await new Promise<void>((resolve) => { finishLogout = resolve })
+      return { status: 204, statusText: 'No Content', data: null, headers: {}, config }
+    }
+    newTab.defaults.adapter = async (config) => {
+      loginStarted = true
+      return { status: 200, statusText: 'OK', data: {}, headers: {}, config }
+    }
+    try {
+      const logout = oldTab.post('/api/console/auth/logout')
+      await started
+      const login = newTab.post('/api/console/auth/login', {})
+      await Promise.resolve()
+      await Promise.resolve()
+      expect(loginStarted).toBe(false)
+      finishLogout()
+      await Promise.all([logout, login])
+      expect(loginStarted).toBe(true)
+      expect(requestLock).toHaveBeenCalledTimes(2)
+    } finally {
+      finishLogout?.()
+      if (originalNavigator) Object.defineProperty(globalThis, 'navigator', originalNavigator)
+      else Reflect.deleteProperty(globalThis, 'navigator')
+    }
+  })
+
+  it('认证锁失败时传播错误，不发送未协调的认证请求', async () => {
+    const originalNavigator = Object.getOwnPropertyDescriptor(globalThis, 'navigator')
+    Object.defineProperty(globalThis, 'navigator', {
+      configurable: true,
+      value: { locks: { request: vi.fn().mockRejectedValue(new Error('lock unavailable')) } },
+    })
+    const client = makeClient()
+    const adapter = vi.fn()
+    client.defaults.adapter = adapter
+    try {
+      await expect(client.post('/api/console/auth/logout')).rejects.toThrow('lock unavailable')
+      expect(adapter).not.toHaveBeenCalled()
+    } finally {
+      if (originalNavigator) Object.defineProperty(globalThis, 'navigator', originalNavigator)
+      else Reflect.deleteProperty(globalThis, 'navigator')
+    }
+  })
+
+  it('令牌换发参与认证锁，普通业务请求不占用认证锁', async () => {
+    const originalNavigator = Object.getOwnPropertyDescriptor(globalThis, 'navigator')
+    const requestLock = vi.fn((_name: string, _options: unknown, operation: () => Promise<unknown>) => operation())
+    Object.defineProperty(globalThis, 'navigator', {
+      configurable: true,
+      value: { locks: { request: requestLock } },
+    })
+    const client = makeClient()
+    client.defaults.adapter = async (config) => ({
+      status: 200, statusText: 'OK', data: {}, headers: {}, config,
+    })
+    try {
+      await client.post('/api/console/auth/token')
+      await client.post('/api/console/jobs', {})
+      expect(requestLock).toHaveBeenCalledTimes(1)
+      expect(requestLock).toHaveBeenCalledWith(AUTH_COOKIE_LOCK_NAME, { signal: expect.any(AbortSignal) }, expect.any(Function))
+    } finally {
+      if (originalNavigator) Object.defineProperty(globalThis, 'navigator', originalNavigator)
+      else Reflect.deleteProperty(globalThis, 'navigator')
+    }
+  })
+
+  it('连续登出分别到达服务端，不复用同一自动幂等键', async () => {
+    const client = makeClient()
+    const keys: unknown[] = []
+    client.defaults.adapter = async (config) => {
+      keys.push(config.headers.get('Idempotency-Key'))
+      return { data: null, status: 204, statusText: 'No Content', headers: {}, config }
+    }
+
+    await client.post('/api/console/auth/logout')
+    await client.post('/api/console/auth/logout')
+
+    expect(keys).toEqual([undefined, undefined])
+  })
+
+  it('显式键与业务写请求的自动键保持原有行为', async () => {
+    const client = makeClient()
+    const keys: unknown[] = []
+    client.defaults.adapter = async (config) => {
+      keys.push(config.headers.get('Idempotency-Key'))
+      return { data: null, status: 204, statusText: 'No Content', headers: {}, config }
+    }
+
+    await client.post('/api/console/auth/logout', undefined, {
+      headers: { 'Idempotency-Key': 'caller-key' },
+    })
+    await client.post('/api/console/jobs', { jobCode: 'example' })
+
+    expect(keys[0]).toBe('caller-key')
+    expect(keys[1]).toEqual(expect.any(String))
+  })
+
+  it('旧会话迟到的 401 不刷新新账号或展示旧错误', async () => {
+    const client = makeClient()
+    let release!: () => void
+    let markStarted!: () => void
+    const started = new Promise<void>((resolve) => {
+      markStarted = resolve
+    })
+    const refreshed = vi.fn()
+    client.defaults.adapter = (async (config: InternalAxiosRequestConfig) => {
+      if (config.url === '/api/console/auth/token') {
+        refreshed()
+        return { data: {}, status: 200, statusText: 'OK', headers: {}, config }
+      }
+      return new Promise((_resolve, reject) => {
+        release = () =>
+          reject(
+            Object.assign(new Error('旧会话已失效'), {
+              isAxiosError: true,
+              response: { status: 401, statusText: 'Unauthorized', headers: {}, data: {}, config },
+              config,
+            }),
+          )
+        markStarted()
+      })
+    }) as never
+
+    const pending = client.get('/api/console/config/change-logs').catch((error) => error)
+    await started
+    advanceAuthSession()
+    release()
+    await pending
+
+    expect(refreshed).not.toHaveBeenCalled()
+    expect(ElMessage.error).not.toHaveBeenCalled()
+    expect(storage.get(STORAGE_KEYS.session)).toBe('1')
+  })
+
+  it('请求发起后立即切账号时，旧请求的 401 不刷新新会话', async () => {
+    const client = makeClient()
+    const refreshed = vi.fn()
+    client.defaults.adapter = (async (config: InternalAxiosRequestConfig) => {
+      if (config.url === '/api/console/auth/token') {
+        refreshed()
+        return { data: {}, status: 200, statusText: 'OK', headers: {}, config }
+      }
+      throw Object.assign(new Error('旧会话已失效'), {
+        isAxiosError: true,
+        response: { status: 401, statusText: 'Unauthorized', headers: {}, data: {}, config },
+        config,
+      })
+    }) as never
+
+    const pending = client.get('/api/console/config/change-logs').catch((error) => error)
+    advanceAuthSession()
+    await pending
+
+    expect(refreshed).not.toHaveBeenCalled()
+    expect(ElMessage.error).not.toHaveBeenCalled()
+  })
+
+  it('旧会话请求收尾不会缩短新会话同一写请求的幂等保护', async () => {
+    const client = makeClient()
+    const keys: string[] = []
+    const completions: Array<() => void> = []
+    client.defaults.adapter = (async (config: InternalAxiosRequestConfig) => {
+      keys.push(String(config.headers.get('Idempotency-Key')))
+      return new Promise((resolve) => {
+        completions.push(() =>
+          resolve({ data: null, status: 204, statusText: 'No Content', headers: {}, config }),
+        )
+      })
+    }) as never
+
+    const first = client.post('/api/console/jobs', { jobCode: 'same-request' })
+    await vi.waitFor(() => expect(keys).toHaveLength(1))
+    advanceAuthSession()
+    const second = client.post('/api/console/jobs', { jobCode: 'same-request' })
+    await vi.waitFor(() => expect(keys).toHaveLength(2))
+    completions[0]!()
+    await first
+    const third = client.post('/api/console/jobs', { jobCode: 'same-request' })
+    await vi.waitFor(() => expect(keys).toHaveLength(3))
+
+    expect(keys[0]).not.toBe(keys[1])
+    expect(keys[2]).toBe(keys[1])
+    completions[1]!()
+    completions[2]!()
+    await Promise.all([second, third])
+  })
+
+  it('登出后旧业务请求返回 401 时不再刷新会话', async () => {
+    const client = makeClient()
+    const refreshed = vi.fn()
+    client.defaults.adapter = (async (config: InternalAxiosRequestConfig) => {
+      if (config.url === '/api/console/auth/token') {
+        refreshed()
+        return { data: {}, status: 200, statusText: 'OK', headers: {}, config }
+      }
+      throw Object.assign(new Error('已退出'), {
+        isAxiosError: true,
+        response: { status: 401, statusText: 'Unauthorized', headers: {}, data: {}, config },
+        config,
+      })
+    }) as never
+    storage.delete(STORAGE_KEYS.session)
+
+    await expect(client.get('/api/console/config/change-logs')).rejects.toThrow('已退出')
+    expect(refreshed).not.toHaveBeenCalled()
+    expect(ElMessage.error).not.toHaveBeenCalled()
+  })
+
+  it('不同会话的刷新互不复用，旧刷新结束也不释放新会话的在途刷新', async () => {
+    const client = makeClient()
+    const releases: Array<() => void> = []
+    const businessCalls: string[] = []
+    client.defaults.adapter = (async (config: InternalAxiosRequestConfig) => {
+      if (config.url === '/api/console/auth/token') {
+        return new Promise((resolve) => {
+          releases.push(() =>
+            resolve({ data: {}, status: 200, statusText: 'OK', headers: {}, config }),
+          )
+        })
+      }
+      businessCalls.push(String(config.url))
+      throw Object.assign(new Error('需要认证'), {
+        isAxiosError: true,
+        response: { status: 401, statusText: 'Unauthorized', headers: {}, data: {}, config },
+        config,
+      })
+    }) as never
+
+    const first = client.get('/api/console/old').catch((error) => error)
+    await vi.waitFor(() => expect(releases).toHaveLength(1))
+    advanceAuthSession()
+    const second = client.get('/api/console/new-1').catch((error) => error)
+    let newRefreshStarted = false
+    try {
+      await vi.waitFor(() => expect(releases).toHaveLength(2), { timeout: 600 })
+      newRefreshStarted = true
+    } catch {
+      // 保证失败时也释放在途请求，再报告复用旧刷新的首个断言。
+    }
+    if (!newRefreshStarted) {
+      releases[0]!()
+      await Promise.all([first, second])
+      expect(newRefreshStarted).toBe(true)
+      return
+    }
+
+    releases[0]!()
+    await first
+    const third = client.get('/api/console/new-2').catch((error) => error)
+    await vi.waitFor(() => expect(businessCalls).toHaveLength(3))
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    expect(releases).toHaveLength(2)
+    releases[1]!()
+    await Promise.all([second, third])
+  })
+})
+
 beforeEach(() => {
   vi.resetAllMocks()
   storage.clear()
+  initializeSharedAuthRevision()
   // D7 Stage B: token 不再前端持有；session flag 表达"已登录"
   storage.set(STORAGE_KEYS.session, '1')
   storage.set(STORAGE_KEYS.tenantId, 'tenant-a')
@@ -46,7 +339,6 @@ beforeEach(() => {
   storage.set(STORAGE_KEYS.telemetry, 'on')
   clearLogs()
 })
-
 
 describe('API 成功日志:URL / params / request / response 全部捕获', () => {
   it('记录完整字段,敏感字段脱敏', async () => {
@@ -269,19 +561,19 @@ describe('401 分级处理:业务 401 不登出', () => {
     expect((window as { location: { href: string } }).location.href).toBe('/')
   })
 
-  it('/api/console/ops/triggers 401 → refresh 成功 → 用新 token retry 原请求成功', async () => {
+  it('/api/console/ops/triggers 401 → 无 token 响应体的 refresh 成功后重试', async () => {
     ;(window as { location: { href: string } }).location.href = '/'
     const client = makeClient()
     let bizCallCount = 0
     client.defaults.adapter = (async (cfg: { url?: string }) => {
       const url = cfg.url ?? ''
       if (url.includes('/api/console/auth/token')) {
-        // refresh 成功:返回新 accessToken
+        // 服务端将新 token 写入 HttpOnly Cookie，响应体不返回 token。
         return {
           status: 200,
           statusText: 'OK',
           headers: { 'content-type': 'application/json' },
-          data: { code: 'SUCCESS', data: { accessToken: 'new-token' }, message: 'ok', meta: {} },
+          data: { code: 'SUCCESS', data: { username: 'admin', tokenType: 'Bearer' }, message: 'ok', meta: {} },
           config: cfg,
         }
       }
@@ -318,6 +610,31 @@ describe('401 分级处理:业务 401 不登出', () => {
     expect(resp.data).toEqual({ items: [] })
     // 没跳登录
     expect((window as { location: { href: string } }).location.href).toBe('/')
+  })
+
+  it('refresh 返回 HTTP 200 但业务失败时不重试原请求', async () => {
+    const client = makeClient()
+    let businessCalls = 0
+    client.defaults.adapter = (async (config: InternalAxiosRequestConfig) => {
+      if (config.url === '/api/console/auth/token') {
+        return {
+          status: 200,
+          statusText: 'OK',
+          headers: {},
+          data: { code: 'UNAUTHORIZED', message: 'refresh rejected', data: null },
+          config,
+        }
+      }
+      businessCalls++
+      throw Object.assign(new Error('unauthorized'), {
+        isAxiosError: true,
+        response: { status: 401, statusText: 'Unauthorized', headers: {}, data: {}, config },
+        config,
+      })
+    }) as never
+
+    await expect(client.get('/api/console/ops/triggers')).rejects.toThrow('unauthorized')
+    expect(businessCalls).toBe(1)
   })
 
   it('/api/console/auth/login 401 → 保留 session 状态（提示密码错），不跳登录', async () => {

@@ -117,6 +117,37 @@
           @select="activePanel = t.key"
         />
       </div>
+      <div v-if="Array.isArray(snap.workers)" class="snapshot-attention">
+        <div>
+          <strong>{{ t('schedulerSnapshot.attentionTitle') }}</strong>
+          <p>{{ t('schedulerSnapshot.attentionHint') }}</p>
+        </div>
+        <div class="snapshot-attention__actions">
+          <el-button
+            :type="workerStates.offline ? 'danger' : 'info'"
+            plain
+            @click="openSnapshotPanel('workers')"
+          >
+            {{ t('schedulerSnapshot.offlineWorkers', { count: workerStates.offline }) }}
+          </el-button>
+          <el-button
+            :type="workerStates.draining ? 'warning' : 'info'"
+            plain
+            @click="openSnapshotPanel('workers')"
+          >
+            {{ t('schedulerSnapshot.drainingWorkers', { count: workerStates.draining }) }}
+          </el-button>
+          <el-button v-if="workerStates.unknown" plain @click="openSnapshotPanel('workers')">
+            {{ t('schedulerSnapshot.unknownWorkers', { count: workerStates.unknown }) }}
+          </el-button>
+          <el-button plain @click="openSnapshotPanel('queues')">{{
+            t('schedulerSnapshot.viewQueues')
+          }}</el-button>
+          <el-button v-if="canReadWaits" plain @click="openDependencyWaits">{{
+            t('schedulerSnapshot.viewWaits')
+          }}</el-button>
+        </div>
+      </div>
     </SectionCard>
 
     <SectionCard v-if="snap" class="mt detail-card">
@@ -299,6 +330,15 @@
             :label="t('schedulerSnapshot.colEffectiveMaxRunningJobs')"
             width="190"
           />
+          <el-table-column :label="t('schedulerSnapshot.partitionCapacity')" min-width="180">
+            <template #default="{ row }">
+              <template v-if="queuePartitionCapacity(row.activePartitions, row.maxRunningPartitions)">
+                <span>{{ row.activePartitions }} / {{ row.maxRunningPartitions }}</span>
+                <el-progress :percentage="queuePartitionCapacity(row.activePartitions, row.maxRunningPartitions)!.percent" :show-text="false" />
+              </template>
+              <span v-else>{{ t('schedulerSnapshot.partitionCapacityUnknown') }}</span>
+            </template>
+          </el-table-column>
           <el-table-column
             prop="burstLimit"
             :label="t('schedulerSnapshot.colBurstLimit')"
@@ -377,15 +417,7 @@
           </el-table-column>
           <el-table-column :label="t('schedulerSnapshot.colCurrentLoad')" width="240">
             <template #default="{ row }">
-              <div class="load-cell">
-                <el-progress
-                  :percentage="clampLoadPercentage(row.currentLoad)"
-                  :stroke-width="10"
-                  :show-text="false"
-                  :status="progressStatus(row.status)"
-                />
-                <span class="load-cell__value">{{ row.currentLoad }}</span>
-              </div>
+              <span>{{ row.currentLoad ?? '—' }}</span>
             </template>
           </el-table-column>
           <el-table-column :label="t('schedulerSnapshot.colActions')" width="140" fixed="right">
@@ -501,12 +533,12 @@
       </div>
     </SectionCard>
 
-    <DependencyWaitPanel class="mt" />
+    <DependencyWaitPanel id="snapshot-dependency-waits" class="mt" />
   </PageContainer>
 </template>
 
 <script setup lang="ts">
-  import { computed, ref, watch } from 'vue'
+  import { computed, nextTick, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { useRouter } from 'vue-router'
   import { ElMessage } from 'element-plus'
@@ -514,10 +546,10 @@
   import { confirmDanger } from '@/composables/useDangerConfirm'
   import { fmtDatetime } from '@/utils/datetime'
   import {
-    clampLoadPercentage,
     errorCorrelation,
     panelDotClass,
-    progressStatus,
+    queuePartitionCapacity,
+    summarizeWorkerStates,
     tagTypeForKey,
   } from './schedulerSnapshotPresentation'
   import {
@@ -554,7 +586,7 @@
 
   const tenant = useTenantStore()
   const snapshotScope = useTenantRequestScope()
-  const { canManageSystem } = usePermission()
+  const { canManageSystem, hasPermission } = usePermission()
   const { writesFrozen } = useWriteAvailability()
   const loading = ref(false)
   const histLoading = ref(false)
@@ -568,6 +600,19 @@
   const lastSuccessfulAt = ref<string | null>(null)
   const activePanel = ref<PanelKey>('policies')
   const KPI_KEYS: PanelKey[] = ['policies', 'queues', 'workers', 'history']
+  const workerStates = computed(() => summarizeWorkerStates(snap.value?.workers ?? []))
+  const canReadWaits = computed(() =>
+    ['ROLE_ADMIN', 'ROLE_AUDITOR', 'ROLE_TENANT_ADMIN'].some((role) => hasPermission(role)),
+  )
+
+  function openSnapshotPanel(panel: PanelKey) {
+    activePanel.value = panel
+    nextTick(() => document.getElementById(`snapshot-panel-${panel}`)?.scrollIntoView())
+  }
+
+  function openDependencyWaits() {
+    document.getElementById('snapshot-dependency-waits')?.scrollIntoView()
+  }
 
   const snapshotFailed = ref(false)
   const loadErrorDescription = computed(() => {
@@ -811,6 +856,30 @@
 </script>
 
 <style scoped>
+  .snapshot-attention {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-md);
+    flex-wrap: wrap;
+    margin-top: var(--space-md);
+    padding: var(--space-md);
+    background: var(--color-bg-subtle);
+    border-radius: var(--radius-content);
+  }
+  .snapshot-attention p {
+    margin: var(--space-xs) 0 0;
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+  }
+  .snapshot-attention__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+  }
+  .snapshot-attention__actions :deep(.el-button + .el-button) {
+    margin-left: 0;
+  }
   .mt {
     margin-top: 16px;
   }
@@ -903,20 +972,6 @@
   .cell-sub {
     font-size: 12px;
     color: var(--color-text-tertiary);
-  }
-
-  .load-cell {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-
-  .load-cell__value {
-    min-width: 32px;
-    text-align: right;
-    font-variant-numeric: tabular-nums;
-    color: var(--color-text-secondary);
-    font-size: 12px;
   }
 
   @media (max-width: 960px) {

@@ -2,7 +2,8 @@ import { request as requestFactory } from '@playwright/test'
 import { expect, test } from './support/app'
 import { e2eText, installE2eLocale } from './support/i18n'
 import { seedBrowserStorage } from './support/storage'
-import { WorkerExecutionProgressFixture } from './fixtures/runtime-progress/fixture'
+import { WorkerRoleFixture } from './fixtures/runtime-progress/worker-role-fixture'
+import { verifyWorkerRoleProgress } from './support/worker-role-progress'
 
 type PushedProgress = {
   kind: 'workflow' | 'job' | 'daily'
@@ -13,7 +14,7 @@ const enabled = process.env.E2E_WORKER_PROGRESS_REAL === '1'
 if (enabled && process.env.E2E_SKIP_GLOBAL_SETUP !== '1')
   throw new Error('Set E2E_SKIP_GLOBAL_SETUP=1; this suite owns authentication, Worker and cleanup')
 test.use({ storageState: { cookies: [], origins: [] }, serviceWorkers: 'block', trace: 'off' })
-test.setTimeout(240_000)
+test.setTimeout(420_000)
 test.skip(
   !enabled,
   'Requires a real Atomic Worker, integrated WDI services and exclusive acceptance slot',
@@ -21,8 +22,9 @@ test.skip(
 
 test('真实 Atomic Worker 的作业进度推送到 DAG、作业详情和租户日统计', async ({
   page,
+  browser,
 }, testInfo) => {
-  const fixture = new WorkerExecutionProgressFixture()
+  const fixture = new WorkerRoleFixture()
   const reader = await requestFactory.newContext({ baseURL: String(testInfo.project.use.baseURL) })
   const pushed: PushedProgress[] = []
   let primaryError: unknown
@@ -31,6 +33,7 @@ test('真实 Atomic Worker 的作业进度推送到 DAG、作业详情和租户�
     expect(anonymousAuthStatus).toBe(401)
     await page.setViewportSize({ width: 1440, height: 1100 })
     fixture.prepare()
+    fixture.prepareRoles()
     await fixture.login(page.request)
     await fixture.login(reader, true)
     await installE2eLocale(page)
@@ -473,6 +476,15 @@ test('真实 Atomic Worker 的作业进度推送到 DAG、作业详情和租户�
       fullPage: true,
     })
 
+    await verifyWorkerRoleProgress(
+      browser,
+      fixture,
+      String(testInfo.project.use.baseURL),
+      runId,
+      instanceId,
+      testInfo,
+    )
+
     const persisted = fixture.workerProgressState()
     expect(persisted.nodes).toContainEqual(
       expect.objectContaining({
@@ -501,22 +513,32 @@ test('真实 Atomic Worker 的作业进度推送到 DAG、作业详情和租户�
     primaryError = error
     throw error
   } finally {
+    const cleanupErrors: unknown[] = []
     try {
       await page.goto('about:blank')
+    } catch (error) {
+      cleanupErrors.push(error)
+    }
+    try {
+      await fixture.cleanupRoles()
+    } catch (error) {
+      cleanupErrors.push(error)
+    }
+    try {
       const residue = await fixture.finish(page.request, reader)
       await testInfo.attach('worker-progress-cleanup.json', {
         body: JSON.stringify(residue),
         contentType: 'application/json',
       })
     } catch (cleanupError) {
-      if (primaryError)
-        throw new AggregateError(
-          [primaryError, cleanupError],
-          'Worker acceptance and cleanup failed',
-        )
-      throw cleanupError
+      cleanupErrors.push(cleanupError)
     } finally {
       await reader.dispose()
     }
+    if (cleanupErrors.length)
+      throw new AggregateError(
+        primaryError ? [primaryError, ...cleanupErrors] : cleanupErrors,
+        'Worker acceptance and cleanup failed',
+      )
   }
 })

@@ -12,6 +12,37 @@
       </template>
     </PageHeader>
 
+    <SectionCard v-if="canManageSystem && (recoveryCommands.length || recoveryStorageBlocked)">
+      <h2>{{ t('configBatchRecovery.title') }}</h2>
+      <el-alert v-if="recoveryStorageBlocked" type="warning" :closable="false"
+        :title="t('configBatchRecovery.storageUnavailable')" />
+      <div v-for="command in recoveryCommands" :key="command.key">
+        <p>{{ t('configBatchRecovery.record', { tenant: command.auditTenantId, kind: recoveryKindLabel(command), time: new Date(command.createdAt).toLocaleString() }) }}</p>
+        <el-button :disabled="!!recoveryLoadingKey" @click="checkRecovery(command)">
+          {{ t('configBatchRecovery.check') }}
+        </el-button>
+        <div v-if="recoveryCurrent?.key === command.key" aria-live="polite">
+          <p v-if="recoveryCurrent.error">{{ t(recoveryCurrent.error) }}</p>
+          <template v-if="recoveryCurrent.result">
+            <p v-if="recoveryCurrent.result.status === 'COMPLETE'">{{ t('configBatchRecovery.complete') }}</p>
+            <ul>
+              <li v-for="target in recoveryCurrent.result.targets" :key="target.ordinal">
+                {{ target.ordinal + 1 }}. {{ target.tenantId }} —
+                {{ t(target.status === 'UNKNOWN' || !target.result ? 'configBatchRecovery.unknown' : target.result.success ? 'configBatchRecovery.success' : 'configBatchRecovery.failed') }}
+                <span v-if="target.result?.errorMessage">{{ target.result.errorMessage }}</span>
+              </li>
+            </ul>
+            <el-button v-if="recoveryCurrent.result.status === 'COMPLETE'" @click="acknowledgeRecovery(command)">
+              {{ t('configBatchRecovery.acknowledge') }}
+            </el-button>
+          </template>
+          <el-button v-if="canStopRecovery(command)" @click="stopTrackingRecovery(command)">
+            {{ t('configBatchRecovery.stopTracking') }}
+          </el-button>
+        </div>
+      </div>
+    </SectionCard>
+
     <SectionCard>
       <div class="wizard-layout">
         <el-dialog
@@ -316,17 +347,45 @@
           <div v-else class="review-step">
             <JobConfigBasicSection :job="reviewJob" :execution-mode-label="form.executionMode" />
             <el-descriptions :column="2" border size="small" class="bundle-summary">
-              <el-descriptions-item label="fileChannels">
+              <el-descriptions-item :label="t('jobDefinitionWizard.selectChannelLabel')">
                 {{ summarizeCount(selectedChannelIds.length, fileChannelsJson) }}
+                <div v-if="selectedReview.channels.length" class="bundle-summary__selection">
+                  {{
+                    t('jobDefinitionWizard.reviewSelected', {
+                      names: selectedReview.channels.join(', '),
+                    })
+                  }}
+                </div>
               </el-descriptions-item>
-              <el-descriptions-item label="fileTemplates">
+              <el-descriptions-item :label="t('jobDefinitionWizard.selectTemplateLabel')">
                 {{ summarizeCount(selectedTemplateIds.length, fileTemplatesJson) }}
+                <div v-if="selectedReview.templates.length" class="bundle-summary__selection">
+                  {{
+                    t('jobDefinitionWizard.reviewSelected', {
+                      names: selectedReview.templates.join(', '),
+                    })
+                  }}
+                </div>
               </el-descriptions-item>
-              <el-descriptions-item label="workflowDefinitions">
+              <el-descriptions-item :label="t('jobDefinitionWizard.selectWorkflowLabel')">
                 {{ summarizeCount(selectedWorkflowIds.length, workflowDefinitionsJson) }}
+                <div v-if="selectedReview.workflows.length" class="bundle-summary__selection">
+                  {{
+                    t('jobDefinitionWizard.reviewSelected', {
+                      names: selectedReview.workflows.join(', '),
+                    })
+                  }}
+                </div>
               </el-descriptions-item>
-              <el-descriptions-item label="alertRoutings">
+              <el-descriptions-item :label="t('jobDefinitionWizard.selectAlertRoutingLabel')">
                 {{ summarizeCount(selectedAlertRoutingIds.length, alertRoutingsJson) }}
+                <div v-if="selectedReview.alerts.length" class="bundle-summary__selection">
+                  {{
+                    t('jobDefinitionWizard.reviewSelected', {
+                      names: selectedReview.alerts.join(', '),
+                    })
+                  }}
+                </div>
               </el-descriptions-item>
             </el-descriptions>
           </div>
@@ -365,10 +424,22 @@
   import { useI18n } from 'vue-i18n'
   import { useRouter } from 'vue-router'
   import type { FormInstance, FormRules } from 'element-plus'
-  import { ElMessage } from 'element-plus'
+  import { ElMessage, ElMessageBox } from 'element-plus'
   import JsonTextareaInput from '@/components/common/JsonTextareaInput.vue'
   import { jobApi, type JobBundlePayload } from '@/api/job'
+  import { currentAuthSession, isSharedAuthRevisionCurrent } from '@/api/authSession'
+  import { getConfigBatchOperation, type ConfigBatchRecoveryResponse } from '@/api/configBatchRecovery'
+  import { STORAGE_KEYS } from '@/constants/storageKeys'
+  import {
+    type ConfigBatchRecovery,
+    createConfigBatchRecovery,
+    saveConfigBatchRecovery,
+    listConfigBatchRecoveries,
+    clearConfigBatchRecovery,
+    canReadConfigBatchRecovery,
+  } from '@/utils/configBatchRecovery'
   import { assessBatchInitOutcome } from '@/utils/batchInitOutcome'
+  import { isConsoleServiceUnavailable } from '@/utils/serviceAvailability'
   import { getMetaEnums, getMetaQueues, type MetaOption } from '@/api/meta'
   import { queryFileChannels } from '@/api/fileChannelsQuery'
   import { queryFileTemplates } from '@/api/system'
@@ -471,6 +542,158 @@
   const optionsScope = useTenantRequestScope()
   const auth = useAuthStore()
   const actor = computed(() => auth.userInfo?.userId ?? auth.userInfo?.username)
+  const recoveryActor = computed(() => actor.value ?? '')
+  const recoveryCommands = ref<ConfigBatchRecovery[]>([])
+  const recoveryStorageBlocked = ref(false)
+  const recoveryLoadingKey = ref('')
+  const recoveryCurrent = ref<{ key: string; result?: ConfigBatchRecoveryResponse; error?: string }>()
+  const recoveryScope = useTenantRequestScope()
+  let recoveryRevision = 0
+
+  function recoveryKindLabel(command: ConfigBatchRecovery) {
+    return t(command.operationKind === 'JOB_BUNDLE_CREATE'
+      ? 'configBatchRecovery.kindJobBundleCreate'
+      : 'configBatchRecovery.kindJobBundleImport')
+  }
+
+  function headerTenant(): string | null {
+    try {
+      return localStorage.getItem(STORAGE_KEYS.tenantId) ?? ''
+    } catch {
+      return null
+    }
+  }
+
+  function refreshRecoveryCommands() {
+    const header = headerTenant()
+    recoveryRevision += 1
+    recoveryCurrent.value = undefined
+    recoveryLoadingKey.value = ''
+    if (!canManageSystem.value) {
+      recoveryCommands.value = []
+      recoveryStorageBlocked.value = false
+      return
+    }
+    if (header === null || header !== tenant.tenantId) {
+      recoveryCommands.value = []
+      recoveryStorageBlocked.value = true
+      return
+    }
+    const state = listConfigBatchRecoveries(recoveryActor.value, header)
+    recoveryCommands.value = state.commands.filter((item) => item.operationKind.startsWith('JOB_BUNDLE_'))
+    recoveryStorageBlocked.value = state.blocked
+  }
+
+  watch([recoveryActor, () => tenant.tenantId, canManageSystem], () => {
+    recoveryRevision += 1
+    recoveryCurrent.value = undefined
+  }, { flush: 'sync' })
+  watch([recoveryActor, () => tenant.tenantId, canManageSystem], refreshRecoveryCommands, {
+    immediate: true,
+  })
+
+  function prepareRecovery(operationKind: 'JOB_BUNDLE_CREATE' | 'JOB_BUNDLE_IMPORT', auditTenantId: string) {
+    const header = headerTenant()
+    if (header === null || header !== tenant.tenantId) {
+      ElMessage.error(t('configBatchRecovery.storageUnavailable'))
+      return null
+    }
+    try {
+      const command = createConfigBatchRecovery({
+        actor: recoveryActor.value,
+        headerTenant: header,
+        auditTenantId,
+        operationKind,
+      })
+      if (saveConfigBatchRecovery(command)) {
+        refreshRecoveryCommands()
+        return command
+      }
+    } catch {
+      // 无法可靠记录原身份时不发送写请求。
+    }
+    recoveryStorageBlocked.value = true
+    ElMessage.error(t('configBatchRecovery.storageUnavailable'))
+    return null
+  }
+
+  async function checkRecovery(command: ConfigBatchRecovery) {
+    const header = headerTenant()
+    if (!canManageSystem.value || recoveryLoadingKey.value || header === null ||
+        header !== tenant.tenantId || !canReadConfigBatchRecovery(command, recoveryActor.value, header) ||
+        !isSharedAuthRevisionCurrent()) return
+    const scope = recoveryScope.begin()
+    const revision = recoveryRevision
+    const authSession = currentAuthSession()
+    const isCurrent = () => recoveryScope.isCurrent(scope) && revision === recoveryRevision &&
+      canManageSystem.value && headerTenant() === header && currentAuthSession() === authSession &&
+      isSharedAuthRevisionCurrent()
+    recoveryLoadingKey.value = command.key
+    try {
+      const result = await getConfigBatchOperation(command, recoveryActor.value, header)
+      if (!isCurrent()) return
+      recoveryCurrent.value = { key: command.key, result }
+    } catch (error) {
+      if (!isCurrent()) return
+      const status = (error as { response?: { status?: number } })?.response?.status
+      recoveryCurrent.value = { key: command.key, error: status === 404 ? 'configBatchRecovery.notFound' : 'configBatchRecovery.queryFailed' }
+    } finally {
+      if (recoveryLoadingKey.value === command.key) recoveryLoadingKey.value = ''
+    }
+  }
+
+  function canStopRecovery(command: ConfigBatchRecovery) {
+    const current = recoveryCurrent.value
+    return current?.key === command.key &&
+      (current.error === 'configBatchRecovery.notFound' || current.result?.status === 'UNKNOWN')
+  }
+
+  async function stopTrackingRecovery(command: ConfigBatchRecovery) {
+    const header = headerTenant()
+    if (!canManageSystem.value || header === null || header !== tenant.tenantId ||
+        !canReadConfigBatchRecovery(command, recoveryActor.value, header) ||
+        !canStopRecovery(command) || !isSharedAuthRevisionCurrent()) return
+    const scope = recoveryScope.begin()
+    const revision = recoveryRevision
+    const authSession = currentAuthSession()
+    try {
+      await ElMessageBox.confirm(
+        t('configBatchRecovery.stopTrackingMessage'),
+        t('configBatchRecovery.stopTrackingTitle'),
+        {
+          type: 'warning',
+          confirmButtonText: t('configBatchRecovery.stopTracking'),
+          cancelButtonText: t('common.cancel'),
+        },
+      )
+    } catch {
+      return
+    }
+    const currentHeader = headerTenant()
+    if (!recoveryScope.isCurrent(scope) || revision !== recoveryRevision || !canManageSystem.value ||
+        currentHeader === null || currentHeader !== tenant.tenantId ||
+        !canReadConfigBatchRecovery(command, recoveryActor.value, currentHeader) ||
+        !canStopRecovery(command) || currentAuthSession() !== authSession ||
+        !isSharedAuthRevisionCurrent()) return
+    if (!clearConfigBatchRecovery(command)) {
+      ElMessage.error(t('configBatchRecovery.storageUnavailable'))
+      return
+    }
+    refreshRecoveryCommands()
+  }
+
+  function acknowledgeRecovery(command: ConfigBatchRecovery) {
+    const header = headerTenant()
+    if (!canManageSystem.value || header === null || header !== tenant.tenantId ||
+        !canReadConfigBatchRecovery(command, recoveryActor.value, header) ||
+        recoveryCurrent.value?.key !== command.key || recoveryCurrent.value.result?.status !== 'COMPLETE' ||
+        !isSharedAuthRevisionCurrent()) return
+    if (!clearConfigBatchRecovery(command)) {
+      ElMessage.error(t('configBatchRecovery.storageUnavailable'))
+      return
+    }
+    refreshRecoveryCommands()
+  }
   let submissionRevision = 0
   watch(
     [
@@ -734,6 +957,39 @@
     return t('jobDefinitionWizard.countRefAndCreate', { ref: refCount, create: newCount })
   }
 
+  function selectedNames<T extends { id?: number }>(
+    ids: number[],
+    options: T[],
+    label: (item: T) => string | undefined,
+  ) {
+    return ids.flatMap((id) => {
+      const item = options.find((option) => option.id === id)
+      return item ? [label(item) || String(id)] : []
+    })
+  }
+  const selectedReview = computed(() => ({
+    channels: selectedNames(
+      selectedChannelIds.value,
+      channelOptions.value,
+      (item) => item.channelCode,
+    ),
+    templates: selectedNames(
+      selectedTemplateIds.value,
+      templateOptions.value,
+      (item) => item.templateCode,
+    ),
+    workflows: selectedNames(
+      selectedWorkflowIds.value,
+      workflowOptions.value,
+      (item) => item.workflowCode,
+    ),
+    alerts: selectedNames(
+      selectedAlertRoutingIds.value,
+      alertRoutingOptions.value,
+      (item) => item.routeCode,
+    ),
+  }))
+
   function stringifyArray(value: unknown) {
     return Array.isArray(value) && value.length ? JSON.stringify(value, null, 2) : ''
   }
@@ -868,17 +1124,28 @@
     const scope = submissionScope.begin()
     const revision = submissionRevision
     const submittedJobCode = form.jobCode.trim()
+    const expectedHeader = headerTenant()
+    const authSession = currentAuthSession()
+    if (!isSharedAuthRevisionCurrent()) return
+    const isCurrent = () => submissionScope.isCurrent(scope) && revision === submissionRevision &&
+      headerTenant() === expectedHeader && currentAuthSession() === authSession &&
+      isSharedAuthRevisionCurrent()
     saving.value = true
+    let sent = false
     try {
       const tenantId = tenant.tenantId
       const bundle = buildBundle()
+      const command = prepareRecovery('JOB_BUNDLE_CREATE', tenantId)
+      if (!command) return
+      sent = true
       const response = await jobApi.createBundle({
         tenantId,
         mode: 'SKIP_EXISTING',
         dryRun: false,
         bundle,
-      })
-      if (!submissionScope.isCurrent(scope) || revision !== submissionRevision) return
+      }, command.key)
+      sent = false
+      if (!isCurrent()) return
       const outcome = assessBatchInitOutcome(response.result)
       if (!outcome.fullySuccessful) {
         const failedTenantNames = outcome.failedTenantIds.join(', ')
@@ -890,12 +1157,24 @@
         )
         return
       }
+      if (!clearConfigBatchRecovery(command)) {
+        ElMessage.warning(t('configBatchRecovery.cleanupFailed'))
+      }
+      refreshRecoveryCommands()
       ElMessage.success(t('jobDefinitionWizard.createBundleSuccess'))
       await router.push({ path: '/jobs/definitions', query: { jobCode: submittedJobCode } })
     } catch (error) {
       if (error instanceof SyntaxError) {
         ElMessage.error(t('jobDefinitionWizard.relatedJsonInvalid'))
       } else {
+        const status = (error as { response?: { status?: number } })?.response?.status
+        if (
+          sent &&
+          isCurrent() &&
+          (isConsoleServiceUnavailable(error) || status === 409)
+        ) {
+          ElMessage.warning(t('jobDefinitionWizard.createBundleUnknownOutcome'))
+        }
         throw error
       }
     } finally {
@@ -1076,6 +1355,11 @@
   .bundle-summary {
     width: 100%;
     max-width: 920px;
+  }
+
+  .bundle-summary__selection {
+    color: var(--color-text-secondary);
+    overflow-wrap: anywhere;
   }
 
   .wizard-footer {

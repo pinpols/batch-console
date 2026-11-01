@@ -21,8 +21,10 @@
 
 - `npm run test:e2e:progress:real` 对应 `e2e/runtime-progress-real.spec.ts`，显式要求 `E2E_SKIP_GLOBAL_SETUP=1` 和独占真实环境。运行前用后端生命周期锁协调构建/重启，核对WDI运行包与固定前端产物，不切换其他工作树服务。真实控制图场景不创建Job/Worker，核对ADMIN API暂停/恢复、TENANT_ADMIN拒绝、Workflow完整SSE快照、冻结图不随定义编辑漂移及终态SKIPPED/NOT_EXECUTED；单独标记手工日期，不能声称Quartz或当前业务日计划验收。
 - 使用 `e2e/fixtures/runtime-progress/` 的随机临时身份、正式运行包密码实现及独占租户，不复用共享管理员；原密码不写日志或trace。PG连接参数沿用当前closure fixture环境变量。
+- 准备 SQL 超时不能推断事务未提交。恢复先等待本例唯一 `PGAPPNAME` 的在途会话退出；未拿到凭据数字身份时按本例随机用户名、租户和原密码哈希恢复，出现哈希不符即阻断删除，附属角色也在准备前登记，再按身份精确清理与独立回读。`runtime-progress-fixture-recovery-real.spec.ts` 注入租户和凭据提交后的超时（2/2），并单独验证附属角色（1/1）；这些只证明夹具恢复，真实 Worker 作业需另行验收。命令及数据库隔离要求见[夹具说明](../../../../e2e/fixtures/runtime-progress/README.md)。
 - 业务创建、触发、暂停/恢复、定义修改走真实API；SQL用于身份准备、独立状态/Outbox回读和按数字身份精确清理。截图、推送状态、无周期GET观察和零残留分别留证，列表发现或跳过不计验收通过。
 - `npm run test:e2e:worker-progress:real` 对应 `e2e/worker-workflow-progress-real.spec.ts`，由独占租户临时启动真实 Atomic Worker；作业/Workflow 创建与触发走真实 API，经 Kafka、Orchestrator、Worker 执行，再核对 DAG 节点、Job/分区/任务、每日图表和在线无周期 GET。它是 Worker 业务闭环证据，与不创建 Worker 的控制图场景及 SQL 推进 Pipeline 场景分开记录。
+- 同一真实Worker运行上的四角色验收复用 `WorkerRoleFixture` 和 `worker-role-progress.ts`：平台管理员检查运行中推送，其余三类独立登录，按实际菜单／Controller 权限核对同一终态运行的进度API、DAG、Job进度条及SSE；不能把角色菜单可见当作真实进度验收。四角色导航专项入口和范围见[测试文档](../../../../docs/testing/README.md)。运行时使用专属一次性数据库，随机账号按租户和用户名清理；认证审计及日用量聚合须另行回读并随隔离环境销毁，夹具业务表零残留不代表全库零残留。
 - Worker 场景同样要求固定 WDI preview、真实认证、空闲生命周期锁、显式 `E2E_CLOSURE_PG_CONTAINER/USER/DATABASE`。SQL 只独立回读和按随机租户/编码/已保存身份精确清理；先确认 Worker 与运行终态，活跃副作用会阻止删除。
 
 - Pipeline完整快照的真实传输入口为`npm run test:e2e:pipeline-progress:real`。`e2e/fixtures/runtime-progress/sql/pipeline-{prepare,advance,cleanup}.sql`只驱动独占SQL投影变化，必须与真实Worker业务验收分开报告；SQL、完整API/SSE和浏览器真实不代表Worker实际处理过文件。该入口同样要求显式PG环境、独占生命周期窗口、真实认证和零残留证据。

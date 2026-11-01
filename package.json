@@ -90,6 +90,7 @@
     "test:e2e:workflow-node-replay:real": "E2E_WORKFLOW_NODE_REPLAY_REAL=1 node scripts/run-playwright.mjs test e2e/workflow-failed-node-replay-real.spec.ts --project=chromium --workers=1 --retries=0",
     "test:e2e:workflow-dag-branches:real": "E2E_WORKFLOW_DAG_BRANCHES_REAL=1 node scripts/run-playwright.mjs test e2e/workflow-dag-branches-real.spec.ts --project=chromium --workers=1 --retries=0",
     "test:e2e:multi-calendar-progress:real": "E2E_MULTI_CALENDAR_PROGRESS_REAL=1 node scripts/run-playwright.mjs test e2e/multi-calendar-daily-progress-real.spec.ts --project=chromium --workers=1 --retries=0",
+    "test:e2e:export-mapping:real": "E2E_EXPORT_MAPPING_REAL=1 node scripts/run-playwright.mjs test e2e/export-mapping-real.spec.ts --project=chromium --workers=1 --retries=0",
     "test:e2e:whole-workflow-replay:real": "E2E_WHOLE_WORKFLOW_REPLAY_REAL=1 node scripts/run-playwright.mjs test e2e/workflow-whole-replay-real.spec.ts --project=chromium --workers=1 --retries=0",
     "test:e2e:process-worker-progress:real": "E2E_PROCESS_WORKER_PROGRESS_REAL=1 node scripts/run-playwright.mjs test e2e/process-worker-pipeline-progress-real.spec.ts --project=chromium --workers=1 --retries=0",
     "test:e2e:dispatch-worker-progress:real": "E2E_DISPATCH_WORKER_PROGRESS_REAL=1 node scripts/run-playwright.mjs test e2e/dispatch-worker-pipeline-progress-real.spec.ts --project=chromium --workers=1 --retries=0",

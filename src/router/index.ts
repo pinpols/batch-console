@@ -14,6 +14,8 @@ import { isMobile } from '@/layout-mobile/composables/useMobileDetect'
 import { applyPageMetaToRoutes } from '@/constants/pageMeta'
 import { i18n } from '@/locales'
 import type { Role } from '@/types'
+import { permissionFallback } from './permissionFallback'
+import { mobileMenuAccess } from './mobileMenuAccess'
 
 /**
  * 移动端兜底首页：没有对应移动页时的最终回退目标。
@@ -50,12 +52,12 @@ const MOBILE_DEEPLINK_MAP: { prefix: string; to: string | MobileMapper }[] = [
   },
   { prefix: '/runs', to: '/m/jobs' },
   { prefix: '/monitor/job-steps', to: '/m/jobs' },
-  // 工作流运行：移动端有只读 DAG viewer（/m/workflow/:id）
+  // 工作流运行使用运行 ID，定义查看使用定义 ID，不能混用。
   {
     prefix: '/monitor/workflow-runs',
     to: (to) => {
       const m = /^\/monitor\/workflow-runs\/([^/]+)/.exec(to.path)
-      return m ? `/m/workflow/${m[1]}` : '/m/jobs'
+      return m ? `/m/workflow/run/${m[1]}` : '/m/jobs'
     },
   },
   {
@@ -90,7 +92,7 @@ const MOBILE_DEEPLINK_MAP: { prefix: string; to: string | MobileMapper }[] = [
 /**
  * 解析移动设备访问桌面路径时应降级到的 `/m/*` 目标；无映射返回 null（不分流，保持原行为）。
  */
-function resolveMobileTarget(to: RouteLocationNormalized): string | null {
+export function resolveMobileTarget(to: RouteLocationNormalized): string | null {
   for (const rule of MOBILE_DEEPLINK_MAP) {
     if (to.path === rule.prefix || to.path.startsWith(`${rule.prefix}/`)) {
       const target = typeof rule.to === 'function' ? rule.to(to) : rule.to
@@ -98,6 +100,14 @@ function resolveMobileTarget(to: RouteLocationNormalized): string | null {
     }
   }
   return null
+}
+
+/** 旧地址携带运行 ID 时转到冻结快照，避免在当前定义图上叠加历史状态。 */
+export function legacyMobileWorkflowRunRedirect(to: RouteLocationNormalized) {
+  if (to.name !== 'm-workflow-viewer' || !('runId' in to.query)) return null
+  const { runId, ...query } = to.query
+  const value = Array.isArray(runId) ? runId[0] : runId
+  return { name: 'm-workflow-run', params: { id: value || '0' }, query, replace: true }
 }
 
 export const routes: RouteRecordRaw[] = [
@@ -902,8 +912,13 @@ export const routes: RouteRecordRaw[] = [
         meta: { title: '作业实例详情', minRole: 'VIEWER' },
       },
       {
-        // M3:移动只读 workflow DAG viewer。深链 /m/workflow/:id?runId=NNN
-        // oncall 从告警 push / 邮件链入,只看不操作
+        path: 'workflow/run/:id',
+        name: 'm-workflow-run',
+        component: () => import('@/views-mobile/MWorkflowRunProgress.vue'),
+        meta: { title: 'Workflow 运行进度', minRole: 'VIEWER' },
+      },
+      {
+        // 定义图按定义 ID 查询；旧的 runId 深链在路由守卫中迁移到运行视图。
         path: 'workflow/:id',
         name: 'm-workflow-viewer',
         component: () => import('@/views-mobile/MWorkflowViewer.vue'),
@@ -929,13 +944,13 @@ export const routes: RouteRecordRaw[] = [
         path: 'workers',
         name: 'm-workers',
         component: () => import('@/views-mobile/MWorkers.vue'),
-        meta: { title: 'Worker', minRole: 'VIEWER' },
+        meta: { title: 'Worker', minRole: 'OPERATOR' },
       },
       {
         path: 'outbox',
         name: 'm-outbox',
         component: () => import('@/views-mobile/MOutbox.vue'),
-        meta: { title: 'Outbox', minRole: 'VIEWER' },
+        meta: { title: 'Outbox', minRole: 'OPERATOR' },
       },
       {
         path: 'logs',
@@ -1008,6 +1023,9 @@ router.beforeEach(async (to, from) => {
 
   if (!auth.isLoggedIn) return { name: 'login', query: { redirect: to.fullPath } }
 
+  const legacyRunTarget = legacyMobileWorkflowRunRedirect(to)
+  if (legacyRunTarget) return legacyRunTarget
+
   // 移动设备访问桌面首页/深链时自动分流到移动端。?desktop=1 可强制留在桌面版。
   // 先处理首页场景，再按 MOBILE_DEEPLINK_MAP 把常见列表/详情降级到对应 /m/* 页，
   // 没有对应移动页的桌面深链回退到 MOBILE_HOME，而不是渲染桌面 20 列页。
@@ -1051,8 +1069,7 @@ router.beforeEach(async (to, from) => {
         await auth.logout()
         return { name: 'login', query: { redirect: to.fullPath } }
       }
-      // 透明放行:userInfo 仍为 null,各页面自身 loadXxx 会再次失败 + toast,
-      // 但用户不会被无声踢出。
+      // 保留登录态，但未确认当前租户资料时不恢复菜单控制的页面权限。
     }
   }
 
@@ -1070,9 +1087,8 @@ router.beforeEach(async (to, from) => {
   // 在登录页 BE 已校验过账户必有 tenant 绑定;到这里依旧 0 租户属于异常,放行让
   // 业务页空态自行提示。检测带内存缓存(系统级状态变化频率极低),向导创建后
   // 主动 invalidate。
-  const administratorNeedsInitialTenantSetup = auth.hasPermission('ROLE_ADMIN') &&
-    to.path !== '/setup/initial-tenant' &&
-    to.name !== 'login'
+  const administratorNeedsInitialTenantSetup =
+    auth.profileLoaded && auth.hasPermission('ROLE_ADMIN') && to.path !== '/setup/initial-tenant' && to.name !== 'login'
   if (administratorNeedsInitialTenantSetup) {
     try {
       const { systemHasTenants } = await import('@/api/setup')
@@ -1090,39 +1106,46 @@ router.beforeEach(async (to, from) => {
   }
 
   const minRole = to.meta.minRole as string | undefined
+  const deniedLanding = () => permissionFallback(
+    auth.profileLoaded,
+    permission.hasBackendMenuAccess('/ops/summary'),
+    permission.canAccessRole('VIEWER'),
+  )
   if (minRole && !permission.canAccessRole(minRole as Role)) {
-    return { path: '/' }
+    return { path: deniedLanding() }
   }
 
   const permissions = to.meta.permissions as string[] | undefined
   if (permissions && !permission.canAccessPermissions(permissions)) {
-    return { path: '/' }
+    return { path: deniedLanding() }
   }
 
   const capabilities = to.meta.capabilities as string[] | undefined
   const hasRouteCapability =
     capabilities?.some((capability) => auth.hasCapability(capability)) ?? false
   if (capabilities && !hasRouteCapability) {
-    return { path: '/' }
+    return { path: deniedLanding() }
   }
 
   // 后端 /auth/me 下发的菜单是当前租户+authorities 的最终可见性来源。
   // 静态 minRole 只表示前端粗粒度等级；当后端菜单存在时，路由也必须按菜单 allowlist 收口，
   // 避免用户通过 URL、历史标签或命令面板进入已被后端隐藏的页面。
-  const activeMenu = to.meta.activeMenu as string | undefined
+  const activeMenu = (to.meta.activeMenu as string | undefined) ?? (typeof to.name === 'string' ? mobileMenuAccess[to.name] : undefined)
   const menuCandidates = [
     activeMenu || to.path,
     ...((to.meta.menuAccessFallbacks as string[] | undefined) ?? []),
   ]
   const allowWithoutMenu =
     to.path === '/system/me' ||
-    to.path === '/system/users' ||
-    to.path.startsWith('/m/') ||
-    (to.path === '/system/ai-chat' && auth.hasCapability('AI_ASSISTANT_USE'))
+    (to.path === '/system/users' && auth.profileLoaded) ||
+    to.name === 'm-desktop-only' ||
+    (to.name === 'initial-tenant-setup' && auth.profileLoaded && auth.hasPermission('ROLE_ADMIN')) ||
+    (to.path === '/system/ai-chat' && auth.profileLoaded && auth.hasCapability('AI_ASSISTANT_USE'))
   const menuAccessDenied =
     !allowWithoutMenu && !menuCandidates.some((path) => permission.hasBackendMenuAccess(path))
   if (menuAccessDenied) {
-    return { path: '/' }
+    // 空菜单不允许进入默认首页；账户页对所有已登录角色开放，避免重定向循环。
+    return { path: deniedLanding() }
   }
 
   return true

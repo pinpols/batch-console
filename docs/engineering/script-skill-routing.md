@@ -40,7 +40,11 @@ Skill界面元数据由各自`agents/openai.yaml`维护；它不是执行脚本�
 
 运行DAG/每日进度的真实验收入口为 `npm run test:e2e:progress:real`，由 `frontend-testing-ci` 负责；该控制图场景不创建Job/Worker，通过真实API验证Workflow暂停/恢复与角色边界、SSE冻结DAG状态和运维总览统计，手工业务日期不能代表Quartz计划。`e2e/fixtures/runtime-progress/` 包含正式运行包密码适配器与身份准备/清理SQL，边界见[夹具说明](../../e2e/fixtures/runtime-progress/README.md)。进度状态与图表组合规则由 `frontend-state-data-flow` 维护。
 
+`e2e/runtime-progress-fixture-recovery-real.spec.ts` 验证随机租户、临时凭据或附属角色事务已提交但调用超时后的夹具恢复；`runtime-progress/sql/active-owned-sessions.sql` 只观察本例唯一 SQL 会话，`credentials-recover.sql` 按随机身份和本例密码哈希定位账号供精确清理。三者由 `frontend-testing-ci` 维护，只在专属数据库和独占时段执行，命令及分场景故障注入证据边界见[夹具说明](../../e2e/fixtures/runtime-progress/README.md)；不把夹具恢复当成真实作业验收。
+
 Atomic Worker实际执行闭环使用 `npm run test:e2e:worker-progress:real`，由 `frontend-testing-ci` 负责。它真实启动独占Worker并检查Workflow节点、Job/分区/任务推送和租户每日图表；`worker-progress-state.sql` 只回读，`worker-progress-cleanup.sql` 按租户与已保存身份精确清理。该场景独立于不创建Worker的控制图验收和SQL驱动的Pipeline投影验收。
+
+四角色同一真实Worker运行的身份由 `e2e/fixtures/runtime-progress/worker-role-fixture.ts` 按随机用户名准备和回收；`e2e/support/worker-role-progress.ts` 负责各角色真实菜单、进度API、页面和SSE断言。独立的 `e2e/role-navigation-real.spec.ts` 检查代表性侧栏／搜索／直链、移动底栏及后端只读权限，运行命令见[测试入口](../testing/README.md)。这三份测试资产由 `frontend-testing-ci` 主责，权限契约由 `frontend-api-contract` 配合；要求专属一次性数据库与独占时段，不能使用固定账号的全局准备／清理。认证审计及日用量聚合不属于既有夹具零残留断言，需另行回读并在验收后销毁专属隔离环境。
 
 Atomic执行器运行态门控验收使用 `npm run test:e2e:atomic-runtime:real`，同样由 `frontend-testing-ci` 负责。用`E2E_ATOMIC_RUNTIME_MODE=available|unavailable`分别核对真实Worker状态反查和禁用时的安全降级，四角色读权限及精确清理；认证、运行模式和日期化证据要求见[runtime-progress夹具说明](../../e2e/fixtures/runtime-progress/README.md)。
 

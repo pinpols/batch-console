@@ -1,5 +1,5 @@
 <template>
-  <MPullRefresh :on-refresh="load">
+  <MPullRefresh :on-refresh="refreshAll">
     <div class="m-page">
       <div class="m-page__header">
         <div>
@@ -9,6 +9,8 @@
           </div>
         </div>
       </div>
+
+      <MTenantDailyProgress ref="dailyProgress" />
 
       <div v-if="summary" class="m-metric-grid">
         <router-link to="/m/jobs?status=RUNNING" class="m-metric">
@@ -110,12 +112,18 @@
   import { REFRESH_INTERVAL_COLD_MS } from '@/layout-mobile/composables/refreshIntervals'
   import MPullRefresh from '@/layout-mobile/MPullRefresh.vue'
   import MSkeleton from '@/layout-mobile/MSkeleton.vue'
+  import MTenantDailyProgress from './MTenantDailyProgress.vue'
   import { getOpsSummary } from '@/api/ops'
   import type { ConsoleOpsSummaryResponse } from '@/types/console-api'
 
   const tenant = useTenantStore()
   const loading = ref(false)
   const summary = ref<ConsoleOpsSummaryResponse | null>(null)
+  const dailyProgress = ref<InstanceType<typeof MTenantDailyProgress> | null>(null)
+
+  async function refreshAll() {
+    await Promise.all([load(), dailyProgress.value?.refresh()])
+  }
 
   async function load() {
     loading.value = true

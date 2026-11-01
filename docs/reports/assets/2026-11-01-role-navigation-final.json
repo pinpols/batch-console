@@ -1,0 +1,1622 @@
+{
+  "checks": [
+    {
+      "role": "ADMIN",
+      "surface": "api",
+      "path": "/api/console/queues",
+      "expected": "200",
+      "actual": "200"
+    },
+    {
+      "role": "ADMIN",
+      "surface": "api",
+      "path": "/api/console/users",
+      "expected": "200",
+      "actual": "200"
+    },
+    {
+      "role": "ADMIN",
+      "surface": "sidebar",
+      "path": "/jobs/definitions",
+      "expected": "visible",
+      "actual": "visible"
+    },
+    {
+      "role": "ADMIN",
+      "surface": "search",
+      "path": "/jobs/definitions",
+      "expected": "visible",
+      "actual": "visible"
+    },
+    {
+      "role": "ADMIN",
+      "surface": "sidebar",
+      "path": "/monitor/workflow-runs",
+      "expected": "visible",
+      "actual": "visible"
+    },
+    {
+      "role": "ADMIN",
+      "surface": "search",
+      "path": "/monitor/workflow-runs",
+      "expected": "visible",
+      "actual": "visible"
+    },
+    {
+      "role": "ADMIN",
+      "surface": "sidebar",
+      "path": "/approvals",
+      "expected": "visible",
+      "actual": "visible"
+    },
+    {
+      "role": "ADMIN",
+      "surface": "search",
+      "path": "/approvals",
+      "expected": "visible",
+      "actual": "visible"
+    },
+    {
+      "role": "ADMIN",
+      "surface": "sidebar",
+      "path": "/system/user-accounts",
+      "expected": "visible",
+      "actual": "visible"
+    },
+    {
+      "role": "ADMIN",
+      "surface": "search",
+      "path": "/system/user-accounts",
+      "expected": "visible",
+      "actual": "visible"
+    },
+    {
+      "role": "ADMIN",
+      "surface": "sidebar",
+      "path": "/files/templates",
+      "expected": "visible",
+      "actual": "visible"
+    },
+    {
+      "role": "ADMIN",
+      "surface": "search",
+      "path": "/files/templates",
+      "expected": "visible",
+      "actual": "visible"
+    },
+    {
+      "role": "ADMIN",
+      "surface": "sidebar",
+      "path": "/governance/queues",
+      "expected": "absent",
+      "actual": "absent"
+    },
+    {
+      "role": "ADMIN",
+      "surface": "search",
+      "path": "/governance/queues",
+      "expected": "visible",
+      "actual": "visible"
+    },
+    {
+      "role": "ADMIN",
+      "surface": "direct-url",
+      "path": "/jobs/definitions",
+      "expected": "/jobs/definitions",
+      "actual": "/jobs/definitions"
+    },
+    {
+      "role": "ADMIN",
+      "surface": "direct-url",
+      "path": "/monitor/workflow-runs",
+      "expected": "/monitor/workflow-runs",
+      "actual": "/monitor/workflow-runs"
+    },
+    {
+      "role": "ADMIN",
+      "surface": "direct-url",
+      "path": "/approvals",
+      "expected": "/approvals",
+      "actual": "/approvals"
+    },
+    {
+      "role": "ADMIN",
+      "surface": "direct-url",
+      "path": "/system/user-accounts",
+      "expected": "/system/user-accounts",
+      "actual": "/system/user-accounts"
+    },
+    {
+      "role": "ADMIN",
+      "surface": "direct-url",
+      "path": "/files/templates",
+      "expected": "/files/templates",
+      "actual": "/files/templates"
+    },
+    {
+      "role": "ADMIN",
+      "surface": "direct-url",
+      "path": "/governance/queues",
+      "expected": "/governance/queues",
+      "actual": "/governance/queues"
+    },
+    {
+      "role": "ADMIN",
+      "surface": "mobile-tab",
+      "path": "/m/alerts",
+      "expected": "visible",
+      "actual": "visible"
+    },
+    {
+      "role": "ADMIN",
+      "surface": "mobile-tab",
+      "path": "/m/approvals",
+      "expected": "visible",
+      "actual": "visible"
+    },
+    {
+      "role": "ADMIN",
+      "surface": "mobile-tab",
+      "path": "/m/ops/summary",
+      "expected": "visible",
+      "actual": "visible"
+    },
+    {
+      "role": "ADMIN",
+      "surface": "mobile-tab",
+      "path": "/m/jobs",
+      "expected": "visible",
+      "actual": "visible"
+    },
+    {
+      "role": "ADMIN",
+      "surface": "mobile-tab",
+      "path": "/m/workers",
+      "expected": "visible",
+      "actual": "visible"
+    },
+    {
+      "role": "AUDITOR",
+      "surface": "api",
+      "path": "/api/console/queues",
+      "expected": "403",
+      "actual": "403"
+    },
+    {
+      "role": "AUDITOR",
+      "surface": "api",
+      "path": "/api/console/users",
+      "expected": "403",
+      "actual": "403"
+    },
+    {
+      "role": "AUDITOR",
+      "surface": "sidebar",
+      "path": "/jobs/definitions",
+      "expected": "visible",
+      "actual": "visible"
+    },
+    {
+      "role": "AUDITOR",
+      "surface": "search",
+      "path": "/jobs/definitions",
+      "expected": "visible",
+      "actual": "visible"
+    },
+    {
+      "role": "AUDITOR",
+      "surface": "sidebar",
+      "path": "/monitor/workflow-runs",
+      "expected": "visible",
+      "actual": "visible"
+    },
+    {
+      "role": "AUDITOR",
+      "surface": "search",
+      "path": "/monitor/workflow-runs",
+      "expected": "visible",
+      "actual": "visible"
+    },
+    {
+      "role": "AUDITOR",
+      "surface": "sidebar",
+      "path": "/approvals",
+      "expected": "absent",
+      "actual": "absent"
+    },
+    {
+      "role": "AUDITOR",
+      "surface": "search",
+      "path": "/approvals",
+      "expected": "absent",
+      "actual": "absent"
+    },
+    {
+      "role": "AUDITOR",
+      "surface": "sidebar",
+      "path": "/system/user-accounts",
+      "expected": "absent",
+      "actual": "absent"
+    },
+    {
+      "role": "AUDITOR",
+      "surface": "search",
+      "path": "/system/user-accounts",
+      "expected": "absent",
+      "actual": "absent"
+    },
+    {
+      "role": "AUDITOR",
+      "surface": "sidebar",
+      "path": "/files/templates",
+      "expected": "visible",
+      "actual": "visible"
+    },
+    {
+      "role": "AUDITOR",
+      "surface": "search",
+      "path": "/files/templates",
+      "expected": "visible",
+      "actual": "visible"
+    },
+    {
+      "role": "AUDITOR",
+      "surface": "sidebar",
+      "path": "/governance/queues",
+      "expected": "absent",
+      "actual": "absent"
+    },
+    {
+      "role": "AUDITOR",
+      "surface": "search",
+      "path": "/governance/queues",
+      "expected": "absent",
+      "actual": "absent"
+    },
+    {
+      "role": "AUDITOR",
+      "surface": "direct-url",
+      "path": "/jobs/definitions",
+      "expected": "/jobs/definitions",
+      "actual": "/jobs/definitions"
+    },
+    {
+      "role": "AUDITOR",
+      "surface": "direct-url",
+      "path": "/monitor/workflow-runs",
+      "expected": "/monitor/workflow-runs",
+      "actual": "/monitor/workflow-runs"
+    },
+    {
+      "role": "AUDITOR",
+      "surface": "direct-url",
+      "path": "/approvals",
+      "expected": "/ops/summary",
+      "actual": "/ops/summary"
+    },
+    {
+      "role": "AUDITOR",
+      "surface": "direct-url",
+      "path": "/system/user-accounts",
+      "expected": "/ops/summary",
+      "actual": "/ops/summary"
+    },
+    {
+      "role": "AUDITOR",
+      "surface": "direct-url",
+      "path": "/files/templates",
+      "expected": "/files/templates",
+      "actual": "/files/templates"
+    },
+    {
+      "role": "AUDITOR",
+      "surface": "direct-url",
+      "path": "/governance/queues",
+      "expected": "/ops/summary",
+      "actual": "/ops/summary"
+    },
+    {
+      "role": "AUDITOR",
+      "surface": "mobile-tab",
+      "path": "/m/alerts",
+      "expected": "visible",
+      "actual": "visible"
+    },
+    {
+      "role": "AUDITOR",
+      "surface": "mobile-tab",
+      "path": "/m/approvals",
+      "expected": "absent",
+      "actual": "absent"
+    },
+    {
+      "role": "AUDITOR",
+      "surface": "mobile-tab",
+      "path": "/m/ops/summary",
+      "expected": "visible",
+      "actual": "visible"
+    },
+    {
+      "role": "AUDITOR",
+      "surface": "mobile-tab",
+      "path": "/m/jobs",
+      "expected": "visible",
+      "actual": "visible"
+    },
+    {
+      "role": "AUDITOR",
+      "surface": "mobile-tab",
+      "path": "/m/workers",
+      "expected": "absent",
+      "actual": "absent"
+    },
+    {
+      "role": "AUDITOR",
+      "surface": "mobile-direct-url",
+      "path": "/m/approvals",
+      "expected": "/m/ops/summary",
+      "actual": "/m/ops/summary"
+    },
+    {
+      "role": "AUDITOR",
+      "surface": "mobile-direct-url",
+      "path": "/m/workers",
+      "expected": "/m/ops/summary",
+      "actual": "/m/ops/summary"
+    },
+    {
+      "role": "TENANT_ADMIN",
+      "surface": "api",
+      "path": "/api/console/queues",
+      "expected": "403",
+      "actual": "403"
+    },
+    {
+      "role": "TENANT_ADMIN",
+      "surface": "api",
+      "path": "/api/console/users",
+      "expected": "200",
+      "actual": "200"
+    },
+    {
+      "role": "TENANT_ADMIN",
+      "surface": "sidebar",
+      "path": "/jobs/definitions",
+      "expected": "visible",
+      "actual": "visible"
+    },
+    {
+      "role": "TENANT_ADMIN",
+      "surface": "search",
+      "path": "/jobs/definitions",
+      "expected": "visible",
+      "actual": "visible"
+    },
+    {
+      "role": "TENANT_ADMIN",
+      "surface": "sidebar",
+      "path": "/monitor/workflow-runs",
+      "expected": "visible",
+      "actual": "visible"
+    },
+    {
+      "role": "TENANT_ADMIN",
+      "surface": "search",
+      "path": "/monitor/workflow-runs",
+      "expected": "visible",
+      "actual": "visible"
+    },
+    {
+      "role": "TENANT_ADMIN",
+      "surface": "sidebar",
+      "path": "/approvals",
+      "expected": "visible",
+      "actual": "visible"
+    },
+    {
+      "role": "TENANT_ADMIN",
+      "surface": "search",
+      "path": "/approvals",
+      "expected": "visible",
+      "actual": "visible"
+    },
+    {
+      "role": "TENANT_ADMIN",
+      "surface": "sidebar",
+      "path": "/system/user-accounts",
+      "expected": "visible",
+      "actual": "visible"
+    },
+    {
+      "role": "TENANT_ADMIN",
+      "surface": "search",
+      "path": "/system/user-accounts",
+      "expected": "visible",
+      "actual": "visible"
+    },
+    {
+      "role": "TENANT_ADMIN",
+      "surface": "sidebar",
+      "path": "/files/templates",
+      "expected": "visible",
+      "actual": "visible"
+    },
+    {
+      "role": "TENANT_ADMIN",
+      "surface": "search",
+      "path": "/files/templates",
+      "expected": "visible",
+      "actual": "visible"
+    },
+    {
+      "role": "TENANT_ADMIN",
+      "surface": "sidebar",
+      "path": "/governance/queues",
+      "expected": "absent",
+      "actual": "absent"
+    },
+    {
+      "role": "TENANT_ADMIN",
+      "surface": "search",
+      "path": "/governance/queues",
+      "expected": "absent",
+      "actual": "absent"
+    },
+    {
+      "role": "TENANT_ADMIN",
+      "surface": "direct-url",
+      "path": "/jobs/definitions",
+      "expected": "/jobs/definitions",
+      "actual": "/jobs/definitions"
+    },
+    {
+      "role": "TENANT_ADMIN",
+      "surface": "direct-url",
+      "path": "/monitor/workflow-runs",
+      "expected": "/monitor/workflow-runs",
+      "actual": "/monitor/workflow-runs"
+    },
+    {
+      "role": "TENANT_ADMIN",
+      "surface": "direct-url",
+      "path": "/approvals",
+      "expected": "/approvals",
+      "actual": "/approvals"
+    },
+    {
+      "role": "TENANT_ADMIN",
+      "surface": "direct-url",
+      "path": "/system/user-accounts",
+      "expected": "/system/user-accounts",
+      "actual": "/system/user-accounts"
+    },
+    {
+      "role": "TENANT_ADMIN",
+      "surface": "direct-url",
+      "path": "/files/templates",
+      "expected": "/files/templates",
+      "actual": "/files/templates"
+    },
+    {
+      "role": "TENANT_ADMIN",
+      "surface": "direct-url",
+      "path": "/governance/queues",
+      "expected": "/ops/summary",
+      "actual": "/ops/summary"
+    },
+    {
+      "role": "TENANT_ADMIN",
+      "surface": "mobile-tab",
+      "path": "/m/alerts",
+      "expected": "visible",
+      "actual": "visible"
+    },
+    {
+      "role": "TENANT_ADMIN",
+      "surface": "mobile-tab",
+      "path": "/m/approvals",
+      "expected": "visible",
+      "actual": "visible"
+    },
+    {
+      "role": "TENANT_ADMIN",
+      "surface": "mobile-tab",
+      "path": "/m/ops/summary",
+      "expected": "visible",
+      "actual": "visible"
+    },
+    {
+      "role": "TENANT_ADMIN",
+      "surface": "mobile-tab",
+      "path": "/m/jobs",
+      "expected": "visible",
+      "actual": "visible"
+    },
+    {
+      "role": "TENANT_ADMIN",
+      "surface": "mobile-tab",
+      "path": "/m/workers",
+      "expected": "visible",
+      "actual": "visible"
+    },
+    {
+      "role": "TENANT_USER",
+      "surface": "api",
+      "path": "/api/console/queues",
+      "expected": "403",
+      "actual": "403"
+    },
+    {
+      "role": "TENANT_USER",
+      "surface": "api",
+      "path": "/api/console/users",
+      "expected": "403",
+      "actual": "403"
+    },
+    {
+      "role": "TENANT_USER",
+      "surface": "sidebar",
+      "path": "/jobs/definitions",
+      "expected": "visible",
+      "actual": "visible"
+    },
+    {
+      "role": "TENANT_USER",
+      "surface": "search",
+      "path": "/jobs/definitions",
+      "expected": "visible",
+      "actual": "visible"
+    },
+    {
+      "role": "TENANT_USER",
+      "surface": "sidebar",
+      "path": "/monitor/workflow-runs",
+      "expected": "visible",
+      "actual": "visible"
+    },
+    {
+      "role": "TENANT_USER",
+      "surface": "search",
+      "path": "/monitor/workflow-runs",
+      "expected": "visible",
+      "actual": "visible"
+    },
+    {
+      "role": "TENANT_USER",
+      "surface": "sidebar",
+      "path": "/approvals",
+      "expected": "absent",
+      "actual": "absent"
+    },
+    {
+      "role": "TENANT_USER",
+      "surface": "search",
+      "path": "/approvals",
+      "expected": "absent",
+      "actual": "absent"
+    },
+    {
+      "role": "TENANT_USER",
+      "surface": "sidebar",
+      "path": "/system/user-accounts",
+      "expected": "absent",
+      "actual": "absent"
+    },
+    {
+      "role": "TENANT_USER",
+      "surface": "search",
+      "path": "/system/user-accounts",
+      "expected": "absent",
+      "actual": "absent"
+    },
+    {
+      "role": "TENANT_USER",
+      "surface": "sidebar",
+      "path": "/files/templates",
+      "expected": "absent",
+      "actual": "absent"
+    },
+    {
+      "role": "TENANT_USER",
+      "surface": "search",
+      "path": "/files/templates",
+      "expected": "absent",
+      "actual": "absent"
+    },
+    {
+      "role": "TENANT_USER",
+      "surface": "sidebar",
+      "path": "/governance/queues",
+      "expected": "absent",
+      "actual": "absent"
+    },
+    {
+      "role": "TENANT_USER",
+      "surface": "search",
+      "path": "/governance/queues",
+      "expected": "absent",
+      "actual": "absent"
+    },
+    {
+      "role": "TENANT_USER",
+      "surface": "direct-url",
+      "path": "/jobs/definitions",
+      "expected": "/jobs/definitions",
+      "actual": "/jobs/definitions"
+    },
+    {
+      "role": "TENANT_USER",
+      "surface": "direct-url",
+      "path": "/monitor/workflow-runs",
+      "expected": "/monitor/workflow-runs",
+      "actual": "/monitor/workflow-runs"
+    },
+    {
+      "role": "TENANT_USER",
+      "surface": "direct-url",
+      "path": "/approvals",
+      "expected": "/ops/summary",
+      "actual": "/ops/summary"
+    },
+    {
+      "role": "TENANT_USER",
+      "surface": "direct-url",
+      "path": "/system/user-accounts",
+      "expected": "/ops/summary",
+      "actual": "/ops/summary"
+    },
+    {
+      "role": "TENANT_USER",
+      "surface": "direct-url",
+      "path": "/files/templates",
+      "expected": "/ops/summary",
+      "actual": "/ops/summary"
+    },
+    {
+      "role": "TENANT_USER",
+      "surface": "direct-url",
+      "path": "/governance/queues",
+      "expected": "/ops/summary",
+      "actual": "/ops/summary"
+    },
+    {
+      "role": "TENANT_USER",
+      "surface": "mobile-tab",
+      "path": "/m/alerts",
+      "expected": "visible",
+      "actual": "visible"
+    },
+    {
+      "role": "TENANT_USER",
+      "surface": "mobile-tab",
+      "path": "/m/approvals",
+      "expected": "absent",
+      "actual": "absent"
+    },
+    {
+      "role": "TENANT_USER",
+      "surface": "mobile-tab",
+      "path": "/m/ops/summary",
+      "expected": "visible",
+      "actual": "visible"
+    },
+    {
+      "role": "TENANT_USER",
+      "surface": "mobile-tab",
+      "path": "/m/jobs",
+      "expected": "visible",
+      "actual": "visible"
+    },
+    {
+      "role": "TENANT_USER",
+      "surface": "mobile-tab",
+      "path": "/m/workers",
+      "expected": "absent",
+      "actual": "absent"
+    },
+    {
+      "role": "TENANT_USER",
+      "surface": "mobile-direct-url",
+      "path": "/m/approvals",
+      "expected": "/m/ops/summary",
+      "actual": "/m/ops/summary"
+    },
+    {
+      "role": "TENANT_USER",
+      "surface": "mobile-direct-url",
+      "path": "/m/workers",
+      "expected": "/m/ops/summary",
+      "actual": "/m/ops/summary"
+    }
+  ],
+  "observations": [
+    {
+      "role": "ADMIN",
+      "type": "profile",
+      "status": 200,
+      "authorities": [
+        "ROLE_ADMIN"
+      ],
+      "jobDefinitionsAllowed": true
+    },
+    {
+      "role": "ADMIN",
+      "type": "navigation",
+      "path": "/ops/summary"
+    },
+    {
+      "role": "ADMIN",
+      "type": "navigation",
+      "path": "/ops/summary"
+    },
+    {
+      "role": "ADMIN",
+      "type": "response",
+      "path": "/api/console/auth/me",
+      "status": 200
+    },
+    {
+      "role": "ADMIN",
+      "type": "navigation",
+      "path": "/ops/summary"
+    },
+    {
+      "role": "ADMIN",
+      "type": "navigation",
+      "path": "/ops/summary"
+    },
+    {
+      "role": "ADMIN",
+      "type": "navigation",
+      "path": "/jobs/definitions"
+    },
+    {
+      "role": "ADMIN",
+      "type": "search-navigation",
+      "title": "作业定义",
+      "optionMeta": "准备作业",
+      "expectedPath": "/jobs/definitions",
+      "actualPath": "/jobs/definitions"
+    },
+    {
+      "role": "ADMIN",
+      "type": "navigation",
+      "path": "/jobs/definitions"
+    },
+    {
+      "role": "ADMIN",
+      "type": "navigation",
+      "path": "/monitor/workflow-runs"
+    },
+    {
+      "role": "ADMIN",
+      "type": "navigation",
+      "path": "/jobs/definitions"
+    },
+    {
+      "role": "ADMIN",
+      "type": "navigation",
+      "path": "/jobs/definitions"
+    },
+    {
+      "role": "ADMIN",
+      "type": "response",
+      "path": "/api/console/auth/me",
+      "status": 200
+    },
+    {
+      "role": "ADMIN",
+      "type": "navigation",
+      "path": "/monitor/workflow-runs"
+    },
+    {
+      "role": "ADMIN",
+      "type": "navigation",
+      "path": "/monitor/workflow-runs"
+    },
+    {
+      "role": "ADMIN",
+      "type": "response",
+      "path": "/api/console/auth/me",
+      "status": 200
+    },
+    {
+      "role": "ADMIN",
+      "type": "navigation",
+      "path": "/approvals"
+    },
+    {
+      "role": "ADMIN",
+      "type": "navigation",
+      "path": "/approvals"
+    },
+    {
+      "role": "ADMIN",
+      "type": "response",
+      "path": "/api/console/auth/me",
+      "status": 200
+    },
+    {
+      "role": "ADMIN",
+      "type": "navigation",
+      "path": "/system/user-accounts"
+    },
+    {
+      "role": "ADMIN",
+      "type": "navigation",
+      "path": "/system/user-accounts"
+    },
+    {
+      "role": "ADMIN",
+      "type": "response",
+      "path": "/api/console/auth/me",
+      "status": 200
+    },
+    {
+      "role": "ADMIN",
+      "type": "navigation",
+      "path": "/files/templates"
+    },
+    {
+      "role": "ADMIN",
+      "type": "navigation",
+      "path": "/files/templates"
+    },
+    {
+      "role": "ADMIN",
+      "type": "response",
+      "path": "/api/console/auth/me",
+      "status": 200
+    },
+    {
+      "role": "ADMIN",
+      "type": "navigation",
+      "path": "/governance/queues"
+    },
+    {
+      "role": "ADMIN",
+      "type": "navigation",
+      "path": "/governance/queues"
+    },
+    {
+      "role": "ADMIN",
+      "type": "response",
+      "path": "/api/console/auth/me",
+      "status": 200
+    },
+    {
+      "role": "ADMIN",
+      "type": "navigation",
+      "path": "/m/ops/summary"
+    },
+    {
+      "role": "ADMIN",
+      "type": "navigation",
+      "path": "/m/ops/summary"
+    },
+    {
+      "role": "ADMIN",
+      "type": "response",
+      "path": "/api/console/auth/me",
+      "status": 200
+    },
+    {
+      "role": "ADMIN",
+      "type": "navigation",
+      "path": "/m/ops/summary"
+    },
+    {
+      "role": "ADMIN",
+      "type": "navigation",
+      "path": "/m/ops/summary"
+    },
+    {
+      "role": "ADMIN",
+      "type": "navigation",
+      "path": "/m/jobs"
+    },
+    {
+      "role": "AUDITOR",
+      "type": "profile",
+      "status": 200,
+      "authorities": [
+        "ROLE_AUDITOR"
+      ],
+      "jobDefinitionsAllowed": true
+    },
+    {
+      "role": "AUDITOR",
+      "type": "navigation",
+      "path": "/ops/summary"
+    },
+    {
+      "role": "AUDITOR",
+      "type": "navigation",
+      "path": "/ops/summary"
+    },
+    {
+      "role": "AUDITOR",
+      "type": "response",
+      "path": "/api/console/auth/me",
+      "status": 200
+    },
+    {
+      "role": "AUDITOR",
+      "type": "navigation",
+      "path": "/ops/summary"
+    },
+    {
+      "role": "AUDITOR",
+      "type": "navigation",
+      "path": "/ops/summary"
+    },
+    {
+      "role": "AUDITOR",
+      "type": "navigation",
+      "path": "/jobs/definitions"
+    },
+    {
+      "role": "AUDITOR",
+      "type": "search-navigation",
+      "title": "作业定义",
+      "optionMeta": "准备作业",
+      "expectedPath": "/jobs/definitions",
+      "actualPath": "/jobs/definitions"
+    },
+    {
+      "role": "AUDITOR",
+      "type": "navigation",
+      "path": "/jobs/definitions"
+    },
+    {
+      "role": "AUDITOR",
+      "type": "navigation",
+      "path": "/monitor/workflow-runs"
+    },
+    {
+      "role": "AUDITOR",
+      "type": "navigation",
+      "path": "/jobs/definitions"
+    },
+    {
+      "role": "AUDITOR",
+      "type": "navigation",
+      "path": "/jobs/definitions"
+    },
+    {
+      "role": "AUDITOR",
+      "type": "response",
+      "path": "/api/console/auth/me",
+      "status": 200
+    },
+    {
+      "role": "AUDITOR",
+      "type": "navigation",
+      "path": "/monitor/workflow-runs"
+    },
+    {
+      "role": "AUDITOR",
+      "type": "navigation",
+      "path": "/monitor/workflow-runs"
+    },
+    {
+      "role": "AUDITOR",
+      "type": "response",
+      "path": "/api/console/auth/me",
+      "status": 200
+    },
+    {
+      "role": "AUDITOR",
+      "type": "navigation",
+      "path": "/approvals"
+    },
+    {
+      "role": "AUDITOR",
+      "type": "navigation",
+      "path": "/approvals"
+    },
+    {
+      "role": "AUDITOR",
+      "type": "response",
+      "path": "/api/console/auth/me",
+      "status": 200
+    },
+    {
+      "role": "AUDITOR",
+      "type": "navigation",
+      "path": "/ops/summary"
+    },
+    {
+      "role": "AUDITOR",
+      "type": "navigation",
+      "path": "/system/user-accounts"
+    },
+    {
+      "role": "AUDITOR",
+      "type": "navigation",
+      "path": "/system/user-accounts"
+    },
+    {
+      "role": "AUDITOR",
+      "type": "response",
+      "path": "/api/console/auth/me",
+      "status": 200
+    },
+    {
+      "role": "AUDITOR",
+      "type": "navigation",
+      "path": "/ops/summary"
+    },
+    {
+      "role": "AUDITOR",
+      "type": "navigation",
+      "path": "/files/templates"
+    },
+    {
+      "role": "AUDITOR",
+      "type": "navigation",
+      "path": "/files/templates"
+    },
+    {
+      "role": "AUDITOR",
+      "type": "navigation",
+      "path": "/governance/queues"
+    },
+    {
+      "role": "AUDITOR",
+      "type": "navigation",
+      "path": "/governance/queues"
+    },
+    {
+      "role": "AUDITOR",
+      "type": "response",
+      "path": "/api/console/auth/me",
+      "status": 200
+    },
+    {
+      "role": "AUDITOR",
+      "type": "navigation",
+      "path": "/ops/summary"
+    },
+    {
+      "role": "AUDITOR",
+      "type": "navigation",
+      "path": "/m/ops/summary"
+    },
+    {
+      "role": "AUDITOR",
+      "type": "navigation",
+      "path": "/m/ops/summary"
+    },
+    {
+      "role": "AUDITOR",
+      "type": "response",
+      "path": "/api/console/auth/me",
+      "status": 200
+    },
+    {
+      "role": "AUDITOR",
+      "type": "navigation",
+      "path": "/m/ops/summary"
+    },
+    {
+      "role": "AUDITOR",
+      "type": "navigation",
+      "path": "/m/ops/summary"
+    },
+    {
+      "role": "AUDITOR",
+      "type": "navigation",
+      "path": "/m/jobs"
+    },
+    {
+      "role": "AUDITOR",
+      "type": "navigation",
+      "path": "/m/approvals"
+    },
+    {
+      "role": "AUDITOR",
+      "type": "navigation",
+      "path": "/m/approvals"
+    },
+    {
+      "role": "AUDITOR",
+      "type": "response",
+      "path": "/api/console/auth/me",
+      "status": 200
+    },
+    {
+      "role": "AUDITOR",
+      "type": "navigation",
+      "path": "/m/ops/summary"
+    },
+    {
+      "role": "AUDITOR",
+      "type": "navigation",
+      "path": "/m/workers"
+    },
+    {
+      "role": "AUDITOR",
+      "type": "navigation",
+      "path": "/m/workers"
+    },
+    {
+      "role": "AUDITOR",
+      "type": "response",
+      "path": "/api/console/auth/me",
+      "status": 200
+    },
+    {
+      "role": "AUDITOR",
+      "type": "navigation",
+      "path": "/m/ops/summary"
+    },
+    {
+      "role": "TENANT_ADMIN",
+      "type": "profile",
+      "status": 200,
+      "authorities": [
+        "ROLE_TENANT_ADMIN"
+      ],
+      "jobDefinitionsAllowed": true
+    },
+    {
+      "role": "TENANT_ADMIN",
+      "type": "navigation",
+      "path": "/ops/summary"
+    },
+    {
+      "role": "TENANT_ADMIN",
+      "type": "navigation",
+      "path": "/ops/summary"
+    },
+    {
+      "role": "TENANT_ADMIN",
+      "type": "response",
+      "path": "/api/console/auth/me",
+      "status": 200
+    },
+    {
+      "role": "TENANT_ADMIN",
+      "type": "navigation",
+      "path": "/ops/summary"
+    },
+    {
+      "role": "TENANT_ADMIN",
+      "type": "navigation",
+      "path": "/ops/summary"
+    },
+    {
+      "role": "TENANT_ADMIN",
+      "type": "navigation",
+      "path": "/jobs/definitions"
+    },
+    {
+      "role": "TENANT_ADMIN",
+      "type": "search-navigation",
+      "title": "作业定义",
+      "optionMeta": "准备作业",
+      "expectedPath": "/jobs/definitions",
+      "actualPath": "/jobs/definitions"
+    },
+    {
+      "role": "TENANT_ADMIN",
+      "type": "navigation",
+      "path": "/jobs/definitions"
+    },
+    {
+      "role": "TENANT_ADMIN",
+      "type": "navigation",
+      "path": "/monitor/workflow-runs"
+    },
+    {
+      "role": "TENANT_ADMIN",
+      "type": "navigation",
+      "path": "/jobs/definitions"
+    },
+    {
+      "role": "TENANT_ADMIN",
+      "type": "navigation",
+      "path": "/jobs/definitions"
+    },
+    {
+      "role": "TENANT_ADMIN",
+      "type": "response",
+      "path": "/api/console/auth/me",
+      "status": 200
+    },
+    {
+      "role": "TENANT_ADMIN",
+      "type": "navigation",
+      "path": "/monitor/workflow-runs"
+    },
+    {
+      "role": "TENANT_ADMIN",
+      "type": "navigation",
+      "path": "/monitor/workflow-runs"
+    },
+    {
+      "role": "TENANT_ADMIN",
+      "type": "response",
+      "path": "/api/console/auth/me",
+      "status": 200
+    },
+    {
+      "role": "TENANT_ADMIN",
+      "type": "navigation",
+      "path": "/approvals"
+    },
+    {
+      "role": "TENANT_ADMIN",
+      "type": "navigation",
+      "path": "/approvals"
+    },
+    {
+      "role": "TENANT_ADMIN",
+      "type": "response",
+      "path": "/api/console/auth/me",
+      "status": 200
+    },
+    {
+      "role": "TENANT_ADMIN",
+      "type": "navigation",
+      "path": "/system/user-accounts"
+    },
+    {
+      "role": "TENANT_ADMIN",
+      "type": "navigation",
+      "path": "/system/user-accounts"
+    },
+    {
+      "role": "TENANT_ADMIN",
+      "type": "response",
+      "path": "/api/console/auth/me",
+      "status": 200
+    },
+    {
+      "role": "TENANT_ADMIN",
+      "type": "navigation",
+      "path": "/files/templates"
+    },
+    {
+      "role": "TENANT_ADMIN",
+      "type": "navigation",
+      "path": "/files/templates"
+    },
+    {
+      "role": "TENANT_ADMIN",
+      "type": "response",
+      "path": "/api/console/auth/me",
+      "status": 200
+    },
+    {
+      "role": "TENANT_ADMIN",
+      "type": "navigation",
+      "path": "/governance/queues"
+    },
+    {
+      "role": "TENANT_ADMIN",
+      "type": "navigation",
+      "path": "/governance/queues"
+    },
+    {
+      "role": "TENANT_ADMIN",
+      "type": "response",
+      "path": "/api/console/auth/me",
+      "status": 200
+    },
+    {
+      "role": "TENANT_ADMIN",
+      "type": "navigation",
+      "path": "/ops/summary"
+    },
+    {
+      "role": "TENANT_ADMIN",
+      "type": "navigation",
+      "path": "/m/ops/summary"
+    },
+    {
+      "role": "TENANT_ADMIN",
+      "type": "navigation",
+      "path": "/m/ops/summary"
+    },
+    {
+      "role": "TENANT_ADMIN",
+      "type": "response",
+      "path": "/api/console/auth/me",
+      "status": 200
+    },
+    {
+      "role": "TENANT_ADMIN",
+      "type": "navigation",
+      "path": "/m/ops/summary"
+    },
+    {
+      "role": "TENANT_ADMIN",
+      "type": "navigation",
+      "path": "/m/ops/summary"
+    },
+    {
+      "role": "TENANT_ADMIN",
+      "type": "navigation",
+      "path": "/m/jobs"
+    },
+    {
+      "role": "TENANT_USER",
+      "type": "profile",
+      "status": 200,
+      "authorities": [
+        "ROLE_TENANT_USER"
+      ],
+      "jobDefinitionsAllowed": true
+    },
+    {
+      "role": "TENANT_USER",
+      "type": "navigation",
+      "path": "/ops/summary"
+    },
+    {
+      "role": "TENANT_USER",
+      "type": "navigation",
+      "path": "/ops/summary"
+    },
+    {
+      "role": "TENANT_USER",
+      "type": "response",
+      "path": "/api/console/auth/me",
+      "status": 200
+    },
+    {
+      "role": "TENANT_USER",
+      "type": "navigation",
+      "path": "/ops/summary"
+    },
+    {
+      "role": "TENANT_USER",
+      "type": "navigation",
+      "path": "/ops/summary"
+    },
+    {
+      "role": "TENANT_USER",
+      "type": "navigation",
+      "path": "/jobs/definitions"
+    },
+    {
+      "role": "TENANT_USER",
+      "type": "search-navigation",
+      "title": "作业定义",
+      "optionMeta": "准备作业",
+      "expectedPath": "/jobs/definitions",
+      "actualPath": "/jobs/definitions"
+    },
+    {
+      "role": "TENANT_USER",
+      "type": "navigation",
+      "path": "/jobs/definitions"
+    },
+    {
+      "role": "TENANT_USER",
+      "type": "navigation",
+      "path": "/monitor/workflow-runs"
+    },
+    {
+      "role": "TENANT_USER",
+      "type": "navigation",
+      "path": "/jobs/definitions"
+    },
+    {
+      "role": "TENANT_USER",
+      "type": "navigation",
+      "path": "/jobs/definitions"
+    },
+    {
+      "role": "TENANT_USER",
+      "type": "response",
+      "path": "/api/console/auth/me",
+      "status": 200
+    },
+    {
+      "role": "TENANT_USER",
+      "type": "navigation",
+      "path": "/monitor/workflow-runs"
+    },
+    {
+      "role": "TENANT_USER",
+      "type": "navigation",
+      "path": "/monitor/workflow-runs"
+    },
+    {
+      "role": "TENANT_USER",
+      "type": "response",
+      "path": "/api/console/auth/me",
+      "status": 200
+    },
+    {
+      "role": "TENANT_USER",
+      "type": "navigation",
+      "path": "/approvals"
+    },
+    {
+      "role": "TENANT_USER",
+      "type": "navigation",
+      "path": "/approvals"
+    },
+    {
+      "role": "TENANT_USER",
+      "type": "response",
+      "path": "/api/console/auth/me",
+      "status": 200
+    },
+    {
+      "role": "TENANT_USER",
+      "type": "navigation",
+      "path": "/ops/summary"
+    },
+    {
+      "role": "TENANT_USER",
+      "type": "navigation",
+      "path": "/system/user-accounts"
+    },
+    {
+      "role": "TENANT_USER",
+      "type": "navigation",
+      "path": "/system/user-accounts"
+    },
+    {
+      "role": "TENANT_USER",
+      "type": "response",
+      "path": "/api/console/auth/me",
+      "status": 200
+    },
+    {
+      "role": "TENANT_USER",
+      "type": "navigation",
+      "path": "/ops/summary"
+    },
+    {
+      "role": "TENANT_USER",
+      "type": "navigation",
+      "path": "/files/templates"
+    },
+    {
+      "role": "TENANT_USER",
+      "type": "navigation",
+      "path": "/files/templates"
+    },
+    {
+      "role": "TENANT_USER",
+      "type": "response",
+      "path": "/api/console/auth/me",
+      "status": 200
+    },
+    {
+      "role": "TENANT_USER",
+      "type": "navigation",
+      "path": "/ops/summary"
+    },
+    {
+      "role": "TENANT_USER",
+      "type": "navigation",
+      "path": "/governance/queues"
+    },
+    {
+      "role": "TENANT_USER",
+      "type": "navigation",
+      "path": "/governance/queues"
+    },
+    {
+      "role": "TENANT_USER",
+      "type": "response",
+      "path": "/api/console/auth/me",
+      "status": 200
+    },
+    {
+      "role": "TENANT_USER",
+      "type": "navigation",
+      "path": "/ops/summary"
+    },
+    {
+      "role": "TENANT_USER",
+      "type": "navigation",
+      "path": "/m/ops/summary"
+    },
+    {
+      "role": "TENANT_USER",
+      "type": "navigation",
+      "path": "/m/ops/summary"
+    },
+    {
+      "role": "TENANT_USER",
+      "type": "response",
+      "path": "/api/console/auth/me",
+      "status": 200
+    },
+    {
+      "role": "TENANT_USER",
+      "type": "navigation",
+      "path": "/m/ops/summary"
+    },
+    {
+      "role": "TENANT_USER",
+      "type": "navigation",
+      "path": "/m/ops/summary"
+    },
+    {
+      "role": "TENANT_USER",
+      "type": "navigation",
+      "path": "/m/jobs"
+    },
+    {
+      "role": "TENANT_USER",
+      "type": "navigation",
+      "path": "/m/approvals"
+    },
+    {
+      "role": "TENANT_USER",
+      "type": "navigation",
+      "path": "/m/approvals"
+    },
+    {
+      "role": "TENANT_USER",
+      "type": "response",
+      "path": "/api/console/auth/me",
+      "status": 200
+    },
+    {
+      "role": "TENANT_USER",
+      "type": "navigation",
+      "path": "/m/ops/summary"
+    },
+    {
+      "role": "TENANT_USER",
+      "type": "navigation",
+      "path": "/m/workers"
+    },
+    {
+      "role": "TENANT_USER",
+      "type": "navigation",
+      "path": "/m/workers"
+    },
+    {
+      "role": "TENANT_USER",
+      "type": "response",
+      "path": "/api/console/auth/me",
+      "status": 200
+    },
+    {
+      "role": "TENANT_USER",
+      "type": "navigation",
+      "path": "/m/ops/summary"
+    }
+  ],
+  "fixtureCleanup": {
+    "definitions": 0,
+    "nodes": 0,
+    "edges": 0,
+    "versions": 0,
+    "runs": 0,
+    "nodeRuns": 0,
+    "requests": 0,
+    "jobInstances": 0,
+    "terminalEvents": 0,
+    "terminalReceipts": 0,
+    "terminalDedupKeys": 0,
+    "calendars": 0,
+    "batchDays": 0,
+    "dayCursors": 0,
+    "dayAudits": 0,
+    "catchupControls": 0,
+    "catchupEvents": 0,
+    "tenants": 0,
+    "configurationRevisions": 0,
+    "operationAudits": 0,
+    "credentialAccounts": 0,
+    "roleAccountsRemaining": 0
+  },
+  "authResidue": {
+    "tenantUsageRows": 1,
+    "loginAuditRows": 4,
+    "logoutAuditRows": 1
+  },
+  "cleanupScope": "Fixture counts cover the owned accounts and business tenant; auth audit, daily usage and shared system aggregates require final disposal of the isolated environment."
+}

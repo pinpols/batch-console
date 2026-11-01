@@ -326,6 +326,17 @@
           {{ t('common.create') }}
         </el-button>
       </div>
+      <el-alert
+        v-if="holidayError"
+        type="error"
+        :closable="false"
+        show-icon
+        :title="t('queueConfig.holidayLoadError')"
+      >
+        <el-button size="small" @click="reloadCurrentHolidays">{{ t('common.retry') }}</el-button>
+      </el-alert>
+      <p v-else-if="holidayLoading">{{ t('common.loading') }}</p>
+      <HolidayMonthView v-else-if="holidayLoaded" :records="holidays" />
       <el-table
         v-loading="holidayLoading"
         :data="pagedHolidays.records"
@@ -334,7 +345,7 @@
         size="small"
         highlight-current-row
         class="console-table"
-        :empty-text="t('common.noData')"
+        :empty-text="holidayError ? t('queueConfig.holidayLoadError') : t('common.noData')"
       >
         <el-table-column
           prop="holidayDate"
@@ -351,11 +362,6 @@
           :label="t('queueConfig.holidayColType')"
           min-width="120"
         />
-        <el-table-column :label="t('queueConfig.holidayColEnabled')" width="90">
-          <template #default="{ row }">
-            <StatusTag :value="String(row.enabled)" category="yn" />
-          </template>
-        </el-table-column>
         <el-table-column
           v-if="canMutateConfig"
           :label="t('fileTemplateList.colActions')"
@@ -512,6 +518,35 @@
         <el-form-item :label="t('queueConfig.fieldAllowCrossDay')"
           ><el-switch v-model="windowForm.allowCrossDay"
         /></el-form-item>
+        <el-form-item :label="t('queueConfig.windowPreviewTitle')">
+          <div class="window-preview">
+            <template v-if="windowSchedule.mode !== 'incomplete'">
+              <div class="window-preview__track" role="img" :aria-label="windowPreviewText">
+                <span
+                  v-for="(segment, index) in windowSchedule.segments"
+                  :key="index"
+                  class="window-preview__segment"
+                  :style="{
+                    left: `${segment.start * 100}%`,
+                    width: `${(segment.end - segment.start) * 100}%`,
+                  }"
+                />
+              </div>
+              <div class="window-preview__axis" aria-hidden="true">
+                <span>00:00</span><span>12:00</span><span>24:00</span>
+              </div>
+              <p>{{ windowPreviewText }}</p>
+              <p>{{ t('queueConfig.windowPreviewZoneFallback') }}</p>
+              <p v-if="windowSchedule.fullDueCrossDay" class="window-preview__warning">
+                {{ t('queueConfig.windowPreviewFullCross') }}
+              </p>
+              <p v-if="windowSchedule.rangeInvalid" class="window-preview__warning">
+                {{ t('queueConfig.windowPreviewRangeInvalid') }}
+              </p>
+            </template>
+            <p v-else>{{ t('queueConfig.windowPreviewIncomplete') }}</p>
+          </div>
+        </el-form-item>
         <el-form-item :label="t('queueConfig.fieldEnabled')"
           ><el-switch v-model="windowForm.enabled"
         /></el-form-item>
@@ -655,6 +690,7 @@
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
+  import { useTenantRequestScope } from '@/composables/useTenantRequestScope'
   import PageContainer from '@/components/common/PageContainer.vue'
   import MetaSelect from '@/components/common/MetaSelect.vue'
   import { usePermission } from '@/composables/usePermission'
@@ -666,6 +702,8 @@
   import TablePagerBar from '@/components/table/TablePagerBar.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
   import GovernanceFilterBar from './components/GovernanceFilterBar.vue'
+  import HolidayMonthView from './HolidayMonthView.vue'
+  import { windowPreview } from './windowPreview'
   import { userErrorMessage } from '@/utils/userErrorMessage'
 
   const tenant = useTenantStore()
@@ -673,6 +711,11 @@
   const { filterBusy, runSearch, runReset, runRefresh } = useListFilterFeedback(listRemote)
   const loading = ref(false)
   const holidayLoading = ref(false)
+  const holidayLoaded = ref(false)
+  const holidayError = ref(false)
+  const holidayScope = useTenantRequestScope()
+  const holidayActionScope = useTenantRequestScope()
+  let holidayActionRevision = 0
   const togglingKey = ref('')
   const loadError = ref<unknown>(null)
   // P2 IA 拆分:route.meta.mode 限定本页只显示某一类资源
@@ -771,6 +814,21 @@
     allowCrossDay: false,
     enabled: true,
     description: '',
+  })
+  const windowSchedule = computed(() =>
+    windowPreview(windowForm.startTime, windowForm.endTime, windowForm.allowCrossDay),
+  )
+  const windowPreviewText = computed(() => {
+    const values = {
+      start: windowForm.startTime,
+      end: windowForm.endTime,
+      timezone: windowForm.timezone,
+    }
+    if (windowSchedule.value.mode === 'full-day')
+      return t('queueConfig.windowPreviewFullDay', values)
+    if (windowSchedule.value.mode === 'overnight')
+      return t('queueConfig.windowPreviewOvernight', values)
+    return t('queueConfig.windowPreviewSameDay', values)
   })
 
   const calendarForm = reactive({
@@ -1210,22 +1268,16 @@
   }
 
   async function openHolidays(row: GovernanceCalendarRow) {
+    holidayActionRevision++
+    holidayDialogVisible.value = false
+    holidayEditingId.value = null
     holidayPage.value = 1
     holidayDrawerVisible.value = true
     currentCalendarId.value = row.id
     holidayDrawerTitle.value = t('queueConfig.holidayDrawerTitleWithCode', {
       code: row.calendarCode,
     })
-    holidayLoading.value = true
-    try {
-      holidays.value = row.id
-        ? await governanceApi.listCalendarHolidays(row.id, tenant.tenantId)
-        : []
-    } catch {
-      holidays.value = []
-    } finally {
-      holidayLoading.value = false
-    }
+    await reloadCurrentHolidays()
   }
 
   function openHolidayCreate() {
@@ -1263,39 +1315,76 @@
   }
 
   async function reloadCurrentHolidays() {
-    if (!currentCalendarId.value) return
-    holidays.value = await governanceApi.listCalendarHolidays(
-      currentCalendarId.value,
-      tenant.tenantId,
-    )
+    const calendarId = currentCalendarId.value
+    const scope = holidayScope.begin()
+    holidays.value = []
+    holidayLoaded.value = false
+    holidayError.value = false
+    holidayLoading.value = false
+    if (!calendarId || !scope.tenantId) {
+      holidayError.value = true
+      return
+    }
+    holidayLoading.value = true
+    const isCurrent = () =>
+      holidayScope.isCurrent(scope) &&
+      holidayDrawerVisible.value &&
+      currentCalendarId.value === calendarId
+    try {
+      const records = await governanceApi.listCalendarHolidays(calendarId, scope.tenantId)
+      if (isCurrent()) {
+        holidays.value = records
+        holidayLoaded.value = true
+      }
+    } catch {
+      if (isCurrent()) holidayError.value = true
+    } finally {
+      if (isCurrent()) holidayLoading.value = false
+    }
   }
 
   async function saveHoliday() {
-    if (!canMutateConfig.value || !currentCalendarId.value) return
+    const calendarId = currentCalendarId.value
+    if (!canMutateConfig.value || !calendarId || !holidayDialogVisible.value || saving.value) return
+    const scope = holidayActionScope.begin()
+    const revision = ++holidayActionRevision
+    const editingId = holidayEditingId.value
+    const isCurrent = () =>
+      holidayActionScope.isCurrent(scope) &&
+      revision === holidayActionRevision &&
+      holidayDrawerVisible.value &&
+      currentCalendarId.value === calendarId &&
+      canMutateConfig.value
     saving.value = true
     try {
       const payload = buildHolidayPayload()
-      if (holidayEditingId.value == null) {
-        await governanceApi.createCalendarHoliday(currentCalendarId.value, payload)
+      if (editingId == null) {
+        await governanceApi.createCalendarHoliday(calendarId, payload)
       } else {
-        await governanceApi.updateCalendarHoliday(
-          currentCalendarId.value,
-          holidayEditingId.value,
-          payload,
-        )
+        await governanceApi.updateCalendarHoliday(calendarId, editingId, payload)
       }
+      if (!isCurrent()) return
       ElMessage.success(t('fileTemplateList.saveSuccess'))
       holidayDialogVisible.value = false
       await reloadCurrentHolidays()
     } catch (err) {
-      handleValidationError(err)
+      if (isCurrent()) handleValidationError(err)
     } finally {
       saving.value = false
     }
   }
 
   async function deleteHoliday(row: GovernanceCalendarHolidayRow) {
-    if (!canMutateConfig.value || !currentCalendarId.value || !row.id) return
+    const calendarId = currentCalendarId.value
+    if (!canMutateConfig.value || !calendarId || !row.id) return
+    const scope = holidayActionScope.begin()
+    const revision = ++holidayActionRevision
+    const isCurrent = () =>
+      holidayActionScope.isCurrent(scope) &&
+      revision === holidayActionRevision &&
+      holidayDrawerVisible.value &&
+      currentCalendarId.value === calendarId &&
+      canMutateConfig.value
     try {
       await confirmDanger({
         verb: t('common.delete'),
@@ -1306,7 +1395,9 @@
     } catch {
       return
     }
-    await governanceApi.deleteCalendarHoliday(currentCalendarId.value, row.id, tenant.tenantId)
+    if (!isCurrent()) return
+    await governanceApi.deleteCalendarHoliday(calendarId, row.id, scope.tenantId)
+    if (!isCurrent()) return
     ElMessage.success(t('fileTemplateList.saveSuccess'))
     await reloadCurrentHolidays()
   }
@@ -1318,10 +1409,62 @@
     enabledApplied.value = undefined
     resetListPages()
   })
+  watch(
+    () => tenant.tenantId,
+    () => {
+      holidayActionRevision++
+      holidayDrawerVisible.value = false
+      holidayDialogVisible.value = false
+      currentCalendarId.value = null
+      holidays.value = []
+      holidayLoaded.value = false
+      holidayLoading.value = false
+      holidayError.value = false
+    },
+    { flush: 'sync' },
+  )
+  watch(holidayDrawerVisible, (visible) => {
+    if (!visible) {
+      holidayActionRevision++
+      holidayLoading.value = false
+      holidayLoaded.value = false
+      holidays.value = []
+    }
+  })
   useTenantReload(load)
 </script>
 
 <style scoped>
+  .window-preview {
+    width: 100%;
+    line-height: 1.5;
+  }
+  .window-preview__track {
+    position: relative;
+    height: 12px;
+    border-radius: 999px;
+    overflow: hidden;
+    background: var(--color-bg-subtle);
+    border: 1px solid var(--color-border);
+  }
+  .window-preview__segment {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    background: var(--color-primary);
+  }
+  .window-preview__axis {
+    display: flex;
+    justify-content: space-between;
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+  }
+  .window-preview p {
+    margin: var(--space-xs) 0 0;
+  }
+  .window-preview__warning {
+    color: var(--color-warning);
+  }
   .governance-workspace {
     display: flex;
     margin-bottom: var(--space-md);

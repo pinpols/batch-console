@@ -12,9 +12,19 @@ E2E_SKIP_GLOBAL_SETUP=1 npm run test:e2e:progress:real
 
 `fixture.ts`复用Workflow批量夹具的租户、日历、独立状态回读和按数字身份清理；`PasswordHash.java`从配对后端`build/runtime-jars/console.jar`提取正式密码实现及依赖生成临时密码hash，需要Java、unzip与Docker/psql。密码仅经临时子进程环境传入，不输出到报告；用例关闭trace，截图只捕获已登录业务页。
 
+准备租户前先登记独占所有权，全部本例 SQL 连接使用随机 `application_name`。调用超时不表示事务未提交；清理前有界等待本例 SQL 连接退出，若无法确认则报错并保留环境。凭据插入结果丢失时，按本例随机用户名、租户及密码哈希恢复数字 ID，再按 ID 与用户名限定删除；发现身份不匹配时拒绝清理。`E2E_FIXTURE_RECOVERY_REAL=1 E2E_SKIP_GLOBAL_SETUP=1 node scripts/run-playwright.mjs test e2e/runtime-progress-fixture-recovery-real.spec.ts --project=chromium --workers=1 --retries=0` 在专属库用 COMMIT 后 `pg_sleep` 注入实际 Docker 超时，分别验证租户与凭据的恢复，不能将其当作业务运行验收。
+
 `sql/credentials-prepare.sql`创建本例两个随机身份，保存返回数字ID；`credentials-cleanup.sql`仅删除同时匹配ID与随机用户名的账户，再独立核对残留。先收敛运行、注销、删除身份，再调用批量夹具精确清理；遇到活跃运行或意外Job副作用时拒绝删除。失败与清理失败同时保留，不能将父记录消失当作清理成功。
 
 输出包含运行与日统计截图、公开推送DTO、SQL状态、在线无周期GET观察及零残留计数。控制DAG用例以手工业务日期创建 START→WAIT→END；ADMIN真实API暂停/恢复、TENANT_ADMIN被拒，UI由全快照SSE更新冻结节点。它不创建Job/Worker，不能证明Quartz；本用例通过真实浏览器点击详情页暂停/恢复按钮并确认，以SSE断言状态变化。`--list`只证明测试可发现，开关未启用的跳过不计业务通过。不要将临时凭据、Cookie或连接票据保存到版本库。
+
+夹具准备的数据库事务可能已经提交，但 Docker 调用仍超时、调用方没有收到结果。`ControlProgressFixture` 在准备前登记本例所有权，给 SQL 连接设置本例唯一 `PGAPPNAME`；收尾等待本例遗留 SQL 会话退出，再按随机租户、账号及原密码哈希恢复数字身份，哈希不匹配时拒绝清理。`active-owned-sessions.sql` 只回读本例会话，`credentials-recover.sql` 只定位本例身份；两者不按全局前缀删除数据。使用专属数据库和上述真实认证／独占时段，可运行：
+
+```bash
+E2E_SKIP_GLOBAL_SETUP=1 E2E_FIXTURE_RECOVERY_REAL=1 node scripts/run-playwright.mjs test e2e/runtime-progress-fixture-recovery-real.spec.ts --project=chromium --workers=1 --retries=0
+```
+
+2026-11-01 本轮隔离 PostgreSQL 故障注入的租户提交后超时、凭据提交后超时两项均通过（2/2），附属角色提交后超时单独通过（1/1）：分别确认提交、等待在途会话并核对本例清理计数。该结果只覆盖夹具恢复，真实 Worker 作业与角色必须另行验收，不能据此报告业务链已通过。
 
 ## readiness 与容量持久等待查询验收
 
@@ -39,6 +49,10 @@ E2E_SKIP_GLOBAL_SETUP=1 npm run test:e2e:progress:real
 `E2E_SKIP_GLOBAL_SETUP=1 npm run test:e2e:worker-progress:real` 启动本例独占租户的临时 Atomic Worker，使用独立 Kafka consumer group 与 `TENANT_SCOPED` 订阅；作业定义和 Workflow 通过真实 Console API 创建并触发，Worker 真正执行只读 `SELECT pg_sleep(...)`，由 Orchestrator 回报实例、分区和任务状态。浏览器不使用路由桩，验证运行 DAG、作业详情的 SSE 快照、租户当日进度图表/分项表及在线期间没有周期 GET。DAG显示关联Job实例状态，同时保留Workflow节点自身状态，不把显示状态写回调度模型。`E2E_ATOMIC_WORKER_JAR` 可指向本地单独构建的 Atomic Worker 包，未设置时使用标准 `build/runtime-jars/worker-atomic.jar`。
 
 启动前确认本地 Worker JAR 与 WDI 源码一致、当前工作树本地生命周期锁空闲、真实认证开启、数据库/Kafka 健康，且 E2E 指向 WDI 前端预览和后端。夹具关闭临时 Worker 后仅按独占租户、随机编码和已保存数字身份删除本例运行记录；先确认关联Workflow运行已终态，再清除节点与单作业Workflow的外键引用，最后删除Job并由父夹具清理Workflow/租户。活跃任务或运行会拒绝删除。截图和 JSON 附件不包含 SQL 参数、认证凭据、Cookie 或 Worker 日志。
+
+`WorkerRoleFixture` 在同一独占租户增加随机审计员和租户用户，`worker-role-progress.ts` 以独立会话核对租户管理员、审计员和租户用户对同一真实运行的菜单、进度API、DAG、Job进度条及SSE；原场景单独核对管理员的运行中状态。角色账号按本例租户和随机用户名删除，失败时仍执行Worker和父夹具清理。真实运行结果、源码和环境版本以对应日期验收记录为准；发现用例不等于通过。
+
+四角色导航的单独真实入口和参数见[测试入口](../../../docs/testing/README.md)。两个场景均要求专属一次性数据库：认证会写入操作审计和日用量聚合，平台管理员的 `system` 租户统计不能按测试租户整行删除。导航用例独立回读本例认证审计和租户用量，夹具的零残留计数只覆盖其列出的身份与业务表；运行结束后按环境owner核对并销毁专属隔离环境，不能声称这些计数代表全库零残留。
 
 ## PROCESS 双库WAP与进程恢复验收
 
@@ -66,7 +80,11 @@ PROCESS使用`E2E_SKIP_GLOBAL_SETUP=1 npm run test:e2e:process-worker-progress:r
 
 EXPORT Worker使用本例独立`java.io.tmpdir`，在本例重启间保留，避免不同隔离库相同Pipeline ID误用其他运行的临时文件。延迟视图必须保持分页按页读取，不能把全表排序前的延迟误当作续跑；源查询退出、运行终态后才删除本例关系及临时目录。共享`worker-progress-state.sql`要求调用方提供保存的`job_definition_ids`，扩展时同时检查Atomic、IMPORT与EXPORT调用方。
 
-多定义双日历日统计使用 `E2E_SKIP_GLOBAL_SETUP=1 npm run test:e2e:multi-calendar-progress:real`，要求本例Trigger启用真实Quartz。`MultiCalendarProgressFixture`准备第二日历；`multi-calendar-progress-state.sql`独立回读全部定义、原始occurrence、水位、业务日、请求与根运行。三个定义分别是两条单次CRON及一条86400秒FIXED_RATE，预计CRON约两分钟后触发，执行窗口应避开日历cutoff与跨日；不得为赶时长修改Quartz表。当前日及次日投影分别检查，缺少未来业务日cutoff时计划比例保持未知。清理先逐一关闭保存的全部定时定义，再精确移除每个定义的计划／水位，最后按租户清理并核对全部业务表残留；不创建Job/Worker。
+`E2E_SKIP_GLOBAL_SETUP=1 npm run test:e2e:quartz-progress:real` 使用真实 Quartz、计划 Workflow、认证与日统计推送。实际回调经 `scheduled_occurrence_fire` 独立回读，批次日窗口 API 和页面须展示相同事件。真实运行结束并关闭本例定时定义后，`quartz-progress-historical.sql` 插入一条无实际触发事件的历史投影，验证 API 返回空集合且页面显示未知；该投影是测试数据，不计作真实触发。清理按租户和保存的定义 ID 删除本例事件及计划，并独立核对残留。
+
+多定义双日历日统计使用 `E2E_SKIP_GLOBAL_SETUP=1 npm run test:e2e:multi-calendar-progress:real`，要求本例Trigger启用真实Quartz。`MultiCalendarProgressFixture`准备第二日历；`multi-calendar-progress-state.sql`独立回读全部定义、原始occurrence、实际回调事件、水位、业务日、请求与根运行，并逐定义核对实际回调和计划触发身份。三个定义分别是两条单次CRON及一条86400秒FIXED_RATE，预计CRON约两分钟后触发，执行窗口应避开日历cutoff与跨日；不得为赶时长修改Quartz表。当前日及次日投影分别检查，缺少未来业务日cutoff时计划比例保持未知。清理先逐一关闭保存的全部定时定义，再精确移除每个定义的事件、计划／水位，最后按租户清理并核对全部业务表残留；不创建Job/Worker。
+
+字段映射真实导出使用 `E2E_SKIP_GLOBAL_SETUP=1 npm run test:e2e:export-mapping:real`，使用隔离认证服务、数据库、Kafka、对象存储和独占 EXPORT Worker。用例通过真实映射草案接口生成字段配置，按业务表关系填写租户与批次过滤 SQL 后保存模板，执行 Workflow 和 SQL 模板导出；核对 1200 行文件的用户表头、每行字段、分页游标不外泄、其他租户和同租户其他批次数据不可见、字节数、SHA-256 及运行 DAG 键盘选中，并在运行结束后精确清理本例数据与对象。本夹具的业务表位于验收专用数据库，不证明生产分库拓扑。
 
 实际双业务Job并行／分支验收另用 `E2E_SKIP_GLOBAL_SETUP=1 npm run test:e2e:workflow-dag-branches:real` 和 `WorkflowDagFixture`。创建两个独立Job定义并保存ID；状态回读包含这两个ID，逐定义精确清理后再清理Workflow。HTTP目标均为本例随机端口／路径，只暂缓响应以观察同时运行及单侧完成后ALL汇合仍等待，不能以SQL写状态替代。条件场景带真实启动payload，核对未命中分支SKIPPED、503作业沿FAILURE边执行200处理作业、根Workflow保持FAILED。复用全租户表零残留核对，不推断所有Join模式或恢复策略已覆盖。
 

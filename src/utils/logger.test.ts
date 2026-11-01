@@ -103,7 +103,9 @@ describe('ignored errors — benign noise filtered out', () => {
 
   it('keeps legitimate error messages', () => {
     logError('TypeError: Cannot read property x of undefined')
-    expect(getLogs()).toHaveLength(1)
+    expect(getLogs().map((entry) => entry.name)).toEqual([
+      'TypeError: Cannot read property x of undefined',
+    ])
   })
 })
 
@@ -120,7 +122,7 @@ describe('queryLogs', () => {
   beforeEach(() => {
     logRoute('page A')
     logClick('button X')
-    logApi('GET /api → 200', 'info', { url: '/api' })
+    logApi('GET /api → 200', 'info', { url: '/api', marker: 'prop-only-needle' })
     logError('boom')
   })
 
@@ -136,15 +138,22 @@ describe('queryLogs', () => {
   })
 
   it('filters by keyword in name', () => {
-    expect(queryLogs({ keyword: 'button' })).toHaveLength(1)
+    expect(queryLogs({ keyword: 'button' }).map((entry) => entry.name)).toEqual(['button X'])
   })
 
   it('filters by keyword in props', () => {
-    expect(queryLogs({ keyword: '/api' })).toHaveLength(1)
+    expect(queryLogs({ keyword: 'prop-only-needle' }).map((entry) => entry.name)).toEqual([
+      'GET /api → 200',
+    ])
   })
 
   it('returns all when no filter', () => {
-    expect(queryLogs()).toHaveLength(4)
+    expect(queryLogs().map((entry) => entry.name)).toEqual([
+      'page A',
+      'button X',
+      'GET /api → 200',
+      'boom',
+    ])
   })
 })
 

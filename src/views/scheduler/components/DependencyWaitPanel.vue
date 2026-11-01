@@ -18,6 +18,13 @@
     />
     <template v-else>
       <el-tabs v-model="activeKind" @tab-change="onTabChange">
+        <el-tab-pane :label="t('dependencyWaits.graph.title')" name="graph">
+          <WaitRelationshipGraph
+            v-if="activeKind === 'graph'"
+            ref="graphRef"
+            :tenant-id="tenant.tenantId"
+          />
+        </el-tab-pane>
         <el-tab-pane :label="t('dependencyWaits.calendarTab')" name="calendar">
           <el-form inline class="dependency-waits__filters" @submit.prevent="loadCalendar">
             <el-form-item :label="t('dependencyWaits.calendarCode')">
@@ -193,6 +200,7 @@
   import CalendarDependencyWaitTable from './dependency-waits/CalendarDependencyWaitTable.vue'
   import JobDependencyWaitTable from './dependency-waits/JobDependencyWaitTable.vue'
   import PersistentWaitTable from './dependency-waits/PersistentWaitTable.vue'
+  import WaitRelationshipGraph from './dependency-waits/WaitRelationshipGraph.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
   import { canRequestCalendarDependencyAction } from '../dependencyWaitsPresentation'
 
@@ -207,7 +215,8 @@
       hasPermission('ROLE_AUDITOR') ||
       hasPermission('ROLE_TENANT_ADMIN'),
   )
-  const activeKind = ref<'calendar' | 'job' | 'persistent'>('calendar')
+  const activeKind = ref<'graph' | 'calendar' | 'job' | 'persistent'>('calendar')
+  const graphRef = ref<InstanceType<typeof WaitRelationshipGraph> | null>(null)
   const calendarCode = ref('')
   const calendarStatus = ref<'WAITING' | 'OPENED' | 'SKIPPED'>('WAITING')
   const jobCode = ref('')
@@ -289,7 +298,8 @@
   useTenantReload(loadActive)
 
   async function loadActive() {
-    if (activeKind.value === 'calendar') await loadCalendar()
+    if (activeKind.value === 'graph') await graphRef.value?.load()
+    else if (activeKind.value === 'calendar') await loadCalendar()
     else if (activeKind.value === 'job') await loadJobs()
     else await loadPersistentWaits()
   }

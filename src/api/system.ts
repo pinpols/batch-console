@@ -38,6 +38,10 @@ export type FileChannelSavePayload = components['schemas']['FileChannelCreateReq
 
 export type FileNamePreviewPayload = components['schemas']['FileNamePreviewRequest']
 export type FileNamePreviewResult = components['schemas']['FileNamePreviewResponse']
+export type FileTemplateMappingDraftRequest =
+  components['schemas']['FileTemplateMappingDraftRequest']
+export type FileTemplateMappingDraftResponse =
+  components['schemas']['FileTemplateMappingDraftResponse']
 
 function readString(row: RawObject, ...keys: string[]) {
   for (const key of keys) {
@@ -138,6 +142,10 @@ export async function listFileTemplates(tenantId: string) {
 
 export function createFileTemplate(body: FileTemplateSavePayload) {
   return post<ConsoleFileTemplateResponse>('/api/console/file-templates', body)
+}
+
+export function draftFileTemplateMapping(body: FileTemplateMappingDraftRequest) {
+  return post<FileTemplateMappingDraftResponse>('/api/console/file-templates/mapping-draft', body)
 }
 
 export function updateFileTemplate(id: number, body: FileTemplateSavePayload) {

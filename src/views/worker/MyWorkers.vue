@@ -2,7 +2,7 @@
   <PageContainer>
     <PageHeader :title="t('myWorkers.title')" :description="t('myWorkers.description')">
       <template #actions>
-        <el-button :loading="loading" @click="onRefresh">
+        <el-button :loading="loading" @click="loadData">
           {{ t('myWorkers.refresh') }}
         </el-button>
       </template>
@@ -14,7 +14,7 @@
         :data="rows"
         :loading="loading"
         :error="loadError"
-        :on-retry="onRefresh"
+        :on-retry="loadData"
         :total="total"
         v-model:page="page"
         v-model:page-size="pageSize"
@@ -85,10 +85,6 @@
       allWorkers.value = list ?? []
       page.value = 1
     })
-  }
-
-  function onRefresh() {
-    return loadData()
   }
 
   useTenantReload(loadData)

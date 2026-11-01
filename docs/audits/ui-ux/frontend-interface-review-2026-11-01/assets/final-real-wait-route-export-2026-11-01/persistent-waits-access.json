@@ -1,0 +1,18 @@
+{
+  "waitTypes": [
+    "CAPACITY_ADMISSION",
+    "READINESS"
+  ],
+  "waitStatuses": [
+    "WAITING",
+    "PENDING"
+  ],
+  "tenantAdminOwnStatus": 200,
+  "tenantAdminCrossTenantStatus": 403,
+  "auditorOwnStatus": 200,
+  "auditorCrossTenantStatus": 200,
+  "tenantUserStatus": 403,
+  "anonymousStatus": 401,
+  "capacityPayloadMarkerPersisted": true,
+  "capacityPayloadExcludedFromConsole": true
+}

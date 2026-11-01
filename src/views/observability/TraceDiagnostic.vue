@@ -56,6 +56,7 @@
         <el-result icon="warning" :title="t('traceDiagnostic.noHitTitle')">
           <template #sub-title>
             <p>{{ t('traceDiagnostic.noHitSubtitle', { trace: lastSearchedTrace }) }}</p>
+            <p v-if="!timeline.available">{{ t('traceDiagnostic.timelineUnavailable') }}</p>
             <p class="trace-no-hit__alt">{{ t('traceDiagnostic.noHitAlt') }}</p>
           </template>
           <template #extra>
@@ -89,6 +90,62 @@
           show-icon
           :title="t('traceDiagnostic.truncatedWarning', { domains: truncatedDomainLabels })"
         />
+
+        <section class="trace-timeline" :aria-label="t('traceDiagnostic.timelineTitle')">
+          <h2>{{ t('traceDiagnostic.timelineTitle') }}</h2>
+          <p>{{ t('traceDiagnostic.timelineHint') }}</p>
+          <p v-if="!timeline.available">{{ t('traceDiagnostic.timelineUnavailable') }}</p>
+          <p v-else-if="!timeline.events.length">{{ t('traceDiagnostic.timelineEmpty') }}</p>
+          <el-timeline v-else class="trace-timeline__list">
+            <el-timeline-item
+              v-for="(event, index) in visibleTimeline"
+              :key="index"
+              :timestamp="event.occurredAt || t('traceDiagnostic.timelineFieldUnavailable')"
+              placement="top"
+            >
+              <span>{{ t('traceDiagnostic.timelineSource') }}: </span>
+              <el-button
+                v-if="timelineDomain(event.source)"
+                link
+                type="primary"
+                @click="openTimelineDomain(timelineDomain(event.source)!)"
+              >
+                {{ timelineSourceLabel(event.source) }}
+              </el-button>
+              <strong v-else>{{
+                event.source || t('traceDiagnostic.timelineFieldUnavailable')
+              }}</strong>
+              <span class="trace-timeline__field"
+                >{{ t('traceDiagnostic.timelineEventType') }}:
+                {{ event.eventType || t('traceDiagnostic.timelineFieldUnavailable') }}</span
+              >
+              <span class="trace-timeline__field"
+                >{{ t('traceDiagnostic.timelineReference') }}:
+                {{ event.referenceId || t('traceDiagnostic.timelineFieldUnavailable') }}</span
+              >
+              <span class="trace-timeline__field"
+                >{{ t('traceDiagnostic.colStatus') }}:
+                {{ event.status || t('traceDiagnostic.timelineFieldUnavailable') }}</span
+              >
+              <span class="trace-timeline__field"
+                >{{ t('traceDiagnostic.colMessage') }}:
+                {{ event.message || t('traceDiagnostic.timelineFieldUnavailable') }}</span
+              >
+            </el-timeline-item>
+          </el-timeline>
+          <el-button
+            v-if="!showAllTimeline && timeline.events.length > visibleTimeline.length"
+            link
+            type="primary"
+            @click="showAllTimeline = true"
+          >
+            {{
+              t('traceDiagnostic.timelineLimited', {
+                count: timeline.events.length - visibleTimeline.length,
+              })
+            }}
+          </el-button>
+        </section>
 
         <el-collapse v-model="expanded" class="trace-domains" @change="onCollapseChange">
           <el-collapse-item
@@ -149,7 +206,7 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, computed, onMounted, nextTick } from 'vue'
+  import { ref, computed, onMounted, nextTick, watch } from 'vue'
   import type { TableInstance } from 'element-plus'
   import { useRoute, useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
@@ -166,12 +223,15 @@
   import SectionCard from '@/components/common/SectionCard.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
   import { useTenantStore } from '@/stores/tenant'
+  import { useTenantRequestScope } from '@/composables/useTenantRequestScope'
   import { queryTraceSnapshot } from '@/api/observabilityQueries'
+  import { buildTraceTimeline } from './traceTimeline'
 
   const { t } = useI18n({ useScope: 'global' })
   const route = useRoute()
   const router = useRouter()
   const tenant = useTenantStore()
+  const requestScope = useTenantRequestScope()
 
   const traceIdInput = ref<string>('')
   const lastSearchedTrace = ref<string>('')
@@ -179,6 +239,8 @@
   const hasSearched = ref(false)
   const expanded = ref<string[]>([])
   const truncatedDomains = ref<string[]>([])
+  const timelineRecords = ref<unknown>(undefined)
+  const showAllTimeline = ref(false)
 
   // el-table 在 el-collapse 折叠态(display:none, width=0)算的列布局是错的,展开后表头/表体错位。
   // 收集每个域表格 ref,展开时 doLayout() 重算列宽修正错位。
@@ -219,10 +281,45 @@
 
   const hasResult = computed<boolean | null>(() => {
     if (!hasSearched.value) return null
-    return totalHits.value > 0
+    return totalHits.value > 0 || timeline.value.events.length > 0
   })
   const totalHits = computed(() => results.value.reduce((s, d) => s + d.rows.length, 0))
   const hitDomains = computed(() => results.value.filter((d) => d.rows.length > 0))
+  const timeline = computed(() => buildTraceTimeline(timelineRecords.value))
+  const visibleTimeline = computed(() =>
+    showAllTimeline.value ? timeline.value.events : timeline.value.events.slice(0, 30),
+  )
+
+  // 按后端事件的 source 跳转对应的明细分组，不将同 Trace 的事件解释成因果关系。
+  const timelineSourceDomains: Record<string, string> = {
+    JOB_INSTANCE: 'jobInstance',
+    WORKFLOW_RUN: 'workflowRun',
+    WORKFLOW_NODE_RUN: 'workflowNodeRun',
+    FILE_RECORD: 'file',
+    FILE_PIPELINE: 'filePipeline',
+    FILE_AUDIT: 'audit',
+    OPERATION_AUDIT: 'operationAudit',
+    EXECUTION_LOG: 'executionLog',
+    OUTBOX_DELIVERY: 'outbox',
+    ALERT: 'alert',
+    DEAD_LETTER: 'deadLetter',
+  }
+  function timelineDomain(source: string | null): string | undefined {
+    const domain = source ? timelineSourceDomains[source] : undefined
+    return results.value.some((item) => item.domain === domain && item.rows.length > 0)
+      ? domain
+      : undefined
+  }
+  function timelineSourceLabel(source: string | null): string {
+    const domain = timelineDomain(source)
+    return results.value.find((item) => item.domain === domain)?.label ?? source ?? '—'
+  }
+  function openTimelineDomain(domain: string) {
+    if (!expanded.value.includes(domain)) expanded.value = [...expanded.value, domain]
+    relayoutTables([domain])
+    nextTick(() => tableRefs.get(domain)?.$el?.scrollIntoView?.({ block: 'nearest' }))
+  }
+
   const truncatedDomainI18nKeys: Record<string, string> = {
     jobInstances: 'traceDiagnostic.domainJobInstance',
     workflowRuns: 'traceDiagnostic.domainWorkflowRun',
@@ -260,18 +357,30 @@
   async function search() {
     const trace = traceIdInput.value.trim()
     if (!trace) return
+    const scope = requestScope.begin()
+    if (!scope.tenantId) return
     lastSearchedTrace.value = trace
     loading.value = true
     hasSearched.value = true
     expanded.value = []
     truncatedDomains.value = []
+    results.value = []
+    timelineRecords.value = undefined
+    showAllTimeline.value = false
 
     const t0 = Date.now()
-    const tenantId = tenant.tenantId
-
-    const snapshot = await queryTraceSnapshot(tenantId, trace).finally(() => {
-      loading.value = false
-    })
+    let snapshot
+    try {
+      snapshot = await queryTraceSnapshot(scope.tenantId, trace)
+    } catch (error) {
+      if (!requestScope.isCurrent(scope)) return
+      hasSearched.value = false
+      throw error
+    } finally {
+      if (requestScope.isCurrent(scope)) loading.value = false
+    }
+    if (!requestScope.isCurrent(scope)) return
+    timelineRecords.value = snapshot.timeline
     const jobInstances = snapshot.jobInstances ?? []
     const files = snapshot.files ?? []
     const filePipelines = snapshot.filePipelines ?? []
@@ -443,6 +552,10 @@
   }
 
   function reset() {
+    requestScope.begin()
+    loading.value = false
+    timelineRecords.value = undefined
+    showAllTimeline.value = false
     traceIdInput.value = ''
     lastSearchedTrace.value = ''
     hasSearched.value = false
@@ -451,6 +564,8 @@
     truncatedDomains.value = []
     void router.replace({ query: { ...route.query, traceId: undefined } })
   }
+
+  watch(() => tenant.tenantId, reset, { flush: 'sync' })
 
   function openExternal(target: 'grafana' | 'tempo') {
     const trace = lastSearchedTrace.value
@@ -540,6 +655,29 @@
   }
   .trace-result__warning {
     margin-bottom: 12px;
+  }
+  .trace-timeline {
+    margin: 16px 0;
+    padding: 16px;
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-content);
+  }
+  .trace-timeline h2 {
+    margin: 0;
+    font-size: 16px;
+  }
+  .trace-timeline p {
+    color: var(--color-text-secondary);
+    font-size: 13px;
+  }
+  .trace-timeline__list {
+    max-height: 360px;
+    overflow: auto;
+    padding-left: 4px;
+  }
+  .trace-timeline__field {
+    margin-left: 12px;
+    overflow-wrap: anywhere;
   }
   .trace-domain__title {
     display: flex;

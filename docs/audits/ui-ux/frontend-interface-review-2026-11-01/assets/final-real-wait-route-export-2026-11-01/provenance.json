@@ -1,0 +1,20 @@
+{
+  "frontendHead": "e44c3b2d29e29805d95a48bafc167e8d5725129d",
+  "backendHead": "0258697d14229e9da1bddb547943acf9d2481338",
+  "frontendManifestSha256": "654cf2b215ccb377694c794a6a5fb1522c1b044539610a54a9d065fd14506300",
+  "backendManifestSha256": "78ddc846803a943241d389f16c6eb74cb0697da8312d9375cd25807bb6850e51",
+  "runtimeJarSha256": [
+    "92e40fb8580c85abb37987a166d594640db81d70a583093aa04c2f84a11a1fdc  console.jar",
+    "021a2b98ca6aaa7e8498c1c12c3101aec79c14b32a5fa1da8f5587b86d21b407  orchestrator.jar",
+    "fa50978d2bdd2e17405aeab719b23ab7437de0b72349fa9cc2ba6e61b0de9690  trigger.jar",
+    "9de808a9da342f57c60258175495e8874fa2a424b06916a71c3f2d88b38a6ce6  worker-export.jar"
+  ],
+  "scenarios": {
+    "multi-calendar": "passed 1/1, 0 retries",
+    "export-mapping": "passed 1/1, 0 retries",
+    "wait-relationship": "passed 1/1, 0 retries",
+    "notification-route": "passed 1/1, 0 retries"
+  },
+  "imageSource": "Playwright Chromium with isolated generated test identities; wait-graph-detail is a separate same-source screenshot probe, 1/1 passed.",
+  "originalArtifacts": "private task output retained for this session"
+}

@@ -2,7 +2,7 @@
   <PageContainer>
     <PageHeader>
       <template #actions>
-        <el-button v-if="canMutateConfig" type="primary" :icon="Plus" @click="onCreateClick">
+        <el-button v-if="canMutateConfig" type="primary" :icon="Plus" :disabled="!auth.profileLoaded" @click="onCreateClick">
           {{ activeCreateLabel }}
         </el-button>
       </template>
@@ -408,17 +408,34 @@
         <!-- 字段映射 -->
         <div class="form-section">
           <div class="section-title">{{ t('fileTemplateList.sectionMapping') }}</div>
+          <MappingDraftAssistant
+            v-if="
+              templateEditingId == null &&
+              isDelimited &&
+              ['IMPORT', 'EXPORT'].includes(templateForm.templateType)
+            "
+            :tenant-id="tenant.tenantId"
+            :direction="templateForm.templateType === 'EXPORT' ? 'EXPORT' : 'IMPORT'"
+            :can-apply="
+              !templateForm.fieldMappingsJson.trim() && !templateForm.queryParamSchemaJson.trim() &&
+              (templateForm.templateType !== 'EXPORT' || !templateForm.defaultQuerySql.trim())
+            "
+            @apply="applyMappingDraft"
+          />
           <el-form-item :label="t('fileTemplateList.fieldFieldMappingsJson')">
             <JsonTextareaInput v-model="templateForm.fieldMappingsJson" :rows="4" />
           </el-form-item>
           <el-form-item :label="t('fileTemplateList.fieldQueryParamSchemaJson')">
             <JsonTextareaInput v-model="templateForm.queryParamSchemaJson" :rows="3" />
           </el-form-item>
+          <el-form-item v-if="templateForm.templateType === 'EXPORT'" :label="t('fileTemplateList.fieldDefaultQuerySql')">
+            <el-input v-model="templateForm.defaultQuerySql" type="textarea" :rows="4" />
+          </el-form-item>
         </div>
       </el-form>
       <template #footer>
         <el-button @click="templateDialogVisible = false">{{ t('common.cancel') }}</el-button>
-        <el-button type="primary" :loading="saving" @click="saveTemplate">{{
+        <el-button type="primary" :loading="templateSaving" @click="saveTemplate">{{
           t('common.save')
         }}</el-button>
       </template>
@@ -486,7 +503,7 @@
       </el-form>
       <template #footer>
         <el-button @click="channelDialogVisible = false">{{ t('common.cancel') }}</el-button>
-        <el-button type="primary" :loading="saving" @click="saveChannel">{{
+        <el-button type="primary" :loading="channelSaving" @click="saveChannel">{{
           t('common.save')
         }}</el-button>
       </template>
@@ -495,7 +512,7 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, reactive, ref, watch } from 'vue'
+  import { computed, onScopeDispose, reactive, ref, watch } from 'vue'
   import { useRoute } from 'vue-router'
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
@@ -537,7 +554,10 @@
     type FileTemplateSavePayload,
   } from '@/api/system'
   import { useTenantStore } from '@/stores/tenant'
+  import { useAuthStore } from '@/stores/auth'
+  import { currentAuthSession, isSharedAuthRevisionCurrent } from '@/api/authSession'
   import { useTenantReload } from '@/composables/useTenantReload'
+  import { useTenantRequestScope } from '@/composables/useTenantRequestScope'
   import { usePermission } from '@/composables/usePermission'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
@@ -547,12 +567,21 @@
   import StatusTag from '@/components/common/StatusTag.vue'
   import JsonPreview from '@/components/common/JsonPreview.vue'
   import JsonTextareaInput from '@/components/common/JsonTextareaInput.vue'
+  import MappingDraftAssistant from './MappingDraftAssistant.vue'
+  import type { FileTemplateMappingDraftResponse } from '@/api/system'
   import RowActions, { type RowAction } from '@/components/common/RowActions.vue'
   import type { ConsoleFileChannelResponse, ConsoleFileTemplateResponse } from '@/types/console-api'
 
   const tenant = useTenantStore()
+  const auth = useAuthStore()
+  const templatesScope = useTenantRequestScope()
+  const channelsScope = useTenantRequestScope()
+  const bizTypesScope = useTenantRequestScope()
+  const detailScope = useTenantRequestScope()
   const { canMutateConfig } = usePermission()
-  const loading = ref(false)
+  const loadingTemplates = ref(false)
+  const loadingChannels = ref(false)
+  const loading = computed(() => loadingTemplates.value || loadingChannels.value)
   const loadError = ref<unknown>(null)
   const {
     filterBusy: queryActionBusy,
@@ -565,10 +594,40 @@
   const templateDialogVisible = ref(false)
   const channelDialogVisible = ref(false)
   const templateEditingId = ref<number | null>(null)
+  const initialDefaultQuerySql = ref<string | null>(null)
   const channelEditingId = ref<number | null>(null)
-  const saving = ref(false)
+  const templateSaving = ref(false)
+  const channelSaving = ref(false)
+  type EditorScope = { tenantId: string; username: string; session: number }
+  let templateEditor: EditorScope | null = null
+  let channelEditor: EditorScope | null = null
+  function newContextScope(): EditorScope | null {
+    const username = auth.userInfo?.username
+    if (!tenant.tenantId || !username || !auth.isLoggedIn || !auth.profileLoaded || !canMutateConfig.value || !isSharedAuthRevisionCurrent()) return null
+    return { tenantId: tenant.tenantId, username, session: currentAuthSession() }
+  }
+  function contextIsCurrent(scope: EditorScope) {
+    return scope.tenantId === tenant.tenantId && scope.username === auth.userInfo?.username &&
+      scope.session === currentAuthSession() && auth.isLoggedIn && auth.profileLoaded && canMutateConfig.value && isSharedAuthRevisionCurrent()
+  }
+  function editorIsCurrent(scope: EditorScope | null, kind: 'template' | 'channel') {
+    return !!scope && scope === (kind === 'template' ? templateEditor : channelEditor) &&
+      (kind === 'template' ? templateDialogVisible.value : channelDialogVisible.value) &&
+      contextIsCurrent(scope)
+  }
+  function captureReadSession() {
+    return { username: auth.userInfo?.username, session: currentAuthSession() }
+  }
+  function readSessionIsCurrent(scope: ReturnType<typeof captureReadSession>) {
+    return scope.session === currentAuthSession() && scope.username === auth.userInfo?.username &&
+      auth.isLoggedIn && auth.profileLoaded && isSharedAuthRevisionCurrent()
+  }
   const togglingTemplateId = ref<number | null>(null)
   const togglingChannelId = ref<number | null>(null)
+  let templateToggleRevision = 0
+  let channelToggleRevision = 0
+  let latestTemplateToggle = 0
+  let latestChannelToggle = 0
   const activeTab = ref<'templates' | 'channels'>(
     mode.value === 'channels' ? 'channels' : 'templates',
   )
@@ -639,6 +698,7 @@
     lineSeparator: '\\n',
     fieldMappingsJson: '',
     queryParamSchemaJson: '',
+    defaultQuerySql: '',
     enabled: true,
     version: 1,
     description: '',
@@ -646,6 +706,22 @@
 
   // 渐进式披露:分隔符/行分隔符仅对分隔符格式(DELIMITED)相关;其余格式隐藏(值仍保留在 model,提交语义不变)。
   const isDelimited = computed(() => templateForm.fileFormatType === 'DELIMITED')
+  function applyMappingDraft(draft: FileTemplateMappingDraftResponse) {
+    if (
+      !editorIsCurrent(templateEditor, 'template') ||
+      templateEditingId.value != null ||
+      !isDelimited.value ||
+      templateForm.fieldMappingsJson.trim() ||
+      templateForm.queryParamSchemaJson.trim() ||
+      (templateForm.templateType === 'EXPORT' && templateForm.defaultQuerySql.trim()) ||
+      draft.direction !== templateForm.templateType
+    )
+      return
+    if (!draft.fieldMappingsJson || !draft.queryParamSchemaJson) return
+    templateForm.fieldMappingsJson = draft.fieldMappingsJson
+    templateForm.queryParamSchemaJson = draft.queryParamSchemaJson
+    if (draft.direction === 'EXPORT') templateForm.defaultQuerySql = draft.defaultQuerySql ?? ''
+  }
   // 编码等高级项默认折叠(已给 UTF-8 合理默认),减少新建时的认知负担。
   const showFormatAdvanced = ref(false)
 
@@ -699,10 +775,14 @@
   // bizType 是租户级业务字典(独立 API),进页面 + 切租户时拉
   const bizTypeOptions = ref<MetaOption[]>([])
   async function loadBizTypes() {
+    const scope = bizTypesScope.begin()
+    const session = captureReadSession()
+    if (!scope.tenantId) return
     try {
-      bizTypeOptions.value = await getMetaBizTypes(tenant.tenantId)
+      const result = await getMetaBizTypes(scope.tenantId)
+      if (bizTypesScope.isCurrent(scope) && readSessionIsCurrent(session)) bizTypeOptions.value = result
     } catch {
-      bizTypeOptions.value = []
+      if (bizTypesScope.isCurrent(scope) && readSessionIsCurrent(session)) bizTypeOptions.value = []
     }
   }
 
@@ -735,16 +815,24 @@
   }
 
   async function load() {
-    loading.value = true
+    const scope = templatesScope.begin()
+    const session = captureReadSession()
+    if (!scope.tenantId) return
+    loadingTemplates.value = true
     loadError.value = null
     try {
-      allRows.value = await listFileTemplates(tenant.tenantId)
+      const result = await listFileTemplates(scope.tenantId)
+      if (templatesScope.isCurrent(scope) && readSessionIsCurrent(session)) allRows.value = result
     } catch (err) {
-      loadError.value = err
-      allRows.value = []
+      if (templatesScope.isCurrent(scope) && readSessionIsCurrent(session)) {
+        loadError.value = err
+        allRows.value = []
+      }
     } finally {
-      syncPage()
-      loading.value = false
+      if (templatesScope.isCurrent(scope)) {
+        if (readSessionIsCurrent(session)) syncPage()
+        loadingTemplates.value = false
+      }
     }
   }
 
@@ -764,14 +852,20 @@
   }
 
   async function loadChannels() {
-    loading.value = true
+    const scope = channelsScope.begin()
+    const session = captureReadSession()
+    if (!scope.tenantId) return
+    loadingChannels.value = true
     try {
-      allChannelRows.value = await listFileChannels(tenant.tenantId)
+      const result = await listFileChannels(scope.tenantId)
+      if (channelsScope.isCurrent(scope) && readSessionIsCurrent(session)) allChannelRows.value = result
     } catch {
-      allChannelRows.value = []
+      if (channelsScope.isCurrent(scope) && readSessionIsCurrent(session)) allChannelRows.value = []
     } finally {
-      syncChannelRows()
-      loading.value = false
+      if (channelsScope.isCurrent(scope)) {
+        if (readSessionIsCurrent(session)) syncChannelRows()
+        loadingChannels.value = false
+      }
     }
   }
 
@@ -782,7 +876,12 @@
       ElMessage.warning(t('fileTemplateList.detailUnavailable'))
       return
     }
-    detail.value = await queryFileTemplateDetail(tenant.tenantId, row.templateCode)
+    const scope = detailScope.begin()
+    const session = captureReadSession()
+    if (!scope.tenantId || (row.tenantId && row.tenantId !== scope.tenantId)) return
+    const result = await queryFileTemplateDetail(scope.tenantId, row.templateCode)
+    if (!detailScope.isCurrent(scope) || !readSessionIsCurrent(session)) return
+    detail.value = result
     detailVisible.value = true
   }
 
@@ -807,7 +906,11 @@
   }
 
   function openTemplateCreate() {
+    const scope = newContextScope()
+    if (!scope) return
+    templateEditor = scope
     templateEditingId.value = null
+    initialDefaultQuerySql.value = null
     Object.assign(templateForm, {
       templateCode: '',
       templateName: '',
@@ -821,6 +924,7 @@
       lineSeparator: '\\n',
       fieldMappingsJson: '',
       queryParamSchemaJson: '',
+      defaultQuerySql: '',
       enabled: true,
       version: 1,
       description: '',
@@ -829,7 +933,11 @@
   }
 
   function openTemplateEdit(row: ConsoleFileTemplateResponse) {
+    const scope = newContextScope()
+    if (!scope || (row.tenantId && row.tenantId !== scope.tenantId)) return
+    templateEditor = scope
     templateEditingId.value = row.id
+    initialDefaultQuerySql.value = row.defaultQuerySql ?? null
     Object.assign(templateForm, {
       templateCode: row.templateCode ?? '',
       templateName: row.templateName ?? '',
@@ -843,6 +951,7 @@
       lineSeparator: row.lineSeparator ?? '\\n',
       fieldMappingsJson: row.fieldMappings ?? '',
       queryParamSchemaJson: row.queryParamSchema ?? '',
+      defaultQuerySql: row.defaultQuerySql ?? '',
       enabled: row.enabled ?? true,
       version: row.version ?? 1,
       description: row.description ?? '',
@@ -850,9 +959,9 @@
     templateDialogVisible.value = true
   }
 
-  function buildTemplatePayload(): FileTemplateSavePayload {
+  function buildTemplatePayload(tenantId: string): FileTemplateSavePayload {
     return {
-      tenantId: tenant.tenantId,
+      tenantId,
       ...(templateEditingId.value == null
         ? { templateCode: requireCode(templateForm.templateCode, 'templateCode') }
         : {}),
@@ -867,6 +976,9 @@
       lineSeparator: optionalText(templateForm.lineSeparator),
       fieldMappingsJson: optionalText(templateForm.fieldMappingsJson),
       queryParamSchemaJson: optionalText(templateForm.queryParamSchemaJson),
+      defaultQuerySql: templateEditingId.value == null || initialDefaultQuerySql.value == null
+        ? optionalText(templateForm.defaultQuerySql)
+        : templateForm.defaultQuerySql,
       enabled: templateForm.enabled,
       version: templateForm.version,
       description: optionalText(templateForm.description),
@@ -874,34 +986,45 @@
   }
 
   async function saveTemplate() {
-    saving.value = true
+    const scope = templateEditor
+    if (!editorIsCurrent(scope, 'template') || !scope || templateSaving.value) return
+    templateSaving.value = true
     try {
-      const payload = buildTemplatePayload()
+      const payload = buildTemplatePayload(scope.tenantId)
       if (templateEditingId.value == null) await createFileTemplate(payload)
       else await updateFileTemplate(templateEditingId.value, payload)
+      if (!editorIsCurrent(scope, 'template')) return
       ElMessage.success(t('fileTemplateList.saveSuccess'))
       templateDialogVisible.value = false
       await load()
     } catch (err) {
-      handleValidationError(err)
+      if (editorIsCurrent(scope, 'template')) handleValidationError(err)
     } finally {
-      saving.value = false
+      if (templateEditor === scope) templateSaving.value = false
     }
   }
 
   async function toggleTemplate(row: ConsoleFileTemplateResponse) {
-    if (!canMutateConfig.value) return
+    const scope = newContextScope()
+    if (!scope || (row.tenantId && row.tenantId !== scope.tenantId)) return
+    const revision = templateToggleRevision
+    const request = ++latestTemplateToggle
+    const enabled = !row.enabled
     togglingTemplateId.value = row.id
     try {
-      await toggleFileTemplate(row.id, row.tenantId ?? tenant.tenantId, !row.enabled)
-      row.enabled = !row.enabled
+      await toggleFileTemplate(row.id, scope.tenantId, enabled)
+      if (revision !== templateToggleRevision || !contextIsCurrent(scope)) return
+      row.enabled = enabled
       ElMessage.success(t('fileTemplateList.saveSuccess'))
     } finally {
-      togglingTemplateId.value = null
+      if (revision === templateToggleRevision && request === latestTemplateToggle) togglingTemplateId.value = null
     }
   }
 
   function openChannelCreate() {
+    const scope = newContextScope()
+    if (!scope) return
+    channelEditor = scope
     channelEditingId.value = null
     Object.assign(channelForm, {
       channelCode: '',
@@ -918,7 +1041,9 @@
   }
 
   function openChannelEdit(row: ConsoleFileChannelResponse) {
-    if (row.id == null) return
+    const scope = newContextScope()
+    if (!scope || row.id == null || (row.tenantId && row.tenantId !== scope.tenantId)) return
+    channelEditor = scope
     channelEditingId.value = row.id
     Object.assign(channelForm, {
       channelCode: row.channelCode ?? '',
@@ -934,9 +1059,9 @@
     channelDialogVisible.value = true
   }
 
-  function buildChannelPayload(): FileChannelSavePayload {
+  function buildChannelPayload(tenantId: string): FileChannelSavePayload {
     return {
-      tenantId: tenant.tenantId,
+      tenantId,
       ...(channelEditingId.value == null
         ? { channelCode: requireCode(channelForm.channelCode, 'channelCode') }
         : {}),
@@ -952,31 +1077,38 @@
   }
 
   async function saveChannel() {
-    saving.value = true
+    const scope = channelEditor
+    if (!editorIsCurrent(scope, 'channel') || !scope || channelSaving.value) return
+    channelSaving.value = true
     try {
-      const payload = buildChannelPayload()
+      const payload = buildChannelPayload(scope.tenantId)
       if (channelEditingId.value == null) await createFileChannel(payload)
       else await updateFileChannel(channelEditingId.value, payload)
+      if (!editorIsCurrent(scope, 'channel')) return
       ElMessage.success(t('fileTemplateList.saveSuccess'))
       channelDialogVisible.value = false
       await loadChannels()
     } catch (err) {
-      handleValidationError(err)
+      if (editorIsCurrent(scope, 'channel')) handleValidationError(err)
     } finally {
-      saving.value = false
+      if (channelEditor === scope) channelSaving.value = false
     }
   }
 
   async function toggleChannel(row: ConsoleFileChannelResponse) {
-    if (!canMutateConfig.value) return
-    if (row.id == null) return
+    const scope = newContextScope()
+    if (!scope || row.id == null || (row.tenantId && row.tenantId !== scope.tenantId)) return
+    const revision = channelToggleRevision
+    const request = ++latestChannelToggle
+    const enabled = !row.enabled
     togglingChannelId.value = row.id
     try {
-      await toggleFileChannel(row.id, row.tenantId ?? tenant.tenantId, !row.enabled)
-      row.enabled = !row.enabled
+      await toggleFileChannel(row.id, scope.tenantId, enabled)
+      if (revision !== channelToggleRevision || !contextIsCurrent(scope)) return
+      row.enabled = enabled
       ElMessage.success(t('fileTemplateList.saveSuccess'))
     } finally {
-      togglingChannelId.value = null
+      if (revision === channelToggleRevision && request === latestChannelToggle) togglingChannelId.value = null
     }
   }
 
@@ -1010,6 +1142,47 @@
     })
   }
 
+  function invalidateEditors() {
+    templateEditor = null
+    channelEditor = null
+    templateSaving.value = false
+    channelSaving.value = false
+    templateToggleRevision++
+    channelToggleRevision++
+    togglingTemplateId.value = null
+    togglingChannelId.value = null
+    templateDialogVisible.value = false
+    channelDialogVisible.value = false
+  }
+  watch([() => tenant.tenantId, () => auth.userInfo?.username, () => auth.isLoggedIn, () => auth.profileLoaded, canMutateConfig], invalidateEditors, { flush: 'sync' })
+  watch(templateDialogVisible, (visible) => {
+    if (!visible) { templateEditor = null; templateSaving.value = false }
+  }, { flush: 'sync' })
+  watch(channelDialogVisible, (visible) => {
+    if (!visible) { channelEditor = null; channelSaving.value = false }
+  }, { flush: 'sync' })
+  onScopeDispose(invalidateEditors)
+  watch([() => tenant.tenantId, () => auth.userInfo?.username, () => auth.isLoggedIn, () => auth.profileLoaded], ([tenantId, username, loggedIn, profileLoaded], [oldTenantId]) => {
+    templatesScope.begin()
+    channelsScope.begin()
+    bizTypesScope.begin()
+    detailScope.begin()
+    allRows.value = []
+    allChannelRows.value = []
+    bizTypeOptions.value = []
+    detail.value = null
+    detailVisible.value = false
+    loadingTemplates.value = false
+    loadingChannels.value = false
+    loadError.value = null
+    syncPage()
+    syncChannelRows()
+    if (tenantId === oldTenantId && tenantId && username && loggedIn && profileLoaded) {
+      void load()
+      void loadChannels()
+      void loadBizTypes()
+    }
+  }, { flush: 'sync' })
   watch([page, pageSize], syncPage)
   watch(activeTab, (tab) => {
     if (tab === 'channels' && allChannelRows.value.length === 0) void loadChannels()

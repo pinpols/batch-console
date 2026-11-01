@@ -95,7 +95,7 @@ export function listConfigDependencies(tenantId: string, configType: string, con
 
 /** GET /api/console/config/releases/diff?tenantId=&releaseIdA=&releaseIdB= */
 export function diffConfigReleases(tenantId: string, releaseIdA: number, releaseIdB: number) {
-  return get<unknown>('/api/console/config/releases/diff', { tenantId, releaseIdA, releaseIdB })
+  return get<components['schemas']['ConfigReleaseDiffResponse']>('/api/console/config/releases/diff', { tenantId, releaseIdA, releaseIdB })
 }
 
 /** POST /api/console/config/releases/{releaseId}/submit-approval — 提交审批 */

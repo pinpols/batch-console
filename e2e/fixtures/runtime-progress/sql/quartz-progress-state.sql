@@ -10,6 +10,13 @@ SELECT json_build_object(
         WHERE tenant_id = :'tenant_id'
           AND workflow_definition_id = NULLIF(:'workflow_definition_id', '0')::bigint
           AND occurrence_status != 'SUPERSEDED'), '[]'::json),
+    'actualFires', coalesce((SELECT json_agg(json_build_object(
+        'scheduledFireTime', scheduled_fire_time, 'fireInstanceId', fire_instance_id,
+        'refireCount', refire_count, 'actualFireTime', actual_fire_time, 'fireKind', fire_kind)
+        ORDER BY actual_fire_time, id)
+        FROM batch.scheduled_occurrence_fire
+        WHERE tenant_id = :'tenant_id'
+          AND workflow_definition_id = NULLIF(:'workflow_definition_id', '0')::bigint), '[]'::json),
     'coverage', (SELECT json_build_object(
         'scheduleVersion', schedule_version,
         'coverageThrough', coverage_through_at,

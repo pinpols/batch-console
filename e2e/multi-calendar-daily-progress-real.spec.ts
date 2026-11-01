@@ -199,6 +199,11 @@ test('多定义双日历CRON及FIXED_RATE按业务日统计并推送，缺覆盖
         { timeout: 45_000 },
       )
       .toBe(true)
+    await expect
+      .poll(
+        () => new Set(fixture.multiCalendarState().actualFires.map((fire) => fire.workflowId)).size,
+      )
+      .toBe(3)
     const terminal = fixture.multiCalendarState()
     expect(terminal.definitions).toHaveLength(3)
     expect(new Set(terminal.definitions.map((definition) => definition.calendarCode)).size).toBe(2)
@@ -211,6 +216,11 @@ test('多定义双日历CRON及FIXED_RATE按业务日统计并推送，缺覆盖
         }),
       )
       expect(terminal.runs.filter((run) => run.workflowId === definition.id)).toHaveLength(1)
+      expect(terminal.actualFires).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ workflowId: definition.id, fireKind: 'SCHEDULED' }),
+        ]),
+      )
     }
     expect(terminal.requests).toHaveLength(3)
     expect(new Set(terminal.requests.map((request) => request.requestId)).size).toBe(3)
@@ -227,6 +237,18 @@ test('多定义双日历CRON及FIXED_RATE按业务日统计并推送，缺覆盖
           status: 'REQUESTED',
         }),
       )
+      const occurrence = terminal.occurrences.find(
+        (item) => item.workflowId === run.workflowId && item.requestId === request.requestId,
+      )!
+      expect(
+        terminal.actualFires.some(
+          (fire) =>
+            fire.workflowId === run.workflowId &&
+            new Date(fire.scheduledFireTime).getTime() ===
+              new Date(occurrence.fireTime).getTime() &&
+            Number.isFinite(new Date(fire.actualFireTime).getTime()),
+        ),
+      ).toBe(true)
     }
     for (const scope of ['SCHEDULED_OCCURRENCE', 'TRIGGER_REQUEST', 'WORKFLOW_RUN']) {
       await expect(row(scope).locator('td').nth(1)).toHaveText('3')

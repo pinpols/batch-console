@@ -1,0 +1,86 @@
+[
+  {
+    "path": "batch-console-api/src/main/java/io/github/pinpols/batch/console/domain/ops/application/ConsoleAdminTestDataApplicationService.java",
+    "candidateSha256": null,
+    "currentSha256": "7e5c3e23fdd1832c984525edab00e03061e7bbcd2d2e8e33f7d59ce23e7d0261",
+    "impact": "other runtime path"
+  },
+  {
+    "path": "batch-console-api/src/main/java/io/github/pinpols/batch/console/domain/ops/web/ConsoleAdminTestDataController.java",
+    "candidateSha256": "901c98520eac9017f7f5327a5eca698aafbb7f867f6c2de0532cbce5291c6a73",
+    "currentSha256": "464906de2ebf421443f03f161615aa62ca7160a78406468ef92eb9b5e1d9de13",
+    "impact": "other runtime path"
+  },
+  {
+    "path": "batch-orchestrator/src/main/java/io/github/pinpols/batch/orchestrator/application/service/OrchestratorDrainService.java",
+    "candidateSha256": "2f406f683e422bcb1825f2fc43d27679d6257731f6cdbaf4c2f09d9522d211f3",
+    "currentSha256": "c9b83b316a4f2e3094b8818632d4d63d9c11a993591259623c33742f7e9985f0",
+    "impact": "launch/trigger/readiness"
+  },
+  {
+    "path": "batch-orchestrator/src/main/java/io/github/pinpols/batch/orchestrator/application/service/governance/DefaultFileGovernanceService.java",
+    "candidateSha256": "e9e6f226ee6877abf51588d314d081fb56659d4d77a1963cf633a70ea19d6bbe",
+    "currentSha256": "9206900af9cbceb1d6f3c89c2e42afe3c1d4875807001d92b2faa262a4bfb2b8",
+    "impact": "other runtime path"
+  },
+  {
+    "path": "batch-orchestrator/src/main/java/io/github/pinpols/batch/orchestrator/application/service/governance/FileGovernanceLatencyResponse.java",
+    "candidateSha256": null,
+    "currentSha256": "c9bf028fbd0ac1a347f816c487dfe349ff37e72c518324083a77c934a2677b64",
+    "impact": "other runtime path"
+  },
+  {
+    "path": "batch-orchestrator/src/main/java/io/github/pinpols/batch/orchestrator/application/service/governance/FileGovernanceService.java",
+    "candidateSha256": "441186660514912574128b63f255a0c8d5d053f8c2468de446430c9758b0f640",
+    "currentSha256": "6e06618e532b28ac32b123f35fd2201fe8558168f507baa33e65b5aef31f3120",
+    "impact": "other runtime path"
+  },
+  {
+    "path": "batch-orchestrator/src/main/java/io/github/pinpols/batch/orchestrator/controller/FileGovernanceController.java",
+    "candidateSha256": "4e9235f82b621ade0c896b52a0e155f3eb459a7eb65f3ec24702f708e5cb0c1e",
+    "currentSha256": "9b4b887ce2d1f96c67c1c6c2987d3d27f6bfe47b20e7f7b7f42bd2b41aa94bea",
+    "impact": "other runtime path"
+  },
+  {
+    "path": "batch-orchestrator/src/main/java/io/github/pinpols/batch/orchestrator/controller/LaunchController.java",
+    "candidateSha256": "159fca9f169da4e7110fdda9c4b22d5b7d7300351d82e18f81da1130e751ef90",
+    "currentSha256": "266dda8bd3f1ee0a8576176ba48f3d519315c6fd79c9218afc126bf28e65bf5b",
+    "impact": "launch/trigger/readiness"
+  },
+  {
+    "path": "batch-orchestrator/src/main/java/io/github/pinpols/batch/orchestrator/infrastructure/file/FileGovernanceLatencyMetrics.java",
+    "candidateSha256": "1ef9239b20c4c3777458c7b99d4f09bb22c0e09096a72fab57ff21b8e5e72927",
+    "currentSha256": "c1315aea04a5fbdfd26e4dce0cca154fcb5f9ec014816caa3f8dda1a13d55a98",
+    "impact": "other runtime path"
+  },
+  {
+    "path": "batch-trigger/src/main/java/io/github/pinpols/batch/trigger/domain/TriggerDrainService.java",
+    "candidateSha256": "72e8dd2a86e7f7d2d777ee692bf1a8ded1a4f27abc6f0a754a0f8b0f4e6f5902",
+    "currentSha256": "ea044182f678f4ffd203e0d295f1e491e4ea82d4f255fb7e328710c3e3779f6c",
+    "impact": "launch/trigger/readiness"
+  },
+  {
+    "path": "batch-trigger/src/main/java/io/github/pinpols/batch/trigger/infrastructure/readiness/ReadinessRecoveryService.java",
+    "candidateSha256": "633659e14c1e1287a09ffb05011d53de91aed8dab0dfec588bae877c4530239d",
+    "currentSha256": null,
+    "impact": "launch/trigger/readiness"
+  },
+  {
+    "path": "batch-trigger/src/main/java/io/github/pinpols/batch/trigger/service/readiness/ReadinessRecoveryService.java",
+    "candidateSha256": null,
+    "currentSha256": "c963d9384f9f6499dd1b5f75bea96c821dae7ef70ee6ee6dc01464bd2de980c8",
+    "impact": "launch/trigger/readiness"
+  },
+  {
+    "path": "batch-trigger/src/main/java/io/github/pinpols/batch/trigger/web/InternalReadinessRecoveryController.java",
+    "candidateSha256": "dcc42df5a706911e5ec645983d9a76063e3168f34e12cbc026874f0acf8fe286",
+    "currentSha256": "2dcd6d533998e73cb5a20899f452635451a2c9dd35d59f8b1cd64a3446f14119",
+    "impact": "launch/trigger/readiness"
+  },
+  {
+    "path": "batch-trigger/src/main/java/io/github/pinpols/batch/trigger/web/TriggerController.java",
+    "candidateSha256": "5d6f14fbe40fddb6921eb84d33d7f5f5e808fd6dc866cbddfaef1f0ef51e065a",
+    "currentSha256": "f18a1ba49510c6099b827d856832093881cb87be3c4ae36b5c2ee9c34cc133fa",
+    "impact": "launch/trigger/readiness"
+  }
+]

@@ -29,11 +29,11 @@ describe('fmtDatetime', () => {
   it('returns — for null', () => expect(fmtDatetime(null)).toBe('—'))
   it('returns — for undefined', () => expect(fmtDatetime(undefined)).toBe('—'))
   it('returns — for empty string', () => expect(fmtDatetime('')).toBe('—'))
-  it('returns — for empty string (typed)', () => expect(fmtDatetime('')).toBe('—'))
 
   it('handles epoch ms number', () => {
     const result = fmtDatetime(0)
     expect(result).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/)
+    expect(fmtDatetime(0, 'UTC')).toBe('1970-01-01 00:00:00')
   })
 
   it('returns raw string for invalid date', () => {

@@ -33,6 +33,12 @@ SELECT id, tenant_id, job_instance_id
 FROM batch.job_task
 WHERE tenant_id = :'tenant_id'
   AND job_instance_id IN (SELECT id FROM owned_instances);
+CREATE TEMP TABLE owned_retry_schedules AS
+SELECT id FROM batch.retry_schedule
+WHERE tenant_id = :'tenant_id'
+  AND ((related_type = 'JOB_INSTANCE' AND related_id IN (SELECT id FROM owned_instances))
+    OR (related_type = 'JOB_PARTITION' AND related_id IN (SELECT id FROM owned_partitions))
+    OR (related_type = 'JOB_TASK' AND related_id IN (SELECT id FROM owned_tasks)));
 CREATE TEMP TABLE owned_events AS
 SELECT id, event_key
 FROM batch.outbox_event
@@ -108,6 +114,8 @@ DELETE FROM batch.job_instance_dedup_key
 WHERE tenant_id = :'tenant_id' AND first_instance_id IN (SELECT id FROM owned_instances);
 DELETE FROM batch.job_step_instance
 WHERE tenant_id = :'tenant_id' AND job_instance_id IN (SELECT id FROM owned_instances);
+DELETE FROM batch.retry_schedule
+WHERE tenant_id = :'tenant_id' AND id IN (SELECT id FROM owned_retry_schedules);
 DELETE FROM batch.job_task
 WHERE tenant_id = :'tenant_id' AND id IN (SELECT id FROM owned_tasks);
 DELETE FROM batch.job_partition
@@ -128,6 +136,7 @@ SELECT json_build_object(
   'stepInstances', (SELECT count(*) FROM batch.job_step_instance WHERE tenant_id = :'tenant_id' AND job_instance_id IN (SELECT id FROM owned_instances)),
   'executionLogs', (SELECT count(*) FROM batch.job_execution_log WHERE tenant_id = :'tenant_id' AND (job_instance_id IN (SELECT id FROM owned_instances) OR job_partition_id IN (SELECT id FROM owned_partitions))),
   'workerReports', (SELECT count(*) FROM batch.worker_report_outbox WHERE tenant_id = :'tenant_id' AND task_id IN (SELECT id FROM owned_tasks)),
+  'jobRetrySchedules', (SELECT count(*) FROM batch.retry_schedule WHERE tenant_id = :'tenant_id' AND id IN (SELECT id FROM owned_retry_schedules)),
   'jobEvents', (SELECT count(*) FROM batch.outbox_event WHERE tenant_id = :'tenant_id' AND id IN (SELECT id FROM owned_events)),
   'workerRegistry', (SELECT count(*) FROM batch.worker_registry WHERE tenant_id = :'tenant_id' AND worker_code = :'worker_code')
 );

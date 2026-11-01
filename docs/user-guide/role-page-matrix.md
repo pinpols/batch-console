@@ -15,6 +15,8 @@
 
 缩写：`ADMIN` = 平台管理员，`AUDITOR` = 平台审计员，`TENANT_ADMIN` = 租户管理员，`TENANT_USER` = 租户用户。
 
+移动端底部导航和业务深链沿用对应桌面业务入口的菜单权限；当前租户资料未确认时暂不显示受菜单控制的入口。审批和 Worker 等受限入口不会仅因移动端有页面而对低权限角色开放。
+
 ## 工作台与运行监控
 
 | 页面       | 路由                     | ADMIN | AUDITOR | TENANT_ADMIN | TENANT_USER |

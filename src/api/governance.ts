@@ -63,7 +63,6 @@ export interface GovernanceCalendarHolidayRow {
   holidayDate: string
   holidayName: string
   holidayType: string
-  enabled: boolean
   description: string
 }
 
@@ -223,7 +222,6 @@ function normalizeHoliday(row: RawRow): GovernanceCalendarHolidayRow {
     holidayDate: readString(row, 'holidayDate', 'bizDate', 'biz_date'),
     holidayName: readString(row, 'holidayName', 'holiday_name', 'name'),
     holidayType: readString(row, 'holidayType', 'dayType', 'day_type'),
-    enabled: readBoolean(row, 'enabled'),
     description: readString(row, 'description'),
   }
 }
@@ -316,7 +314,10 @@ export const governanceApi = {
   updateBatchWindow: (id: number, body: GovernanceBatchWindowSavePayload) =>
     put<RawRow>(`/api/console/batch-windows/${id}`, body).then(normalizeBatchWindow),
 
-  listCalendars: async (tenantId: string, filters?: { calendarCode?: string; enabled?: boolean }) => {
+  listCalendars: async (
+    tenantId: string,
+    filters?: { calendarCode?: string; enabled?: boolean },
+  ) => {
     const rows = await listGovernanceRows('/api/console/calendars', tenantId, filters ?? {})
     return rows.map(normalizeCalendar)
   },
@@ -331,15 +332,14 @@ export const governanceApi = {
   updateCalendar: (id: number, body: GovernanceCalendarSavePayload) =>
     put<RawRow>(`/api/console/calendars/${id}`, body).then(normalizeCalendar),
 
-  listCalendarHolidays: async (id: number, tenantId: string) =>
-    {
-      const response = await get<RawRow[] | { items?: RawRow[] }>(
-        `/api/console/calendars/${id}/holidays`,
-        { tenantId },
-      )
-      const rows = Array.isArray(response) ? response : (response.items ?? [])
-      return rows.map(normalizeHoliday)
-    },
+  listCalendarHolidays: async (id: number, tenantId: string) => {
+    const response = await get<RawRow[] | { items?: RawRow[] }>(
+      `/api/console/calendars/${id}/holidays`,
+      { tenantId },
+    )
+    const rows = Array.isArray(response) ? response : (response.items ?? [])
+    return rows.map(normalizeHoliday)
+  },
 
   createCalendarHoliday: (calendarId: number, body: GovernanceCalendarHolidaySavePayload) =>
     post<void>(`/api/console/calendars/${calendarId}/holidays`, {

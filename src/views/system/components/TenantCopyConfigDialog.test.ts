@@ -1,17 +1,30 @@
 // @vitest-environment jsdom
 import { flushPromises, mount } from '@vue/test-utils'
+import { createPinia, setActivePinia } from 'pinia'
 import { computed, reactive } from 'vue'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ElMessage } from 'element-plus'
 import TenantCopyConfigDialog from './TenantCopyConfigDialog.vue'
+import {
+  createConfigBatchRecovery,
+  listConfigBatchRecoveries,
+  saveConfigBatchRecovery,
+} from '@/utils/configBatchRecovery'
+import { STORAGE_KEYS } from '@/constants/storageKeys'
 
 const state = vi.hoisted(() => ({
   copy: vi.fn(),
   preview: vi.fn(),
   overlay: vi.fn(),
   matrix: vi.fn(),
+  recover: vi.fn(),
+  confirm: vi.fn(),
   validate: vi.fn(),
-  context: null as unknown as { actor: string; writer: boolean; frozen: boolean },
+  useRealTenant: false,
+  context: null as unknown as { actor: string; tenant: string; writer: boolean; frozen: boolean },
+}))
+vi.mock('@/api/configBatchRecovery', () => ({
+  getConfigBatchOperation: state.recover,
 }))
 vi.mock('@/api/ops', () => ({
   copyTenantConfig: state.copy,
@@ -26,6 +39,16 @@ vi.mock('@/stores/auth', () => ({
     },
   }),
 }))
+vi.mock('@/stores/tenant', async (original) => {
+  const actual = await original<typeof import('@/stores/tenant')>()
+  return {
+    useTenantStore: () => state.useRealTenant ? actual.useTenantStore() : {
+      get tenantId() {
+        return state.context.tenant
+      },
+    },
+  }
+})
 vi.mock('@/composables/usePermission', () => ({
   usePermission: () => ({
     canManageSystem: computed(() => state.context.writer),
@@ -39,6 +62,7 @@ vi.mock('vue-i18n', async (original) => ({
 vi.mock('element-plus', async (original) => ({
   ...(await original<typeof import('element-plus')>()),
   ElMessage: { success: vi.fn(), warning: vi.fn() },
+  ElMessageBox: { confirm: state.confirm },
 }))
 vi.mock('@/composables/useFormValidate', async () => {
   const { ref } = await import('vue')
@@ -81,10 +105,12 @@ const stubs = {
 }
 function pending<T>() {
   let resolve!: (value: T) => void
-  const promise = new Promise<T>((done) => {
+  let reject!: (reason: unknown) => void
+  const promise = new Promise<T>((done, fail) => {
     resolve = done
+    reject = fail
   })
-  return { promise, resolve }
+  return { promise, resolve, reject }
 }
 function diff(marker = 'current-preview') {
   return { summary: { targetTenantCount: 1 }, tenants: [{ tenantId: marker, items: [] }] }
@@ -132,13 +158,19 @@ const previews = [
 
 describe('租户复制的输入与异步结果边界', () => {
   beforeEach(() => {
+    vi.restoreAllMocks()
     vi.clearAllMocks()
-    state.context = reactive({ actor: 'operator', writer: true, frozen: false })
+    sessionStorage.clear()
+    localStorage.setItem(STORAGE_KEYS.tenantId, 'tenant-a')
+    state.useRealTenant = false
+    state.context = reactive({ actor: 'operator', tenant: 'tenant-a', writer: true, frozen: false })
     state.validate.mockReset().mockResolvedValue(true)
     state.copy.mockReset().mockResolvedValue(success())
     state.preview.mockReset().mockResolvedValue(diff())
     state.overlay.mockReset().mockResolvedValue(diff())
     state.matrix.mockReset().mockResolvedValue({ rows: [{ tenantId: 'current-matrix' }] })
+    state.recover.mockReset()
+    state.confirm.mockReset().mockResolvedValue('confirm')
   })
 
   it.each(['close', 'input', 'actor', 'permission', 'maintenance', 'unmount'])(
@@ -186,6 +218,7 @@ describe('租户复制的输入与异步结果边界', () => {
     expect(wrapper.emitted('result')).toBeUndefined()
     expect(wrapper.emitted('update:modelValue')).toBeUndefined()
     expect(ElMessage.success).not.toHaveBeenCalled()
+    expect(listConfigBatchRecoveries('operator', 'tenant-a').commands).toHaveLength(1)
     wrapper.unmount()
   })
 
@@ -240,8 +273,309 @@ describe('租户复制的输入与异步结果边界', () => {
       jobCodes: ['JOB_A'],
       mode: 'SKIP_EXISTING',
       dryRun: false,
-    })
+    }, expect.any(String))
     expect(wrapper.emitted('update:modelValue')).toEqual([[false]])
+    expect(listConfigBatchRecoveries('operator', 'tenant-a').commands).toHaveLength(0)
+    wrapper.unmount()
+  })
+
+  it('成功响应后的本地清理失败保留记录并提示', async () => {
+    const request = pending<ReturnType<typeof success>>()
+    state.copy.mockReturnValueOnce(request.promise)
+    const wrapper = await open()
+    await click(wrapper, 'tenantCopyConfigDialog.btnRunFormal')
+    vi.spyOn(Storage.prototype, 'removeItem').mockImplementation(() => {
+      throw new Error('storage unavailable')
+    })
+
+    request.resolve(success())
+    await flushPromises()
+
+    expect(listConfigBatchRecoveries('operator', 'tenant-a').commands).toHaveLength(1)
+    expect(ElMessage.warning).toHaveBeenCalledWith(
+      'tenantCopyConfigDialog.recoveryStorageUnavailable',
+    )
+    expect(wrapper.emitted('update:modelValue')).toBeUndefined()
+    wrapper.unmount()
+  })
+
+  it('正式复制存在业务失败时保留原请求身份', async () => {
+    state.copy.mockResolvedValueOnce({
+      totalTenants: 1,
+      successTenants: 0,
+      failureTenants: 1,
+      results: [{ tenantId: 'target-a', success: false }],
+    })
+    const wrapper = await open()
+
+    await click(wrapper, 'tenantCopyConfigDialog.btnRunFormal')
+
+    expect(listConfigBatchRecoveries('operator', 'tenant-a').commands).toHaveLength(1)
+    expect(wrapper.emitted('update:modelValue')).toBeUndefined()
+    wrapper.unmount()
+  })
+
+  it.each([
+    { description: '网络中断', error: { code: 'ERR_NETWORK' } },
+    { description: '服务端异常', error: { response: { status: 500 } } },
+    { description: '幂等或状态冲突', error: { response: { status: 409 } } },
+  ])('正式复制$description 后提示先核实目标，不能假定未执行', async ({ error }) => {
+    state.copy.mockRejectedValueOnce(error)
+    const wrapper = await open()
+    wrapper.vm.$.appContext.config.errorHandler = vi.fn()
+    await click(wrapper, 'tenantCopyConfigDialog.btnRunFormal')
+    expect(ElMessage.warning).toHaveBeenCalledWith('tenantCopyConfigDialog.unknownOutcome')
+    expect(wrapper.emitted('update:modelValue')).toBeUndefined()
+    wrapper.unmount()
+  })
+
+  it('复制参数被明确拒绝时不提示结果未知', async () => {
+    state.copy.mockRejectedValueOnce({ response: { status: 400 } })
+    const wrapper = await open()
+    wrapper.vm.$.appContext.config.errorHandler = vi.fn()
+    await click(wrapper, 'tenantCopyConfigDialog.btnRunFormal')
+    expect(ElMessage.warning).not.toHaveBeenCalledWith('tenantCopyConfigDialog.unknownOutcome')
+    wrapper.unmount()
+  })
+
+  it('试运行中断不提示正式复制结果未知', async () => {
+    state.copy.mockRejectedValueOnce({ code: 'ERR_NETWORK' })
+    const wrapper = await open()
+    wrapper.vm.$.appContext.config.errorHandler = vi.fn()
+    await click(wrapper, 'tenantConfigShared.dryRunPreviewDiff')
+    expect(ElMessage.warning).not.toHaveBeenCalledWith('tenantCopyConfigDialog.unknownOutcome')
+    wrapper.unmount()
+  })
+
+  it('正式复制无法保存原请求身份时提示并阻止写请求', async () => {
+    const wrapper = await open()
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new Error('storage unavailable')
+    })
+
+    await click(wrapper, 'tenantCopyConfigDialog.btnRunFormal')
+
+    expect(state.copy).not.toHaveBeenCalled()
+    expect(ElMessage.warning).toHaveBeenCalledWith(
+      'tenantCopyConfigDialog.recoveryStorageUnavailable',
+    )
+    wrapper.unmount()
+  })
+
+  it('租户状态与请求租户不一致时提示刷新并阻止正式复制', async () => {
+    const wrapper = await open()
+    localStorage.setItem(STORAGE_KEYS.tenantId, 'tenant-b')
+
+    await click(wrapper, 'tenantCopyConfigDialog.btnRunFormal')
+
+    expect(state.copy).not.toHaveBeenCalled()
+    expect(ElMessage.warning).toHaveBeenCalledWith(
+      'tenantCopyConfigDialog.recoveryTenantMismatch',
+    )
+    wrapper.unmount()
+  })
+
+  it('无法读取请求租户时阻止正式复制', async () => {
+    const wrapper = await open()
+    vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+      throw new Error('storage unavailable')
+    })
+
+    await click(wrapper, 'tenantCopyConfigDialog.btnRunFormal')
+
+    expect(state.copy).not.toHaveBeenCalled()
+    expect(ElMessage.warning).toHaveBeenCalledWith(
+      'tenantCopyConfigDialog.recoveryTenantMismatch',
+    )
+    wrapper.unmount()
+  })
+
+  it('响应丢失后刷新面板并只读回查，展示已确认失败而不重复提交', async () => {
+    state.copy.mockRejectedValueOnce({ code: 'ERR_NETWORK' })
+    const first = await open()
+    first.vm.$.appContext.config.errorHandler = vi.fn()
+    await click(first, 'tenantCopyConfigDialog.btnRunFormal')
+    const key = state.copy.mock.calls[0]?.[1]
+    expect(key).toEqual(expect.any(String))
+    first.unmount()
+    state.recover.mockResolvedValueOnce({
+      operationId: 'op-original', operationKind: 'TENANT_COPY', responseMetadata: {},
+      status: 'COMPLETE',
+      targets: [{ ordinal: 0, tenantId: 'target-a', status: 'COMPLETE',
+        result: { tenantId: 'target-a', success: false, errorMessage: '真实失败原因' } }],
+    })
+
+    const reopened = await open()
+    expect(reopened.text()).toContain('source-a')
+    await click(reopened, 'tenantCopyConfigDialog.recoveryQuery')
+
+    expect(state.recover).toHaveBeenCalledOnce()
+    expect(state.recover.mock.calls[0]?.[0].key).toBe(key)
+    expect(reopened.text()).toContain('op-original')
+    expect(reopened.text()).toContain('tenantCopyConfigDialog.recoveryFailed')
+    expect(reopened.text()).toContain('真实失败原因')
+    expect(state.copy).toHaveBeenCalledTimes(1)
+    reopened.unmount()
+  })
+
+  it('回查 404 保留原请求身份，不能清除或重发', async () => {
+    const command = createConfigBatchRecovery({
+      actor: 'operator', headerTenant: 'tenant-a', auditTenantId: 'source-a', operationKind: 'TENANT_COPY',
+    })
+    expect(saveConfigBatchRecovery(command)).toBe(true)
+    state.recover.mockRejectedValueOnce({ response: { status: 404 } })
+    const wrapper = await open()
+
+    await click(wrapper, 'tenantCopyConfigDialog.recoveryQuery')
+
+    expect(wrapper.findAll('button').some((button) =>
+      button.text() === 'tenantCopyConfigDialog.recoveryClear')).toBe(false)
+    expect(state.copy).not.toHaveBeenCalled()
+    wrapper.unmount()
+    const reopened = await open()
+    expect(reopened.text()).toContain('source-a')
+    reopened.unmount()
+  })
+
+  it('404 后只有明确确认停止跟踪才删除本地记录，且不重发', async () => {
+    const command = createConfigBatchRecovery({
+      actor: 'operator', headerTenant: 'tenant-a', auditTenantId: 'source-a', operationKind: 'TENANT_COPY',
+    })
+    expect(saveConfigBatchRecovery(command)).toBe(true)
+    state.recover.mockRejectedValueOnce({ response: { status: 404 } })
+    state.confirm.mockRejectedValueOnce('cancel').mockResolvedValueOnce('confirm')
+    const wrapper = await open()
+    await click(wrapper, 'tenantCopyConfigDialog.recoveryQuery')
+
+    await click(wrapper, 'tenantCopyConfigDialog.recoveryStopTracking')
+    expect(listConfigBatchRecoveries('operator', 'tenant-a').commands).toHaveLength(1)
+    await click(wrapper, 'tenantCopyConfigDialog.recoveryStopTracking')
+
+    expect(state.confirm).toHaveBeenCalledWith(
+      'tenantCopyConfigDialog.recoveryStopConfirm',
+      'tenantCopyConfigDialog.recoveryStopTitle',
+      { type: 'warning' },
+    )
+    expect(listConfigBatchRecoveries('operator', 'tenant-a').commands).toHaveLength(0)
+    expect(state.copy).not.toHaveBeenCalled()
+    wrapper.unmount()
+  })
+
+  it('停止跟踪确认期间切换账号，不删除原账号记录', async () => {
+    const command = createConfigBatchRecovery({
+      actor: 'operator', headerTenant: 'tenant-a', auditTenantId: 'source-a', operationKind: 'TENANT_COPY',
+    })
+    expect(saveConfigBatchRecovery(command)).toBe(true)
+    state.recover.mockRejectedValueOnce({ response: { status: 404 } })
+    const confirmation = pending<string>()
+    state.confirm.mockReturnValueOnce(confirmation.promise)
+    const wrapper = await open()
+    await click(wrapper, 'tenantCopyConfigDialog.recoveryQuery')
+    await click(wrapper, 'tenantCopyConfigDialog.recoveryStopTracking')
+    state.context.actor = 'another-operator'
+
+    confirmation.resolve('confirm')
+    await flushPromises()
+
+    expect(listConfigBatchRecoveries('operator', 'tenant-a').commands).toHaveLength(1)
+    expect(state.copy).not.toHaveBeenCalled()
+    wrapper.unmount()
+  })
+
+  it('多个原请求独立回查，只清除用户确认且回执完整的那一项', async () => {
+    const first = createConfigBatchRecovery({
+      actor: 'operator', headerTenant: 'tenant-a', auditTenantId: 'source-a', operationKind: 'TENANT_COPY',
+    })
+    const second = createConfigBatchRecovery({
+      actor: 'operator', headerTenant: 'tenant-a', auditTenantId: 'source-b', operationKind: 'TENANT_COPY',
+    })
+    expect(saveConfigBatchRecovery(first)).toBe(true)
+    expect(saveConfigBatchRecovery(second)).toBe(true)
+    state.recover.mockResolvedValueOnce({ operationId: 'op-first', operationKind: 'TENANT_COPY',
+      responseMetadata: {}, status: 'COMPLETE',
+      targets: [{ ordinal: 0, tenantId: 'target-a', status: 'COMPLETE',
+        result: { tenantId: 'target-a', success: true } }] })
+    const wrapper = await open()
+    expect(wrapper.text()).toContain('source-a')
+    expect(wrapper.text()).toContain('source-b')
+
+    await click(wrapper, 'tenantCopyConfigDialog.recoveryQuery')
+    await click(wrapper, 'tenantCopyConfigDialog.recoveryClear')
+
+    expect(wrapper.text()).not.toContain('source-a')
+    expect(wrapper.text()).toContain('source-b')
+    expect(state.copy).not.toHaveBeenCalled()
+    wrapper.unmount()
+  })
+
+  it('账号或租户切换时隐藏原记录并丢弃旧回查响应', async () => {
+    const command = createConfigBatchRecovery({
+      actor: 'operator', headerTenant: 'tenant-a', auditTenantId: 'source-a', operationKind: 'TENANT_COPY',
+    })
+    expect(saveConfigBatchRecovery(command)).toBe(true)
+    const delayed = pending<object>()
+    state.recover.mockReturnValueOnce(delayed.promise)
+    const wrapper = await open()
+    await click(wrapper, 'tenantCopyConfigDialog.recoveryQuery')
+    state.context.tenant = 'tenant-b'
+    delayed.resolve({ operationId: 'old-operation', operationKind: 'TENANT_COPY',
+      responseMetadata: {}, status: 'COMPLETE', targets: [] })
+    await flushPromises()
+    expect(wrapper.text()).not.toContain('old-operation')
+    expect(wrapper.text()).not.toContain('tenantCopyConfigDialog.recoveryQuery')
+    state.context.tenant = 'tenant-a'
+    await flushPromises()
+    expect(wrapper.text()).toContain('tenantCopyConfigDialog.recoveryQuery')
+    state.context.actor = 'other-user'
+    await flushPromises()
+    expect(wrapper.text()).not.toContain('tenantCopyConfigDialog.recoveryQuery')
+    expect(state.copy).not.toHaveBeenCalled()
+    wrapper.unmount()
+  })
+
+  it('真实租户切换后显示新租户待查记录，并撤销旧租户的在途结果', async () => {
+    state.useRealTenant = true
+    setActivePinia(createPinia())
+    const { useTenantStore } = await vi.importActual<typeof import('@/stores/tenant')>(
+      '@/stores/tenant',
+    )
+    const tenant = useTenantStore()
+    const first = createConfigBatchRecovery({
+      actor: 'operator', headerTenant: 'tenant-a', auditTenantId: 'source-a', operationKind: 'TENANT_COPY',
+    })
+    const second = createConfigBatchRecovery({
+      actor: 'operator', headerTenant: 'tenant-b', auditTenantId: 'source-b', operationKind: 'TENANT_COPY',
+    })
+    expect(saveConfigBatchRecovery(first)).toBe(true)
+    expect(saveConfigBatchRecovery(second)).toBe(true)
+    const delayed = pending<object>()
+    state.recover.mockReturnValueOnce(delayed.promise)
+    const wrapper = await open()
+    expect(wrapper.text()).toContain('source-a')
+    await click(wrapper, 'tenantCopyConfigDialog.recoveryQuery')
+
+    tenant.setTenantId('tenant-b')
+    delayed.resolve({ operationId: 'old-operation', operationKind: 'TENANT_COPY',
+      responseMetadata: {}, status: 'COMPLETE', targets: [] })
+    await flushPromises()
+
+    expect(localStorage.getItem(STORAGE_KEYS.tenantId)).toBe('tenant-b')
+    expect(wrapper.text()).toContain('source-b')
+    expect(wrapper.text()).not.toContain('source-a')
+    expect(wrapper.text()).not.toContain('old-operation')
+    wrapper.unmount()
+  })
+
+  it('切换账号后旧复制失败不向新账号提示', async () => {
+    const request = pending<ReturnType<typeof success>>()
+    state.copy.mockReturnValueOnce(request.promise)
+    const wrapper = await open()
+    wrapper.vm.$.appContext.config.errorHandler = vi.fn()
+    await click(wrapper, 'tenantCopyConfigDialog.btnRunFormal')
+    state.context.actor = 'another-operator'
+    request.reject({ code: 'ERR_NETWORK' })
+    await flushPromises()
+    expect(ElMessage.warning).not.toHaveBeenCalledWith('tenantCopyConfigDialog.unknownOutcome')
     wrapper.unmount()
   })
 

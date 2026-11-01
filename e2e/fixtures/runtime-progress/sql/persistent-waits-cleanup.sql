@@ -3,6 +3,8 @@ BEGIN;
 SET LOCAL lock_timeout = '5s';
 SET LOCAL statement_timeout = '15s';
 SET LOCAL app.tenant_id = :'tenant_id';
+DELETE FROM batch.job_dependency_waiting_launch
+ WHERE tenant_id = :'tenant_id' AND request_id = :'readiness_request_id';
 DELETE FROM batch.workflow_launch_wait
  WHERE tenant_id = :'tenant_id'
    AND workflow_definition_id = :'workflow_definition_id'::bigint
@@ -12,6 +14,8 @@ DELETE FROM batch.readiness_wait
    AND workflow_definition_id = :'workflow_definition_id'::bigint
    AND request_id = :'readiness_request_id';
 SELECT json_build_object(
+  'jobDependencyRowsRemaining', (SELECT count(*) FROM batch.job_dependency_waiting_launch
+                                  WHERE tenant_id = :'tenant_id' AND request_id = :'readiness_request_id'),
   'readinessRowsRemaining', (SELECT count(*) FROM batch.readiness_wait
                               WHERE tenant_id = :'tenant_id'
                                 AND workflow_definition_id = :'workflow_definition_id'::bigint

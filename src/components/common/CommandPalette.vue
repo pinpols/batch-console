@@ -3,7 +3,7 @@
     v-model="open"
     class="command-palette"
     :show-close="false"
-    width="640px"
+    width="min(640px, calc(100vw - 32px))"
     append-to-body
     :close-on-click-modal="true"
     @closed="onClosed"
@@ -12,11 +12,21 @@
     <!-- 设计稿直出(cmdk 样张):⌘ 搜索行 + ESC 徽标 / 蓝点行 + 右侧组名 / 底部快捷键条 -->
     <template #header>
       <div class="cp-header">
-        <span class="cp-header__cmd" aria-hidden="true">⌘</span>
+        <span class="cp-header__cmd" aria-hidden="true">{{
+          shortcutLabel === '⌘K' ? '⌘' : 'Ctrl'
+        }}</span>
         <input
           ref="inputRef"
           v-model="q"
           class="cp-header__input"
+          role="combobox"
+          :aria-label="t('palette.placeholder')"
+          aria-autocomplete="list"
+          aria-controls="command-palette-results"
+          :aria-expanded="open"
+          :aria-activedescendant="
+            flatItems.length ? `command-palette-option-${activeIndex}` : undefined
+          "
           :placeholder="t('palette.placeholder')"
           @keydown.down.prevent="move(1)"
           @keydown.up.prevent="move(-1)"
@@ -25,36 +35,48 @@
         <span v-if="entityLoading" class="cp-kbd cp-kbd--loading">{{
           t('palette.searching')
         }}</span>
-        <span v-else class="cp-kbd">ESC</span>
+        <button
+          type="button"
+          class="cp-kbd cp-kbd--close"
+          :aria-label="t('palette.footClose')"
+          @click="open = false"
+        >
+          ESC
+        </button>
       </div>
     </template>
 
-    <div class="cp-body" role="listbox">
+    <div id="command-palette-results" ref="resultsRef" class="cp-body" role="listbox">
       <div v-if="!flatItems.length" class="cp-empty">{{ t('palette.empty') }}</div>
-      <button
-        v-for="it in flatItems"
-        v-else
-        :key="it.key"
-        type="button"
-        class="cp-item"
-        :class="{ 'is-active': activeIndex === it.globalIndex }"
-        role="option"
-        @mousemove="activeIndex = it.globalIndex"
-        @click="go(it)"
-      >
-        <span class="cp-item__dot" aria-hidden="true" />
-        <span class="cp-item__title">{{ it.title }}</span>
-        <span v-if="it.sidebarHidden" class="cp-item__badge">
-          {{ t('palette.sidebarHidden') }}
-        </span>
-        <span class="cp-item__meta">{{ it.subtitle || it.meta }}</span>
-      </button>
+      <div v-for="section in sections" :key="section.key" role="group" :aria-label="section.title">
+        <div class="cp-section">{{ section.title }}</div>
+        <button
+          v-for="it in section.items"
+          :id="`command-palette-option-${it.globalIndex}`"
+          :key="it.key"
+          type="button"
+          class="cp-item"
+          :class="{ 'is-active': activeIndex === it.globalIndex }"
+          role="option"
+          tabindex="-1"
+          :aria-selected="activeIndex === it.globalIndex"
+          @mousemove="activeIndex = it.globalIndex"
+          @click="go(it)"
+        >
+          <span class="cp-item__dot" aria-hidden="true" />
+          <span class="cp-item__title">{{ it.title }}</span>
+          <span v-if="it.sidebarHidden" class="cp-item__badge">{{
+            t('palette.sidebarHidden')
+          }}</span>
+          <span class="cp-item__meta">{{ it.subtitle || it.meta }}</span>
+        </button>
+      </div>
     </div>
 
     <template #footer>
       <div class="cp-foot">
         <span>↵ {{ t('palette.footOpen') }}</span>
-        <span>⌘K {{ t('palette.footToggle') }}</span>
+        <span>{{ shortcutLabel }} {{ t('palette.footToggle') }}</span>
         <span>ESC {{ t('palette.footClose') }}</span>
       </div>
     </template>
@@ -77,6 +99,9 @@
   import { workflowApi } from '@/api/workflow'
   import { fileApi } from '@/api/file'
   import { useTenantStore } from '@/stores/tenant'
+  import { usePermissionStore } from '@/stores/permission'
+  import { useAuthStore } from '@/stores/auth'
+  import type { Role } from '@/types'
   import { parseCommandPaletteJump } from './commandPaletteJumps'
   import type {
     ConsoleFileRecordResponse,
@@ -85,6 +110,12 @@
   } from '@/types/console-api'
 
   const { t, te } = useI18n({ useScope: 'global' })
+
+  function statusLabel(category: 'instanceStatus' | 'fileStatus', value?: string | null): string {
+    if (!value) return '—'
+    const key = `enum.${category}.${value}`
+    return te(key) ? t(key) : value
+  }
 
   function resolvePageTitle(path: string, fallback: string): string {
     const key = pageTitleKey(path)
@@ -132,6 +163,41 @@
 
   const router = useRouter()
   const tenant = useTenantStore()
+  const permission = usePermissionStore()
+  const auth = useAuthStore()
+  const shortcutLabel = /Mac|iPhone|iPod|iPad/i.test(navigator.platform ?? '') ? '⌘K' : 'Ctrl+K'
+  const permittedPaths = computed(
+    () =>
+      new Set(
+        props.groups.flatMap((group) => group.children.map((item) => displayPath(item.path))),
+      ),
+  )
+
+  function canOpenPath(path: string): boolean {
+    const target = router.resolve(path)
+    if (!target.matched.length || target.name === 'not-found') return false
+    const meta = target.meta
+    if (meta.minRole && !permission.canAccessRole(meta.minRole as Role)) return false
+    if (meta.permissions && !permission.canAccessPermissions(meta.permissions as string[]))
+      return false
+    if (
+      meta.capabilities &&
+      !(meta.capabilities as string[]).some((value) => auth.hasCapability(value))
+    )
+      return false
+    if (
+      target.path === '/system/me' ||
+      target.path === '/system/users' ||
+      target.path.startsWith('/m/')
+    )
+      return true
+    if (target.path === '/system/ai-chat' && auth.hasCapability('AI_ASSISTANT_USE')) return true
+    const candidates = [
+      String(meta.activeMenu || target.path),
+      ...((meta.menuAccessFallbacks as string[] | undefined) ?? []),
+    ]
+    return candidates.some((candidate) => permittedPaths.value.has(displayPath(candidate)))
+  }
 
   // ─── 实体匹配(BE 服务端搜) ─────────────────────────────
   // 触发条件:term 长度 ≥ 2,不是纯数字/纯 hex(那些已走 jump 项)。
@@ -149,55 +215,46 @@
     return true
   }
 
-  async function searchEntities(term: string) {
-    // 空租户保护:启动阶段 / 未选租户 / 租户切换瞬间不发空 tenantId 查询
-    if (!shouldSearchEntity(term) || !tenant.tenantId) {
-      entityJobInstances.value = []
-      entityWorkflowDefs.value = []
-      entityFiles.value = []
-      return
-    }
+  function invalidateSearch() {
     activeSearchGen += 1
-    const myGen = activeSearchGen
+    if (debounceTimer) clearTimeout(debounceTimer)
+    debounceTimer = null
+    entityJobInstances.value = []
+    entityWorkflowDefs.value = []
+    entityFiles.value = []
+    entityLoading.value = false
+  }
+
+  async function searchEntities(term: string, tenantId: string, generation: number) {
     entityLoading.value = true
     try {
       const [jobs, wfs, files] = await Promise.all([
-        instanceApi
-          .list({ tenantId: tenant.tenantId, jobCode: term, page: 1, pageSize: 5 })
-          .catch(() => ({ records: [] as ConsoleJobInstanceResponse[] })),
-        workflowApi
-          .listDefinitions({
-            tenantId: tenant.tenantId,
-            workflowCode: term,
-            page: 1,
-            pageSize: 5,
-          })
-          .catch(() => ({ records: [] as ConsoleWorkflowDefinitionResponse[] })),
-        fileApi
-          .list({ tenantId: tenant.tenantId, fileName: term, page: 1, pageSize: 5 })
-          .catch(() => ({ records: [] as ConsoleFileRecordResponse[] })),
+        canOpenPath('/monitor/job-instances')
+          ? instanceApi
+              .list({ tenantId, jobCode: term, page: 1, pageSize: 5 })
+              .catch(() => ({ records: [] as ConsoleJobInstanceResponse[] }))
+          : Promise.resolve({ records: [] as ConsoleJobInstanceResponse[] }),
+        canOpenPath('/workflow/definitions')
+          ? workflowApi
+              .listDefinitions({ tenantId, workflowCode: term, page: 1, pageSize: 5 })
+              .catch(() => ({ records: [] as ConsoleWorkflowDefinitionResponse[] }))
+          : Promise.resolve({ records: [] as ConsoleWorkflowDefinitionResponse[] }),
+        canOpenPath('/files/list')
+          ? fileApi
+              .list({ tenantId, fileName: term, page: 1, pageSize: 5 })
+              .catch(() => ({ records: [] as ConsoleFileRecordResponse[] }))
+          : Promise.resolve({ records: [] as ConsoleFileRecordResponse[] }),
       ])
-      // 防止快速输入时旧请求覆盖新结果
-      if (myGen !== activeSearchGen) return
+      if (generation !== activeSearchGen) return
       entityJobInstances.value = (jobs.records ?? []).slice(0, 5)
       entityWorkflowDefs.value = (wfs.records ?? []).slice(0, 5)
       entityFiles.value = (files.records ?? []).slice(0, 5)
     } finally {
-      if (myGen === activeSearchGen) entityLoading.value = false
+      if (generation === activeSearchGen) entityLoading.value = false
     }
   }
 
-  function scheduleEntitySearch(term: string) {
-    if (debounceTimer) clearTimeout(debounceTimer)
-    debounceTimer = setTimeout(() => {
-      debounceTimer = null
-      void searchEntities(term)
-    }, 300)
-  }
-
-  onBeforeUnmount(() => {
-    if (debounceTimer) clearTimeout(debounceTimer)
-  })
+  onBeforeUnmount(invalidateSearch)
 
   const open = computed({
     get: () => props.modelValue,
@@ -205,13 +262,14 @@
   })
 
   const inputRef = ref<{ focus: () => void } | null>(null)
+  const resultsRef = ref<HTMLElement | null>(null)
   const q = ref('')
   const activeIndex = ref(0)
 
   const recentItems = computed((): Omit<PaletteItem, 'globalIndex'>[] => {
-    const sorted = [...props.recentTabs].sort(
-      (a, b) => (b.lastAccessAt ?? 0) - (a.lastAccessAt ?? 0),
-    )
+    const sorted = props.recentTabs
+      .filter((tab) => canOpenPath(tab.path))
+      .sort((a, b) => (b.lastAccessAt ?? 0) - (a.lastAccessAt ?? 0))
     return sorted.slice(0, 8).map((tab) => {
       const key = `recent:${tab.key}`
       const titlePath = displayPath(tab.path)
@@ -252,15 +310,14 @@
   const jumpItems = computed((): Omit<PaletteItem, 'globalIndex'>[] => {
     const term = q.value.trim()
     const jump = parseCommandPaletteJump(term)
-    if (!jump) return []
+    if (!jump || !canOpenPath(jump.path)) return []
     const titleKey =
       jump.kind === 'job'
         ? 'palette.jumpJobInstance'
         : jump.kind === 'file'
           ? 'palette.jumpFile'
           : 'palette.jumpTrace'
-    const traceForTitle =
-      jump.value.length > 16 ? `${jump.value.slice(0, 16)}...` : jump.value
+    const traceForTitle = jump.value.length > 16 ? `${jump.value.slice(0, 16)}...` : jump.value
     return [
       {
         key: `jump:${jump.kind}:${jump.value}`,
@@ -282,7 +339,7 @@
       out.push({
         key: `entity:job:${inst.id}`,
         title: inst.instanceNo,
-        subtitle: `${inst.jobCode} · ${inst.bizDate || ''} · ${inst.instanceStatus}`,
+        subtitle: `${inst.jobCode} · ${inst.bizDate || ''} · ${statusLabel('instanceStatus', inst.instanceStatus)}`,
         meta: t('palette.metaJob'),
         path: `/monitor/job-instances/${inst.id}`,
         source: 'entity' as const,
@@ -292,7 +349,7 @@
       out.push({
         key: `entity:wf:${wf.id}`,
         title: wf.workflowCode,
-        subtitle: `${wf.workflowName || ''} · v${wf.version} · ${wf.enabled ? 'enabled' : 'disabled'}`,
+        subtitle: `${wf.workflowName || ''} · v${wf.version} · ${wf.enabled ? t('common.enabled') : t('common.disabled')}`,
         meta: t('palette.metaWorkflow'),
         path: `/workflow/definitions?workflowCode=${encodeURIComponent(wf.workflowCode)}`,
         source: 'entity' as const,
@@ -302,7 +359,7 @@
       out.push({
         key: `entity:file:${file.id}`,
         title: file.fileName || String(file.id),
-        subtitle: `${file.bizType || '—'} · ${file.fileStatus || '—'} · #${file.id}`,
+        subtitle: `${file.bizType || '—'} · ${statusLabel('fileStatus', file.fileStatus)} · #${file.id}`,
         meta: t('palette.metaFile'),
         path: `/files/list?fileId=${file.id}`,
         source: 'entity' as const,
@@ -337,7 +394,10 @@
 
     const seen = new Set<string>()
     const deduped = filtered.filter((it) => {
-      const k = `${it.source}:${it.path}`
+      const k =
+        it.source === 'recent' || it.source === 'menu'
+          ? `page:${displayPath(it.path)}`
+          : `${it.source}:${it.path}`
       if (seen.has(k)) return false
       seen.add(k)
       return true
@@ -384,28 +444,43 @@
   }
 
   function onClosed() {
+    if (open.value) return
     q.value = ''
     activeIndex.value = 0
-    entityJobInstances.value = []
-    entityWorkflowDefs.value = []
-    entityFiles.value = []
-    if (debounceTimer) {
-      clearTimeout(debounceTimer)
-      debounceTimer = null
-    }
+    invalidateSearch()
   }
 
-  watch(open, (v) => {
-    if (v) activeIndex.value = 0
-  })
+  watch(
+    [
+      open,
+      q,
+      () => tenant.tenantId,
+      () => [...permittedPaths.value].sort().join('|'),
+      () => auth.userInfo,
+    ],
+    ([isOpen, term, tenantId]) => {
+      activeIndex.value = 0
+      invalidateSearch()
+      if (!isOpen || !tenantId || !shouldSearchEntity(term.trim())) return
+      const generation = activeSearchGen
+      debounceTimer = setTimeout(() => {
+        debounceTimer = null
+        void searchEntities(term.trim(), tenantId, generation)
+      }, 300)
+    },
+    { flush: 'sync' },
+  )
 
   watch(flatItems, (list) => {
     activeIndex.value = clamp(activeIndex.value, 0, Math.max(0, list.length - 1))
   })
 
-  watch(q, (term) => {
-    activeIndex.value = 0
-    scheduleEntitySearch(term.trim())
+  watch(activeIndex, (index) => {
+    nextTick(() =>
+      resultsRef.value
+        ?.querySelector(`#command-palette-option-${index}`)
+        ?.scrollIntoView?.({ block: 'nearest' }),
+    )
   })
 </script>
 
@@ -448,6 +523,11 @@
     color: var(--color-text-tertiary);
   }
 
+  .cp-kbd--close {
+    background: transparent;
+    cursor: pointer;
+  }
+
   .cp-kbd--loading {
     color: var(--color-primary);
   }
@@ -456,6 +536,13 @@
     max-height: 430px;
     overflow-y: auto;
     padding: 4px 8px;
+  }
+
+  .cp-section {
+    padding: 10px 14px 4px;
+    color: var(--color-text-tertiary);
+    font-size: 12px;
+    font-weight: 600;
   }
 
   .cp-empty {
@@ -470,7 +557,7 @@
     align-items: center;
     gap: 13px;
     width: 100%;
-    height: 48px;
+    min-height: 48px;
     padding: 0 14px;
     border: none;
     border-radius: 8px;
@@ -538,6 +625,7 @@
 
 <style>
   .command-palette.el-dialog {
+    max-width: calc(100vw - 32px);
     padding: 0;
     border-radius: 14px;
     overflow: hidden;

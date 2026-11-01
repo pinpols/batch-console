@@ -45,8 +45,28 @@
             :percentage="totals.percentage"
             :aria-label="t('workflowProgress.completionLabel')"
           />
-          <WorkflowMiniDag interactive auto-fit :mermaid-text="graph" :max-height="520" />
+          <ExecutionAttentionLinks
+            :items="attentionNodes"
+            :selected="selectedNode"
+            @select="selectedNode = $event"
+          />
+          <WorkflowMiniDag
+            interactive
+            auto-fit
+            :mermaid-text="graph"
+            :max-height="520"
+            :node-options="nodeOptions"
+            :selected-node="selectedNode"
+            @select-node="selectedNode = $event"
+          />
+          <p class="execution-progress__hint">{{ t('workflowProgress.selectHint') }}</p>
           <p class="execution-progress__hint">{{ t('workflowProgress.denominatorHint') }}</p>
+          <div v-if="selectedNode" class="execution-progress__selection">
+            <span>{{ t('workflowProgress.selectedNode', { node: selectedNode }) }}</span>
+            <el-button text @click="selectedNode = null">{{
+              t('workflowProgress.clearSelection')
+            }}</el-button>
+          </div>
           <el-table :data="tableNodes" row-key="nodeCode" size="small">
             <el-table-column :label="t('workflowProgress.node')" min-width="160">
               <template #default="{ row }"
@@ -102,13 +122,14 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, watch, type DeepReadonly } from 'vue'
+  import { computed, ref, watch, type DeepReadonly } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { useTenantStore } from '@/stores/tenant'
   import SectionCard from '@/components/common/SectionCard.vue'
   import LiveStatusBadge from '@/components/common/LiveStatusBadge.vue'
   import DataState from '@/components/common/DataState.vue'
   import WorkflowMiniDag from './WorkflowMiniDag.vue'
+  import ExecutionAttentionLinks from './ExecutionAttentionLinks.vue'
   import { useWorkflowExecutionProgress } from '@/composables/useWorkflowExecutionProgress'
   import {
     executionGraph,
@@ -123,17 +144,47 @@
   }>()
   const tenant = useTenantStore()
   const { t, te } = useI18n()
+  const selectedNode = ref<string | null>(null)
   const { progress, status, error, loading, lastRefreshedAt, refresh } =
     useWorkflowExecutionProgress(
       () => tenant.tenantId,
       () => props.runId,
     )
+  defineExpose({ refresh })
   watch(progress, (value) => {
     if (value) emit('snapshot', value)
+    if (
+      selectedNode.value &&
+      (!value?.snapshotAvailable ||
+        !value.nodes.some((node) => node.nodeCode === selectedNode.value))
+    )
+      selectedNode.value = null
+  })
+  watch([() => tenant.tenantId, () => props.runId], () => {
+    selectedNode.value = null
   })
   const totals = computed(() => executionTotals(progress.value?.nodes ?? []))
+  const nodeOptions = computed(() =>
+    (progress.value?.nodes ?? []).map((node) => ({
+      code: node.nodeCode,
+      label: t('workflowProgress.selectNode', { node: node.nodeName || node.nodeCode }),
+    })),
+  )
+  const attentionNodes = computed(() =>
+    (progress.value?.nodes ?? []).map((node) => {
+      const state = executionNodeDisplayStatus(node)
+      return {
+        code: node.nodeCode,
+        name: node.nodeName || node.nodeCode,
+        state,
+        stateLabel: statusText(state),
+      }
+    }),
+  )
   const tableNodes = computed(() =>
-    (progress.value?.nodes ?? []).map((n) => ({ ...n, activeSteps: [...n.activeSteps] })),
+    (progress.value?.nodes ?? [])
+      .filter((n) => !selectedNode.value || n.nodeCode === selectedNode.value)
+      .map((n) => ({ ...n, activeSteps: [...n.activeSteps] })),
   )
   function statusText(value: string) {
     return te(`workflowProgress.states.${value}`) ? t(`workflowProgress.states.${value}`) : value
@@ -175,6 +226,7 @@
 
 <style scoped>
   .execution-progress__actions,
+  .execution-progress__selection,
   .execution-progress__summary {
     display: flex;
     align-items: center;

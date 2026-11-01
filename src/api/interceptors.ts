@@ -13,6 +13,8 @@ import { useAppStore } from '@/stores/app'
 import { STORAGE_KEYS } from '@/constants/storageKeys'
 import { LOCALE_STORAGE_KEY } from '@/constants/locale'
 import { userErrorMessage } from '@/utils/userErrorMessage'
+import { currentAuthSession, isSharedAuthRevisionCurrent, staleAuthSessionError } from './authSession'
+import { coordinateAuthCookieRequest } from './authCookieLock'
 
 /**
  * 把后端 BizException 下发的 i18n key(形如 "error.auth.invalid_credentials")翻成中/英文。
@@ -67,10 +69,11 @@ type LoggedConfig = InternalAxiosRequestConfig & {
   _refreshAttempted?: boolean
   /** 自动生成幂等键时使用的请求签名,供响应阶段收尾短窗口复用。 */
   _autoIdempotencySignature?: string
+  /** 首次发送时的认证会话，重试沿用原值。 */
+  _authSession?: number
   /**
    * 调用方主动声明该请求"失败也不弹 toast"。日志、reject、redirect 仍照常,
-   * 仅抑制 UI 错误提示。典型场景:登录页挂载时预清 cookie 的 /auth/logout,
-   * 失败属预期(cookie 失效)且对用户无意义,不该噪声化体验。
+   * 仅抑制 UI 错误提示，适用于调用方自行展示失败状态的场景。
    */
   _silent?: boolean
 }
@@ -80,28 +83,27 @@ type LoggedConfig = InternalAxiosRequestConfig & {
  * 同时多个请求并发 401 共享一个 refresh promise(去重)。
  * 成功 → 写新 token + 通知调用方 retry 原请求;失败 → 跳登录。
  */
-let refreshInFlight: Promise<string | null> | null = null
+let refreshInFlight: { session: number; promise: Promise<boolean> } | null = null
 
-async function performRefresh(client: AxiosInstance): Promise<string | null> {
+async function performRefresh(client: AxiosInstance): Promise<boolean> {
   try {
-    // D7 Stage B: 后端 /api/console/auth/token 响应会同时下发 HttpOnly cookie，
-    // 浏览器自动接收 Set-Cookie；前端不再把 accessToken 写 localStorage。
-    // 这里仍然返回字符串供调用方判断"refresh 是否成功"（非空 = 成功）。
-    const resp = await client.post('/api/console/auth/token')
-    const data = resp.data as { accessToken?: string } | undefined
-    return data?.accessToken ?? null
+    // 响应拦截器已核对业务成功码；新令牌仅由浏览器接收 HttpOnly Cookie。
+    await client.post('/api/console/auth/token')
+    return true
   } catch {
-    return null
+    return false
   }
 }
 
-function tryRefreshToken(client: AxiosInstance): Promise<string | null> {
-  if (!refreshInFlight) {
-    refreshInFlight = performRefresh(client).finally(() => {
-      refreshInFlight = null
+function tryRefreshToken(client: AxiosInstance, session: number): Promise<boolean> {
+  if (!refreshInFlight || refreshInFlight.session !== session) {
+    const entry = { session, promise: Promise.resolve(false) }
+    entry.promise = performRefresh(client).finally(() => {
+      if (refreshInFlight === entry) refreshInFlight = null
     })
+    refreshInFlight = entry
   }
-  return refreshInFlight
+  return refreshInFlight.promise
 }
 
 /**
@@ -252,8 +254,10 @@ function resolveMutationSignature(
   config: InternalAxiosRequestConfig,
   method: string,
   tenantId: string,
+  authSession: number,
 ): string {
   return [
+    authSession,
     method,
     config.baseURL ?? '',
     config.url ?? '',
@@ -389,61 +393,72 @@ function showApiErrorToast(message: string, error?: unknown) {
 }
 
 export function applyApiInterceptors(client: AxiosInstance): void {
-  client.interceptors.request.use((config) => {
-    if (config.data instanceof FormData) {
-      delete config.headers['Content-Type']
-    }
-
-    // D7 Stage B: HttpOnly cookie 由浏览器自动随请求带，不再注入 Authorization header。
-    // (后端 ConsoleAuthenticationFilter 优先读 cookie，header fallback 也仍兼容老客户端)
-    // 2026-05-16:后端 Set-Cookie 已落地,dev fallback 已删,前端纯 cookie 路径生效。
-
-    const tenantId = readStoredTenantId()
-    if (tenantId) {
-      config.headers['X-Tenant-Id'] = tenantId
-    }
-
-    // 后端 /meta/enums 可按 Accept-Language 返回不同语言 label;FE 缺失 i18n key 时
-    // 用 BE label 兜底。读 localStorage 而不是 vue-i18n 实例,避免请求拦截器在
-    // i18n init 之前触发(token-refresh / SSE init 等)时拿不到 locale。
-    const locale =
-      (typeof localStorage !== 'undefined' && localStorage.getItem(LOCALE_STORAGE_KEY)) || 'zh-CN'
-    config.headers['Accept-Language'] = locale === 'en-US' ? 'en-US,en;q=0.9' : 'zh-CN,zh;q=0.9'
-
-    const loggable = config as LoggedConfig
-    const method = (config.method ?? 'get').toLowerCase()
-    const pinia = getActivePinia()
-    const isMutatingMethod = MUTATING.has(method)
-    const maintenanceGuardApplies =
-      isMutatingMethod && !isMaintenanceWriteAllowed(config.url)
-    if (maintenanceGuardApplies && pinia) {
-      const app = useAppStore(pinia)
-      if (app.writesFrozen) {
-        loggable._silent = true
-        ElMessage.warning(i18n.global.t('maintenance.writeBlocked'))
-        const errorMessage = i18n.global.t('maintenance.writeBlocked')
-        const maintenanceError = Object.assign(new Error(errorMessage), {
-          config,
-          code: 'ERR_MAINTENANCE_WRITE_FROZEN',
-          maintenance: true,
-          silenced: true,
-        })
-        return Promise.reject(maintenanceError)
+  client.interceptors.request.use(
+    (config) => {
+      if (!isSharedAuthRevisionCurrent()) throw staleAuthSessionError(config)
+      if (config.data instanceof FormData) {
+        delete config.headers['Content-Type']
       }
-    }
-    if (isMutatingMethod && !config.headers['Idempotency-Key']) {
-      const signature = resolveMutationSignature(config, method, tenantId)
-      config.headers['Idempotency-Key'] = getAutoIdempotencyKey(signature)
-      loggable._autoIdempotencySignature = signature
-    }
 
-    // 记录请求发起时间 + 脱敏后的 params/body,供响应 / 错误拦截器写日志
-    loggable._startTime = Date.now()
-    loggable._loggedParams = sanitizeParams(config.params)
-    loggable._loggedRequestBody = sanitizeRequestBody(config.data)
+      // D7 Stage B: HttpOnly cookie 由浏览器自动随请求带，不再注入 Authorization header。
+      // (后端 ConsoleAuthenticationFilter 优先读 cookie，header fallback 也仍兼容老客户端)
+      // 2026-05-16:后端 Set-Cookie 已落地,dev fallback 已删,前端纯 cookie 路径生效。
 
-    return config
-  })
+      const tenantId = readStoredTenantId()
+      if (tenantId) {
+        config.headers['X-Tenant-Id'] = tenantId
+      }
+
+      // 后端 /meta/enums 可按 Accept-Language 返回不同语言 label;FE 缺失 i18n key 时
+      // 用 BE label 兜底。读 localStorage 而不是 vue-i18n 实例,避免请求拦截器在
+      // i18n init 之前触发(token-refresh / SSE init 等)时拿不到 locale。
+      const locale =
+        (typeof localStorage !== 'undefined' && localStorage.getItem(LOCALE_STORAGE_KEY)) || 'zh-CN'
+      config.headers['Accept-Language'] = locale === 'en-US' ? 'en-US,en;q=0.9' : 'zh-CN,zh;q=0.9'
+
+      const loggable = config as LoggedConfig
+      loggable._authSession ??= currentAuthSession()
+      const method = (config.method ?? 'get').toLowerCase()
+      const pinia = getActivePinia()
+      const isMutatingMethod = MUTATING.has(method)
+      const maintenanceGuardApplies = isMutatingMethod && !isMaintenanceWriteAllowed(config.url)
+      if (maintenanceGuardApplies && pinia) {
+        const app = useAppStore(pinia)
+        if (app.writesFrozen) {
+          loggable._silent = true
+          ElMessage.warning(i18n.global.t('maintenance.writeBlocked'))
+          const errorMessage = i18n.global.t('maintenance.writeBlocked')
+          const maintenanceError = Object.assign(new Error(errorMessage), {
+            config,
+            code: 'ERR_MAINTENANCE_WRITE_FROZEN',
+            maintenance: true,
+            silenced: true,
+          })
+          throw maintenanceError
+        }
+      }
+      // 登出处理当前 Cookie；相同请求体可能属于不同登录会话，不能复用自动幂等键。
+      const isLogout = method === 'post' && config.url === '/api/console/auth/logout'
+      if (isMutatingMethod && !isLogout && !config.headers['Idempotency-Key']) {
+        const signature = resolveMutationSignature(config, method, tenantId, loggable._authSession)
+        config.headers['Idempotency-Key'] = getAutoIdempotencyKey(signature)
+        loggable._autoIdempotencySignature = signature
+      }
+
+      coordinateAuthCookieRequest(config)
+
+      // 记录请求发起时间 + 脱敏后的 params/body,供响应 / 错误拦截器写日志
+      loggable._startTime = Date.now()
+      loggable._loggedParams = sanitizeParams(config.params)
+      loggable._loggedRequestBody = sanitizeRequestBody(config.data)
+
+      return config
+    },
+    (error) => {
+      throw error
+    },
+    { synchronous: true },
+  )
 
   client.interceptors.response.use(
     (response) => {
@@ -547,6 +562,11 @@ export function applyApiInterceptors(client: AxiosInstance): void {
       const status = error.response?.status as number | undefined
       const cfg = error.config as LoggedConfig | undefined
       markAutoIdempotencyCompleted(cfg)
+      if (cfg?._authSession != null && cfg._authSession !== currentAuthSession()) {
+        return Promise.reject(
+          Object.assign(error as object, { staleSession: true, silenced: true }),
+        )
+      }
       const raw = error.response?.data
 
       // L2/L3 协同的"幂等重放"识别:
@@ -713,6 +733,9 @@ export function applyApiInterceptors(client: AxiosInstance): void {
       }
 
       if (status === 401) {
+        if (!isTokenExchangeRequest(cfg) && localStorage.getItem(STORAGE_KEYS.session) !== '1') {
+          return Promise.reject(Object.assign(error as object, { silenced: true }))
+        }
         if (isTokenExchangeRequest(cfg)) {
           // 登录 / 刷 token 本身 401：用户名密码错 或 refresh 失败，提示不登出
           const rawCode =
@@ -757,8 +780,13 @@ export function applyApiInterceptors(client: AxiosInstance): void {
           // 避免单个权限不足的接口把整个会话清掉(典型如 SchedulerSnapshot:
           // 后端 @PreAuthorize 比路由 minRole 严)。
           cfg._refreshAttempted = true
-          const newToken = await tryRefreshToken(client)
-          if (newToken) {
+          const refreshed = await tryRefreshToken(client, cfg._authSession ?? currentAuthSession())
+          if (cfg._authSession !== currentAuthSession()) {
+            return Promise.reject(
+              Object.assign(error as object, { staleSession: true, silenced: true }),
+            )
+          }
+          if (refreshed) {
             // 用新 token 重发(cookie 已被后端 Set-Cookie 更新，浏览器自动带最新值)
             return client.request(cfg)
           }

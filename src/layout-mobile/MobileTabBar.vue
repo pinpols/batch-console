@@ -1,5 +1,5 @@
 <template>
-  <nav class="mobile-tab-bar" role="navigation" :aria-label="t('nav.mobileTab.ariaLabel')">
+  <nav v-if="tabs.length" class="mobile-tab-bar" role="navigation" :aria-label="t('nav.mobileTab.ariaLabel')" :style="{ gridTemplateColumns: `repeat(${tabs.length}, 1fr)` }">
     <router-link
       v-for="tab in tabs"
       :key="tab.path"
@@ -41,9 +41,12 @@
     Coins as Coin,
   } from '@lucide/vue'
   import { useMobileBadgesStore } from '@/stores/mobileBadges'
+  import { usePermissionStore } from '@/stores/permission'
+  import { mobileMenuAccess } from '@/router/mobileMenuAccess'
 
   const route = useRoute()
   const badges = useMobileBadgesStore()
+  const permission = usePermissionStore()
   const { t } = useI18n({ useScope: 'global' })
 
   /**
@@ -61,38 +64,48 @@
    */
   // iOS Tab Bar:每个 tab 给 line/filled 一对图标,active 时切换到 filled
   // Element Plus icons 集成对偶有限,这里挑接近 SF Symbols line/fill 视觉的成对图标
-  const tabs = [
+  const allTabs = [
     {
       path: '/m/alerts',
+      routeName: 'm-alerts',
       labelKey: 'nav.mobileTab.alerts',
       icon: Warning,
       iconFilled: WarningFilled,
     },
     {
       path: '/m/approvals',
+      routeName: 'm-approvals',
       labelKey: 'nav.mobileTab.approvals',
       icon: Memo,
       iconFilled: Stamp,
     },
     {
       path: '/m/ops/summary',
+      routeName: 'm-ops-summary',
       labelKey: 'nav.mobileTab.summary',
       icon: DataAnalysis,
       iconFilled: Histogram,
     },
     {
       path: '/m/jobs',
+      routeName: 'm-jobs',
       labelKey: 'nav.mobileTab.jobs',
       icon: Operation,
       iconFilled: Monitor,
     },
     {
       path: '/m/workers',
+      routeName: 'm-workers',
       labelKey: 'nav.mobileTab.workers',
       icon: Coin,
       iconFilled: Cpu,
     },
   ]
+
+  const tabs = computed(() => {
+    const visiblePaths = new Set(permission.visibleGroups.flatMap((group) => group.children.map((item) => item.path.split('?')[0])))
+    return allTabs.filter((tab) => visiblePaths.has(mobileMenuAccess[tab.routeName]))
+  })
 
   const isActive = computed(() => (path: string) => route.path.startsWith(path))
 

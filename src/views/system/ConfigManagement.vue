@@ -2,7 +2,7 @@
   <PageContainer>
     <PageHeader />
 
-    <div>
+    <div v-if="auth.isLoggedIn">
       <el-tabs v-model="activeTab" class="pill-tabs">
         <el-tab-pane v-for="item in navItems" :key="item.key" :name="item.key">
           <template #label>
@@ -31,6 +31,7 @@
   import { useRoute, useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
   import { usePermission } from '@/composables/usePermission'
+  import { useAuthStore } from '@/stores/auth'
   import {
     Share2 as Connection,
     KeyRound as Key,
@@ -45,6 +46,7 @@
   import ConfigSyncLogsTab from './components/ConfigSyncLogsTab.vue'
 
   const { t } = useI18n({ useScope: 'global' })
+  const auth = useAuthStore()
   const { canManageSystem } = usePermission()
   const route = useRoute()
   const router = useRouter()

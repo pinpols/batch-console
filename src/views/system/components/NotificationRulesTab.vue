@@ -122,6 +122,13 @@
         <el-form-item :label="t('notificationCommon.enabledLabel')" prop="enabled">
           <el-switch v-model="ruleForm.enabled" />
         </el-form-item>
+        <div class="rule-preview">
+          <strong>{{ t('notificationRulesTab.routeSummary') }}</strong>
+          <p>{{ t('notificationRulesTab.routeSummaryHint') }}</p>
+          <p>{{ t('notificationRulesTab.fieldEventTypes') }}: {{ ruleForm.eventTypes || '—' }}</p>
+          <p>{{ t('notificationRulesTab.fieldChannelId') }}: {{ selectedChannelLabel }}</p>
+          <p>{{ t('notificationCommon.enabledLabel') }}: {{ t(ruleForm.enabled ? 'notificationRulesTab.routeEnabled' : 'notificationRulesTab.routeDisabled') }}</p>
+        </div>
       </el-form>
       <template #footer>
         <el-button @click="closeRuleForm">
@@ -184,6 +191,11 @@
   const ruleForm = reactive({ ruleName: '', eventTypes: '', channelCode: '', enabled: true })
   // 通知渠道下拉源:避免手输不存在的 channelCode 形成悬挂引用
   const channelOptions = ref<Array<{ id: number; code: string; name: string }>>([])
+  const selectedChannelLabel = computed(() => {
+    if (!ruleForm.channelCode) return '—'
+    const channel = channelOptions.value.find((option) => option.code === ruleForm.channelCode)
+    return channel?.name ? `${channel.code} / ${channel.name}` : ruleForm.channelCode
+  })
   const channelScope = useTenantRequestScope()
   const listScope = useTenantRequestScope()
   const formScope = useTenantRequestScope()
@@ -403,3 +415,14 @@
 
   defineExpose({ openRuleCreate })
 </script>
+
+<style scoped>
+  .rule-preview {
+    margin-top: var(--space-md);
+    padding: var(--space-md);
+    border: 1px solid var(--el-border-color-light);
+    border-radius: var(--el-border-radius-base);
+    background: var(--el-fill-color-lighter);
+  }
+  .rule-preview p { margin: var(--space-sm) 0 0; }
+</style>

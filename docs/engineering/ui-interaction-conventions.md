@@ -83,3 +83,11 @@
 ## 审查方法与证据
 
 具体UI、交互与视觉的常见问题、反例和复核步骤由[UI审查Skill](../../.agents/skills/frontend-ui-ia-review/SKILL.md)及其[检查表](../../.agents/skills/frontend-ui-ia-review/references/common-ui-checks.md)维护。沿当前页面任务检查正常/加载/空/错/提交/权限、长数据、中英文/主题/窄屏和键盘场景，记录实际角色、视口、数据与构建身份。纯视觉建议、现行规范偏差、可用性问题和确认Bug分别陈述；历史截图或静态门禁不能证明当前页面已验收。
+
+## 品牌与加载反馈
+
+- 共享品牌资产为 `public/icons/batch-mark.svg`，保留蚂蚁识别；登录、侧栏和移动顶栏复用 `BatchMark`，不通过放大背景裁切标识。favicon与PWA图标由同源SVG经 `scripts/gen-pwa-icons.mjs` 生成；maskable保留安全留白，安装图标与启动图更新需按发布流程刷新缓存。
+- 首屏等待由 `index.html` 与外置 `public/app-startup.css` 提供，挂载后自然替换；主题token未就绪时使用系统背景和品牌蓝回退。继续遵守严格CSP，不为动画增加内联脚本。
+- 页面遮罩使用品牌标识与不定进度光带；按钮内保留Element Plus原生提交loading。路由顶部光带只表示等待，不表示业务完成比例。
+- `ProTable` / `VirtualProTable` 使用行列骨架；通用 `DataState` 使用内容骨架，图表/DAG不显示假表格。数据已存在时按原刷新策略保留内容，错误与空态不因视觉优化合并。
+- 首屏光带、页面遮罩、路由光带和骨架均尊重 `prefers-reduced-motion`；业务进度只使用后端真实状态与分母，不按动画时间估算。

@@ -36,7 +36,7 @@
     height: 3px;
     pointer-events: none;
     overflow: hidden;
-    background: rgb(22 119 255 / 12%);
+    background: color-mix(in srgb, var(--color-primary) 12%, transparent);
   }
 
   .route-progress__track {
@@ -50,8 +50,7 @@
     top: 0;
     left: 0;
     height: 100%;
-    width: 38%;
-    max-width: 240px;
+    width: 34%;
     border-radius: 0 2px 2px 0;
     background: linear-gradient(
       90deg,
@@ -59,16 +58,16 @@
       color-mix(in srgb, var(--color-primary) 70%, #ffffff 30%)
     );
     box-shadow: 0 0 10px color-mix(in srgb, var(--color-primary) 40%, transparent);
-    animation: route-progress-sweep 0.95s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    animation: route-progress-sweep 1.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
   }
 
   @keyframes route-progress-sweep {
     0% {
-      transform: translateX(-100%);
+      transform: translateX(-105%);
     }
 
     100% {
-      transform: translateX(320%);
+      transform: translateX(310%);
     }
   }
 

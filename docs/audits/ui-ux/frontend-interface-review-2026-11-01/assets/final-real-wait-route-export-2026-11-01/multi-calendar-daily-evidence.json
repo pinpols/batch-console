@@ -1,0 +1,467 @@
+{
+  "bizDate": "2026-11-01",
+  "planned": {
+    "definitions": [
+      {
+        "id": 23,
+        "code": "[test-tenant]-A",
+        "version": 1,
+        "scheduleType": "CRON",
+        "calendarCode": "bulk_calendar",
+        "enabled": true,
+        "scheduleEnabled": true
+      },
+      {
+        "id": 24,
+        "code": "[test-tenant]-B",
+        "version": 1,
+        "scheduleType": "CRON",
+        "calendarCode": "bulk_calendar_secondary",
+        "enabled": true,
+        "scheduleEnabled": true
+      },
+      {
+        "id": 25,
+        "code": "[test-tenant]-C",
+        "version": 1,
+        "scheduleType": "FIXED_RATE",
+        "calendarCode": "bulk_calendar_secondary",
+        "enabled": true,
+        "scheduleEnabled": true
+      }
+    ],
+    "occurrences": [
+      {
+        "workflowId": 25,
+        "status": "REQUESTED",
+        "bizDate": "2026-11-01",
+        "fireTime": "2026-11-01T17:19:57.337+08:00",
+        "calendarCode": "bulk_calendar_secondary",
+        "requestId": "quartz-20261101T091957Z-e258b098b10e4083"
+      },
+      {
+        "workflowId": 23,
+        "status": "PLANNED",
+        "bizDate": "2026-11-01",
+        "fireTime": "2026-11-01T17:21:52+08:00",
+        "calendarCode": "bulk_calendar",
+        "requestId": null
+      },
+      {
+        "workflowId": 24,
+        "status": "PLANNED",
+        "bizDate": "2026-11-01",
+        "fireTime": "2026-11-01T17:21:52+08:00",
+        "calendarCode": "bulk_calendar_secondary",
+        "requestId": null
+      },
+      {
+        "workflowId": 25,
+        "status": "PLANNED",
+        "bizDate": "2026-11-02",
+        "fireTime": "2026-11-02T17:19:57.337+08:00",
+        "calendarCode": "bulk_calendar_secondary",
+        "requestId": null
+      },
+      {
+        "workflowId": 25,
+        "status": "PLANNED",
+        "bizDate": "2026-11-03",
+        "fireTime": "2026-11-03T17:19:57.337+08:00",
+        "calendarCode": "bulk_calendar_secondary",
+        "requestId": null
+      }
+    ],
+    "actualFires": [
+      {
+        "workflowId": 25,
+        "scheduledFireTime": "2026-11-01T17:19:57.337+08:00",
+        "actualFireTime": "2026-11-01T17:19:57.352+08:00",
+        "fireKind": "SCHEDULED"
+      }
+    ],
+    "coverage": [
+      {
+        "workflowId": 23,
+        "calendarCode": "bulk_calendar",
+        "scheduleVersion": 1,
+        "from": "2026-11-01T17:19:57.30575+08:00",
+        "through": "2026-11-03T17:19:57.30675+08:00",
+        "lastSuccessAt": "2026-11-01T17:19:57.314882+08:00"
+      },
+      {
+        "workflowId": 24,
+        "calendarCode": "bulk_calendar_secondary",
+        "scheduleVersion": 1,
+        "from": "2026-11-01T17:19:57.328541+08:00",
+        "through": "2026-11-03T17:19:57.329541+08:00",
+        "lastSuccessAt": "2026-11-01T17:19:57.33169+08:00"
+      },
+      {
+        "workflowId": 25,
+        "calendarCode": "bulk_calendar_secondary",
+        "scheduleVersion": 1,
+        "from": "2026-11-01T17:19:57.344967+08:00",
+        "through": "2026-11-03T17:19:57.345967+08:00",
+        "lastSuccessAt": "2026-11-01T17:19:57.34854+08:00"
+      }
+    ],
+    "days": [
+      {
+        "calendarCode": "bulk_calendar",
+        "bizDate": "2026-11-01",
+        "status": "OPEN",
+        "cutoffAt": "2026-11-02T06:00:00+08:00"
+      },
+      {
+        "calendarCode": "bulk_calendar_secondary",
+        "bizDate": "2026-11-01",
+        "status": "OPEN",
+        "cutoffAt": "2026-11-02T06:00:00+08:00"
+      }
+    ],
+    "runs": [
+      {
+        "id": 12,
+        "workflowId": 25,
+        "bizDate": "2026-11-01",
+        "status": "SUCCESS",
+        "triggerRequestId": 22
+      }
+    ],
+    "requests": [
+      {
+        "id": 22,
+        "requestId": "quartz-20261101T091957Z-e258b098b10e4083",
+        "workflowId": 25,
+        "bizDate": "2026-11-01",
+        "status": "LAUNCHED"
+      }
+    ],
+    "jobInstances": 0
+  },
+  "terminal": {
+    "definitions": [
+      {
+        "id": 23,
+        "code": "[test-tenant]-A",
+        "version": 1,
+        "scheduleType": "CRON",
+        "calendarCode": "bulk_calendar",
+        "enabled": true,
+        "scheduleEnabled": true
+      },
+      {
+        "id": 24,
+        "code": "[test-tenant]-B",
+        "version": 1,
+        "scheduleType": "CRON",
+        "calendarCode": "bulk_calendar_secondary",
+        "enabled": true,
+        "scheduleEnabled": true
+      },
+      {
+        "id": 25,
+        "code": "[test-tenant]-C",
+        "version": 1,
+        "scheduleType": "FIXED_RATE",
+        "calendarCode": "bulk_calendar_secondary",
+        "enabled": true,
+        "scheduleEnabled": true
+      }
+    ],
+    "occurrences": [
+      {
+        "workflowId": 25,
+        "status": "REQUESTED",
+        "bizDate": "2026-11-01",
+        "fireTime": "2026-11-01T17:19:57.337+08:00",
+        "calendarCode": "bulk_calendar_secondary",
+        "requestId": "quartz-20261101T091957Z-e258b098b10e4083"
+      },
+      {
+        "workflowId": 23,
+        "status": "REQUESTED",
+        "bizDate": "2026-11-01",
+        "fireTime": "2026-11-01T17:21:52+08:00",
+        "calendarCode": "bulk_calendar",
+        "requestId": "quartz-20261101T092152Z-8a1fff245f7c4e3d"
+      },
+      {
+        "workflowId": 24,
+        "status": "REQUESTED",
+        "bizDate": "2026-11-01",
+        "fireTime": "2026-11-01T17:21:52+08:00",
+        "calendarCode": "bulk_calendar_secondary",
+        "requestId": "quartz-20261101T092152Z-43f3d73ba95c4429"
+      },
+      {
+        "workflowId": 25,
+        "status": "PLANNED",
+        "bizDate": "2026-11-02",
+        "fireTime": "2026-11-02T17:19:57.337+08:00",
+        "calendarCode": "bulk_calendar_secondary",
+        "requestId": null
+      },
+      {
+        "workflowId": 25,
+        "status": "PLANNED",
+        "bizDate": "2026-11-03",
+        "fireTime": "2026-11-03T17:19:57.337+08:00",
+        "calendarCode": "bulk_calendar_secondary",
+        "requestId": null
+      }
+    ],
+    "actualFires": [
+      {
+        "workflowId": 23,
+        "scheduledFireTime": "2026-11-01T17:21:52+08:00",
+        "actualFireTime": "2026-11-01T17:21:52.016+08:00",
+        "fireKind": "SCHEDULED"
+      },
+      {
+        "workflowId": 24,
+        "scheduledFireTime": "2026-11-01T17:21:52+08:00",
+        "actualFireTime": "2026-11-01T17:21:52.038+08:00",
+        "fireKind": "SCHEDULED"
+      },
+      {
+        "workflowId": 25,
+        "scheduledFireTime": "2026-11-01T17:19:57.337+08:00",
+        "actualFireTime": "2026-11-01T17:19:57.352+08:00",
+        "fireKind": "SCHEDULED"
+      }
+    ],
+    "coverage": [
+      {
+        "workflowId": 23,
+        "calendarCode": "bulk_calendar",
+        "scheduleVersion": 1,
+        "from": "2026-11-01T17:19:57.30575+08:00",
+        "through": "2026-11-03T17:21:27.481289+08:00",
+        "lastSuccessAt": "2026-11-01T17:21:27.489492+08:00"
+      },
+      {
+        "workflowId": 24,
+        "calendarCode": "bulk_calendar_secondary",
+        "scheduleVersion": 1,
+        "from": "2026-11-01T17:19:57.328541+08:00",
+        "through": "2026-11-03T17:21:27.496437+08:00",
+        "lastSuccessAt": "2026-11-01T17:21:27.498883+08:00"
+      },
+      {
+        "workflowId": 25,
+        "calendarCode": "bulk_calendar_secondary",
+        "scheduleVersion": 1,
+        "from": "2026-11-01T17:19:57.344967+08:00",
+        "through": "2026-11-03T17:21:27.50513+08:00",
+        "lastSuccessAt": "2026-11-01T17:21:27.507033+08:00"
+      }
+    ],
+    "days": [
+      {
+        "calendarCode": "bulk_calendar",
+        "bizDate": "2026-11-01",
+        "status": "OPEN",
+        "cutoffAt": "2026-11-02T06:00:00+08:00"
+      },
+      {
+        "calendarCode": "bulk_calendar_secondary",
+        "bizDate": "2026-11-01",
+        "status": "OPEN",
+        "cutoffAt": "2026-11-02T06:00:00+08:00"
+      }
+    ],
+    "runs": [
+      {
+        "id": 12,
+        "workflowId": 25,
+        "bizDate": "2026-11-01",
+        "status": "SUCCESS",
+        "triggerRequestId": 22
+      },
+      {
+        "id": 13,
+        "workflowId": 23,
+        "bizDate": "2026-11-01",
+        "status": "SUCCESS",
+        "triggerRequestId": 23
+      },
+      {
+        "id": 14,
+        "workflowId": 24,
+        "bizDate": "2026-11-01",
+        "status": "SUCCESS",
+        "triggerRequestId": 24
+      }
+    ],
+    "requests": [
+      {
+        "id": 22,
+        "requestId": "quartz-20261101T091957Z-e258b098b10e4083",
+        "workflowId": 25,
+        "bizDate": "2026-11-01",
+        "status": "LAUNCHED"
+      },
+      {
+        "id": 23,
+        "requestId": "quartz-20261101T092152Z-8a1fff245f7c4e3d",
+        "workflowId": 23,
+        "bizDate": "2026-11-01",
+        "status": "LAUNCHED"
+      },
+      {
+        "id": 24,
+        "requestId": "quartz-20261101T092152Z-43f3d73ba95c4429",
+        "workflowId": 24,
+        "bizDate": "2026-11-01",
+        "status": "LAUNCHED"
+      }
+    ],
+    "jobInstances": 0
+  },
+  "current": {
+    "tenantId": "[test-tenant]",
+    "bizDate": "2026-11-01",
+    "generatedAt": "2026-11-01T09:21:54.367532Z",
+    "counts": [
+      {
+        "scope": "SCHEDULED_OCCURRENCE",
+        "status": "RUN_SUCCESS",
+        "count": 3
+      },
+      {
+        "scope": "TRIGGER_REQUEST",
+        "status": "LAUNCHED",
+        "count": 3
+      },
+      {
+        "scope": "WORKFLOW_RUN",
+        "status": "SUCCESS",
+        "count": 3
+      }
+    ],
+    "coverage": {
+      "scheduledDefinitions": 3,
+      "uncoveredDefinitions": 0
+    }
+  },
+  "future": {
+    "tenantId": "[test-tenant]",
+    "bizDate": "2026-11-02",
+    "generatedAt": "2026-11-01T09:21:54.492167Z",
+    "counts": [
+      {
+        "scope": "SCHEDULED_OCCURRENCE",
+        "status": "PLANNED",
+        "count": 1
+      }
+    ],
+    "coverage": {
+      "scheduledDefinitions": 3,
+      "uncoveredDefinitions": 3
+    }
+  },
+  "snapshots": [
+    {
+      "tenantId": "[test-tenant]",
+      "bizDate": "2026-11-01",
+      "generatedAt": "2026-11-01T09:19:59.791645Z",
+      "counts": [
+        {
+          "scope": "SCHEDULED_OCCURRENCE",
+          "status": "PLANNED",
+          "count": 2
+        },
+        {
+          "scope": "SCHEDULED_OCCURRENCE",
+          "status": "RUN_SUCCESS",
+          "count": 1
+        },
+        {
+          "scope": "TRIGGER_REQUEST",
+          "status": "LAUNCHED",
+          "count": 1
+        },
+        {
+          "scope": "WORKFLOW_RUN",
+          "status": "SUCCESS",
+          "count": 1
+        }
+      ],
+      "coverage": {
+        "scheduledDefinitions": 3,
+        "uncoveredDefinitions": 0
+      }
+    },
+    {
+      "tenantId": "[test-tenant]",
+      "bizDate": "2026-11-01",
+      "generatedAt": "2026-11-01T09:21:52.901925Z",
+      "counts": [
+        {
+          "scope": "SCHEDULED_OCCURRENCE",
+          "status": "RUN_SUCCESS",
+          "count": 3
+        },
+        {
+          "scope": "TRIGGER_REQUEST",
+          "status": "LAUNCHED",
+          "count": 3
+        },
+        {
+          "scope": "WORKFLOW_RUN",
+          "status": "SUCCESS",
+          "count": 3
+        }
+      ],
+      "coverage": {
+        "scheduledDefinitions": 3,
+        "uncoveredDefinitions": 0
+      }
+    },
+    {
+      "tenantId": "[test-tenant]",
+      "bizDate": "2026-11-02",
+      "generatedAt": "2026-11-01T09:21:54.629232Z",
+      "counts": [
+        {
+          "scope": "SCHEDULED_OCCURRENCE",
+          "status": "PLANNED",
+          "count": 1
+        }
+      ],
+      "coverage": {
+        "scheduledDefinitions": 3,
+        "uncoveredDefinitions": 3
+      }
+    },
+    {
+      "tenantId": "[test-tenant]",
+      "bizDate": "2026-11-01",
+      "generatedAt": "2026-11-01T09:21:54.848507Z",
+      "counts": [
+        {
+          "scope": "SCHEDULED_OCCURRENCE",
+          "status": "RUN_SUCCESS",
+          "count": 3
+        },
+        {
+          "scope": "TRIGGER_REQUEST",
+          "status": "LAUNCHED",
+          "count": 3
+        },
+        {
+          "scope": "WORKFLOW_RUN",
+          "status": "SUCCESS",
+          "count": 3
+        }
+      ],
+      "coverage": {
+        "scheduledDefinitions": 3,
+        "uncoveredDefinitions": 0
+      }
+    }
+  ],
+  "periodicGets": 0
+}

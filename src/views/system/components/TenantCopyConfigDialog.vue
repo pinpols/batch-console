@@ -84,6 +84,55 @@
       </el-form-item>
     </el-form>
 
+    <section v-if="recoveries.length || recoveryStorageBlocked" class="recovery-panel">
+      <h3>{{ t('tenantCopyConfigDialog.recoveryTitle') }}</h3>
+      <el-alert v-if="recoveryStorageBlocked" type="warning" :closable="false" show-icon>
+        <template #title>
+          {{ t(recoveryScopeMismatch ? 'tenantCopyConfigDialog.recoveryTenantMismatch' : 'tenantCopyConfigDialog.recoveryStorageUnavailable') }}
+        </template>
+      </el-alert>
+      <div v-for="command in recoveries" :key="command.key" class="recovery-entry">
+        <span>{{ command.auditTenantId }} · {{ new Date(command.createdAt).toLocaleString() }}</span>
+        <el-button size="small" :disabled="recoveryLoading" @click="queryRecovery(command)">
+          {{ t('tenantCopyConfigDialog.recoveryQuery') }}
+        </el-button>
+        <el-button
+          v-if="selectedRecovery?.key === command.key && recoveryResult?.status === 'COMPLETE'"
+          size="small"
+          @click="clearRecovery(command)"
+        >
+          {{ t('tenantCopyConfigDialog.recoveryClear') }}
+        </el-button>
+        <el-button
+          v-if="selectedRecovery?.key === command.key && recoveryUnknown"
+          size="small"
+          @click="stopTrackingRecovery(command)"
+        >
+          {{ t('tenantCopyConfigDialog.recoveryStopTracking') }}
+        </el-button>
+      </div>
+      <div v-if="selectedRecovery" aria-live="polite">
+        <el-alert v-if="recoveryUnknown" type="warning" :closable="false" show-icon>
+          <template #title>{{ t('tenantCopyConfigDialog.recoveryUnknown') }}</template>
+        </el-alert>
+        <template v-if="recoveryResult">
+          <p>{{ t('tenantCopyConfigDialog.recoveryOperation') }}: {{ recoveryResult.operationId }}</p>
+          <p>
+            {{ t('tenantCopyConfigDialog.recoveryReceiptStatus') }}:
+            {{ recoveryResult.status === 'COMPLETE' ? t('tenantCopyConfigDialog.recoveryComplete') : t('tenantCopyConfigDialog.recoveryUnknown') }}
+          </p>
+          <div v-for="target in recoveryResult.targets" :key="target.ordinal" class="recovery-target">
+            <strong>{{ target.ordinal + 1 }}. {{ target.tenantId }}</strong>
+            <el-tag v-if="target.result" :type="target.result.success ? 'success' : 'danger'">
+              {{ target.result.success ? t('tenantCopyConfigDialog.recoverySucceeded') : t('tenantCopyConfigDialog.recoveryFailed') }}
+            </el-tag>
+            <el-tag v-else type="warning">{{ t('tenantCopyConfigDialog.recoveryUnknown') }}</el-tag>
+            <pre v-if="target.result">{{ JSON.stringify(target.result, null, 2) }}</pre>
+          </div>
+        </template>
+      </div>
+    </section>
+
     <el-tabs v-if="hasPreviewData" v-model="activeResultTab" class="preview-tabs">
       <el-tab-pane :label="t('tenantCopyConfigDialog.tabDiff')" name="diff">
         <div v-if="diffPreview" class="preview-panel">
@@ -300,7 +349,7 @@
 <script setup lang="ts">
   import { computed, onScopeDispose, reactive, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
-  import { ElMessage } from 'element-plus'
+  import { ElMessage, ElMessageBox } from 'element-plus'
   import type { FormRules, TagProps } from 'element-plus'
   import {
     compareTenantJobConfigMatrix,
@@ -312,11 +361,23 @@
     type TenantConfigMatrixResponse,
   } from '@/api/ops'
   import { assessBatchInitOutcome } from '@/utils/batchInitOutcome'
+  import { getConfigBatchOperation, type ConfigBatchRecoveryResponse } from '@/api/configBatchRecovery'
+  import {
+    canReadConfigBatchRecovery,
+    clearConfigBatchRecovery,
+    createConfigBatchRecovery,
+    listConfigBatchRecoveries,
+    saveConfigBatchRecovery,
+    type ConfigBatchRecovery,
+  } from '@/utils/configBatchRecovery'
+  import { isConsoleServiceUnavailable } from '@/utils/serviceAvailability'
   import type { Tenant } from '@/api/tenants'
   import { ALL_CONFIG_TYPES, isReservedTenant, isTemplateTenant } from './tenantConfigTypes'
   import { useFormValidate, rules } from '@/composables/useFormValidate'
   import { usePermission } from '@/composables/usePermission'
   import { useAuthStore } from '@/stores/auth'
+  import { useTenantStore } from '@/stores/tenant'
+  import { STORAGE_KEYS } from '@/constants/storageKeys'
 
   const { t } = useI18n({ useScope: 'global' })
 
@@ -332,6 +393,7 @@
 
   const saving = ref(false)
   const auth = useAuthStore()
+  const tenant = useTenantStore()
   const { canManageSystem, canWriteSystem } = usePermission()
   const actor = computed(() => String(auth.userInfo?.userId ?? auth.userInfo?.username ?? ''))
   let revision = 0
@@ -343,6 +405,14 @@
   const activeResultTab = ref<'diff' | 'matrix'>('diff')
   const diffPreview = ref<TenantConfigDiffPreviewResponse | null>(null)
   const matrixPreview = ref<TenantConfigMatrixResponse | null>(null)
+  const recoveries = ref<ConfigBatchRecovery[]>([])
+  const recoveryStorageBlocked = ref(false)
+  const recoveryScopeMismatch = ref(false)
+  const selectedRecovery = ref<ConfigBatchRecovery | null>(null)
+  const recoveryResult = ref<ConfigBatchRecoveryResponse | null>(null)
+  const recoveryUnknown = ref(false)
+  const recoveryLoading = ref(false)
+  let recoveryAttempt = 0
   const form = reactive({
     sourceTenantId: '',
     targetTenantIds: [] as string[],
@@ -447,7 +517,27 @@
     },
     { flush: 'sync' },
   )
-  watch([actor, canManageSystem], invalidatePreview, { flush: 'sync' })
+  watch([actor, () => tenant.tenantId, canManageSystem], invalidatePreview, { flush: 'sync' })
+  watch(
+    [() => props.modelValue, actor, () => tenant.tenantId, canManageSystem],
+    () => {
+      recoveryAttempt += 1
+      recoveryLoading.value = false
+      selectedRecovery.value = null
+      recoveryResult.value = null
+      recoveryUnknown.value = false
+      recoveries.value = []
+      recoveryStorageBlocked.value = false
+      recoveryScopeMismatch.value = false
+    },
+    { immediate: true, flush: 'sync' },
+  )
+  // 租户 store 先更新响应式值再写入 localStorage，等同步切换结束后读取请求身份。
+  watch(
+    [() => props.modelValue, actor, () => tenant.tenantId, canManageSystem],
+    refreshRecoveries,
+    { immediate: true },
+  )
   watch(
     canWriteSystem,
     () => {
@@ -458,8 +548,102 @@
   )
   onScopeDispose(() => {
     disposed = true
+    recoveryAttempt += 1
     invalidatePreview()
   })
+
+  function refreshRecoveries() {
+    if (!props.modelValue || !canManageSystem.value || !actor.value) {
+      recoveries.value = []
+      recoveryStorageBlocked.value = false
+      recoveryScopeMismatch.value = false
+      return
+    }
+    const header = headerTenant()
+    if (header === null || header !== tenant.tenantId) {
+      recoveries.value = []
+      recoveryStorageBlocked.value = true
+      recoveryScopeMismatch.value = true
+      return
+    }
+    const stored = listConfigBatchRecoveries(actor.value, header)
+    recoveries.value = stored.commands.filter((command) => command.operationKind === 'TENANT_COPY')
+    recoveryStorageBlocked.value = stored.blocked
+    recoveryScopeMismatch.value = false
+  }
+
+  function headerTenant(): string | null {
+    try {
+      return localStorage.getItem(STORAGE_KEYS.tenantId) ?? ''
+    } catch {
+      return null
+    }
+  }
+
+  function currentRecovery(command: ConfigBatchRecovery, attempt: number) {
+    return !disposed && props.modelValue && canManageSystem.value && recoveryAttempt === attempt &&
+      headerTenant() === command.headerTenant &&
+      canReadConfigBatchRecovery(command, actor.value, tenant.tenantId)
+  }
+
+  async function queryRecovery(command: ConfigBatchRecovery) {
+    if (!props.modelValue || !canManageSystem.value || headerTenant() !== command.headerTenant ||
+        !canReadConfigBatchRecovery(command, actor.value, tenant.tenantId)) return
+    const attempt = ++recoveryAttempt
+    selectedRecovery.value = command
+    recoveryResult.value = null
+    recoveryUnknown.value = false
+    recoveryLoading.value = true
+    try {
+      const result = await getConfigBatchOperation(command, actor.value, tenant.tenantId)
+      if (!currentRecovery(command, attempt)) return
+      recoveryResult.value = result
+      recoveryUnknown.value = result.status !== 'COMPLETE'
+    } catch {
+      if (currentRecovery(command, attempt)) recoveryUnknown.value = true
+    } finally {
+      if (recoveryAttempt === attempt) recoveryLoading.value = false
+    }
+  }
+
+  function clearRecovery(command: ConfigBatchRecovery) {
+    if (!selectedRecovery.value || selectedRecovery.value.key !== command.key ||
+        recoveryResult.value?.status !== 'COMPLETE' || headerTenant() !== command.headerTenant ||
+        !canReadConfigBatchRecovery(command, actor.value, tenant.tenantId)) return
+    if (!clearConfigBatchRecovery(command)) {
+      ElMessage.warning(t('tenantCopyConfigDialog.recoveryStorageUnavailable'))
+      return
+    }
+    selectedRecovery.value = null
+    recoveryResult.value = null
+    recoveryUnknown.value = false
+    refreshRecoveries()
+  }
+
+  async function stopTrackingRecovery(command: ConfigBatchRecovery) {
+    const attempt = recoveryAttempt
+    if (!currentRecovery(command, attempt) || selectedRecovery.value?.key !== command.key ||
+        !recoveryUnknown.value) return
+    try {
+      await ElMessageBox.confirm(
+        t('tenantCopyConfigDialog.recoveryStopConfirm'),
+        t('tenantCopyConfigDialog.recoveryStopTitle'),
+        { type: 'warning' },
+      )
+    } catch {
+      return
+    }
+    if (!currentRecovery(command, attempt) || selectedRecovery.value?.key !== command.key ||
+        !recoveryUnknown.value) return
+    if (!clearConfigBatchRecovery(command)) {
+      ElMessage.warning(t('tenantCopyConfigDialog.recoveryStorageUnavailable'))
+      return
+    }
+    selectedRecovery.value = null
+    recoveryResult.value = null
+    recoveryUnknown.value = false
+    refreshRecoveries()
+  }
 
   function canPreview() {
     // 服务端维护策略按HTTP方法冻结POST，业务只读的预览同样受此边界约束。
@@ -557,21 +741,47 @@
       writeRevision === permissionRevision
     saving.value = true
     lastDryRun.value = dryRun
+    let sent = false
     try {
       if (!(await validateCopyForm()) || !isCurrent()) return
       if (form.targetTenantIds.includes(form.sourceTenantId)) {
         ElMessage.warning(t('tenantCopyConfigDialog.sourceTargetOverlap'))
         return
       }
-      const res = await copyTenantConfig({
+      const payload = {
         sourceTenantId: form.sourceTenantId,
         targetTenantIds: [...form.targetTenantIds],
         configTypes: form.configTypes.length ? [...form.configTypes] : undefined,
         jobCodes: normalizedJobCodes.value.length ? [...normalizedJobCodes.value] : undefined,
         mode: form.mode,
         dryRun,
-      })
-      if (!isCurrent()) return
+      }
+      let command: ConfigBatchRecovery | null = null
+      if (!dryRun) {
+        const header = headerTenant()
+        if (header === null || header !== tenant.tenantId) {
+          ElMessage.warning(t('tenantCopyConfigDialog.recoveryTenantMismatch'))
+          refreshRecoveries()
+          return
+        }
+        try {
+          command = createConfigBatchRecovery({
+            actor: actor.value,
+            headerTenant: header,
+            auditTenantId: form.sourceTenantId,
+            operationKind: 'TENANT_COPY',
+          })
+          if (!saveConfigBatchRecovery(command)) throw new Error('storage unavailable')
+        } catch {
+          ElMessage.warning(t('tenantCopyConfigDialog.recoveryStorageUnavailable'))
+          refreshRecoveries()
+          return
+        }
+        refreshRecoveries()
+      }
+      sent = true
+      const res = command ? await copyTenantConfig(payload, command.key) : await copyTenantConfig(payload)
+      if (!isCurrent() || (command && headerTenant() !== command.headerTenant)) return
       emit('result', res)
       if (!dryRun) {
         const outcome = res ? assessBatchInitOutcome(res) : null
@@ -583,8 +793,24 @@
           return
         }
         ElMessage.success(t('tenantCopyConfigDialog.toastDone'))
+        if (command && !clearConfigBatchRecovery(command)) {
+          ElMessage.warning(t('tenantCopyConfigDialog.recoveryStorageUnavailable'))
+          return
+        }
+        refreshRecoveries()
         emit('update:modelValue', false)
       }
+    } catch (error) {
+      const status = (error as { response?: { status?: number } })?.response?.status
+      if (
+        !dryRun &&
+        sent &&
+        isCurrent() &&
+        (isConsoleServiceUnavailable(error) || status === 409)
+      ) {
+        ElMessage.warning(t('tenantCopyConfigDialog.unknownOutcome'))
+      }
+      throw error
     } finally {
       saving.value = false
     }
@@ -592,6 +818,27 @@
 </script>
 
 <style scoped>
+  .recovery-panel {
+    margin: 12px 0;
+    padding: 12px;
+    border: 1px solid var(--el-border-color-lighter);
+    border-radius: 4px;
+  }
+
+  .recovery-entry {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 8px 0;
+  }
+
+  .recovery-target pre {
+    max-height: 220px;
+    overflow: auto;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+
   .mb-12 {
     margin-bottom: 12px;
   }

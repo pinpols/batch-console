@@ -1,13 +1,7 @@
 #!/usr/bin/env node
-// 用 sharp 从品牌原图生成 PWA / iOS 启动图全套位图。
-// 用法:`node scripts/gen-pwa-icons.mjs`
-// 这是构建期一次性脚本,不是运行时;sharp 用 --no-save 装,不入 package.json
-//
-// 产出:
-//   public/icons/icon-{180,192,256,384,512}.png   通用 + Android maskable
-//   public/icons/splash-{w}x{h}.png               iOS apple-touch-startup-image 多分辨率
-//
-// iOS PWA splash 必须按设备点阵分辨率精确匹配,媒体查询匹配的是 device-width / pixel-ratio。
+// 从public/icons/batch-mark.svg生成favicon、PWA图标和iOS启动图。
+// 用法：准备sharp后执行 node scripts/gen-pwa-icons.mjs。
+// compact路径保留兼容；maskable以满幅品牌色和安全留白避免系统裁切主体。
 
 import sharp from 'sharp'
 import { readFileSync } from 'node:fs'
@@ -20,23 +14,28 @@ const root = join(here, '..')
 const out = join(root, 'public', 'icons')
 if (!existsSync(out)) mkdirSync(out, { recursive: true })
 
-const markOnBlue = readFileSync(join(root, 'assets', 'brand', 'mark-on-blue.jpg'))
-const markOnWhite = readFileSync(join(root, 'assets', 'brand', 'mark-on-white.jpg'))
+const mark = readFileSync(join(out, 'batch-mark.svg'))
+const brandBackground = '#1257c4'
 
-// 标准图标使用蓝底，maskable 使用白底原图，避免裁切时露出旧的背景色。
-async function genIcon(size, file, source = markOnBlue) {
-  await sharp(source).resize(size, size).png().toFile(join(out, file))
-  console.log('  ✓', file)
+async function genIcon(size, file) {
+  await sharp(mark).resize(size, size).png().toFile(join(out, file))
+  console.info('generated', file)
 }
 
-console.log('[icons] generating PWA icons...')
-await genIcon(180, 'icon-180.png') // iOS 主屏幕图标
-await genIcon(192, 'icon-192.png')
-await genIcon(192, 'icon-192-maskable.png', markOnWhite)
-await genIcon(256, 'icon-256.png')
-await genIcon(384, 'icon-384.png')
-await genIcon(512, 'icon-512.png')
-await genIcon(512, 'icon-512-maskable.png', markOnWhite)
+for (const size of [180, 192, 256, 384, 512]) {
+  await genIcon(size, `icon-${size}.png`)
+  await genIcon(size, `icon-${size}-compact.png`)
+}
+for (const size of [32, 64]) await genIcon(size, `favicon-${size}.png`)
+for (const size of [192, 512]) {
+  const safeSize = Math.floor(size * 0.8)
+  await sharp({ create: { width: size, height: size, channels: 4, background: brandBackground } })
+    .composite([
+      { input: await sharp(mark).resize(safeSize, safeSize).png().toBuffer(), gravity: 'center' },
+    ])
+    .png()
+    .toFile(join(out, `icon-${size}-maskable.png`))
+}
 
 // 2) iOS apple-touch-startup-image:按 device-width × dpr 全套
 // (Common iPhone/iPad lineups 2020-2025; portrait only)
@@ -54,7 +53,7 @@ const splashes = [
   [2048, 2732, 'ipad-pro-12-9'],
 ]
 
-console.log('[splash] generating apple-touch-startup-image...')
+console.info('generating apple-touch-startup-image')
 const iconSize = 256
 for (const [w, h] of splashes) {
   const file = `splash-${w}x${h}.png`
@@ -68,13 +67,13 @@ for (const [w, h] of splashes) {
   })
     .composite([
       {
-        input: await sharp(markOnBlue).resize(iconSize, iconSize).png().toBuffer(),
+        input: await sharp(mark).resize(iconSize, iconSize).png().toBuffer(),
         gravity: 'center',
       },
     ])
     .png()
     .toFile(join(out, file))
-  console.log('  ✓', file)
+  console.info('generated', file)
 }
 
-console.log('[done] PWA assets in public/icons/')
+console.info('PWA assets generated in public/icons/')

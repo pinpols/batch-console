@@ -30,6 +30,7 @@ export interface WorkflowBulkState {
 /** 每例独占租户；沿用 B182 控制图验收与按已保存数字身份核对残留的方式。 */
 export class WorkflowBulkFixture {
   readonly tenantId: string
+  readonly sqlApplicationName = `wdi-fixture-${randomUUID()}`
   readonly calendarCode = 'bulk_calendar'
   readonly codes: string[]
   readonly bizDate: string
@@ -59,6 +60,8 @@ export class WorkflowBulkFixture {
     const args = [
       'exec',
       '-i',
+      '-e',
+      `PGAPPNAME=${this.sqlApplicationName}`,
       container,
       'psql',
       '-X',
@@ -74,7 +77,7 @@ export class WorkflowBulkFixture {
     const output = execFileSync('docker', args, {
       input: sql,
       encoding: 'utf8',
-      timeout: 20_000,
+      timeout: 60_000,
       maxBuffer: 1024 * 1024,
     }).trim()
     return (output ? JSON.parse(output) : undefined) as T

@@ -11,15 +11,23 @@ export function tagTypeForKey(key: string | null | undefined): TagType {
   return TAG_TYPES[hash % TAG_TYPES.length]
 }
 
-export function progressStatus(
-  status: string | null | undefined,
-): 'success' | 'warning' | 'exception' | undefined {
-  const statusText = String(status ?? '')
-  const s = statusText.toUpperCase()
-  if (s === 'ONLINE') return 'success'
-  if (s === 'DRAINING') return 'warning'
-  if (s === 'OFFLINE') return 'exception'
-  return undefined
+export function summarizeWorkerStates(workers: { status?: string | null }[]) {
+  const counts = { online: 0, offline: 0, draining: 0, unknown: 0 }
+  for (const worker of workers) {
+    const status = worker.status?.toUpperCase()
+    if (status === 'ONLINE') counts.online++
+    else if (status === 'OFFLINE') counts.offline++
+    else if (status === 'DRAINING') counts.draining++
+    else counts.unknown++
+  }
+  return counts
+}
+
+/** 使用后端明确的分区上限；无上限时不推算百分比，超限时仍保留真实计数。 */
+export function queuePartitionCapacity(active: unknown, limit: unknown) {
+  if (typeof active !== 'number' || !Number.isFinite(active) || active < 0) return null
+  if (typeof limit !== 'number' || !Number.isFinite(limit) || limit <= 0) return null
+  return { active, limit, percent: Math.min(100, Math.round((active / limit) * 100)) }
 }
 
 export function errorCorrelation(reason: unknown): string {
@@ -44,10 +52,4 @@ export function panelDotClass(panel: 'policies' | 'queues' | 'workers' | 'histor
     workers: 'dot--warning',
     history: 'dot--info',
   }[panel]
-}
-
-export function clampLoadPercentage(load: unknown): number {
-  const numericLoad = Number(load) || 0
-  const nonNegativeLoad = Math.max(0, numericLoad)
-  return Math.min(100, nonNegativeLoad)
 }

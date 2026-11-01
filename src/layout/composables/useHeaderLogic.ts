@@ -121,8 +121,9 @@ export function useHeaderLogic() {
       : 'Ctrl+K',
   )
 
-  async function handleLogout() {
-    await auth.logout()
+  async function handleLogout(expectedSession?: number) {
+    const applied = await auth.logout(expectedSession)
+    if (!applied) return
     tabsStore.clear()
     router.push('/login')
   }

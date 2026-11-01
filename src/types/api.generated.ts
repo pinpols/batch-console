@@ -1662,6 +1662,26 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/console/ops/wait-relationships': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Traverse tenant wait relationships
+     * @description Traverses calendar, job, readiness and capacity waits by immutable type and numeric ID. Each page is a live read, not a cross-page snapshot; concurrent changes can affect results. Dependency snapshots are original dependencies, not proof that each edge remains blocked. Capacity waits have no dependency edges. No launch payload is returned.
+     */
+    get: operations['listConsoleWaitRelationships']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/console/ops/persistent-waits': {
     parameters: {
       query?: never
@@ -3986,6 +4006,7 @@ export interface paths {
      * Create job bundle
      * @description 仅ROLE_ADMIN可用。在单个目标租户事务中创建作业及关联Workflow、文件、告警或资源配置；
      *     强制strict=true，任一条目失败均回滚该租户事务，不能将其视为普通单作业创建接口。
+     *     非试运行且携带幂等键的请求可通过配置批操作回查接口核对原请求结果，回查不会重新执行。
      */
     post: operations['createJobBundle']
     delete?: never
@@ -4027,6 +4048,7 @@ export interface paths {
      * Import job bundle
      * @description 仅ROLE_ADMIN可用。先校验所有目标身份，再按目标租户独立事务导入配置包；每个目标强制strict=true，
      *     任一条目失败回滚该目标，合法目标之间不建立跨租户事务。未知提交结果须另行核对，不得据响应丢失重做整批。
+     *     非试运行且携带幂等键的请求可通过配置批操作回查接口核对原请求结果，回查不会重新执行。
      */
     post: operations['importJobBundle']
     delete?: never
@@ -5937,9 +5959,35 @@ export interface paths {
     put?: never
     /**
      * Cross-tenant configuration copy
-     * @description Reads configuration from a source tenant and pushes it to one or more target tenants. Supports selective config types and dry-run mode. File channel endpoint and credential JSON are not copied; configure environment-specific values for each target tenant. Response format is identical to tenant-init.
+     * @description Reads configuration from a source tenant and pushes it to one or more target tenants. Supports selective config types and dry-run mode. File channel endpoint and credential JSON are not copied; configure environment-specific values for each target tenant. Response format is identical to tenant-init. 非试运行请求可使用原幂等键通过配置批操作回查接口核对逐目标结果； 不能根据响应丢失或回查未找到直接重新提交整批。
      */
     post: operations['copyTenantConfig']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/config/batch-operation': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * 按原请求身份回查配置批操作结果
+     * @description 仅 ROLE_ADMIN 可用，并校验审计租户访问权限。使用原写请求的 Idempotency-Key 和相同的
+     *     X-Tenant-Id（原请求未传时本次也不传），以及原操作类型和审计租户回查。
+     *     原身份包含租户头、POST 方法、原路径和去除首尾空白的幂等键；查询不会重新执行操作。
+     *     TENANT_COPY 的审计租户为源租户，作业包操作为原请求所属租户。
+     *     只对有键、非 dryRun 且已登记的请求提供回查；旧操作及无键或试运行不保证存在登记。
+     *     COMPLETE 仅表示所有目标回执齐全，逐项业务成功与否查看 result.success；
+     *     UNKNOWN 或 404 不证明未执行，不得据此自动重跑。
+     */
+    get: operations['getConfigBatchOperation']
+    put?: never
+    post?: never
     delete?: never
     options?: never
     head?: never
@@ -6797,6 +6845,26 @@ export interface paths {
     put?: never
     /** Receive frontend telemetry log entries */
     post: operations['receiveTelemetryEvents']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/console/notifications/route-preview': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Preview notification routing without sending
+     * @description 按当前租户的已启用规则、渠道及 Webhook 订阅模拟匹配；Job 终态必须提供 jobCode，升级告警必须提供真实 severity，其他不属于实际事件载荷的字段被忽略。不判断事件是否产生，也不执行限流、去重或投递。
+     */
+    get: operations['previewNotificationRoute']
+    put?: never
+    post?: never
     delete?: never
     options?: never
     head?: never
@@ -8564,6 +8632,9 @@ export interface components {
     CommonResponseConsoleJobDependencyWaitList: components['schemas']['CommonResponseBase'] & {
       data?: components['schemas']['ConsoleJobDependencyWaitResponse'][]
     }
+    CommonResponseConsoleWaitRelationshipPage: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['ConsoleWaitRelationshipPage']
+    }
     CommonResponseConsolePersistentWaitPage: components['schemas']['CommonResponseBase'] & {
       data?: components['schemas']['ConsolePersistentWaitPageResponse']
     }
@@ -10016,7 +10087,7 @@ export interface components {
       defaultQuerySql?: string
       fields?: components['schemas']['FileTemplateMappingDraftField'][]
     }
-    /** @description 文件模板字段映射草案。前端可直接带入 FileTemplateCreate/UpdateRequest。 */
+    /** @description 文件模板字段映射草案。EXPORT 未提供 SQL 时返回空查询及提示，需按真实业务关系补充租户、批次过滤及分页游标。 */
     FileTemplateMappingDraftResponse: {
       /** @enum {string} */
       direction?: 'IMPORT' | 'EXPORT'
@@ -11121,7 +11192,7 @@ export interface components {
       jobCode: string
       /** Format: date */
       bizDate: string
-      /** @description JSON array of upstream job codes */
+      /** @description JSON array of frozen upstream job dependency objects */
       dependencySnapshot?: string
       /** @enum {string} */
       waitStatus: 'WAITING' | 'RELEASED' | 'CANCELLED'
@@ -11136,6 +11207,33 @@ export interface components {
       updatedAt: string
       /** Format: date-time */
       timeoutAlertedAt?: string | null
+    }
+    ConsoleWaitRelationshipPage: {
+      items: components['schemas']['ConsoleWaitRelationshipItem'][]
+      hasMore: boolean
+      /** @enum {string|null} */
+      nextCursorType?: 'CALENDAR' | 'JOB' | 'READINESS' | 'CAPACITY_ADMISSION' | null
+      nextCursorId?: string | null
+    }
+    /** @description Original dependency snapshot on a wait record. CALENDAR and JOB use JSON object arrays; READINESS uses comma-separated job codes; CAPACITY_ADMISSION has no dependency snapshot. */
+    ConsoleWaitRelationshipItem: {
+      id: string
+      /** @enum {string} */
+      waitType: 'CALENDAR' | 'JOB' | 'READINESS' | 'CAPACITY_ADMISSION'
+      tenantId: string
+      subjectCode: string
+      /** Format: date */
+      bizDate: string
+      waitStatus: string
+      /** @description Whitelisted snapshot fields; null when invalid or capacity wait */
+      dependencySnapshot?: string | null
+      /** @description False when dependency snapshot is absent, malformed, or contains unexpected fields */
+      dependencySnapshotValid: boolean
+      /** @description Known reason code only */
+      reason?: string | null
+      /** Format: date-time */
+      updatedAt: string
+      requestId?: string | null
     }
     ConsolePersistentWaitPageResponse: {
       items: components['schemas']['ConsolePersistentWaitResponse'][]
@@ -11243,6 +11341,16 @@ export interface components {
       occurrenceStatus: string
       requestId?: string | null
       lastRejectionReason?: string | null
+      /** @description Quartz 实际回调观察记录；空数组表示暂无记录，可能是历史数据或观察写入失败，不能证明未触发。人工补跑不属于 Quartz 回调。 */
+      actualFires: components['schemas']['ConsoleScheduledOccurrenceFireResponse'][]
+    }
+    ConsoleScheduledOccurrenceFireResponse: {
+      fireInstanceId: string
+      refireCount: number
+      /** Format: date-time */
+      actualFireTime: string
+      /** @enum {string} */
+      fireKind: 'SCHEDULED' | 'CATCH_UP' | 'MISFIRE_APPROVAL' | 'READINESS_RETRY'
     }
     ConsoleBatchDayCatchUpItemResponse: {
       jobCode: string
@@ -12458,6 +12566,52 @@ export interface components {
         alertRoutings?: components['schemas']['TenantConfigInitItemStats']
       }[]
     }
+    /** @description 已确认目标返回原初始化结果；未确认时整个 result 为 null。 */
+    ConfigBatchOperationRecoveryResult: {
+      tenantId: string
+      success: boolean
+      errorMessage?: string | null
+      jobDefinitions?: components['schemas']['TenantConfigInitItemStats']
+      workflowDefinitions?: components['schemas']['TenantConfigInitItemStats']
+      fileChannels?: components['schemas']['TenantConfigInitItemStats']
+      fileTemplates?: components['schemas']['TenantConfigInitItemStats']
+      resourceQueues?: components['schemas']['TenantConfigInitItemStats']
+      batchWindows?: components['schemas']['TenantConfigInitItemStats']
+      businessCalendars?: components['schemas']['TenantConfigInitItemStats']
+      quotaPolicies?: components['schemas']['TenantConfigInitItemStats']
+      alertRoutings?: components['schemas']['TenantConfigInitItemStats']
+    }
+    ConfigBatchOperationRecoveryTarget: {
+      /** @description 原目标列表中的位置；重复租户仍占各自的位置。 */
+      ordinal: number
+      tenantId: string
+      /**
+       * @description COMPLETE 表示回执已确认，不能代替 result.success。
+       * @enum {string}
+       */
+      status: 'COMPLETE' | 'UNKNOWN'
+      result: components['schemas']['ConfigBatchOperationRecoveryResult'] | null
+    }
+    ConfigBatchOperationRecoveryResponse: {
+      operationId: string
+      /** @enum {string} */
+      operationKind: 'TENANT_COPY' | 'JOB_BUNDLE_CREATE' | 'JOB_BUNDLE_IMPORT'
+      /** @description 非敏感响应元数据；作业包包含租户和原包摘要。 */
+      responseMetadata: {
+        [key: string]: unknown
+      }
+      /**
+       * @description 所有目标回执齐全时为 COMPLETE，否则为 UNKNOWN。
+       * @enum {string}
+       */
+      status: 'COMPLETE' | 'UNKNOWN'
+      targets: components['schemas']['ConfigBatchOperationRecoveryTarget'][]
+    }
+    CommonResponseConfigBatchOperationRecovery: {
+      code: string
+      message: string
+      data: components['schemas']['ConfigBatchOperationRecoveryResponse']
+    }
     TenantConfigInitItemStats: {
       created: number
       updated: number
@@ -13580,6 +13734,25 @@ export interface components {
     }
     CommonResponseConsoleTenantUsageSummary: components['schemas']['CommonResponseBase'] & {
       data?: components['schemas']['ConsoleTenantUsageSummaryResponse']
+    }
+    NotificationRoutePreview: {
+      rules: components['schemas']['NotificationRoutePreviewRule'][]
+      webhooks: components['schemas']['NotificationRoutePreviewWebhook'][]
+    }
+    NotificationRoutePreviewRule: {
+      /** Format: int64 */
+      id: number
+      name: string
+      channelCode: string
+      channelType: string
+    }
+    NotificationRoutePreviewWebhook: {
+      /** Format: int64 */
+      id: number
+      name: string
+    }
+    CommonResponseNotificationRoutePreview: components['schemas']['CommonResponseBase'] & {
+      data?: components['schemas']['NotificationRoutePreview']
     }
     /** @description 通知渠道行（mapper 显式列，snake_case 键；config_json 保留 JSON 对象结构，常规凭据键及 webhook URL 在响应中显示为 ****）。更新时回传掩码可保留原值，删除字段可清除配置。 */
     ConsoleNotificationChannelResponse: {
@@ -15464,6 +15637,7 @@ export interface operations {
     parameters: {
       query: {
         tenantId?: string
+        /** @description 兼容既有客户端的参数；实际审批人以当前认证主体为准。 */
         approver: string
       }
       header: {
@@ -15517,6 +15691,7 @@ export interface operations {
     parameters: {
       query: {
         tenantId?: string
+        /** @description 兼容既有客户端的参数；实际审批人以当前认证主体为准。 */
         approver: string
       }
       header?: never
@@ -16160,6 +16335,37 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['CommonResponseConsoleJobDependencyWaitList']
+        }
+      }
+    }
+  }
+  listConsoleWaitRelationships: {
+    parameters: {
+      query: {
+        tenantId: string
+        waitType?: 'CALENDAR' | 'JOB' | 'READINESS' | 'CAPACITY_ADMISSION'
+        waitStatus?: string
+        bizDateFrom?: string
+        bizDateTo?: string
+        /** @description Pair with cursorId using the previous page's nextCursorType. */
+        cursorType?: 'CALENDAR' | 'JOB' | 'READINESS' | 'CAPACITY_ADMISSION'
+        /** @description Positive signed 64-bit ID as a string; pair with cursorType. */
+        cursorId?: string
+        pageSize?: number
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Safe live page of wait relationship facts */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseConsoleWaitRelationshipPage']
         }
       }
     }
@@ -23346,6 +23552,53 @@ export interface operations {
       }
     }
   }
+  getConfigBatchOperation: {
+    parameters: {
+      query: {
+        auditTenantId: string
+        operationKind: 'TENANT_COPY' | 'JOB_BUNDLE_CREATE' | 'JOB_BUNDLE_IMPORT'
+      }
+      header: {
+        'Idempotency-Key': components['parameters']['IdempotencyKeyHeader']
+        'X-Tenant-Id'?: components['parameters']['TenantIdHeader']
+      }
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description 按原目标顺序返回已确认结果与未知项 */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseConfigBatchOperationRecovery']
+        }
+      }
+      /** @description 原请求键缺失或为空，或操作类型无效 */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description 当前账号无管理权限或无权访问审计租户 */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description 未找到匹配登记或操作类型不匹配；不能据此推断业务未执行 */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+    }
+  }
   previewTenantConfigCopy: {
     parameters: {
       query?: never
@@ -24809,6 +25062,51 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['CommonResponseVoid']
+        }
+      }
+    }
+  }
+  previewNotificationRoute: {
+    parameters: {
+      query: {
+        tenantId: string
+        eventType:
+          'JOB_SUCCESS' | 'JOB_FAILED' | 'WORKFLOW_SUCCESS' | 'WORKFLOW_FAILED' | 'ALERT_ESCALATED'
+        /** @description 升级告警必填，接受 INFO、WARN、ERROR、CRITICAL（不区分大小写）；其他事件忽略此字段。 */
+        severity?: string
+        jobCode?: string
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Matched configuration; no delivery is performed */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseNotificationRoutePreview']
+        }
+      }
+      /** @description Unsupported event, missing job code or invalid alert severity */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseObject']
+        }
+      }
+      /** @description Insufficient role or tenant access */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseObject']
         }
       }
     }

@@ -63,10 +63,29 @@
               })
             }}
           </p>
-          <WorkflowMiniDag :mermaid-text="graph" interactive auto-fit />
+          <ExecutionAttentionLinks
+            :items="attentionStages"
+            :selected="selectedStage"
+            @select="selectedStage = $event"
+          />
+          <WorkflowMiniDag
+            :mermaid-text="graph"
+            interactive
+            auto-fit
+            :node-options="stageOptions"
+            :selected-node="selectedStage"
+            @select-node="selectedStage = $event"
+          />
+          <p class="job-progress__hint">{{ t('workflowProgress.selectHint') }}</p>
+          <div v-if="selectedStage" class="job-progress__selection">
+            <span>{{ t('workflowProgress.selectedNode', { node: selectedStage }) }}</span>
+            <el-button text @click="selectedStage = null">{{
+              t('workflowProgress.clearSelection')
+            }}</el-button>
+          </div>
         </template>
         <el-alert v-else :title="t('jobProgress.noGraph')" type="info" :closable="false" />
-        <el-table v-if="progress.stages.length" :data="[...progress.stages]" size="small">
+        <el-table v-if="progress.stages.length" :data="visibleStages" size="small">
           <el-table-column prop="stageCode" :label="t('jobProgress.stage')" min-width="140" />
           <el-table-column :label="t('workflowProgress.statusLabel')" min-width="200"
             ><template #default="{ row }">{{
@@ -90,7 +109,7 @@
   <WorkflowExecutionPanel v-if="progress?.workflowRunId" :run-id="progress.workflowRunId" />
 </template>
 <script setup lang="ts">
-  import { computed, watch } from 'vue'
+  import { computed, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { useTenantStore } from '@/stores/tenant'
   import { useJobExecutionProgress } from '@/composables/useJobExecutionProgress'
@@ -100,6 +119,7 @@
   import DataState from '@/components/common/DataState.vue'
   import LiveStatusBadge from '@/components/common/LiveStatusBadge.vue'
   import WorkflowMiniDag from '@/components/workflow/WorkflowMiniDag.vue'
+  import ExecutionAttentionLinks from '@/components/workflow/ExecutionAttentionLinks.vue'
   import WorkflowExecutionPanel from '@/components/workflow/WorkflowExecutionPanel.vue'
   import type { JobExecutionProgress } from '@/api/jobProgress'
   import type { DeepReadonly } from 'vue'
@@ -107,13 +127,42 @@
   const emit = defineEmits<{ snapshot: [data: DeepReadonly<JobExecutionProgress>] }>()
   const tenant = useTenantStore()
   const { t, te } = useI18n()
+  const selectedStage = ref<string | null>(null)
   const { progress, status, error, loading, lastRefreshedAt } = useJobExecutionProgress(
     () => tenant.tenantId,
     () => props.jobId,
   )
   watch(progress, (data) => {
     if (data) emit('snapshot', data)
+    if (
+      selectedStage.value &&
+      (!data?.stageGraphAvailable ||
+        !data.stages.some((stage) => stage.stageCode === selectedStage.value))
+    )
+      selectedStage.value = null
   })
+  watch([() => tenant.tenantId, () => props.jobId], () => {
+    selectedStage.value = null
+  })
+  const stageOptions = computed(() =>
+    (progress.value?.stages ?? []).map((stage) => ({
+      code: stage.stageCode,
+      label: t('workflowProgress.selectNode', { node: stage.stageCode }),
+    })),
+  )
+  const attentionStages = computed(() =>
+    (progress.value?.stages ?? []).map((stage) => ({
+      code: stage.stageCode,
+      name: stage.stageCode,
+      state: stage.stageStatus,
+      stateLabel: stateText(stage.stageStatus),
+    })),
+  )
+  const visibleStages = computed(() =>
+    (progress.value?.stages ?? []).filter(
+      (stage) => !selectedStage.value || stage.stageCode === selectedStage.value,
+    ),
+  )
   const counts = computed(() => (progress.value ? jobExecutionCounts(progress.value) : []))
   function stateText(state: string) {
     return te(`workflowProgress.states.${state}`) ? t(`workflowProgress.states.${state}`) : state

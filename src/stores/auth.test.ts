@@ -6,6 +6,7 @@ import { stubLocalStorage } from '@/test-utils/localStorage'
 import { useAuthStore } from './auth'
 import { useTenantStore } from './tenant'
 import { authApi } from '@/api/auth'
+import { currentAuthSession } from '@/api/authSession'
 
 const storage = stubLocalStorage()
 const sessionStorageState = new Map<string, string>()
@@ -47,7 +48,7 @@ describe('useAuthStore', () => {
     vi.mocked(authApi.logout).mockResolvedValue(undefined)
   })
 
-  it('isLoggedIn is false when no token', () => {
+  it('isLoggedIn is false when no session flag exists', () => {
     const auth = useAuthStore()
     expect(auth.isLoggedIn).toBe(false)
   })
@@ -59,10 +60,82 @@ describe('useAuthStore', () => {
     expect(auth.isLoggedIn).toBe(true)
   })
 
+  it('登出开始时立即使旧会话失效，而不等待服务端返回', async () => {
+    storage.set(STORAGE_KEYS.session, '1')
+    setActivePinia(createPinia())
+    const auth = useAuthStore()
+    let complete!: () => void
+    vi.mocked(authApi.logout).mockReturnValueOnce(
+      new Promise<void>((resolve) => {
+        complete = resolve
+      }),
+    )
+    const previousSession = currentAuthSession()
+
+    const pending = auth.logout()
+
+    expect(auth.isLoggedIn).toBe(false)
+    expect(storage.get(STORAGE_KEYS.session)).toBeUndefined()
+    expect(currentAuthSession()).toBeGreaterThan(previousSession)
+    complete()
+    await pending
+  })
+
+  it('旧登出迟到不能清空已经登录的新账号', async () => {
+    storage.set(STORAGE_KEYS.session, '1')
+    setActivePinia(createPinia())
+    const auth = useAuthStore()
+    let finishLogout!: () => void
+    vi.mocked(authApi.logout).mockReturnValueOnce(
+      new Promise<void>((resolve) => {
+        finishLogout = resolve
+      }),
+    )
+    vi.mocked(authApi.login).mockResolvedValueOnce({
+      tenantId: 'system',
+      userInfo: { username: 'new-user', permissions: ['ROLE_ADMIN'] },
+    } as Awaited<ReturnType<typeof authApi.login>>)
+
+    const pendingLogout = auth.logout()
+    await auth.login('new-user', 'test-password')
+    finishLogout()
+    await pendingLogout
+
+    expect(auth.isLoggedIn).toBe(true)
+    expect(auth.userInfo?.username).toBe('new-user')
+    expect(storage.get(STORAGE_KEYS.session)).toBe('1')
+  })
+
+  it('旧登录迟到不能覆盖已经登录的新账号', async () => {
+    const auth = useAuthStore()
+    type LoginResult = Awaited<ReturnType<typeof authApi.login>>
+    let finishOldLogin!: (value: LoginResult) => void
+    vi.mocked(authApi.login)
+      .mockReturnValueOnce(
+        new Promise<LoginResult>((resolve) => {
+          finishOldLogin = resolve
+        }),
+      )
+      .mockResolvedValueOnce({
+        tenantId: 'system',
+        userInfo: { username: 'new-user', permissions: ['ROLE_ADMIN'] },
+      } as LoginResult)
+
+    const oldLogin = auth.login('old-user', 'test-password')
+    await auth.login('new-user', 'test-password')
+    finishOldLogin({
+      tenantId: 'system',
+      userInfo: { username: 'old-user', permissions: ['ROLE_ADMIN'] },
+    } as LoginResult)
+    await oldLogin
+
+    expect(auth.userInfo?.username).toBe('new-user')
+    expect(auth.isLoggedIn).toBe(true)
+  })
+
   it('checks dynamic capabilities independently from role authorities', async () => {
     const { authApi } = await import('@/api/auth')
     vi.mocked(authApi.login).mockResolvedValue({
-      token: 'test-token',
       tenantId: 'system',
       userInfo: {
         userId: 'auditor',
@@ -179,7 +252,6 @@ describe('useAuthStore', () => {
   it('marks the authoritative profile loaded only after /auth/me succeeds', async () => {
     const { authApi } = await import('@/api/auth')
     vi.mocked(authApi.login).mockResolvedValue({
-      token: 'test-token',
       tenantId: 'system',
       userInfo: {
         userId: 'admin',
@@ -278,6 +350,23 @@ describe('useAuthStore', () => {
     expect(auth.userInfo?.username).toBe('after-switch')
   })
 
+  it('invalidates the previous tenant profile synchronously and keeps it unconfirmed on refresh failure', async () => {
+    storage.set(STORAGE_KEYS.session, '1')
+    storage.set(STORAGE_KEYS.tenantId, 'tenant-a')
+    setActivePinia(createPinia())
+    const auth = useAuthStore()
+    const tenant = useTenantStore()
+    vi.mocked(authApi.profile).mockResolvedValueOnce({ username: 'admin', role: 'ADMIN', menus: [] } as never)
+    await auth.fetchMe()
+    expect(auth.profileLoaded).toBe(true)
+    vi.mocked(authApi.profile).mockRejectedValueOnce(new Error('offline'))
+    tenant.setTenantId('tenant-b')
+    expect(auth.profileLoaded).toBe(false)
+    await nextTick()
+    await Promise.resolve()
+    expect(auth.profileLoaded).toBe(false)
+  })
+
   it('tenant change does NOT trigger fetchMe when no session', async () => {
     const { get } = await import('@/api/client')
     const mockedGet = vi.mocked(get)
@@ -321,7 +410,6 @@ describe('useAuthStore', () => {
     const request = auth.fetchMe()
     await auth.logout()
     vi.mocked(authApi.login).mockResolvedValue({
-      token: 'test-token',
       tenantId: 'system',
       userInfo: {
         userId: 'next-user',
@@ -394,7 +482,6 @@ describe('useAuthStore', () => {
       setActivePinia(createPinia())
       const { authApi } = await import('@/api/auth')
       vi.mocked(authApi.login).mockResolvedValue({
-        token: 'test-token',
         tenantId: 'system',
         userInfo: {
           userId: 'admin',
@@ -418,7 +505,6 @@ describe('useAuthStore', () => {
     it('tenant 业务用户 login → tenant store 正常落到自己租户', async () => {
       const { authApi } = await import('@/api/auth')
       vi.mocked(authApi.login).mockResolvedValue({
-        token: 'test-token',
         tenantId: 'ta',
         userInfo: {
           userId: 'op-ta',

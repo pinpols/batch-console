@@ -34,6 +34,13 @@ VALUES
    jsonb_build_object('privateMarker', 'PERSISTENT_WAIT_PRIVATE_PAYLOAD', 'tenantId', :'tenant_id'),
    'WAITING', 3, current_timestamp + interval '2 minutes');
 
+-- 与 readiness 的 upstream-a 拼成同业务日链 source-job → upstream-a → workflow。
+INSERT INTO batch.job_dependency_waiting_launch
+  (tenant_id, request_id, job_code, biz_date, dependency_snapshot, launch_payload, wait_status)
+VALUES (:'tenant_id', :'readiness_request_id', 'upstream-a', :'biz_date'::date,
+        '[{"upstreamJobCode":"source-job","bizDateAlignment":"SAME_DAY"}]'::jsonb,
+        '{}'::jsonb, 'WAITING');
+
 SELECT json_build_object(
   'readinessCount', (SELECT count(*) FROM batch.readiness_wait
                       WHERE tenant_id = :'tenant_id' AND request_id = :'readiness_request_id'),

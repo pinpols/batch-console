@@ -117,6 +117,18 @@ describe('notification rule tenant scope', () => {
     state.ruleRow = null
   })
 
+  it('summarizes the configured event types and channel without claiming delivery', async () => {
+    state.ruleRow = { id: 7, tenantId: 'tenant-a', ruleName: 'alerts', eventTypes: 'JOB_FAILED', channelCode: 'ops', enabled: true }
+    state.listChannels.mockResolvedValue([{ id: 1, channelCode: 'ops', channelName: 'Operations' }])
+    const wrapper = mount(NotificationRulesTab, { global: { stubs } })
+    await flushPromises()
+    await wrapper.findAll('button').find((button) => button.text() === 'edit')!.trigger('click')
+    expect(wrapper.text()).toContain('notificationRulesTab.routeSummaryHint')
+    expect(wrapper.text()).toContain('JOB_FAILED')
+    expect(wrapper.text()).toContain('ops / Operations')
+    expect(wrapper.text()).toContain('notificationRulesTab.routeEnabled')
+  })
+
   it('does not submit an A form when the tenant changes while validation is pending', async () => {
     let resolveValidation!: (isValid: boolean) => void
     state.validate.mockReturnValueOnce(

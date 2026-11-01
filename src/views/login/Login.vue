@@ -178,7 +178,6 @@
   import { ElMessage } from 'element-plus'
   import { useAuthStore } from '@/stores/auth'
   import { useLocale } from '@/composables/useLocale'
-  import { authApi } from '@/api/auth'
   import { getCaptchaConfig } from '@/api/captcha'
   import type { CaptchaConfig } from '@/api/captcha'
   import { getConsoleOidcProvider } from '@/api/oidc'
@@ -204,7 +203,9 @@
 
   // 登录入口始终采用深色视觉；离开后恢复用户在控制台内保存的主题偏好。
   applyThemeToDocument('dark')
+  let active = true
   onBeforeUnmount(() => {
+    active = false
     const themePreference = readThemePreference()
     const systemIsDark = getSystemIsDark()
     const restoredTheme = resolveEffectiveTheme(themePreference, systemIsDark)
@@ -239,15 +240,7 @@
     captchaToken.value = token
   }
 
-  // 兜底:登录页挂载时主动调一次 /auth/logout,让后端 Set-Cookie max-age=0
-  // 清掉浏览器里可能残留的失效 HttpOnly cookie。否则 cookie 过期 / 服务端 secret
-  // 轮换后,浏览器会把毒 cookie 自动带给后续 /auth/login,旧版后端 filter 会直接
-  // 401 INVALID_CONSOLE_JWT,用户陷死无法重新登录(必须手清浏览器数据)。
-  // 失败静默 —— 后端可能 401(cookie 已失效)或 5xx,都不影响接下来用户输密码登录。
   onMounted(() => {
-    // _silent:抑制失败 toast(详见 src/api/interceptors.ts LoggedConfig._silent)。
-    // 失效 cookie 时这次 logout 会 401,不该让用户在登录页一打开就看到"未授权"。
-    void authApi.logout({ _silent: true } as AxiosRequestConfig).catch(() => {})
     // 拉验证码配置:loginProtectionEnabled && provider!=none 时才可能需要验证码;
     // 但只有登录失败返回 CAPTCHA_REQUIRED 才真正展示组件(渐进式,首登无摩擦)。
     void getCaptchaConfig({ _silent: true } as AxiosRequestConfig)
@@ -296,7 +289,12 @@
     loginTrace.value = ''
     serviceUnavailable.value = false
     try {
-      await auth.login(form.username, form.password, captchaToken.value || undefined)
+      const applied = await auth.login(
+        form.username,
+        form.password,
+        captchaToken.value || undefined,
+      )
+      if (!applied || !active) return
       const redirect = (route.query.redirect as string) || '/'
       router.push(redirect)
     } catch (e: unknown) {

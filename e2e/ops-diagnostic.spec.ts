@@ -3,6 +3,7 @@
  */
 import { expect, test } from './support/app'
 import { enterDemoApp, expectPageTitle } from './support/app'
+import { e2eText } from './support/i18n'
 
 test.describe('ops diagnostic (运维诊断)', () => {
   test.beforeEach(async ({ page }) => {
@@ -27,9 +28,12 @@ test.describe('ops diagnostic (运维诊断)', () => {
   })
 
   test('集群诊断区块存在', async ({ page }) => {
-    await expect(page.locator('main').getByText(/集群|诊断|节点/).first()).toBeVisible({
-      timeout: 8000,
+    const clusterTitle = e2eText('opsDiagnostic.sectionClusterOverview')
+    const clusterHeading = page.locator('.diag-card').getByRole('heading', {
+      name: clusterTitle,
+      exact: true,
     })
+    await expect(clusterHeading).toBeVisible({ timeout: 8000 })
   })
 
   test('旧路由重定向到运维诊断', async ({ page }) => {

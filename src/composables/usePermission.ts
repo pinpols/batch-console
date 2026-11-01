@@ -9,11 +9,11 @@ export function usePermission() {
   const role = computed(() => auth.role)
 
   function canAccess(minRole: Role) {
-    return auth.canAccess(minRole)
+    return auth.profileLoaded && auth.canAccess(minRole)
   }
 
   function hasPermission(permission: string) {
-    return auth.hasPermission(permission)
+    return auth.profileLoaded && auth.hasPermission(permission)
   }
 
   /**
@@ -26,11 +26,12 @@ export function usePermission() {
   const canMutateConfig = computed(
     () =>
       !app.writesFrozen &&
+      auth.profileLoaded &&
       (auth.hasPermission('ROLE_ADMIN') || auth.hasPermission('ROLE_TENANT_ADMIN')),
   )
 
   /** 仅 ADMIN 能做的高危操作(用户管理、租户管理等) */
-  const canManageSystem = computed(() => auth.hasPermission('ROLE_ADMIN'))
+  const canManageSystem = computed(() => auth.profileLoaded && auth.hasPermission('ROLE_ADMIN'))
   const canWriteSystem = computed(() => canManageSystem.value && !app.writesFrozen)
 
   return {

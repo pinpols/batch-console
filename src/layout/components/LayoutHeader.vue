@@ -250,6 +250,7 @@
   import { getDocsBase } from '@/components/common/docsRegistry'
   import { checkDocsAvailability } from '@/utils/serviceAvailability'
   import { truncateDisplayText } from '@/utils/text'
+  import { currentAuthSession } from '@/api/authSession'
 
   const { t } = useI18n({ useScope: 'global' })
   const { current: currentLocale, setLocale } = useLocale()
@@ -386,6 +387,7 @@
       return
     }
     if (command === 'logout') {
+      const logoutSession = currentAuthSession()
       try {
         await ElMessageBox.confirm(t('nav.confirmLogout'), t('nav.logout'), {
           confirmButtonText: t('nav.logout'),
@@ -395,7 +397,7 @@
       } catch {
         return
       }
-      handleLogout()
+      handleLogout(logoutSession)
     }
   }
 </script>

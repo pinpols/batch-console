@@ -1376,59 +1376,66 @@ a:focus-visible,
   font-weight: 500;
 }
 
-/* 页面级等待由品牌圆环和图标组成；按钮内继续使用原生 loading。 */
-.el-loading-mask .el-loading-spinner .circular {
-  display: none;
+/* 页面遮罩使用静态品牌与不定进度光带；按钮内保留原生loading。 */
+.el-loading-mask:has(.circular) {
+  background-color: color-mix(in srgb, var(--color-bg-card) 90%, transparent);
+  border-radius: inherit;
 }
 
 .el-loading-mask .el-loading-spinner:has(.circular) {
-  position: relative;
-  width: 52px;
-  height: 52px;
-  margin: 0 auto;
+  top: 50%;
+  left: 50%;
+  width: min(240px, 90%);
+  min-height: 60px;
+  margin: 0;
+  padding-top: 70px;
+  transform: translate(-50%, -50%);
+}
+
+.el-loading-mask .el-loading-spinner:has(.circular) .circular {
+  display: none;
 }
 
 .el-loading-mask .el-loading-spinner:has(.circular)::before {
   content: '';
-  display: block;
   position: absolute;
-  inset: 2px;
-  border-radius: 50%;
-  background: conic-gradient(
-    from 0deg,
-    var(--color-primary) 0deg,
-    color-mix(in srgb, var(--color-primary) 14%, transparent) 290deg,
-    transparent 360deg
-  );
-  mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2px));
-  animation: brand-loading-spin 1s linear infinite;
+  top: 0;
+  left: calc(50% - 24px);
+  width: 48px;
+  height: 48px;
+  border-radius: 25%;
+  background: center / contain no-repeat url('/icons/batch-mark.svg');
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--color-primary) 16%, transparent);
 }
 
 .el-loading-mask .el-loading-spinner:has(.circular)::after {
   content: '';
   position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 32px;
-  height: 32px;
-  border-radius: 25%;
-  background: center / contain no-repeat url('/icons/icon-192-maskable.png');
-  transform: translate(-50%, -50%);
+  top: 59px;
+  left: calc(50% - 24px);
+  width: 48px;
+  height: 3px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, var(--color-primary), transparent)
+    -48px 0 / 48px 100% no-repeat
+    color-mix(in srgb, var(--color-primary) 12%, transparent);
+  animation: brand-loading-travel 1.4s ease-in-out infinite;
 }
 
-html.dark .el-loading-mask .el-loading-spinner:has(.circular)::after {
-  background-image: url('/icons/icon-192.png');
+.el-loading-mask .el-loading-spinner:has(.circular) .el-loading-text {
+  margin: 0;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
 }
 
-@keyframes brand-loading-spin {
-  to {
-    transform: rotate(360deg);
-  }
+@keyframes brand-loading-travel {
+  to { background-position: 48px 0; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .el-loading-mask .el-loading-spinner:has(.circular)::before {
+  .el-loading-mask .el-loading-spinner:has(.circular)::after {
     animation: none;
+    background: var(--color-primary);
   }
 }
 

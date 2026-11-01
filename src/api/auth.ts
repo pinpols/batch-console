@@ -1,6 +1,7 @@
 import axios, { type AxiosRequestConfig } from 'axios'
 import { get, post } from '@/api/client'
 import { clearPublicKeyCache, encryptLoginBody } from '@/utils/loginCrypto'
+import { currentAuthSession, staleAuthSessionError } from './authSession'
 
 import type { MenuGroup, Role, UserInfo } from '@/types'
 
@@ -17,7 +18,6 @@ export interface LoginParams {
 
 /** POST /api/console/auth/login 解包后的 data */
 export interface ConsoleAuthTokenPayload {
-  accessToken: string
   tokenType: string
   issuedAt: string
   expiresAt: string
@@ -81,14 +81,19 @@ async function postLoginWithEncryption(
     username: string
     password: string
   },
+  loginSession: number,
   captchaToken?: string,
 ): Promise<ConsoleAuthTokenPayload> {
   const send = async () => {
+    if (loginSession !== currentAuthSession()) throw staleAuthSessionError()
     const encrypted = await encryptLoginBody(plaintext)
+    if (loginSession !== currentAuthSession()) throw staleAuthSessionError()
     const body: Record<string, unknown> = { ...(encrypted ?? plaintext) }
     // captchaToken 放外层(不进加密体);BE 解密后会带到请求里。
     if (captchaToken) body.captchaToken = captchaToken
-    return post<ConsoleAuthTokenPayload>('/api/console/auth/login', body)
+    return post<ConsoleAuthTokenPayload>('/api/console/auth/login', body, {
+      _authSession: loginSession,
+    } as AxiosRequestConfig)
   }
   try {
     return await send()
@@ -114,12 +119,12 @@ export const authApi = {
     // 回退明文 (BE 默认 required=false 接受双形态)。
     // prod profile 强制 required=true 时,明文路径会被 401 error.auth.encryption_required
     // 拦下,登录页捕获错误码提示用户。
+    const loginSession = currentAuthSession()
     const plaintext = { username: params.username, password: params.password }
     // BE 重启会重新生成 RSA keypair,FE sessionStorage 缓存的旧公钥导致解密失败。
     // 命中 error.auth.encryption_failed 时清缓存重取公钥再试一次,避免 5 分钟 TTL 内死循环。
-    const payload = await postLoginWithEncryption(plaintext, params.captchaToken)
+    const payload = await postLoginWithEncryption(plaintext, loginSession, params.captchaToken)
     return {
-      token: payload.accessToken,
       userInfo: mapProfileToUserInfo({
         username: payload.username,
         tenantId: payload.tenantId,
@@ -144,9 +149,7 @@ export const authApi = {
 
   /**
    * POST /api/console/auth/logout — 后端 Set-Cookie max-age=0 清 HttpOnly
-   * token cookie。返回 204(无 body)。失败不抛(前端会兜底清本地态)。
-   * 可传 `{ _silent: true }`(见 interceptors LoggedConfig)抑制失败 toast,
-   * 用于登录页挂载时预清的兜底调用。
+   * token cookie，成功返回 204（无响应体）。失败由调用方处理。
    */
   logout: (config?: AxiosRequestConfig) =>
     post<void>('/api/console/auth/logout', undefined, config),

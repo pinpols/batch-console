@@ -126,6 +126,31 @@
 
     <SectionCard v-if="window">
       <template #header>{{ t('batchDayWindow.windowStatus') }}</template>
+      <div class="batch-day-milestones">
+        <div class="batch-day-milestones__heading">
+          <h3>{{ t('batchDayWindow.milestonesTitle') }}</h3>
+          <span>{{ t('batchDayWindow.displayTimezone', { timezone: displayTimezone }) }}</span>
+        </div>
+        <ul class="batch-day-milestones__list">
+          <li class="batch-day-milestones__item">
+            <span>{{ t('batchDayWindow.currentTime') }}</span>
+            <DatetimeText :value="window.currentSystemTime" />
+          </li>
+          <li class="batch-day-milestones__item">
+            <span>{{ t('batchDayWindow.cutoff') }}</span>
+            <DatetimeText :value="window.cutoffAt" />
+          </li>
+          <li class="batch-day-milestones__item">
+            <span>{{ t('batchDayWindow.slaCutoff') }}</span>
+            <DatetimeText :value="window.slaDeadlineAt" />
+          </li>
+          <li class="batch-day-milestones__item">
+            <span>{{ t('batchDayWindow.lateWindowClosed') }}</span>
+            <DatetimeText :value="window.lateArrivalWindowClosesAt" />
+          </li>
+        </ul>
+        <p>{{ t('batchDayWindow.milestonesSnapshot') }}</p>
+      </div>
       <el-descriptions :column="2" border size="small">
         <el-descriptions-item :label="t('batchDayWindow.bizDate')">
           {{ window.bizDate }}
@@ -133,20 +158,8 @@
         <el-descriptions-item :label="t('batchDayWindow.dayStatus')">
           {{ window.dayStatus }}
         </el-descriptions-item>
-        <el-descriptions-item :label="t('batchDayWindow.currentTime')">
-          <DatetimeText :value="window.currentSystemTime" />
-        </el-descriptions-item>
-        <el-descriptions-item :label="t('batchDayWindow.cutoff')">
-          <DatetimeText :value="window.cutoffAt" />
-        </el-descriptions-item>
-        <el-descriptions-item :label="t('batchDayWindow.slaCutoff')">
-          <DatetimeText :value="window.slaDeadlineAt" />
-        </el-descriptions-item>
         <el-descriptions-item :label="t('batchDayWindow.secondsToCutoff')">
           {{ window.timeUntilCutoffSeconds ?? '—' }}
-        </el-descriptions-item>
-        <el-descriptions-item :label="t('batchDayWindow.lateWindowClosed')">
-          <DatetimeText :value="window.lateArrivalWindowClosesAt" />
         </el-descriptions-item>
       </el-descriptions>
     </SectionCard>
@@ -219,8 +232,69 @@
 
     <SectionCard v-if="window">
       <template #header>{{ t('batchDayWindow.scheduledOccurrences') }}</template>
+      <div class="batch-day-timeline__filters">
+        <el-select
+          v-model="occurrenceWorkflow"
+          clearable
+          filterable
+          :placeholder="t('batchDayWindow.timelineWorkflowFilter')"
+          :aria-label="t('batchDayWindow.timelineWorkflowFilter')"
+        >
+          <el-option
+            v-for="code in occurrenceWorkflowOptions"
+            :key="code"
+            :label="code"
+            :value="code"
+          />
+        </el-select>
+        <el-select
+          v-model="occurrenceStatus"
+          clearable
+          :placeholder="t('batchDayWindow.timelineStatusFilter')"
+          :aria-label="t('batchDayWindow.timelineStatusFilter')"
+        >
+          <el-option
+            v-for="status in occurrenceStatusOptions"
+            :key="status"
+            :label="occurrenceStatusLabel(status)"
+            :value="status"
+          />
+        </el-select>
+      </div>
+      <p class="batch-day-timeline__hint">{{ t('batchDayWindow.timelineExplanation') }}</p>
+      <p class="batch-day-timeline__hint">
+        {{
+          t('batchDayWindow.timelineCount', {
+            shown: timelineShown.length,
+            total: timeline.events.length,
+          })
+        }}
+      </p>
+      <p v-if="timeline.invalidOccurrences" class="batch-day-timeline__hint">
+        {{ t('batchDayWindow.timelineInvalid', { count: timeline.invalidOccurrences }) }}
+      </p>
+      <el-timeline v-if="timelineShown.length" class="batch-day-timeline">
+        <el-timeline-item
+          v-for="(event, index) in timelineShown"
+          :key="`${event.kind}-${event.time}-${index}`"
+        >
+          <DatetimeText :value="event.time" />
+          <template v-if="(event.kind === 'scheduled' || event.kind === 'actual') && event.occurrence">
+            · {{ t(event.kind === 'actual' ? 'batchDayWindow.colActualFire' : 'batchDayWindow.colScheduledFire') }} ·
+            <el-button
+              link
+              type="primary"
+              @click="occurrenceWorkflow = event.occurrence.workflowCode"
+              >{{ event.occurrence.workflowCode }}</el-button
+            >
+            · {{ occurrenceStatusLabel(event.occurrence.occurrenceStatus) }}
+            <template v-if="event.fire"> · {{ t(`batchDayWindow.fireKinds.${event.fire.fireKind}`) }}</template>
+          </template>
+          <template v-else> · {{ timelineLabel(event.kind) }}</template>
+        </el-timeline-item>
+      </el-timeline>
       <el-table
-        :data="window.scheduledOccurrences"
+        :data="filteredOccurrences"
         stripe
         border
         :empty-text="t('batchDayWindow.noScheduledOccurrences')"
@@ -243,6 +317,16 @@
         >
           <template #default="{ row }">
             <DatetimeText :value="row.scheduledFireTime" />
+          </template>
+        </el-table-column>
+        <el-table-column :label="t('batchDayWindow.colActualFire')" min-width="240">
+          <template #default="{ row }">
+            <template v-if="row.actualFires?.length">
+              <div v-for="fire in row.actualFires" :key="`${fire.fireInstanceId}-${fire.refireCount}`">
+                <DatetimeText :value="fire.actualFireTime" /> · {{ t(`batchDayWindow.fireKinds.${fire.fireKind}`) }}
+              </div>
+            </template>
+            <span v-else>{{ t('batchDayWindow.actualFireUnknown') }}</span>
           </template>
         </el-table-column>
         <el-table-column
@@ -422,6 +506,7 @@
   } from '@/api/batchDays'
   import { useAuthStore } from '@/stores/auth'
   import { STORAGE_KEYS } from '@/constants/storageKeys'
+  import { displayTimezone } from '@/constants/timezone'
   import { createIdempotencyKey } from '@/utils/idempotency'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
@@ -433,6 +518,11 @@
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import type { ConsoleBatchDayWindowResponse } from '@/types/console-api'
+  import {
+    batchDayTimeline,
+    filterScheduledOccurrences,
+    type BatchDayTimelineEvent,
+  } from './batchDayTimeline'
 
   const route = useRoute()
   const router = useRouter()
@@ -459,6 +549,39 @@
   const { filterBusy, runSearch, runReset, runRefresh } = useListFilterFeedback(loading)
   const window = ref<ConsoleBatchDayWindowResponse | null>(null)
   const jobKeyword = ref('')
+  const occurrenceWorkflow = ref('')
+  const occurrenceStatus = ref('')
+  const occurrences = computed(() => window.value?.scheduledOccurrences ?? [])
+  const occurrenceWorkflowOptions = computed(() =>
+    [...new Set(occurrences.value.map((item) => item.workflowCode))].sort(),
+  )
+  const occurrenceStatusOptions = computed(() =>
+    [...new Set(occurrences.value.map((item) => item.occurrenceStatus))].sort(),
+  )
+  const filteredOccurrences = computed(() =>
+    filterScheduledOccurrences(occurrences.value, occurrenceWorkflow.value, occurrenceStatus.value),
+  )
+  const timeline = computed(() =>
+    window.value
+      ? batchDayTimeline(window.value, filteredOccurrences.value)
+      : { events: [], invalidOccurrences: 0 },
+  )
+  const timelineShown = computed(() => timeline.value.events.slice(0, 40))
+  function timelineLabel(kind: BatchDayTimelineEvent['kind']) {
+    const labels = {
+      snapshot: 'timelineSnapshot',
+      cutoff: 'cutoff',
+      sla: 'slaCutoff',
+      late: 'lateWindowClosed',
+      scheduled: 'colScheduledFire',
+      actual: 'colActualFire',
+    } as const
+    return t(`batchDayWindow.${labels[kind]}`)
+  }
+  watch([() => tenant.tenantId, bizDate, calendarCode], () => {
+    occurrenceWorkflow.value = ''
+    occurrenceStatus.value = ''
+  })
 
   const filteredJobs = computed(() => {
     const list = window.value?.jobs ?? []
@@ -898,6 +1021,64 @@
 </script>
 
 <style scoped>
+  .batch-day-timeline__filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+  }
+  .batch-day-timeline__filters :deep(.el-select) {
+    width: min(100%, 240px);
+  }
+  .batch-day-timeline__hint {
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+  }
+  .batch-day-timeline {
+    max-height: 420px;
+    overflow: auto;
+    margin-top: var(--space-md);
+  }
+  .batch-day-milestones {
+    margin-bottom: var(--space-md);
+  }
+  .batch-day-milestones__heading {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+  }
+  .batch-day-milestones__heading h3 {
+    margin: 0;
+    font-size: 14px;
+  }
+  .batch-day-milestones__heading span,
+  .batch-day-milestones p {
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+  }
+  .batch-day-milestones__list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr));
+    gap: var(--space-sm);
+    padding: 0;
+    list-style: none;
+  }
+  .batch-day-milestones__item {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+    padding: var(--space-sm);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-control);
+    background: var(--color-bg-subtle);
+  }
+  .batch-day-milestones__item span {
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+  }
+  .batch-day-milestones p {
+    margin: 0;
+  }
   .batch-day-context {
     display: flex;
     align-items: center;

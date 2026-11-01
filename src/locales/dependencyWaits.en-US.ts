@@ -5,6 +5,38 @@ export default {
   calendarTab: 'Cross-calendar waits',
   jobTab: 'Job dependency waits',
   persistentTab: 'Persistent waits',
+  graph: {
+    title: 'Wait relationships',
+    topologyTitle: 'Overall wait topology',
+    topologyHint:
+      'Jobs and calendars are joined only by tenant, type, code and business date; workflow waits stay separate. If rendering fails, use the details below. Node counts do not indicate progress.',
+    topologyTooLarge:
+      'Too many relationships to safely draw the topology. Narrow the filters or use the paginated details below.',
+    topologyUnresolved:
+      '{count} waits have unresolved dependencies or upstream dates, so the topology is incomplete. See the details.',
+    topologyUnavailable: 'The current records cannot be drawn. See the details below.',
+    detailsTitle: 'Wait details by record',
+    nodeWaitCount: '{count} waits',
+    nodeStatuses: 'Status: {statuses}',
+    statusUnavailable: 'Not provided',
+    allTypes: 'All types',
+    types: {
+      CALENDAR: 'Cross-calendar',
+      JOB: 'Job dependency',
+      READINESS: 'Dependency readiness',
+      CAPACITY_ADMISSION: 'Workflow capacity',
+    },
+    liveHint:
+      'All results are read by type and record. Data may change during loading, so this is not a point-in-time snapshot. Edges are original dependencies and do not prove each dependency remains blocked.',
+    incomplete: 'Loading stopped; these results are incomplete. Search again.',
+    loading: 'Loading; {count} records read…',
+    count: '{count} wait records read; relationships are displayed by record.',
+    empty: 'No wait records.',
+    capacity: 'Capacity waits have no dependency edges',
+    noDependency: 'No recognizable dependencies',
+    unknown: 'Some dependencies could not be parsed; check the dependency configuration.',
+    arrow: 'Dependency points to waiting subject',
+  },
   waitType: 'Wait type',
   workflowDefinitionId: 'Workflow definition ID',
   workflowCode: 'Workflow code',
