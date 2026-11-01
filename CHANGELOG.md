@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-11-01 CI 与镜像验证
+
+- 统一 CI 展示名称并减少重复的 Node 测试；夜间前端镜像构建校验后端成功验证覆盖目标提交。
+
 ## 2026-10-31 依赖安全与 Dependabot 治理
 
 - 通过 overrides 升级 `undici`（`6.29.1` / jsdom `8.12.3`）、vitepress 嵌套 `vite`（`6.4.4+`）、`minimatch`、`fast-uri`、`serialize-javascript`，处理 GitHub Security 中可修复 Dependabot 告警；同步 SBOM 与第三方许可证快照。
