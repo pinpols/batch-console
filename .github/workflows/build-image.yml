@@ -135,7 +135,7 @@ jobs:
             for _ in $(seq 1 60); do
               job_state=$(gh api --paginate \
                 "repos/${BACKEND_REPOSITORY}/actions/runs/${sim_run_id}/jobs?per_page=100" \
-                --jq '.jobs[] | select(.name == "sim-and-strict") | [.status, .conclusion] | @tsv' \
+                --jq '.jobs[] | select(.name == "sim-and-strict" or .name == "Run simulation and strict validation") | [.status, .conclusion] | @tsv' \
                 2>/dev/null | tail -n 1 || true)
               status=$(printf '%s' "$job_state" | cut -f1)
               conclusion=$(printf '%s' "$job_state" | cut -f2)
