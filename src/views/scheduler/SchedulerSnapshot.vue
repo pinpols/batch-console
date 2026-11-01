@@ -283,98 +283,9 @@
         role="tabpanel"
         aria-labelledby="snapshot-tab-queues"
       >
-        <el-table
-          v-loading="loading"
-          :data="pagedQueues.records"
-          stripe
-          border
-          size="small"
-          :empty-text="t('common.noData')"
-          class="console-table"
-        >
-          <el-table-column :label="t('schedulerSnapshot.colQueue')" min-width="280">
-            <template #default="{ row }">
-              <div class="cell-stack">
-                <div class="cell-main">
-                  <el-tag size="small" effect="plain" type="success">{{ row.queueCode }}</el-tag>
-                  <el-tag size="small" effect="plain" :type="tagTypeForKey(row.fairShareGroup)">
-                    {{ row.fairShareGroup }}
-                  </el-tag>
-                </div>
-                <div class="cell-sub">
-                  {{ t('schedulerSnapshot.quotaResetPolicyLabel') }}:
-                  <el-tag size="small" effect="plain" type="info">{{
-                    row.quotaResetPolicy
-                  }}</el-tag>
-                </div>
-              </div>
-            </template>
-          </el-table-column>
-          <el-table-column
-            prop="fairShareWeight"
-            :label="t('schedulerSnapshot.colWeight')"
-            width="90"
-          />
-          <el-table-column
-            prop="activeJobs"
-            :label="t('schedulerSnapshot.colActiveJobs')"
-            width="110"
-          />
-          <el-table-column
-            prop="maxRunningJobs"
-            :label="t('schedulerSnapshot.colMaxRunningJobs')"
-            width="150"
-          />
-          <el-table-column
-            prop="effectiveMaxRunningJobs"
-            :label="t('schedulerSnapshot.colEffectiveMaxRunningJobs')"
-            width="190"
-          />
-          <el-table-column :label="t('schedulerSnapshot.partitionCapacity')" min-width="180">
-            <template #default="{ row }">
-              <template v-if="queuePartitionCapacity(row.activePartitions, row.maxRunningPartitions)">
-                <span>{{ row.activePartitions }} / {{ row.maxRunningPartitions }}</span>
-                <el-progress :percentage="queuePartitionCapacity(row.activePartitions, row.maxRunningPartitions)!.percent" :show-text="false" />
-              </template>
-              <span v-else>{{ t('schedulerSnapshot.partitionCapacityUnknown') }}</span>
-            </template>
-          </el-table-column>
-          <el-table-column
-            prop="burstLimit"
-            :label="t('schedulerSnapshot.colBurstLimit')"
-            width="110"
-          />
-          <el-table-column
-            prop="quotaBurstRemaining"
-            :label="t('schedulerSnapshot.colQuotaBurstRemaining')"
-            width="160"
-          />
-          <el-table-column
-            prop="quotaBurstPeakBorrowed"
-            :label="t('schedulerSnapshot.colQuotaBurstPeakBorrowed')"
-            width="180"
-          />
-          <el-table-column
-            prop="groupSharedMaxRunningJobs"
-            :label="t('schedulerSnapshot.colGroupSharedMax')"
-            width="130"
-          />
-          <DatetimeColumn
-            prop="quotaResetWindowExpiresAt"
-            :label="t('schedulerSnapshot.colQuotaWindow')"
-            width="170"
-          />
-          <el-table-column :label="t('schedulerSnapshot.colActions')" width="140" fixed="right">
-            <template #default="{ row }">
-              <CopyableText :text="String(row.queueCode ?? '')" class="snapshot-copy-action">
-                <el-button type="primary" plain size="small" :icon="DocumentCopy">
-                  {{ t('schedulerSnapshot.actionCopyCode') }}
-                </el-button>
-              </CopyableText>
-            </template>
-          </el-table-column>
-        </el-table>
-        <TablePagerBar
+        <SchedulerQueueTable
+          :records="pagedQueues.records"
+          :loading="loading"
           :page="pageQueues"
           :page-size="pageSize"
           :total="pagedQueues.total"
@@ -548,7 +459,6 @@
   import {
     errorCorrelation,
     panelDotClass,
-    queuePartitionCapacity,
     summarizeWorkerStates,
     tagTypeForKey,
   } from './schedulerSnapshotPresentation'

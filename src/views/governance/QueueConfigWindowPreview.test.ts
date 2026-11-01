@@ -22,7 +22,15 @@ const slot = { template: '<div><slot /></div>' }
 describe('批次窗口编辑预览', () => {
   it('编辑非跨日无效时间时显示保存校验警告', async () => {
     const wrapper = shallowMount(QueueConfig, {
-      global: { stubs: { PageContainer: slot, ElDrawer: slot, ElForm: slot, ElFormItem: slot } },
+      global: {
+        stubs: {
+          PageContainer: slot,
+          ElDrawer: slot,
+          ElForm: slot,
+          ElFormItem: slot,
+          WindowSchedulePreview: false,
+        },
+      },
     })
     const vm = wrapper.vm as unknown as { openWindowEdit: (row: object) => void }
     vm.openWindowEdit({
