@@ -144,6 +144,17 @@ test('持久等待查询从真实PostgreSQL投影到调度快照并遵守角色�
     expect(Number.isSafeInteger(workflowId)).toBe(true)
     fixture.seedWaits(workflowId, workflow.workflowCode)
 
+    // 等真实恢复器检查后仍等待，避免无效载荷先通过 UI 断言、随后被后台取消。
+    await expect.poll(() => fixture.jobDependencyWaitState(), {
+      timeout: 90_000,
+      intervals: [1000, 2000, 5000],
+    }).toMatchObject({
+      status: 'WAITING',
+      attempts: expect.any(Number),
+      reason: 'UPSTREAM_NOT_EFFECTIVE:source-job',
+    })
+    expect(fixture.jobDependencyWaitState().attempts).toBeGreaterThan(0)
+
     const databaseState = fixture.persistentWaitState()
     expect(databaseState).toEqual({
       readinessCount: 1,

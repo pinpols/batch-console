@@ -90,6 +90,7 @@ export class ControlProgressFixture extends WorkflowBulkFixture {
       | 'persistent-waits-accounts-state'
       | 'persistent-waits-seed'
       | 'persistent-waits-state'
+      | 'persistent-waits-job-state'
       | 'persistent-waits-cleanup'
       | 'persistent-waits-accounts-cleanup'
       | 'manual-upload-roles-prepare'
@@ -428,6 +429,13 @@ export class PersistentWaitFixture extends ControlProgressFixture {
       readiness_request_id: this.readinessRequestId,
       capacity_request_id: this.capacityRequestId,
     })
+  }
+
+  jobDependencyWaitState() {
+    return this.ownedSql<{ status: string | null; attempts: number; reason: string | null }>(
+      'persistent-waits-job-state',
+      { job_wait_request_id: this.jobWaitRequestId },
+    )
   }
 
   override async finish(request: APIRequestContext, reader?: APIRequestContext) {
