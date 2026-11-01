@@ -84,10 +84,24 @@ export class ExportWorkflowReplayFixture extends ManualFileUploadFixture {
   private workerStarts = 0
   private jobDefinitionId = 0
   private exportPrepared = false
+  private exportPreparationStarted = false
 
-  prepareExport() {
-    expect(this.ownedSql('export-replay-prepare', this.variables())).toEqual({ templates: 1 })
+  prepareExport(exportDataRef = 'jdbc_mapped_export') {
+    // SQL 超时不代表事务未提交；清理前需回读本例资源的真实状态。
+    this.exportPreparationStarted = true
+    expect(
+      this.ownedSql('export-replay-prepare', {
+        ...this.variables(),
+        export_data_ref: exportDataRef,
+      }),
+    ).toEqual({ templates: 1 })
     this.exportPrepared = true
+  }
+
+  prepareOtherBatch() {
+    expect(this.ownedSql('export-replay-other-batch', this.variables())).toEqual({
+      insertedRows: 1,
+    })
   }
 
   rememberJobDefinition(id: number) {
@@ -107,6 +121,13 @@ export class ExportWorkflowReplayFixture extends ManualFileUploadFixture {
 
   async startWorker() {
     if (this.worker) throw new Error('本例EXPORT Worker尚未停止')
+    const startupTimeout = Number(process.env.E2E_WORKER_STARTUP_TIMEOUT_MS ?? 60_000)
+    if (
+      !Number.isSafeInteger(startupTimeout) ||
+      startupTimeout < 60_000 ||
+      startupTimeout > 240_000
+    )
+      throw new Error('E2E_WORKER_STARTUP_TIMEOUT_MS must be between 60000 and 240000')
     const backend = resolve(__dirname, '../../../../file-batch-system')
     const jar = resolve(backend, 'build/runtime-jars/worker-export.jar')
     const startedAt = Date.now()
@@ -147,7 +168,7 @@ export class ExportWorkflowReplayFixture extends ManualFileUploadFixture {
           const state = this.exportState()
           return state.worker?.status === 'ONLINE' && Number(state.workerHeartbeatMs) >= startedAt
         },
-        { timeout: 60_000, intervals: [1000] },
+        { timeout: startupTimeout, intervals: [1000] },
       )
       .toBe(true)
   }
@@ -169,6 +190,16 @@ export class ExportWorkflowReplayFixture extends ManualFileUploadFixture {
   }
 
   override async finish(request: APIRequestContext, reader?: APIRequestContext) {
+    if (this.exportPreparationStarted && !this.exportPrepared) {
+      await this.waitForOwnedSqlSessions()
+      const owned = this.ownedSql<{ relations: number; templates: number }>(
+        'export-replay-relations-state',
+        this.variables(),
+      )
+      if (owned.relations === 3 && owned.templates === 1) this.exportPrepared = true
+      else if (owned.relations !== 0 || owned.templates !== 0)
+        throw new Error(`EXPORT 夹具准备结果不完整，拒绝自动清理: ${JSON.stringify(owned)}`)
+    }
     if (!this.exportPrepared) return super.finish(request, reader)
     const active = () => {
       const state = this.exportState()
@@ -203,7 +234,13 @@ export class ExportWorkflowReplayFixture extends ManualFileUploadFixture {
     const parent = await super.finish(request, reader)
     const finalCleanup = this.ownedSql<Record<string, number>>('workflow-replay-final-cleanup')
     expect(Object.values(finalCleanup).every((count) => count === 0)).toBe(true)
-    expect(this.ownedSql('workflow-replay-residue')).toEqual({})
+    // 配置失效 outbox 异步投递；只在本例租户的所有残留自然清零后完成验收。
+    await expect
+      .poll(() => this.ownedSql('workflow-replay-residue'), {
+        timeout: 30_000,
+        intervals: [500, 1000, 2000],
+      })
+      .toEqual({})
     rmSync(this.javaTmpDir, { recursive: true, force: true })
     expect(existsSync(this.javaTmpDir)).toBe(false)
     return {

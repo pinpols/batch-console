@@ -1,4 +1,4 @@
-import { ref, reactive, computed, watch } from 'vue'
+import { ref, reactive, computed, watch, onScopeDispose } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { confirmDanger } from '@/composables/useDangerConfirm'
@@ -24,6 +24,7 @@ import {
 import { useTenantStore } from '@/stores/tenant'
 import { useTenantReload } from '@/composables/useTenantReload'
 import { useAuthStore } from '@/stores/auth'
+import { currentAuthSession, isSharedAuthRevisionCurrent } from '@/api/authSession'
 import { useWriteAvailability } from '@/composables/useWriteAvailability'
 import { buildBatchDayReplayRequest } from '@/utils/batchDayReplayForm'
 import { jobApi } from '@/api/job'
@@ -89,11 +90,11 @@ export function useBatchDayReplay() {
   const currentOperation = ref<ReplayOperation | null>(null)
   const operationActing = ref(false)
   const canApproveOperation = computed(
-    () => currentOperation.value?.status === 'PENDING_APPROVAL' && isPlatformAdmin.value,
+    () => !writesFrozen.value && auth.isLoggedIn && auth.profileLoaded && currentOperation.value?.status === 'PENDING_APPROVAL' && isPlatformAdmin.value,
   )
   const canCancelOperation = computed(() => {
     const operation = currentOperation.value
-    if (!operation) return false
+    if (!operation || writesFrozen.value || !auth.isLoggedIn || !auth.profileLoaded) return false
     const operationStatusIsNotCancellable =
       operation.status !== 'RUNNING' && operation.status !== 'PENDING_APPROVAL'
     if (operationStatusIsNotCancellable) return false
@@ -321,16 +322,76 @@ export function useBatchDayReplay() {
   const canApprove = computed(
     () =>
       !writesFrozen.value &&
+      auth.isLoggedIn && auth.profileLoaded &&
       currentSession.value?.status === 'PENDING_APPROVAL' &&
       isPlatformAdmin.value,
   )
   /** RUNNING / PENDING_APPROVAL 都可取消;ADMIN 或 提交人本人 */
   const canCancel = computed(() => {
     const s = currentSession.value
-    if (!s || writesFrozen.value) return false
+    if (!s || writesFrozen.value || !auth.isLoggedIn || !auth.profileLoaded) return false
     if (s.status !== 'RUNNING' && s.status !== 'PENDING_APPROVAL') return false
     return isPlatformAdmin.value || s.requestedBy === auth.userInfo?.username
   })
+
+  // 高危操作绑定确认时的租户、主体、会话与所选对象；往返切换也会使旧确认失效。
+  let contextRevision = 0
+  let operationActionRevision = 0
+  let sessionActionRevision = 0
+  let operationsLoadRevision = 0
+  function invalidateContext() {
+    contextRevision++
+    operationActionRevision++
+    sessionActionRevision++
+    operationActing.value = false
+    approving.value = false
+    cancelling.value = false
+    retryingEntryId.value = null
+  }
+  watch(
+    [() => tenant.tenantId, () => auth.isLoggedIn, () => auth.profileLoaded,
+      () => auth.userInfo?.userId, () => auth.userInfo?.username,
+      () => JSON.stringify([...(auth.userInfo?.permissions ?? [])].sort()), () => writesFrozen.value],
+    invalidateContext,
+    { flush: 'sync' },
+  )
+  function invalidateOperationsLoad() {
+    operationsLoadRevision++
+    loadingOperations.value = false
+  }
+  watch(
+    [() => tenant.tenantId, () => auth.isLoggedIn, () => auth.profileLoaded,
+      () => auth.userInfo?.userId, () => auth.userInfo?.username,
+      () => JSON.stringify([...(auth.userInfo?.permissions ?? [])].sort())],
+    invalidateOperationsLoad,
+    { flush: 'sync' },
+  )
+  watch([() => currentOperation.value?.id, operationDrawerOpen], () => {
+    operationActionRevision++
+    operationActing.value = false
+  }, { flush: 'sync' })
+  watch([() => currentSession.value?.id, detailDrawerOpen], () => {
+    sessionActionRevision++
+    approving.value = false
+    cancelling.value = false
+    retryingEntryId.value = null
+  }, { flush: 'sync' })
+  onScopeDispose(() => {
+    invalidateContext()
+    invalidateOperationsLoad()
+  })
+
+  function captureContext() {
+    const tenantId = tenant.tenantId
+    const username = auth.userInfo?.username
+    if (!tenantId || !username || !auth.isLoggedIn || !auth.profileLoaded || writesFrozen.value || !isSharedAuthRevisionCurrent()) return null
+    return { tenantId, username, session: currentAuthSession(), revision: contextRevision }
+  }
+  function contextIsCurrent(scope: NonNullable<ReturnType<typeof captureContext>>) {
+    return scope.revision === contextRevision && scope.tenantId === tenant.tenantId &&
+      scope.username === auth.userInfo?.username && scope.session === currentAuthSession() &&
+      auth.isLoggedIn && auth.profileLoaded && !writesFrozen.value && isSharedAuthRevisionCurrent()
+  }
 
   function scopeTagType(scope: string): 'primary' | 'warning' | 'success' | 'info' {
     if (scope === 'ALL') return 'primary'
@@ -562,61 +623,71 @@ export function useBatchDayReplay() {
 
   async function approveOperation() {
     if (!ensureWriteAvailable()) return
-    if (!currentOperation.value) return
-    try {
-      await confirmDanger({
-        verb: t('batchDayReplay.approveBtn'),
-        target: `${currentOperation.value.fromDate ?? ''} – ${currentOperation.value.throughDate ?? ''}`,
-        consequence: t('batchDayReplay.approveConfirmHint'),
-        irreversible: true,
-      })
-    } catch {
-      return
-    }
+    const scope = captureContext()
+    const operation = currentOperation.value
+    if (!scope || !operation || operation.tenantId !== scope.tenantId || !operationDrawerOpen.value || !canApproveOperation.value || operationActing.value) return
+    const revision = ++operationActionRevision
+    const isCurrent = () => revision === operationActionRevision && contextIsCurrent(scope) &&
+      operationDrawerOpen.value && currentOperation.value === operation && canApproveOperation.value
     operationActing.value = true
     try {
+      try {
+        await confirmDanger({
+          verb: t('batchDayReplay.approveBtn'),
+          target: `#${operation.id} ${operation.fromDate ?? ''} – ${operation.throughDate ?? ''}`,
+          consequence: t('batchDayReplay.approveConfirmHint'),
+          irreversible: true,
+        })
+      } catch { return }
+      if (!isCurrent()) return
       const approved = await batchDayReplayApi.approveOperation(
-        currentOperation.value.id,
-        auth.userInfo?.username ?? 'unknown',
-        tenant.tenantId,
+        operation.id,
+        scope.username,
+        scope.tenantId,
       )
+      if (!isCurrent()) return
       currentOperation.value = approved
       upsertOperation(approved)
-      await loadOperations()
       ElMessage.success(t('batchDayReplay.approveOk'))
+      await loadOperations()
     } catch (error) {
-      ElMessage.error(userErrorMessage(error))
+      if (isCurrent()) ElMessage.error(userErrorMessage(error))
     } finally {
-      operationActing.value = false
+      if (revision === operationActionRevision) operationActing.value = false
     }
   }
 
   async function cancelOperation() {
     if (!ensureWriteAvailable()) return
-    if (!currentOperation.value) return
-    try {
-      await confirmDanger({
-        verb: t('batchDayReplay.cancelBtn'),
-        target: '',
-        consequence: t('batchDayReplay.cancelConfirmHint'),
-      })
-    } catch {
-      return
-    }
+    const scope = captureContext()
+    const operation = currentOperation.value
+    if (!scope || !operation || operation.tenantId !== scope.tenantId || !operationDrawerOpen.value || !canCancelOperation.value || operationActing.value) return
+    const revision = ++operationActionRevision
+    const isCurrent = () => revision === operationActionRevision && contextIsCurrent(scope) &&
+      operationDrawerOpen.value && currentOperation.value === operation && canCancelOperation.value
     operationActing.value = true
     try {
+      try {
+        await confirmDanger({
+          verb: t('batchDayReplay.cancelBtn'),
+          target: `#${operation.id} ${operation.fromDate ?? ''} – ${operation.throughDate ?? ''}`,
+          consequence: t('batchDayReplay.cancelConfirmHint'),
+        })
+      } catch { return }
+      if (!isCurrent()) return
       const cancelled = await batchDayReplayApi.cancelOperation(
-        currentOperation.value.id,
-        tenant.tenantId,
+        operation.id,
+        scope.tenantId,
       )
+      if (!isCurrent()) return
       currentOperation.value = cancelled
       upsertOperation(cancelled)
-      await loadOperations()
       ElMessage.success(t('batchDayReplay.cancelOk'))
+      await loadOperations()
     } catch (error) {
-      ElMessage.error(userErrorMessage(error))
+      if (isCurrent()) ElMessage.error(userErrorMessage(error))
     } finally {
-      operationActing.value = false
+      if (revision === operationActionRevision) operationActing.value = false
     }
   }
 
@@ -800,88 +871,120 @@ export function useBatchDayReplay() {
     }
   }
 
-  async function retryFailedSubmission(entry: BatchDayReplayEntry) {
+  function canRetryEntry(entry: BatchDayReplayEntry) {
     const session = currentSession.value
-    if (!session || !ensureWriteAvailable()) return
+    return !!session && auth.isLoggedIn && auth.profileLoaded && isPlatformAdmin.value &&
+      !writesFrozen.value && session.tenantId === tenant.tenantId && entry.tenantId === tenant.tenantId &&
+      entry.sessionId === session.id && entry.status === 'FAILED' && entry.rerunInstanceId == null
+  }
+
+  async function retryFailedSubmission(entry: BatchDayReplayEntry) {
+    if (!ensureWriteAvailable()) return
+    const scope = captureContext()
+    const session = currentSession.value
+    if (!scope || !session || !detailDrawerOpen.value || !canRetryEntry(entry) || retryingEntryId.value != null || approving.value || cancelling.value) return
+    const revision = ++sessionActionRevision
+    const isCurrent = () => revision === sessionActionRevision && contextIsCurrent(scope) &&
+      detailDrawerOpen.value && currentSession.value === session && canRetryEntry(entry) &&
+      entries.value.some((item) => item.id === entry.id && canRetryEntry(item))
+    retryingEntryId.value = entry.id
     try {
       const { value: reason } = await ElMessageBox.prompt(
         t('batchDayReplay.retrySubmissionReason'),
-        t('batchDayReplay.retrySubmission'),
+        `${t('batchDayReplay.retrySubmission')} #${entry.id}`,
         {
-          inputPattern: /\\S/,
+          inputPattern: /\S/,
           inputErrorMessage: t('batchDayReplay.retrySubmissionReasonRequired'),
         },
       )
-      retryingEntryId.value = entry.id
-      await batchDayReplayApi.retryFailedSubmission(
+      if (!isCurrent()) return
+      const updated = await batchDayReplayApi.retryFailedSubmission(
         session.id,
         entry.id,
-        tenant.tenantId,
+        scope.tenantId,
         reason.trim(),
       )
+      if (!isCurrent()) return
+      currentSession.value = updated
+      upsertSession(updated)
       ElMessage.success(t('batchDayReplay.retrySubmissionAccepted'))
-      await Promise.all([reloadCurrent(), loadEntries(), loadSessions()])
+      const result = await batchDayReplayApi.entries(session.id, {
+        status: entriesStatusFilter.value || undefined,
+        tenantId: scope.tenantId,
+      })
+      if (revision === sessionActionRevision && contextIsCurrent(scope) &&
+        detailDrawerOpen.value && currentSession.value?.id === session.id) entries.value = result
     } catch (error) {
-      if (error !== 'cancel' && error !== 'close') ElMessage.error(userErrorMessage(error))
+      if (revision === sessionActionRevision && contextIsCurrent(scope) &&
+        detailDrawerOpen.value && currentSession.value?.id === session.id &&
+        error !== 'cancel' && error !== 'close') ElMessage.error(userErrorMessage(error))
     } finally {
-      retryingEntryId.value = null
+      if (revision === sessionActionRevision) retryingEntryId.value = null
     }
   }
 
   async function doApprove() {
     if (!ensureWriteAvailable()) return
-    if (!currentSession.value) return
-    try {
-      await confirmDanger({
-        verb: t('batchDayReplay.approveBtn'),
-        target: '',
-        consequence: t('batchDayReplay.approveConfirmHint'),
-        irreversible: true,
-      })
-    } catch {
-      // 用户点取消 → early return,不执行高危 ops
-      return
-    }
+    const scope = captureContext()
+    const session = currentSession.value
+    if (!scope || !session || session.tenantId !== scope.tenantId || !detailDrawerOpen.value || !canApprove.value || approving.value || cancelling.value || retryingEntryId.value != null) return
+    const revision = ++sessionActionRevision
+    const isCurrent = () => revision === sessionActionRevision && contextIsCurrent(scope) &&
+      detailDrawerOpen.value && currentSession.value === session && canApprove.value
     approving.value = true
     try {
+      try {
+        await confirmDanger({
+          verb: t('batchDayReplay.approveBtn'),
+          target: `#${session.id} ${session.bizDate}`,
+          consequence: t('batchDayReplay.approveConfirmHint'),
+          irreversible: true,
+        })
+      } catch { return }
+      if (!isCurrent()) return
       const fresh = await batchDayReplayApi.approve(
-        currentSession.value.id,
-        auth.userInfo?.username ?? 'unknown',
-        tenant.tenantId,
+        session.id,
+        scope.username,
+        scope.tenantId,
       )
+      if (!isCurrent()) return
       currentSession.value = fresh
       upsertSession(fresh)
       ElMessage.success(t('batchDayReplay.approveOk'))
     } catch (err) {
-      ElMessage.error(userErrorMessage(err))
+      if (isCurrent()) ElMessage.error(userErrorMessage(err))
     } finally {
-      approving.value = false
+      if (revision === sessionActionRevision) approving.value = false
     }
   }
 
   async function doCancel() {
     if (!ensureWriteAvailable()) return
-    if (!currentSession.value) return
-    try {
-      await confirmDanger({
-        verb: t('batchDayReplay.cancelBtn'),
-        target: '',
-        consequence: t('batchDayReplay.cancelConfirmHint'),
-      })
-    } catch {
-      // 用户点取消 → early return,不执行高危 ops
-      return
-    }
+    const scope = captureContext()
+    const session = currentSession.value
+    if (!scope || !session || session.tenantId !== scope.tenantId || !detailDrawerOpen.value || !canCancel.value || approving.value || cancelling.value || retryingEntryId.value != null) return
+    const revision = ++sessionActionRevision
+    const isCurrent = () => revision === sessionActionRevision && contextIsCurrent(scope) &&
+      detailDrawerOpen.value && currentSession.value === session && canCancel.value
     cancelling.value = true
     try {
-      const fresh = await batchDayReplayApi.cancel(currentSession.value.id, tenant.tenantId)
+      try {
+        await confirmDanger({
+          verb: t('batchDayReplay.cancelBtn'),
+          target: `#${session.id} ${session.bizDate}`,
+          consequence: t('batchDayReplay.cancelConfirmHint'),
+        })
+      } catch { return }
+      if (!isCurrent()) return
+      const fresh = await batchDayReplayApi.cancel(session.id, scope.tenantId)
+      if (!isCurrent()) return
       currentSession.value = fresh
       upsertSession(fresh)
       ElMessage.success(t('batchDayReplay.cancelOk'))
     } catch (err) {
-      ElMessage.error(userErrorMessage(err))
+      if (isCurrent()) ElMessage.error(userErrorMessage(err))
     } finally {
-      cancelling.value = false
+      if (revision === sessionActionRevision) cancelling.value = false
     }
   }
 
@@ -909,19 +1012,38 @@ export function useBatchDayReplay() {
   }
 
   async function loadOperations() {
+    if (!auth.isLoggedIn || !auth.profileLoaded) return
+    const sequence = ++operationsLoadRevision
+    const tenantId = tenant.tenantId
+    const username = auth.userInfo?.username
+    const session = currentAuthSession()
+    const isCurrent = () => sequence === operationsLoadRevision && tenantId === tenant.tenantId &&
+      username === auth.userInfo?.username && session === currentAuthSession() &&
+      auth.isLoggedIn && auth.profileLoaded && isSharedAuthRevisionCurrent()
     loadingOperations.value = true
     try {
-      operations.value = await batchDayReplayApi.operations({
-        tenantId: tenant.tenantId,
+      const result = await batchDayReplayApi.operations({
+        tenantId,
         limit: 50,
       })
+      if (isCurrent()) operations.value = result
     } catch (error) {
+      if (!isCurrent()) return
       operations.value = []
       ElMessage.error(userErrorMessage(error))
     } finally {
-      loadingOperations.value = false
+      if (isCurrent()) loadingOperations.value = false
     }
   }
+
+  watch(
+    [() => auth.isLoggedIn, () => auth.profileLoaded],
+    ([loggedIn, profileLoaded]) => {
+      if (!loggedIn || !profileLoaded) operations.value = []
+      else void loadOperations()
+    },
+    { flush: 'sync' },
+  )
 
   useTenantReload(() => {
     submitForm.tenantId = tenant.tenantId
@@ -1019,6 +1141,7 @@ export function useBatchDayReplay() {
     reloadCurrent,
     loadEntries,
     retryFailedSubmission,
+    canRetryEntry,
     doApprove,
     doCancel,
   }

@@ -29,6 +29,19 @@
       </template>
     </PageHeader>
 
+    <JobBundleRecoveryPanel
+      v-if="canManageSystem && (recoveryCommands.length || recoveryStorageBlocked)"
+      :recovery-commands="recoveryCommands"
+      :recovery-storage-blocked="recoveryStorageBlocked"
+      :recovery-loading-key="recoveryLoadingKey"
+      :recovery-current="recoveryCurrent"
+      :recovery-kind-label="recoveryKindLabel"
+      :can-stop-recovery="canStopRecovery"
+      @check="checkRecovery"
+      @acknowledge="acknowledgeRecovery"
+      @stop="stopTrackingRecovery"
+    />
+
     <SectionCard>
       <ProTable
         class="job-definition-table"
@@ -647,7 +660,12 @@
   ])
   import type { FormInstance, FormItemRule, FormRules } from 'element-plus'
   import { jobApi, type JobBundlePayload } from '@/api/job'
+  import { currentAuthSession, isSharedAuthRevisionCurrent } from '@/api/authSession'
+  import { clearConfigBatchRecovery } from '@/utils/configBatchRecovery'
+  import JobBundleRecoveryPanel from './components/JobBundleRecoveryPanel.vue'
+  import { useJobBundleRecovery } from './useJobBundleRecovery'
   import { assessBatchInitOutcome } from '@/utils/batchInitOutcome'
+  import { isConsoleServiceUnavailable } from '@/utils/serviceAvailability'
   import { instanceApi } from '@/api/instance'
   import { fmtDatetime } from '@/utils/datetime'
   import { getMetaEnums, getMetaQueues, type MetaOption } from '@/api/meta'
@@ -889,6 +907,11 @@
   const bundleImportSaving = ref(false)
   const bundleImportScope = useTenantRequestScope()
   const auth = useAuthStore()
+  const {
+    recoveryCommands, recoveryStorageBlocked, recoveryLoadingKey, recoveryCurrent,
+    recoveryKindLabel, headerTenant, refreshRecoveryCommands, prepareRecovery,
+    checkRecovery, canStopRecovery, stopTrackingRecovery, acknowledgeRecovery,
+  } = useJobBundleRecovery()
   let bundleImportRevision = 0
   // 输入、主体或权限曾经变化即使旧响应失效，关闭后重开的面板属于另一会话。
   watch(
@@ -950,16 +973,27 @@
     const scope = bundleImportScope.begin()
     const revision = bundleImportRevision
     const dryRun = bundleImportDryRun.value
+    const expectedHeader = headerTenant()
+    const authSession = currentAuthSession()
+    if (!isSharedAuthRevisionCurrent()) return
+    const isCurrent = () => bundleImportScope.isCurrent(scope) && revision === bundleImportRevision &&
+      headerTenant() === expectedHeader && currentAuthSession() === authSession &&
+      isSharedAuthRevisionCurrent()
     bundleImportSaving.value = true
     try {
-      const response = await jobApi.importBundle({
+      const command = dryRun ? null : prepareRecovery('JOB_BUNDLE_IMPORT', sourceTenant)
+      if (!dryRun && !command) return
+      const payload = {
         tenantId: sourceTenant,
         targetTenantIds: targets,
         mode: bundleImportMode.value,
         dryRun,
         bundle,
-      })
-      if (!bundleImportScope.isCurrent(scope) || revision !== bundleImportRevision) return
+      }
+      const response = command
+        ? await jobApi.importBundle(payload, command.key)
+        : await jobApi.importBundle(payload)
+      if (!isCurrent()) return
       const outcome = assessBatchInitOutcome(response.result)
       if (!outcome.fullySuccessful) {
         const failedTenants = outcome.failedTenantIds.length
@@ -968,6 +1002,12 @@
         ElMessage.error(t('jobDefinitionList.bundleImportFailed', { tenants: failedTenants }))
         return
       }
+      if (command) {
+        if (!clearConfigBatchRecovery(command)) {
+          ElMessage.warning(t('configBatchRecovery.cleanupFailed'))
+        }
+        refreshRecoveryCommands()
+      }
       ElMessage.success(
         dryRun
           ? t('jobDefinitionList.bundleImportDryRunDone', { n: targets.length })
@@ -975,6 +1015,16 @@
       )
       bundleImportVisible.value = false
       void refetch()
+    } catch (error) {
+      const status = (error as { response?: { status?: number } })?.response?.status
+      if (
+        !dryRun &&
+        isCurrent() &&
+        (isConsoleServiceUnavailable(error) || status === 409)
+      ) {
+        ElMessage.warning(t('jobDefinitionList.bundleImportUnknownOutcome'))
+      }
+      throw error
     } finally {
       bundleImportSaving.value = false
     }

@@ -118,7 +118,7 @@
             @confirm="handleLogout"
           >
             <template #reference>
-              <button type="button" class="mobile-appbar__link mobile-appbar__link--danger">
+              <button type="button" class="mobile-appbar__link mobile-appbar__link--danger" @click="logoutSession = currentAuthSession()">
                 {{ t('mobile.appBar.logout') }}
               </button>
             </template>
@@ -160,6 +160,7 @@
   } from '@/constants/timezone'
   import { authorityRoleLabelKeyMap, resolveAuthorityRole } from '@/constants/role'
   import { truncateDisplayText } from '@/utils/text'
+  import { currentAuthSession } from '@/api/authSession'
 
   withDefaults(defineProps<{ scrolled?: boolean }>(), { scrolled: false })
 
@@ -227,8 +228,10 @@
     }
   }
 
+  let logoutSession = currentAuthSession()
   async function handleLogout() {
-    await auth.logout()
+    const applied = await auth.logout(logoutSession)
+    if (!applied) return
     tabsStore.clear()
     router.push('/login')
   }

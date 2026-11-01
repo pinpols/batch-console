@@ -12,51 +12,27 @@
       </template>
     </PageHeader>
 
+    <JobBundleRecoveryPanel
+      v-if="canManageSystem && (recoveryCommands.length || recoveryStorageBlocked)"
+      :recovery-commands="recoveryCommands"
+      :recovery-storage-blocked="recoveryStorageBlocked"
+      :recovery-loading-key="recoveryLoadingKey"
+      :recovery-current="recoveryCurrent"
+      :recovery-kind-label="recoveryKindLabel"
+      :can-stop-recovery="canStopRecovery"
+      @check="checkRecovery"
+      @acknowledge="acknowledgeRecovery"
+      @stop="stopTrackingRecovery"
+    />
+
     <SectionCard>
       <div class="wizard-layout">
-        <el-dialog
+        <JobBundlePrefillDialog
           v-model="bundlePrefillVisible"
-          :title="t('jobDefinitionWizard.prefillDialogTitle')"
-          width="640px"
-          append-to-body
-          :close-on-click-modal="false"
-        >
-          <el-alert type="info" :closable="false" show-icon class="prefill-dialog__hint">
-            <template #title>
-              <div class="prefill-hint">
-                <div>
-                  {{ t('jobDefinitionWizard.prefillSourcePrefix') }}
-                  <el-link type="primary" underline="never" @click="goExportSource">
-                    {{ t('jobDefinitionWizard.prefillSourceJobList') }}
-                  </el-link>
-                  {{ t('jobDefinitionWizard.prefillSourceMiddle') }}
-                  <strong>{{ t('jobDefinitionWizard.prefillExportBundle') }}</strong>
-                  {{ t('jobDefinitionWizard.prefillSourceSuffix') }}
-                  <code>job-bundle-&lt;jobCode&gt;.json</code>
-                </div>
-                <div class="prefill-hint__sub">
-                  {{ t('jobDefinitionWizard.prefillSourceHint') }}
-                </div>
-              </div>
-            </template>
-          </el-alert>
-          <JsonTextareaInput
-            v-model="bundlePrefillJson"
-            :rows="10"
-            expect="object"
-            :placeholder="t('jobDefinitionWizard.bundlePrefillJsonPlaceholder')"
-          />
-          <template #footer>
-            <el-button @click="bundlePrefillVisible = false">{{ t('common.cancel') }}</el-button>
-            <el-button
-              type="primary"
-              :disabled="!bundlePrefillJson.trim()"
-              @click="applyBundlePrefill"
-            >
-              {{ t('jobDefinitionWizard.prefillConfirm') }}
-            </el-button>
-          </template>
-        </el-dialog>
+          v-model:json="bundlePrefillJson"
+          @source="goExportSource"
+          @apply="applyBundlePrefill"
+        />
 
         <div class="wizard-steps">
           <el-steps :active="step" finish-status="success" align-center>
@@ -316,17 +292,45 @@
           <div v-else class="review-step">
             <JobConfigBasicSection :job="reviewJob" :execution-mode-label="form.executionMode" />
             <el-descriptions :column="2" border size="small" class="bundle-summary">
-              <el-descriptions-item label="fileChannels">
+              <el-descriptions-item :label="t('jobDefinitionWizard.selectChannelLabel')">
                 {{ summarizeCount(selectedChannelIds.length, fileChannelsJson) }}
+                <div v-if="selectedReview.channels.length" class="bundle-summary__selection">
+                  {{
+                    t('jobDefinitionWizard.reviewSelected', {
+                      names: selectedReview.channels.join(', '),
+                    })
+                  }}
+                </div>
               </el-descriptions-item>
-              <el-descriptions-item label="fileTemplates">
+              <el-descriptions-item :label="t('jobDefinitionWizard.selectTemplateLabel')">
                 {{ summarizeCount(selectedTemplateIds.length, fileTemplatesJson) }}
+                <div v-if="selectedReview.templates.length" class="bundle-summary__selection">
+                  {{
+                    t('jobDefinitionWizard.reviewSelected', {
+                      names: selectedReview.templates.join(', '),
+                    })
+                  }}
+                </div>
               </el-descriptions-item>
-              <el-descriptions-item label="workflowDefinitions">
+              <el-descriptions-item :label="t('jobDefinitionWizard.selectWorkflowLabel')">
                 {{ summarizeCount(selectedWorkflowIds.length, workflowDefinitionsJson) }}
+                <div v-if="selectedReview.workflows.length" class="bundle-summary__selection">
+                  {{
+                    t('jobDefinitionWizard.reviewSelected', {
+                      names: selectedReview.workflows.join(', '),
+                    })
+                  }}
+                </div>
               </el-descriptions-item>
-              <el-descriptions-item label="alertRoutings">
+              <el-descriptions-item :label="t('jobDefinitionWizard.selectAlertRoutingLabel')">
                 {{ summarizeCount(selectedAlertRoutingIds.length, alertRoutingsJson) }}
+                <div v-if="selectedReview.alerts.length" class="bundle-summary__selection">
+                  {{
+                    t('jobDefinitionWizard.reviewSelected', {
+                      names: selectedReview.alerts.join(', '),
+                    })
+                  }}
+                </div>
               </el-descriptions-item>
             </el-descriptions>
           </div>
@@ -368,7 +372,12 @@
   import { ElMessage } from 'element-plus'
   import JsonTextareaInput from '@/components/common/JsonTextareaInput.vue'
   import { jobApi, type JobBundlePayload } from '@/api/job'
+  import { currentAuthSession, isSharedAuthRevisionCurrent } from '@/api/authSession'
+  import { clearConfigBatchRecovery } from '@/utils/configBatchRecovery'
+  import JobBundleRecoveryPanel from './components/JobBundleRecoveryPanel.vue'
+  import { useJobBundleRecovery } from './useJobBundleRecovery'
   import { assessBatchInitOutcome } from '@/utils/batchInitOutcome'
+  import { isConsoleServiceUnavailable } from '@/utils/serviceAvailability'
   import { getMetaEnums, getMetaQueues, type MetaOption } from '@/api/meta'
   import { queryFileChannels } from '@/api/fileChannelsQuery'
   import { queryFileTemplates } from '@/api/system'
@@ -389,6 +398,7 @@
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
+  import JobBundlePrefillDialog from './components/JobBundlePrefillDialog.vue'
   import JobConfigBasicForm from './components/JobConfigBasicForm.vue'
   import JobConfigBasicSection from './components/JobConfigBasicSection.vue'
   import { createEmptyJobEditForm } from './jobEditFormTypes'
@@ -471,6 +481,11 @@
   const optionsScope = useTenantRequestScope()
   const auth = useAuthStore()
   const actor = computed(() => auth.userInfo?.userId ?? auth.userInfo?.username)
+  const {
+    recoveryCommands, recoveryStorageBlocked, recoveryLoadingKey, recoveryCurrent,
+    recoveryKindLabel, headerTenant, refreshRecoveryCommands, prepareRecovery,
+    checkRecovery, canStopRecovery, stopTrackingRecovery, acknowledgeRecovery,
+  } = useJobBundleRecovery()
   let submissionRevision = 0
   watch(
     [
@@ -734,6 +749,39 @@
     return t('jobDefinitionWizard.countRefAndCreate', { ref: refCount, create: newCount })
   }
 
+  function selectedNames<T extends { id?: number }>(
+    ids: number[],
+    options: T[],
+    label: (item: T) => string | undefined,
+  ) {
+    return ids.flatMap((id) => {
+      const item = options.find((option) => option.id === id)
+      return item ? [label(item) || String(id)] : []
+    })
+  }
+  const selectedReview = computed(() => ({
+    channels: selectedNames(
+      selectedChannelIds.value,
+      channelOptions.value,
+      (item) => item.channelCode,
+    ),
+    templates: selectedNames(
+      selectedTemplateIds.value,
+      templateOptions.value,
+      (item) => item.templateCode,
+    ),
+    workflows: selectedNames(
+      selectedWorkflowIds.value,
+      workflowOptions.value,
+      (item) => item.workflowCode,
+    ),
+    alerts: selectedNames(
+      selectedAlertRoutingIds.value,
+      alertRoutingOptions.value,
+      (item) => item.routeCode,
+    ),
+  }))
+
   function stringifyArray(value: unknown) {
     return Array.isArray(value) && value.length ? JSON.stringify(value, null, 2) : ''
   }
@@ -868,17 +916,28 @@
     const scope = submissionScope.begin()
     const revision = submissionRevision
     const submittedJobCode = form.jobCode.trim()
+    const expectedHeader = headerTenant()
+    const authSession = currentAuthSession()
+    if (!isSharedAuthRevisionCurrent()) return
+    const isCurrent = () => submissionScope.isCurrent(scope) && revision === submissionRevision &&
+      headerTenant() === expectedHeader && currentAuthSession() === authSession &&
+      isSharedAuthRevisionCurrent()
     saving.value = true
+    let sent = false
     try {
       const tenantId = tenant.tenantId
       const bundle = buildBundle()
+      const command = prepareRecovery('JOB_BUNDLE_CREATE', tenantId)
+      if (!command) return
+      sent = true
       const response = await jobApi.createBundle({
         tenantId,
         mode: 'SKIP_EXISTING',
         dryRun: false,
         bundle,
-      })
-      if (!submissionScope.isCurrent(scope) || revision !== submissionRevision) return
+      }, command.key)
+      sent = false
+      if (!isCurrent()) return
       const outcome = assessBatchInitOutcome(response.result)
       if (!outcome.fullySuccessful) {
         const failedTenantNames = outcome.failedTenantIds.join(', ')
@@ -890,12 +949,24 @@
         )
         return
       }
+      if (!clearConfigBatchRecovery(command)) {
+        ElMessage.warning(t('configBatchRecovery.cleanupFailed'))
+      }
+      refreshRecoveryCommands()
       ElMessage.success(t('jobDefinitionWizard.createBundleSuccess'))
       await router.push({ path: '/jobs/definitions', query: { jobCode: submittedJobCode } })
     } catch (error) {
       if (error instanceof SyntaxError) {
         ElMessage.error(t('jobDefinitionWizard.relatedJsonInvalid'))
       } else {
+        const status = (error as { response?: { status?: number } })?.response?.status
+        if (
+          sent &&
+          isCurrent() &&
+          (isConsoleServiceUnavailable(error) || status === 409)
+        ) {
+          ElMessage.warning(t('jobDefinitionWizard.createBundleUnknownOutcome'))
+        }
         throw error
       }
     } finally {
@@ -1038,35 +1109,6 @@
     font-weight: 600;
   }
 
-  .prefill-dialog__hint {
-    margin-bottom: 12px;
-  }
-
-  .prefill-hint {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    font-weight: 400;
-    line-height: 1.5;
-  }
-  .prefill-hint code {
-    background: var(--color-bg-page);
-    padding: 0 4px;
-    border-radius: 3px;
-    font-family: 'SF Mono', Monaco, monospace;
-    font-size: 12px;
-  }
-  .prefill-hint__sub {
-    font-size: 12px;
-    color: var(--color-text-tertiary);
-  }
-
-  .prefill-dialog__textarea :deep(.el-textarea__inner) {
-    font-family: var(--font-family-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
-    font-size: 12px;
-    line-height: 1.55;
-  }
-
   .review-step {
     display: flex;
     flex-direction: column;
@@ -1076,6 +1118,11 @@
   .bundle-summary {
     width: 100%;
     max-width: 920px;
+  }
+
+  .bundle-summary__selection {
+    color: var(--color-text-secondary);
+    overflow-wrap: anywhere;
   }
 
   .wizard-footer {

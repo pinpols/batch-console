@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" sizes="64x64" href="/icons/favicon-64.png" />
     <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png" />
+    <link rel="icon" type="image/svg+xml" href="/icons/batch-mark.svg" />
     <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-180-compact.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <meta name="theme-color" content="#1677ff" />
@@ -34,9 +35,15 @@
     <title>%VITE_APP_TITLE%</title>
     <!-- 在 Vue 挂载前同步完成主题与存储兜底，避免首屏闪烁并满足严格 CSP。 -->
     <script src="/app-bootstrap.js"></script>
+    <link rel="stylesheet" href="/app-startup.css" />
   </head>
   <body>
-    <div id="app"></div>
+    <div id="app">
+      <div class="app-startup" role="progressbar" aria-busy="true" aria-label="%VITE_APP_TITLE%">
+        <img class="app-startup__mark" src="/icons/batch-mark.svg" alt="" />
+        <span class="app-startup__track" aria-hidden="true"></span>
+      </div>
+    </div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

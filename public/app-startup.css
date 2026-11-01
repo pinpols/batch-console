@@ -1,0 +1,50 @@
+/* 首屏样式在应用CSS之前加载，系统色作为主题token就绪前的回退。 */
+html {
+  color-scheme: light;
+}
+html.dark {
+  color-scheme: dark;
+}
+.app-startup {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 22px;
+  background: var(--color-bg-page, Canvas);
+}
+.app-startup__mark {
+  width: 64px;
+  height: 64px;
+}
+.app-startup__track {
+  width: 64px;
+  height: 3px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-primary, #2165ec) 12%, transparent);
+}
+.app-startup__track::after {
+  content: '';
+  display: block;
+  width: 50%;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--color-primary, #2165ec);
+  animation: app-startup-travel 1.4s ease-in-out infinite;
+}
+@keyframes app-startup-travel {
+  0% {
+    transform: translateX(-110%);
+  }
+  100% {
+    transform: translateX(210%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .app-startup__track::after {
+    animation: none;
+    width: 100%;
+  }
+}

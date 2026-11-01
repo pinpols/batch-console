@@ -12,14 +12,23 @@ export function dependencySnapshotText(value: string | null | undefined): string
   if (!value) return '—'
   try {
     const parsed: unknown = JSON.parse(value)
-    if (Array.isArray(parsed)) return parsed.map((item) => String(item)).join(', ') || '—'
+    if (Array.isArray(parsed))
+      return (
+        parsed
+          .map((item) =>
+            typeof item === 'object' && item !== null ? JSON.stringify(item) : String(item),
+          )
+          .join(', ') || '—'
+      )
   } catch {
     return value
   }
   return value
 }
 
-export function waitStatusTone(status: CalendarDependencyWait['waitStatus'] | JobDependencyWait['waitStatus']) {
+export function waitStatusTone(
+  status: CalendarDependencyWait['waitStatus'] | JobDependencyWait['waitStatus'],
+) {
   if (status === 'WAITING') return 'warning'
   if (status === 'OPENED' || status === 'RELEASED') return 'success'
   return 'info'

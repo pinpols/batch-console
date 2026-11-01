@@ -361,7 +361,21 @@
         </el-form-item>
       </el-form>
       <div v-if="diffData" class="diff-result">
-        <JsonPreview class="release-json" :data="diffData" />
+        <el-descriptions :column="1" border>
+          <el-descriptions-item :label="t('configReleaseList.diffPayload')">{{ t(diffData.payloadChanged ? 'configReleaseList.diffChanged' : 'configReleaseList.diffUnchanged') }}</el-descriptions-item>
+          <el-descriptions-item :label="t('configReleaseList.diffGray')">{{ t(diffData.grayScopeChanged ? 'configReleaseList.diffChanged' : 'configReleaseList.diffUnchanged') }}</el-descriptions-item>
+          <el-descriptions-item :label="t('configReleaseList.diffStatus')">{{ t(diffData.statusChanged ? 'configReleaseList.diffChanged' : 'configReleaseList.diffUnchanged') }} · {{ diffData.releaseA.configStatus }} → {{ diffData.releaseB.configStatus }}</el-descriptions-item>
+        </el-descriptions>
+        <template v-if="diffData.payloadChanged && diffPaths.paths.length">
+          <p>{{ t('configReleaseList.diffPaths') }}</p>
+          <ul><li v-for="path in diffPaths.paths" :key="path"><code>{{ path }}</code></li></ul>
+          <p v-if="diffPaths.truncated">{{ t('configReleaseList.diffPathsTruncated') }}</p>
+        </template>
+        <el-collapse>
+          <el-collapse-item :title="t('configReleaseList.diffRaw')" name="raw">
+            <JsonPreview class="release-json" :data="diffData" />
+          </el-collapse-item>
+        </el-collapse>
       </div>
     </el-dialog>
 
@@ -399,6 +413,8 @@
 <script setup lang="ts">
   import { ref, watch, computed, reactive } from 'vue'
   import { useI18n } from 'vue-i18n'
+  import type { components } from '@/types/api.generated'
+  import { releaseDiffPaths } from './releaseDiffPaths'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import { Plus, Settings2 } from '@lucide/vue'
   import { confirmDanger } from '@/composables/useDangerConfirm'
@@ -832,7 +848,8 @@
   // --- 版本对比 ---
   const diffVisible = ref(false)
   const diffLoading = ref(false)
-  const diffData = ref<unknown>(null)
+  const diffData = ref<components['schemas']['ConfigReleaseDiffResponse'] | null>(null)
+  const diffPaths = computed(() => releaseDiffPaths(diffData.value?.payloadA, diffData.value?.payloadB))
   const diffForm = reactive({ releaseIdA: 0, releaseIdB: 0 })
 
   function openDiff(row: ConsoleConfigReleaseResponse) {

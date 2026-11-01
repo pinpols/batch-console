@@ -28,7 +28,13 @@
       :has-data="Boolean(mermaidText)"
       :empty-text="emptyText"
     >
-      <div ref="graphRef" class="mini-dag__graph" :style="graphStyle" />
+      <div
+        ref="graphRef"
+        class="mini-dag__graph"
+        :style="graphStyle"
+        @click="selectGraphNode"
+        @keydown="onGraphKeydown"
+      />
     </DataState>
     <div v-if="mermaidText" class="mini-dag__footer">
       <slot name="footer" />
@@ -66,12 +72,55 @@
     loading?: boolean
     errorMessage?: string
     emptyText?: string
+    nodeOptions?: { code: string; label: string }[]
+    selectedNode?: string | null
   }>()
+  const emit = defineEmits<{ selectNode: [code: string] }>()
 
   const { t } = useI18n()
   const zoom = ref(1)
   let intrinsicWidth = 0
   const graphRef = ref<HTMLDivElement | null>(null)
+  let renderedOptions: { code: string; label: string }[] = []
+  let renderedId = ''
+
+  function optionForNode(node: Element) {
+    const dataId = node.getAttribute('data-id') ?? ''
+    const id = node.getAttribute('id') ?? ''
+    const prefix = `${renderedId}-flowchart-`
+    const match =
+      /^n(\d+)$/.exec(dataId) ??
+      (renderedId && id.startsWith(prefix) ? /^n(\d+)-\d+$/.exec(id.slice(prefix.length)) : null)
+    return match ? renderedOptions[Number(match[1])] : undefined
+  }
+
+  function updateSelectableNodes() {
+    graphRef.value?.querySelectorAll<SVGElement>('.node').forEach((node) => {
+      const option = optionForNode(node)
+      if (!option) return
+      node.setAttribute('tabindex', '0')
+      node.setAttribute('role', 'button')
+      node.setAttribute('aria-label', option.label)
+      node.setAttribute('aria-pressed', String(option.code === props.selectedNode))
+    })
+  }
+
+  function selectGraphNode(event: Event) {
+    const target = event.target
+    if (!(target instanceof Element)) return
+    const node = target.closest('.node')
+    if (!node || !graphRef.value?.contains(node)) return
+    const option = optionForNode(node)
+    if (option) emit('selectNode', option.code)
+  }
+
+  function onGraphKeydown(event: KeyboardEvent) {
+    if (event.key !== 'Enter' && event.key !== ' ') return
+    const target = event.target
+    if (!(target instanceof Element) || !target.closest('.node[role="button"]')) return
+    event.preventDefault()
+    selectGraphNode(event)
+  }
   const graphStyle = computed(() => ({
     maxHeight: `${props.maxHeight ?? 280}px`,
   }))
@@ -136,6 +185,9 @@
   let renderSequence = 0
   async function render() {
     const sequence = ++renderSequence
+    renderedOptions = []
+    renderedId = ''
+    const options = props.nodeOptions?.map((option) => ({ ...option })) ?? []
     renderError.value = ''
     if (!props.mermaidText.trim()) {
       clearTrustedSvg(graphRef.value)
@@ -149,6 +201,9 @@
       await nextTick()
       if (sequence === renderSequence) {
         setTrustedMermaidSvg(graphRef.value, svg)
+        renderedOptions = options
+        renderedId = renderId
+        updateSelectableNodes()
         intrinsicWidth = graphRef.value?.querySelector('svg')?.viewBox.baseVal.width ?? 0
         if (props.autoFit) fitGraph()
         else applyZoom()
@@ -160,10 +215,11 @@
 
   onMounted(render)
   watch(
-    () => [props.mermaidText, props.nodeRuns],
+    () => [props.mermaidText, props.nodeRuns, props.nodeOptions],
     () => void render(),
     { deep: true },
   )
+  watch(() => props.selectedNode, updateSelectableNodes)
   onBeforeUnmount(() => {
     renderSequence++
     clearTrustedSvg(graphRef.value)
@@ -206,6 +262,14 @@
   }
   .mini-dag__graph :deep(.node text) {
     text-anchor: middle;
+  }
+  .mini-dag__graph :deep(.node[role='button']) {
+    cursor: pointer;
+  }
+  .mini-dag__graph :deep(.node[role='button'][aria-pressed='true'] rect),
+  .mini-dag__graph :deep(.node[role='button']:focus-visible rect) {
+    stroke: var(--color-primary);
+    stroke-width: 3px;
   }
   /* 净化器有意移除内联样式，运行图使用组件自身的可信样式恢复状态和连线。 */
   .mini-dag__graph :deep(.node rect),

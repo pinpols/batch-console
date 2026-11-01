@@ -8,6 +8,8 @@ import type { MenuGroup, Role } from '@/types'
 export const usePermissionStore = defineStore('permission', () => {
   const auth = useAuthStore()
   const role = computed(() => auth.role)
+  // 当前租户资料未确认时不可沿用上一个租户的菜单和能力。
+  const backendMenus = computed(() => (auth.profileLoaded ? auth.menus : []))
 
   function canAccessRole(minRole?: Role) {
     if (!minRole) return true
@@ -43,25 +45,22 @@ export const usePermissionStore = defineStore('permission', () => {
    * /auth/me 返回的租户侧菜单标题覆盖本地产品文案。
    */
   const visibleGroups = computed<NavigationGroup[]>(() => {
-    const backendMenus = auth.menus
-    if (backendMenus && backendMenus.length > 0) {
-      const backendPaths = backendVisiblePaths(backendMenus)
-      // 后端菜单是可见性上限,前端精确 authority / capability 规则仍需同时满足。
-      // 避免后端菜单配置偏宽时,本地已收紧的 ADMIN 页面重新出现在低权限侧栏。
-      const navigationItems = navigationGroups.flatMap((group) => group.children)
-      const capabilityPaths = navigationItems
-        .filter((item) => item.capabilities?.some((capability) => auth.hasCapability(capability)))
-        .map((item) => item.path)
-      const fallbackPaths = navigationItems
-        .filter((item) => item.menuAccessFallbacks?.some((path) => backendPaths.has(path)))
-        .map((item) => item.path)
-      const permittedGroups = filterGroups(navigationGroups)
-      return filterNavigationByBackendMenus(permittedGroups, backendMenus, [
-        ...capabilityPaths,
-        ...fallbackPaths,
-      ])
-    }
-    return filterGroups(navigationGroups)
+    if (!auth.profileLoaded) return []
+    const menus = backendMenus.value
+    const backendPaths = backendVisiblePaths(menus)
+    // 后端菜单是可见性上限,前端精确 authority / capability 规则仍需同时满足。
+    const navigationItems = navigationGroups.flatMap((group) => group.children)
+    const capabilityPaths = navigationItems
+      .filter((item) => item.capabilities?.some((capability) => auth.hasCapability(capability)))
+      .map((item) => item.path)
+    const fallbackPaths = navigationItems
+      .filter((item) => item.menuAccessFallbacks?.some((path) => backendPaths.has(path)))
+      .map((item) => item.path)
+    const permittedGroups = filterGroups(navigationGroups)
+    return filterNavigationByBackendMenus(permittedGroups, menus, [
+      ...capabilityPaths,
+      ...fallbackPaths,
+    ])
   })
 
   return {
@@ -70,7 +69,7 @@ export const usePermissionStore = defineStore('permission', () => {
     canAccessRole,
     canAccessPermissions,
     filterGroups,
-    hasBackendMenuAccess: (path?: string) => hasBackendMenuAccess(auth.menus, path),
+    hasBackendMenuAccess: (path?: string) => hasBackendMenuAccess(backendMenus.value, path),
   }
 })
 
@@ -86,7 +85,7 @@ export function backendVisiblePaths(backendMenus?: MenuGroup[] | null): Set<stri
 
 export function hasBackendMenuAccess(backendMenus?: MenuGroup[] | null, path?: string): boolean {
   if (!path) return true
-  if (!backendMenus || backendMenus.length === 0) return true
+  if (!backendMenus) return true
   return backendVisiblePaths(backendMenus).has(path)
 }
 

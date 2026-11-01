@@ -1,4 +1,21 @@
 const batchDayReplay = {
+  submitFlowHint: 'Enter the scope and reason, preview and review the impact, then submit. Review the status and results in the details. If approval is required, an authorized user can act.',
+  statusGuidanceUnknown: 'The status is returned by the server; review the details below.',
+  statusGuidance: {
+    PENDING_APPROVAL: 'Awaiting approval; an authorized administrator can act in the details.',
+    RUNNING: 'Running; review the details and returned counts below.',
+    SUCCEEDED: 'Succeeded; review the results below.',
+    PARTIAL_FAILED: 'Partially failed; inspect failed entries or the corresponding date details below.',
+    FAILED: 'Failed; review the details below.',
+    REJECTED: 'The request was rejected; review the current record.',
+    CANCELLED: 'The request was cancelled; review the current record.',
+  },
+  statusSummaryTitle: 'Processing summary',
+  statusPreviewUnavailable: 'The pre-submission preview is not included in historical details.',
+  statusApprovalId: 'Approval ID',
+  statusStartedAt: 'Started at',
+  statusCompletedAt: 'Completed at',
+  statusLabels: { PENDING_APPROVAL: 'Awaiting approval', REJECTED: 'Rejected', RUNNING: 'Running', SUCCEEDED: 'Succeeded', PARTIAL_FAILED: 'Partially failed', FAILED: 'Failed', CANCELLED: 'Cancelled' },
   colActions: 'Actions',
   resultGovernanceTitle: 'Result version governance',
   resultGovernanceHint:

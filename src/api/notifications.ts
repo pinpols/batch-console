@@ -5,6 +5,22 @@ import type { components } from '@/types/api.generated'
 type NotificationChannelWire = components['schemas']['ConsoleNotificationChannelResponse']
 type NotificationRuleWire = components['schemas']['ConsoleSubscriptionRuleResponse']
 type NotificationDeliveryWire = components['schemas']['ConsoleNotificationDeliveryLogResponse']
+type NotificationRoutePreview = components['schemas']['NotificationRoutePreview']
+
+/** 只匹配当前配置，不触发通知发送。 */
+export function previewNotificationRoute(
+  tenantId: string,
+  eventType: string,
+  severity?: string,
+  jobCode?: string,
+) {
+  return get<NotificationRoutePreview>('/api/console/notifications/route-preview', {
+    tenantId,
+    eventType,
+    severity: severity || undefined,
+    jobCode: jobCode || undefined,
+  })
+}
 
 function normalizeChannel(row: NotificationChannelWire) {
   return {

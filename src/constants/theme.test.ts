@@ -25,7 +25,7 @@ describe('theme', () => {
     expect(readThemePreference()).toBe('light')
   })
 
-  it('migrates legacy system default to dark once', () => {
+  it('returns dark for an unmarked legacy system preference', () => {
     storage.set(THEME_STORAGE_KEY, 'system')
 
     expect(readThemePreference()).toBe('dark')

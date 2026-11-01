@@ -326,6 +326,17 @@
           {{ t('common.create') }}
         </el-button>
       </div>
+      <el-alert
+        v-if="holidayError"
+        type="error"
+        :closable="false"
+        show-icon
+        :title="t('queueConfig.holidayLoadError')"
+      >
+        <el-button size="small" @click="reloadCurrentHolidays">{{ t('common.retry') }}</el-button>
+      </el-alert>
+      <p v-else-if="holidayLoading">{{ t('common.loading') }}</p>
+      <HolidayMonthView v-else-if="holidayLoaded" :records="holidays" />
       <el-table
         v-loading="holidayLoading"
         :data="pagedHolidays.records"
@@ -334,7 +345,7 @@
         size="small"
         highlight-current-row
         class="console-table"
-        :empty-text="t('common.noData')"
+        :empty-text="holidayError ? t('queueConfig.holidayLoadError') : t('common.noData')"
       >
         <el-table-column
           prop="holidayDate"
@@ -351,11 +362,6 @@
           :label="t('queueConfig.holidayColType')"
           min-width="120"
         />
-        <el-table-column :label="t('queueConfig.holidayColEnabled')" width="90">
-          <template #default="{ row }">
-            <StatusTag :value="String(row.enabled)" category="yn" />
-          </template>
-        </el-table-column>
         <el-table-column
           v-if="canMutateConfig"
           :label="t('fileTemplateList.colActions')"
@@ -395,73 +401,7 @@
       />
     </el-drawer>
 
-    <el-drawer
-      :append-to-body="true"
-      v-model="queueDialogVisible"
-      :title="
-        queueEditingId == null ? t('queueConfig.queueCreateTitle') : t('queueConfig.queueEditTitle')
-      "
-      direction="rtl"
-      size="640px"
-      destroy-on-close
-    >
-      <el-form :model="queueForm" label-width="120px">
-        <el-form-item :label="t('queueConfig.fieldQueueCode')" required>
-          <el-input
-            v-model="queueForm.queueCode"
-            :disabled="queueEditingId != null"
-            maxlength="128"
-          />
-        </el-form-item>
-        <el-form-item :label="t('queueConfig.fieldQueueName')"
-          ><el-input v-model="queueForm.queueName" maxlength="256"
-        /></el-form-item>
-        <el-form-item :label="t('queueConfig.fieldQueueType')" required
-          ><MetaSelect v-model="queueForm.queueType" enum-key="queueType" class="query-w-full"
-        /></el-form-item>
-        <el-form-item :label="t('queueConfig.fieldMaxRunningJobs')"
-          ><el-input-number v-model="queueForm.maxRunningJobs" :min="0" :max="INT32_MAX"
-        /></el-form-item>
-        <el-form-item :label="t('queueConfig.fieldMaxRunningPartitions')"
-          ><el-input-number v-model="queueForm.maxRunningPartitions" :min="0" :max="INT32_MAX"
-        /></el-form-item>
-        <el-form-item :label="t('queueConfig.fieldMaxQps')"
-          ><el-input-number v-model="queueForm.maxQps" :min="0" :max="INT32_MAX"
-        /></el-form-item>
-        <el-form-item :label="t('queueConfig.fieldWorkerGroup')"
-          ><el-input v-model="queueForm.workerGroup" maxlength="128"
-        /></el-form-item>
-        <el-form-item :label="t('queueConfig.fieldResourceTag')"
-          ><el-input v-model="queueForm.resourceTag" maxlength="64"
-        /></el-form-item>
-        <el-form-item :label="t('queueConfig.fieldPriorityPolicy')"
-          ><MetaSelect
-            v-model="queueForm.priorityPolicy"
-            enum-key="priorityPolicy"
-            class="query-w-full"
-            clearable
-        /></el-form-item>
-        <el-form-item :label="t('queueConfig.fieldFairShareWeight')"
-          ><el-input-number v-model="queueForm.fairShareWeight" :min="1" :max="INT32_MAX"
-        /></el-form-item>
-        <el-form-item :label="t('queueConfig.fieldEnabled')"
-          ><el-switch v-model="queueForm.enabled"
-        /></el-form-item>
-        <el-form-item :label="t('queueConfig.fieldDescription')"
-          ><el-input
-            v-model="queueForm.description"
-            type="textarea"
-            maxlength="512"
-            show-word-limit
-        /></el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="queueDialogVisible = false">{{ t('common.cancel') }}</el-button>
-        <el-button type="primary" :loading="saving" @click="saveQueue">{{
-          t('common.save')
-        }}</el-button>
-      </template>
-    </el-drawer>
+    <GovernanceQueueEditor v-model="queueDialogVisible" :queue-form="queueForm" :queue-editing-id="queueEditingId" :saving="saving" @save="saveQueue" />
 
     <el-drawer
       :append-to-body="true"
@@ -512,6 +452,9 @@
         <el-form-item :label="t('queueConfig.fieldAllowCrossDay')"
           ><el-switch v-model="windowForm.allowCrossDay"
         /></el-form-item>
+        <el-form-item :label="t('queueConfig.windowPreviewTitle')">
+          <WindowSchedulePreview :start-time="windowForm.startTime" :end-time="windowForm.endTime" :timezone="windowForm.timezone" :allow-cross-day="windowForm.allowCrossDay" />
+        </el-form-item>
         <el-form-item :label="t('queueConfig.fieldEnabled')"
           ><el-switch v-model="windowForm.enabled"
         /></el-form-item>
@@ -531,60 +474,7 @@
       </template>
     </el-drawer>
 
-    <el-drawer
-      :append-to-body="true"
-      v-model="calendarDialogVisible"
-      :title="
-        calendarEditingId == null
-          ? t('queueConfig.calendarCreateTitle')
-          : t('queueConfig.calendarEditTitle')
-      "
-      direction="rtl"
-      size="640px"
-      destroy-on-close
-    >
-      <el-form :model="calendarForm" label-width="120px">
-        <el-form-item :label="t('queueConfig.fieldCalendarCode')" required>
-          <el-input
-            v-model="calendarForm.calendarCode"
-            :disabled="calendarEditingId != null"
-            maxlength="128"
-          />
-        </el-form-item>
-        <el-form-item :label="t('queueConfig.fieldCalendarName')" required
-          ><el-input v-model="calendarForm.calendarName" maxlength="256"
-        /></el-form-item>
-        <el-form-item :label="t('queueConfig.fieldTimezone')" required
-          ><el-input v-model="calendarForm.timezone" maxlength="64"
-        /></el-form-item>
-        <el-form-item :label="t('queueConfig.fieldHolidayRollRule')"
-          ><MetaSelect
-            v-model="calendarForm.holidayRollRule"
-            enum-key="holidayStrategy"
-            class="query-w-full"
-            clearable
-        /></el-form-item>
-        <el-form-item :label="t('queueConfig.fieldCatchUpPolicy')"
-          ><MetaSelect
-            v-model="calendarForm.catchUpPolicy"
-            enum-key="catchUpPolicy"
-            class="query-w-full"
-            clearable
-        /></el-form-item>
-        <el-form-item :label="t('queueConfig.fieldCatchUpMaxDays')"
-          ><el-input-number v-model="calendarForm.catchUpMaxDays" :min="0" :max="INT32_MAX"
-        /></el-form-item>
-        <el-form-item :label="t('queueConfig.fieldEnabled')"
-          ><el-switch v-model="calendarForm.enabled"
-        /></el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="calendarDialogVisible = false">{{ t('common.cancel') }}</el-button>
-        <el-button type="primary" :loading="saving" @click="saveCalendar">{{
-          t('common.save')
-        }}</el-button>
-      </template>
-    </el-drawer>
+    <GovernanceCalendarEditor v-model="calendarDialogVisible" :calendar-form="calendarForm" :calendar-editing-id="calendarEditingId" :saving="saving" @save="saveCalendar" />
 
     <el-drawer
       :append-to-body="true"
@@ -655,17 +545,21 @@
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
+  import { useTenantRequestScope } from '@/composables/useTenantRequestScope'
   import PageContainer from '@/components/common/PageContainer.vue'
   import MetaSelect from '@/components/common/MetaSelect.vue'
+  import GovernanceQueueEditor from './GovernanceQueueEditor.vue'
+  import GovernanceCalendarEditor from './GovernanceCalendarEditor.vue'
   import { usePermission } from '@/composables/usePermission'
   import PageHeader from '@/components/common/PageHeader.vue'
   // 三类治理资源的写接口均为 ROLE_ADMIN;租户管理员仅可读取业务日历。
   const { canAccess, canWriteSystem: canMutateConfig } = usePermission()
   // 计数字段按后端 int32 上限约束，避免超界值在 Jackson 反序列化阶段返回 400。
-  const INT32_MAX = 2147483647
   import TablePagerBar from '@/components/table/TablePagerBar.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
   import GovernanceFilterBar from './components/GovernanceFilterBar.vue'
+  import HolidayMonthView from './HolidayMonthView.vue'
+  import WindowSchedulePreview from './WindowSchedulePreview.vue'
   import { userErrorMessage } from '@/utils/userErrorMessage'
 
   const tenant = useTenantStore()
@@ -673,6 +567,11 @@
   const { filterBusy, runSearch, runReset, runRefresh } = useListFilterFeedback(listRemote)
   const loading = ref(false)
   const holidayLoading = ref(false)
+  const holidayLoaded = ref(false)
+  const holidayError = ref(false)
+  const holidayScope = useTenantRequestScope()
+  const holidayActionScope = useTenantRequestScope()
+  let holidayActionRevision = 0
   const togglingKey = ref('')
   const loadError = ref<unknown>(null)
   // P2 IA 拆分:route.meta.mode 限定本页只显示某一类资源
@@ -772,6 +671,7 @@
     enabled: true,
     description: '',
   })
+
 
   const calendarForm = reactive({
     calendarCode: '',
@@ -1210,22 +1110,16 @@
   }
 
   async function openHolidays(row: GovernanceCalendarRow) {
+    holidayActionRevision++
+    holidayDialogVisible.value = false
+    holidayEditingId.value = null
     holidayPage.value = 1
     holidayDrawerVisible.value = true
     currentCalendarId.value = row.id
     holidayDrawerTitle.value = t('queueConfig.holidayDrawerTitleWithCode', {
       code: row.calendarCode,
     })
-    holidayLoading.value = true
-    try {
-      holidays.value = row.id
-        ? await governanceApi.listCalendarHolidays(row.id, tenant.tenantId)
-        : []
-    } catch {
-      holidays.value = []
-    } finally {
-      holidayLoading.value = false
-    }
+    await reloadCurrentHolidays()
   }
 
   function openHolidayCreate() {
@@ -1263,39 +1157,76 @@
   }
 
   async function reloadCurrentHolidays() {
-    if (!currentCalendarId.value) return
-    holidays.value = await governanceApi.listCalendarHolidays(
-      currentCalendarId.value,
-      tenant.tenantId,
-    )
+    const calendarId = currentCalendarId.value
+    const scope = holidayScope.begin()
+    holidays.value = []
+    holidayLoaded.value = false
+    holidayError.value = false
+    holidayLoading.value = false
+    if (!calendarId || !scope.tenantId) {
+      holidayError.value = true
+      return
+    }
+    holidayLoading.value = true
+    const isCurrent = () =>
+      holidayScope.isCurrent(scope) &&
+      holidayDrawerVisible.value &&
+      currentCalendarId.value === calendarId
+    try {
+      const records = await governanceApi.listCalendarHolidays(calendarId, scope.tenantId)
+      if (isCurrent()) {
+        holidays.value = records
+        holidayLoaded.value = true
+      }
+    } catch {
+      if (isCurrent()) holidayError.value = true
+    } finally {
+      if (isCurrent()) holidayLoading.value = false
+    }
   }
 
   async function saveHoliday() {
-    if (!canMutateConfig.value || !currentCalendarId.value) return
+    const calendarId = currentCalendarId.value
+    if (!canMutateConfig.value || !calendarId || !holidayDialogVisible.value || saving.value) return
+    const scope = holidayActionScope.begin()
+    const revision = ++holidayActionRevision
+    const editingId = holidayEditingId.value
+    const isCurrent = () =>
+      holidayActionScope.isCurrent(scope) &&
+      revision === holidayActionRevision &&
+      holidayDrawerVisible.value &&
+      currentCalendarId.value === calendarId &&
+      canMutateConfig.value
     saving.value = true
     try {
       const payload = buildHolidayPayload()
-      if (holidayEditingId.value == null) {
-        await governanceApi.createCalendarHoliday(currentCalendarId.value, payload)
+      if (editingId == null) {
+        await governanceApi.createCalendarHoliday(calendarId, payload)
       } else {
-        await governanceApi.updateCalendarHoliday(
-          currentCalendarId.value,
-          holidayEditingId.value,
-          payload,
-        )
+        await governanceApi.updateCalendarHoliday(calendarId, editingId, payload)
       }
+      if (!isCurrent()) return
       ElMessage.success(t('fileTemplateList.saveSuccess'))
       holidayDialogVisible.value = false
       await reloadCurrentHolidays()
     } catch (err) {
-      handleValidationError(err)
+      if (isCurrent()) handleValidationError(err)
     } finally {
       saving.value = false
     }
   }
 
   async function deleteHoliday(row: GovernanceCalendarHolidayRow) {
-    if (!canMutateConfig.value || !currentCalendarId.value || !row.id) return
+    const calendarId = currentCalendarId.value
+    if (!canMutateConfig.value || !calendarId || !row.id) return
+    const scope = holidayActionScope.begin()
+    const revision = ++holidayActionRevision
+    const isCurrent = () =>
+      holidayActionScope.isCurrent(scope) &&
+      revision === holidayActionRevision &&
+      holidayDrawerVisible.value &&
+      currentCalendarId.value === calendarId &&
+      canMutateConfig.value
     try {
       await confirmDanger({
         verb: t('common.delete'),
@@ -1306,7 +1237,9 @@
     } catch {
       return
     }
-    await governanceApi.deleteCalendarHoliday(currentCalendarId.value, row.id, tenant.tenantId)
+    if (!isCurrent()) return
+    await governanceApi.deleteCalendarHoliday(calendarId, row.id, scope.tenantId)
+    if (!isCurrent()) return
     ElMessage.success(t('fileTemplateList.saveSuccess'))
     await reloadCurrentHolidays()
   }
@@ -1317,6 +1250,28 @@
     kwApplied.value = ''
     enabledApplied.value = undefined
     resetListPages()
+  })
+  watch(
+    () => tenant.tenantId,
+    () => {
+      holidayActionRevision++
+      holidayDrawerVisible.value = false
+      holidayDialogVisible.value = false
+      currentCalendarId.value = null
+      holidays.value = []
+      holidayLoaded.value = false
+      holidayLoading.value = false
+      holidayError.value = false
+    },
+    { flush: 'sync' },
+  )
+  watch(holidayDrawerVisible, (visible) => {
+    if (!visible) {
+      holidayActionRevision++
+      holidayLoading.value = false
+      holidayLoaded.value = false
+      holidays.value = []
+    }
   })
   useTenantReload(load)
 </script>

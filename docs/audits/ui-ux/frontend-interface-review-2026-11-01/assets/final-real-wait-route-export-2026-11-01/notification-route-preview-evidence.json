@@ -1,0 +1,17 @@
+{
+  "rules": [
+    {
+      "id": 31,
+      "name": "route-match",
+      "channelCode": "route-enabled",
+      "channelType": "WEBHOOK"
+    }
+  ],
+  "webhooks": [
+    {
+      "id": 17,
+      "name": "webhook-match"
+    }
+  ],
+  "stateUnchanged": true
+}

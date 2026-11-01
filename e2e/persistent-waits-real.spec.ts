@@ -57,7 +57,12 @@ async function authenticate(
   expect((await context.request.get('/api/console/auth/check')).status()).toBe(204)
 }
 
-async function openWaitPanel(page: Page, fixture: PersistentWaitFixture, canRead: boolean) {
+async function openWaitPanel(
+  page: Page,
+  fixture: PersistentWaitFixture,
+  canRead: boolean,
+  onGraph?: () => Promise<void>,
+) {
   await installE2eLocale(page)
   await seedBrowserStorage(page, {
     session: '1',
@@ -71,6 +76,39 @@ async function openWaitPanel(page: Page, fixture: PersistentWaitFixture, canRead
     return
   }
   await expect(panel).toBeVisible()
+  await panel.getByRole('tab', { name: e2eText('dependencyWaits.graph.title') }).click()
+  const graph = panel.getByTestId('wait-relationship-graph')
+  await expect(graph.locator('.wait-graph__record')).toHaveCount(3)
+  await expect(graph).toContainText('source-job')
+  await expect(graph).toContainText('upstream-a')
+  await expect(graph).toContainText('upstream-b')
+  await expect(graph).toContainText(fixture.workflowCode)
+  await expect(graph).not.toContainText('PERSISTENT_WAIT_PRIVATE_PAYLOAD')
+  const svg = graph.locator('.wait-graph__topology svg')
+  const source = svg.locator('.node').filter({ hasText: 'source-job' })
+  const middle = svg.locator('.node').filter({ hasText: 'upstream-a' })
+  const target = svg
+    .locator('.node')
+    .filter({ hasText: fixture.workflowCode })
+    .filter({
+      hasText: e2eText('dependencyWaits.graph.types.READINESS'),
+    })
+  for (const node of [source, middle, target]) {
+    await expect(node).toHaveCount(1)
+    await expect(node).toContainText(fixture.bizDate)
+  }
+  await expect(source).toContainText(e2eText('dependencyWaits.graph.statusUnavailable'))
+  await expect(middle).toContainText(e2eText('dependencyWaits.states.WAITING'))
+  await expect(target).toContainText(e2eText('dependencyWaits.states.PENDING'))
+  const nodeId = async (node: typeof source) =>
+    (await node.getAttribute('id'))?.match(/-flowchart-(n\d+)-\d+$/)?.[1]
+  const sourceId = await nodeId(source)
+  const middleId = await nodeId(middle)
+  const targetId = await nodeId(target)
+  expect(sourceId && middleId && targetId).toBeTruthy()
+  await expect(svg.locator(`path[id$="-L_${sourceId}_${middleId}_0"]`)).toHaveCount(1)
+  await expect(svg.locator(`path[id$="-L_${middleId}_${targetId}_0"]`)).toHaveCount(1)
+  await onGraph?.()
   await panel.getByRole('tab', { name: e2eText('dependencyWaits.persistentTab') }).click()
   await expect(panel.getByRole('cell', { name: fixture.workflowCode, exact: true })).toHaveCount(2)
   await expect(page.getByText('upstream-a,upstream-b', { exact: true })).toBeVisible()
@@ -105,6 +143,17 @@ test('持久等待查询从真实PostgreSQL投影到调度快照并遵守角色�
     const workflowId = Number(createBody.data?.id ?? createBody.id)
     expect(Number.isSafeInteger(workflowId)).toBe(true)
     fixture.seedWaits(workflowId, workflow.workflowCode)
+
+    // 等真实恢复器检查后仍等待，避免无效载荷先通过 UI 断言、随后被后台取消。
+    await expect.poll(() => fixture.jobDependencyWaitState(), {
+      timeout: 90_000,
+      intervals: [1000, 2000, 5000],
+    }).toMatchObject({
+      status: 'WAITING',
+      attempts: expect.any(Number),
+      reason: 'UPSTREAM_NOT_EFFECTIVE:source-job',
+    })
+    expect(fixture.jobDependencyWaitState().attempts).toBeGreaterThan(0)
 
     const databaseState = fixture.persistentWaitState()
     expect(databaseState).toEqual({
@@ -209,7 +258,38 @@ test('持久等待查询从真实PostgreSQL投影到调度快照并遵守角色�
     expect(userOwn.status()).toBe(403)
     expect(anonymousOwn.status()).toBe(401)
 
-    await openWaitPanel(page, fixture, true)
+    const relationships = (request: typeof page.request, tenantId = fixture.tenantId) =>
+      request.get('/api/console/ops/wait-relationships', {
+        params: { tenantId, pageSize: '15' },
+        headers: { 'X-Tenant-Id': fixture.tenantId },
+      })
+    const graphAdmin = await relationships(page.request)
+    expect(graphAdmin.status()).toBe(200)
+    const graphBody = (await graphAdmin.json()).data
+    expect(graphBody.items.map((item: { waitType: string }) => item.waitType).sort()).toEqual([
+      'CAPACITY_ADMISSION',
+      'JOB',
+      'READINESS',
+    ])
+    const chain = graphBody.items.filter((item: { waitType: string }) =>
+      ['JOB', 'READINESS'].includes(item.waitType),
+    )
+    expect(chain.every((item: { bizDate: string }) => item.bizDate === fixture.bizDate)).toBe(true)
+    expect(JSON.stringify(chain)).toContain('source-job')
+    expect(JSON.stringify(chain)).toContain('upstream-a')
+    expect(JSON.stringify(graphBody)).not.toContain('PERSISTENT_WAIT_PRIVATE_PAYLOAD')
+    expect((await relationships(readerContext.request)).status()).toBe(200)
+    expect((await relationships(readerContext.request, 'system')).status()).toBe(403)
+    expect((await relationships(auditorContext.request)).status()).toBe(200)
+    expect((await relationships(userContext.request)).status()).toBe(403)
+    expect((await relationships(anonymous)).status()).toBe(401)
+
+    await openWaitPanel(page, fixture, true, async () => {
+      await testInfo.attach('wait-relationship-graph-admin.png', {
+        body: await page.screenshot({ fullPage: true, animations: 'disabled' }),
+        contentType: 'image/png',
+      })
+    })
     await testInfo.attach('persistent-waits-admin.png', {
       body: await page.screenshot(),
       contentType: 'image/png',

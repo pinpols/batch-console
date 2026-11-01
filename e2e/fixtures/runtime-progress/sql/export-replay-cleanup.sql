@@ -8,6 +8,7 @@ DO $$ BEGIN
     THEN RAISE EXCEPTION 'Owned EXPORT execution still active'; END IF;
 END $$;
 CREATE TEMP TABLE export_pipelines AS SELECT id FROM batch.pipeline_instance WHERE tenant_id = :'tenant_id' AND job_code = :'job_code';
+CREATE TEMP TABLE export_retries AS SELECT id FROM batch.retry_schedule WHERE tenant_id = :'tenant_id' AND related_type = 'PIPELINE_INSTANCE' AND related_id IN (SELECT id FROM export_pipelines);
 DELETE FROM batch.replay_operation_preview_token WHERE tenant_id = :'tenant_id';
 DELETE FROM batch.replay_operation WHERE tenant_id = :'tenant_id';
 DELETE FROM batch.console_push_approval_notification WHERE tenant_id = :'tenant_id';
@@ -16,19 +17,21 @@ DELETE FROM batch.approval_command WHERE tenant_id = :'tenant_id';
 DELETE FROM batch.pipeline_progress WHERE tenant_id = :'tenant_id' AND pipeline_instance_id IN (SELECT id FROM export_pipelines);
 DELETE FROM batch.file_dispatch_record WHERE tenant_id = :'tenant_id';
 DELETE FROM batch.pipeline_step_run WHERE pipeline_instance_id IN (SELECT id FROM export_pipelines);
+DELETE FROM batch.retry_schedule WHERE tenant_id = :'tenant_id' AND id IN (SELECT id FROM export_retries);
 DELETE FROM batch.pipeline_instance WHERE tenant_id = :'tenant_id' AND id IN (SELECT id FROM export_pipelines);
 DELETE FROM batch.asset_partition WHERE tenant_id = :'tenant_id';
 DELETE FROM batch.result_version WHERE tenant_id = :'tenant_id';
 DELETE FROM batch.file_audit_log WHERE tenant_id = :'tenant_id';
 DELETE FROM batch.file_record WHERE tenant_id = :'tenant_id';
 DELETE FROM batch.file_template_config WHERE tenant_id = :'tenant_id' AND template_code = :'template_code';
-SELECT format('DROP VIEW biz.%I', :'detail_view') \gexec
-SELECT format('DROP TABLE biz.%I', name) FROM unnest(ARRAY[:'detail_table', :'batch_table']) name \gexec
+SELECT format('DROP VIEW IF EXISTS biz.%I', :'detail_view') \gexec
+SELECT format('DROP TABLE IF EXISTS biz.%I', name) FROM unnest(ARRAY[:'detail_table', :'batch_table']) name \gexec
 COMMIT;
 SELECT json_build_object(
   'exportPipelines', (SELECT count(*) FROM batch.pipeline_instance WHERE tenant_id = :'tenant_id'),
   'exportSteps', (SELECT count(*) FROM batch.pipeline_step_run WHERE pipeline_instance_id IN (SELECT id FROM export_pipelines)),
   'exportCheckpoints', (SELECT count(*) FROM batch.pipeline_progress WHERE tenant_id = :'tenant_id'),
+  'exportRetrySchedules', (SELECT count(*) FROM batch.retry_schedule WHERE tenant_id = :'tenant_id' AND id IN (SELECT id FROM export_retries)),
   'exportFiles', (SELECT count(*) FROM batch.file_record WHERE tenant_id = :'tenant_id'),
   'exportTemplates', (SELECT count(*) FROM batch.file_template_config WHERE tenant_id = :'tenant_id'),
   'replayOperations', (SELECT count(*) FROM batch.replay_operation WHERE tenant_id = :'tenant_id'),

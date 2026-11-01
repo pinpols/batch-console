@@ -11,6 +11,17 @@ type DailyProgress = {
   coverage?: { scheduledDefinitions: number; uncoveredDefinitions: number }
 }
 type PushedDailyProgress = { kind: 'daily'; data: DailyProgress }
+type WindowOccurrence = {
+  workflowCode: string
+  scheduledFireTime: string
+  occurrenceStatus: string
+  actualFires: Array<{
+    fireInstanceId: string
+    refireCount: number
+    actualFireTime: string
+    fireKind: string
+  }>
+}
 const enabled = process.env.E2E_QUARTZ_PROGRESS_REAL === '1'
 if (enabled && process.env.E2E_SKIP_GLOBAL_SETUP !== '1')
   throw new Error('Set E2E_SKIP_GLOBAL_SETUP=1; this suite owns authentication and cleanup')
@@ -26,6 +37,7 @@ test('真实 Quartz 计划、定时Workflow与租户当日进度经全快照推�
   const reader = await requestFactory.newContext({ baseURL: String(testInfo.project.use.baseURL) })
   const pushed: PushedDailyProgress[] = []
   let primaryError: unknown
+  let scheduleDisabled = false
   try {
     expect((await page.request.get('/api/console/auth/me')).status()).toBe(401)
     fixture.prepare()
@@ -223,6 +235,87 @@ test('真实 Quartz 计划、定时Workflow与租户当日进度经全快照推�
     await page.waitForTimeout(4500)
     expect(dailyGets.length).toBe(dailyGetsAfterPush)
 
+    await expect.poll(() => fixture.quartzProgressState().actualFires.length).toBeGreaterThan(0)
+    const observedFires = fixture.quartzProgressState().actualFires
+    const actualFire = observedFires.find((fire) => fire.fireKind === 'SCHEDULED')
+    expect(actualFire).toBeDefined()
+    expect(new Date(actualFire!.scheduledFireTime).getTime()).toBe(
+      new Date(planned.occurrences[0]!.scheduledFireTime).getTime(),
+    )
+    expect(Number.isFinite(new Date(actualFire!.actualFireTime).getTime())).toBe(true)
+
+    // 历史投影仅用于验证无观察记录的含义；真实 Quartz 事件仍保留供独立回读。
+    await fixture.disableScheduledWorkflow(page.request)
+    scheduleDisabled = true
+    const historical = fixture.prepareHistoricalOccurrence()
+    expect(historical.insertedRows).toBe(1)
+    const windowResponse = await reader.get(`/api/console/queries/batch-days/${bizDate}/window`, {
+      params: { tenantId: fixture.tenantId, calendarCode: fixture.calendarCode },
+      headers: { 'X-Tenant-Id': fixture.tenantId },
+    })
+    expect(windowResponse.status()).toBe(200)
+    const windowEnvelope = (await windowResponse.json()) as {
+      data?: { scheduledOccurrences: WindowOccurrence[] }
+      scheduledOccurrences?: WindowOccurrence[]
+    }
+    const occurrences =
+      windowEnvelope.data?.scheduledOccurrences ?? windowEnvelope.scheduledOccurrences
+    expect(occurrences).toBeDefined()
+    const sameInstant = (left: string, right: string) =>
+      new Date(left).getTime() === new Date(right).getTime()
+    const actualOccurrence = occurrences!.find(
+      (item) =>
+        item.workflowCode === fixture.codes[0] &&
+        sameInstant(item.scheduledFireTime, actualFire!.scheduledFireTime),
+    )
+    expect(
+      actualOccurrence?.actualFires.some(
+        (fire) =>
+          fire.fireInstanceId === actualFire!.fireInstanceId &&
+          fire.refireCount === actualFire!.refireCount &&
+          fire.fireKind === actualFire!.fireKind &&
+          sameInstant(fire.actualFireTime, actualFire!.actualFireTime),
+      ),
+    ).toBe(true)
+    const historicalOccurrence = occurrences!.find(
+      (item) =>
+        item.workflowCode === fixture.codes[0] &&
+        sameInstant(item.scheduledFireTime, historical.scheduledFireTime),
+    )
+    expect(historicalOccurrence).toMatchObject({ occurrenceStatus: 'REQUESTED', actualFires: [] })
+
+    await page.goto(
+      `/scheduler/batch-days/${bizDate}?calendarCode=${encodeURIComponent(fixture.calendarCode)}`,
+    )
+    const occurrencesPanel = page
+      .locator('.section-card')
+      .filter({ hasText: e2eText('batchDayWindow.scheduledOccurrences') })
+    const occurrenceRows = occurrencesPanel
+      .locator('.el-table__row')
+      .filter({ hasText: fixture.codes[0] })
+    const actualRow = occurrenceRows.filter({
+      has: page.locator(
+        `time[datetime="${new Date(actualFire!.scheduledFireTime).toISOString()}"]`,
+      ),
+    })
+    const historicalRow = occurrenceRows.filter({
+      has: page.locator(`time[datetime="${new Date(historical.scheduledFireTime).toISOString()}"]`),
+    })
+    await expect(actualRow).toHaveCount(1)
+    await expect(actualRow.locator('td').nth(3)).toContainText(
+      e2eText('batchDayWindow.fireKinds.SCHEDULED'),
+    )
+    await expect(
+      actualRow
+        .locator('td')
+        .nth(3)
+        .locator(`time[datetime="${new Date(actualFire!.actualFireTime).toISOString()}"]`),
+    ).toBeVisible()
+    await expect(historicalRow).toHaveCount(1)
+    await expect(historicalRow.locator('td').nth(3)).toContainText(
+      e2eText('batchDayWindow.actualFireUnknown'),
+    )
+
     await testInfo.attach('quartz-daily-progress-evidence.json', {
       body: JSON.stringify(
         {
@@ -231,6 +324,8 @@ test('真实 Quartz 计划、定时Workflow与租户当日进度经全快照推�
           initialCoverage,
           dailyCoverage: daily.coverage,
           occurrenceStatusAfterRun: persisted.occurrences[0]?.status,
+          observedActualFires: observedFires.length,
+          historicalActualFires: historicalOccurrence?.actualFires.length,
           workflowRunStatus: 'SUCCESS',
           pushedRunStatus: 'RUN_SUCCESS',
           periodicDailyProgressGets: dailyGets.length - dailyGetsAfterPush,
@@ -246,7 +341,7 @@ test('真实 Quartz 计划、定时Workflow与租户当日进度经全快照推�
   } finally {
     const cleanupErrors: unknown[] = []
     try {
-      await fixture.disableScheduledWorkflow(page.request)
+      if (!scheduleDisabled) await fixture.disableScheduledWorkflow(page.request)
     } catch (cleanupError) {
       cleanupErrors.push(cleanupError)
     }

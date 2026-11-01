@@ -60,11 +60,12 @@ describe('passwordStrength', () => {
   })
 
   it('extra point at length ≥ 12', () => {
+    expect(passwordStrength('Abcdef1!Xyz')).toBe(3) // 同样的字符类别，长度为 11
     expect(passwordStrength('Abcdef1!XyzW')).toBe(4) // 包含全部字符类别且长度为 12
   })
 
   it('caps at 4 (extreme)', () => {
-    expect(passwordStrength('A!a1A!a1A!a1A!a1')).toBeLessThanOrEqual(4)
+    expect(passwordStrength('A!a1A!a1A!a1A!a1')).toBe(4)
   })
 
   it('PASSWORD_STRENGTH_LABEL has 5 entries indexable by score', () => {

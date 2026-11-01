@@ -4,6 +4,7 @@ import { expect, test, csrfHeaders, enterDemoApp } from './support/app'
 import { e2eText, installE2eLocale } from './support/i18n'
 import { seedBrowserStorage } from './support/storage'
 import { ClosureRecoveryFixture, requiredEnvironment } from './fixtures/closure-recovery/fixture'
+import { AUTH_COOKIE_LOCK_NAME } from '../src/constants/authCookieLock'
 
 const enabled = process.env.E2E_CLOSURE_RECOVERY_REAL === '1'
 if (enabled && process.env.E2E_SKIP_GLOBAL_SETUP !== '1') {
@@ -50,6 +51,29 @@ async function authenticate(page: Page, tenantId: string): Promise<string> {
   await installE2eLocale(page)
   await seedBrowserStorage(page, { session: '1', tenantId, onboardingDone: '1' })
   return username
+}
+
+async function switchAccountThroughPage(page: Page, username: string, password: string) {
+  await page.locator('.user-chip').click()
+  await page.getByRole('menuitem', { name: e2eText('nav.logout') }).click()
+  const confirmation = page.locator('.el-message-box:visible')
+  await expect(confirmation).toBeVisible()
+  await confirmation.getByRole('button', { name: e2eText('nav.logout') }).click()
+  await expect(page).toHaveURL(/\/login/)
+  await page.getByPlaceholder(e2eText('login.usernamePlaceholder')).fill(username)
+  await page.getByPlaceholder(e2eText('login.passwordPlaceholder')).fill(password)
+  const loginResponse = page.waitForResponse(
+    (response) =>
+      new URL(response.url()).pathname === '/api/console/auth/login' &&
+      response.request().method() === 'POST',
+  )
+  await page.getByRole('button', { name: e2eText('login.submit') }).click()
+  const response = await loginResponse
+  expect(response.status(), '切换账号必须经过真实认证').toBe(200)
+  const body = (await response.json()) as { data?: { username?: string; authorities?: string[] } }
+  expect(body.data?.username).toBe(username)
+  await expect(page).not.toHaveURL(/\/login/)
+  return body.data
 }
 
 test('真实终态冷历史可见且不可重试，人工核对保留原投递和审计身份', async ({ page, network }, testInfo) => {
@@ -138,9 +162,10 @@ test('真实 ConfigSync 核对已提交收据后刷新保持原结果且不重�
     const before = fixture.run<SyncState>('config-sync-state')
     await testInfo.attach('config-sync-before.json', { body: JSON.stringify(before), contentType: 'application/json' })
     expect(before).toMatchObject({ status: 'RUNNING', configCount: 2, receiptCount: 2 })
-    await enterDemoApp(page)
     await page.goto('/config/management')
-    await page.getByRole('tab', { name: e2eText('configManagement.tabSyncLogs') }).click()
+    const syncLogsTab = page.getByRole('tab', { name: e2eText('configManagement.tabSyncLogs') })
+    await expect(syncLogsTab).toBeVisible({ timeout: 45_000 })
+    await syncLogsTab.click()
     const row = page.locator('tr').filter({ has: page.getByText(`#${before.logId}`, { exact: true }) })
     await expect(row).toContainText('RUNNING')
     await expect(row).toContainText(e2eText('configSyncLogsTab.outcomePending'))
@@ -167,5 +192,373 @@ test('真实 ConfigSync 核对已提交收据后刷新保持原结果且不重�
     fixture.cleanup()
     const cleanupEvidence = JSON.stringify({ tenantId: fixture.tenantId, remainingRows: 0 })
     await testInfo.attach('owned-fixture-cleanup.json', { body: cleanupEvidence, contentType: 'application/json' })
+  }
+})
+
+test('页面发起配置导入后按原键核对已提交目标，刷新不重复执行', async ({
+  page,
+  network,
+}, testInfo) => {
+  const fixture = new ClosureRecoveryFixture()
+  const importPath = '/api/console/config/sync/import'
+  network.ignoreIf(
+    (entry) =>
+      entry.status === 500 && entry.method === 'POST' && new URL(entry.url).pathname === importPath,
+  )
+  try {
+    fixture.run('prepare-tenants')
+    const username = await authenticate(page, fixture.tenantId)
+    await page.goto('/config/management')
+    const syncTab = page.getByRole('tab', { name: e2eText('configManagement.tabSync') })
+    await expect(syncTab).toBeVisible({ timeout: 45_000 })
+    await syncTab.click()
+
+    const targetField = page.locator('.sync__target-grid .el-form-item').filter({
+      hasText: e2eText('configSyncTab.targetTenantsLabel'),
+    })
+    for (const tenantId of [fixture.targetA, fixture.targetB]) {
+      const input = targetField.locator('input')
+      await targetField.locator('.el-select').click()
+      await input.fill(tenantId)
+      await page
+        .locator('.el-select-dropdown:visible [role="option"]')
+        .filter({ hasText: tenantId })
+        .click()
+    }
+    await page.keyboard.press('Escape')
+    await expect(targetField).toContainText(fixture.targetA)
+    const payload = {
+      resourceQueues: [
+        { queueCode: fixture.queueCode, queueName: 'Closure browser queue', queueType: 'MIXED' },
+      ],
+    }
+    await page.locator('.sync__payload textarea').fill(JSON.stringify(payload))
+
+    fixture.run('install-sync-fault')
+    let requestKey = ''
+    try {
+      const imported = page.waitForResponse(
+        (response) =>
+          new URL(response.url()).pathname === importPath && response.request().method() === 'POST',
+      )
+      await page.getByRole('button', { name: e2eText('configSyncTab.btnImport') }).click()
+      const confirmation = page.locator('.el-message-box:visible')
+      await expect(confirmation).toBeVisible()
+      await confirmation
+        .getByRole('button', { name: e2eText('configSyncTab.importConfirmButton') })
+        .click()
+      const response = await imported
+      expect(response.status(), 'Only final audit persistence is faulted').toBe(500)
+      requestKey = response.request().headers()['idempotency-key'] ?? ''
+      expect(requestKey).toBeTruthy()
+      const sent = response.request().postDataJSON() as {
+        tenantId: string
+        targetTenantIds: string[]
+        dryRun: boolean
+        bundle: typeof payload
+      }
+      expect(sent).toMatchObject({
+        tenantId: fixture.tenantId,
+        targetTenantIds: [fixture.targetA, fixture.targetB],
+        bundle: payload,
+      })
+      expect(sent.dryRun ?? false).toBe(false)
+    } finally {
+      fixture.run('remove-sync-fault')
+    }
+
+    const before = fixture.run<SyncState>('config-sync-state')
+    expect(before).toMatchObject({ status: 'RUNNING', configCount: 2, receiptCount: 2 })
+    const pendingAlert = page.locator('.sync .el-alert').filter({
+      hasText: e2eText('configSyncTab.unknownOutcome'),
+    })
+    await expect(pendingAlert).toBeVisible()
+    const auditor = requiredEnvironment('E2E_AUDITOR_USERNAME')
+    expect(auditor).not.toBe(username)
+    const auditorIdentity = await switchAccountThroughPage(
+      page,
+      auditor,
+      requiredEnvironment('E2E_AUDITOR_PASSWORD'),
+    )
+    expect(auditorIdentity?.authorities).toContain('ROLE_AUDITOR')
+    await page.goto('/config/management')
+    await expect(page.getByRole('tab', { name: e2eText('configManagement.tabSync') })).toHaveCount(
+      0,
+    )
+    await expect(pendingAlert).toHaveCount(0)
+    await switchAccountThroughPage(page, username, requiredEnvironment('E2E_PASSWORD'))
+    await page.goto('/config/management')
+    await page.getByRole('tab', { name: e2eText('configManagement.tabSync') }).click()
+    await expect(pendingAlert).toBeVisible()
+    await page.reload()
+    await page.getByRole('tab', { name: e2eText('configManagement.tabSync') }).click()
+    const check = page.getByRole('button', { name: e2eText('configSyncTab.checkOriginal') })
+    await expect(check).toBeVisible()
+    const statusResponse = page.waitForResponse(
+      (response) =>
+        new URL(response.url()).pathname === '/api/console/config/sync/requests/status' &&
+        response.request().method() === 'GET',
+    )
+    const reconcilePath = `/api/console/config/sync/logs/${before.logId}/reconcile`
+    const reconcileResponse = page.waitForResponse(
+      (response) =>
+        new URL(response.url()).pathname === reconcilePath &&
+        response.request().method() === 'POST',
+    )
+    await check.click()
+    const status = await statusResponse
+    expect(status.status()).toBe(200)
+    expect(status.request().headers()['idempotency-key']).toBe(requestKey)
+    const reconciled = await reconcileResponse
+    expect(reconciled.status()).toBe(200)
+    await expect(check).toHaveCount(0)
+    const after = fixture.run<SyncState>('config-sync-state')
+    expect(after).toMatchObject({
+      status: 'SUCCESS',
+      successItems: 2,
+      skippedItems: 0,
+      configCount: 2,
+      receiptCount: 2,
+      reconciledBy: username,
+    })
+    expect(after.receiptResults).toEqual(before.receiptResults)
+    expect(
+      network.all.filter(
+        (entry) =>
+          entry.status === 500 &&
+          entry.method === 'POST' &&
+          new URL(entry.url).pathname === importPath,
+      ),
+    ).toHaveLength(1)
+    network.assertClean('real page ConfigSync import and original-key reconciliation')
+    await testInfo.attach('page-config-sync-reconcile-result.json', {
+      body: JSON.stringify({ tenantId: fixture.tenantId, requestKey, before, after }, null, 2),
+      contentType: 'application/json',
+    })
+  } finally {
+    fixture.cleanup()
+    await testInfo.attach('owned-fixture-cleanup.json', {
+      body: JSON.stringify({ tenantId: fixture.tenantId, remainingRows: 0 }),
+      contentType: 'application/json',
+    })
+  }
+})
+
+test('旧登出响应迟到时不应清除新账号的认证 Cookie', async ({ page, context }, testInfo) => {
+  const fixture = new ClosureRecoveryFixture()
+  let releaseOldLogout: () => void = () => undefined
+  let heldLogoutReady!: () => void
+  const held = new Promise<void>((resolve) => { heldLogoutReady = resolve })
+  const gate = new Promise<void>((resolve) => { releaseOldLogout = resolve })
+  let secondPage: Page | undefined
+  let pendingLogout: Promise<number> | undefined
+  try {
+    fixture.run('prepare-tenants')
+    await authenticate(page, fixture.tenantId)
+    await page.goto('/config/management')
+    await expect(page.locator('.user-chip')).toBeVisible({ timeout: 45_000 })
+    await page.route('**/api/console/auth/logout', async (route) => {
+      const response = await route.fetch()
+      expect(response.status()).toBe(204)
+      heldLogoutReady()
+      await gate
+      await route.fulfill({ response })
+    })
+    const csrf = await csrfHeaders(page.request)
+    pendingLogout = page.evaluate(async ({ tenantId, headers }) => {
+      const response = await fetch('/api/console/auth/logout', {
+        method: 'POST', credentials: 'same-origin', headers: { ...headers, 'X-Tenant-Id': tenantId },
+      })
+      return response.status
+    }, { tenantId: fixture.tenantId, headers: csrf })
+    await held
+
+    secondPage = await context.newPage()
+    await installE2eLocale(secondPage)
+    await secondPage.goto('/login')
+    await secondPage.getByPlaceholder(e2eText('login.usernamePlaceholder')).fill(requiredEnvironment('E2E_AUDITOR_USERNAME'))
+    await secondPage.getByPlaceholder(e2eText('login.passwordPlaceholder')).fill(requiredEnvironment('E2E_AUDITOR_PASSWORD'))
+    const loginResponse = secondPage.waitForResponse(response =>
+      new URL(response.url()).pathname === '/api/console/auth/login' && response.request().method() === 'POST')
+    await secondPage.getByRole('button', { name: e2eText('login.submit') }).click()
+    expect((await loginResponse).status()).toBe(200)
+    await expect(secondPage).not.toHaveURL(/\/login/)
+    const before = await secondPage.request.get('/api/console/auth/me')
+    expect(before.status()).toBe(200)
+    const beforeBody = await before.json() as { data?: { username?: string } }
+    expect(beforeBody.data?.username).toBe(requiredEnvironment('E2E_AUDITOR_USERNAME'))
+
+    releaseOldLogout()
+    expect(await pendingLogout).toBe(204)
+    const after = await secondPage.request.get('/api/console/auth/me')
+    expect(after.status(), '旧响应不得清除新账号认证').toBe(200)
+    const afterBody = await after.json() as { data?: { username?: string } }
+    expect(afterBody.data?.username).toBe(requiredEnvironment('E2E_AUDITOR_USERNAME'))
+  } finally {
+    releaseOldLogout()
+    await pendingLogout?.catch(() => undefined)
+    await page.unroute('**/api/console/auth/logout')
+    await secondPage?.close()
+    fixture.cleanup()
+    await testInfo.attach('owned-fixture-cleanup.json', {
+      body: JSON.stringify({ tenantId: fixture.tenantId, remainingRows: 0 }),
+      contentType: 'application/json',
+    })
+  }
+})
+
+test('同源标签通过认证锁等待旧登出响应后登录', async ({ page, context }, testInfo) => {
+  const fixture = new ClosureRecoveryFixture()
+  let releaseOldLogout: () => void = () => undefined
+  let heldLogoutReady!: () => void
+  const held = new Promise<void>((resolve) => { heldLogoutReady = resolve })
+  const gate = new Promise<void>((resolve) => { releaseOldLogout = resolve })
+  let secondPage: Page | undefined
+  let pendingLogout: Promise<void> | undefined
+  try {
+    fixture.run('prepare-tenants')
+    await authenticate(page, fixture.tenantId)
+    await page.goto('/config/management')
+    await expect(page.locator('.user-chip')).toBeVisible({ timeout: 45_000 })
+    await page.route('**/api/console/auth/logout', async (route) => {
+      const response = await route.fetch()
+      expect(response.status()).toBe(204)
+      heldLogoutReady()
+      await gate
+      await route.fulfill({ response })
+    })
+    pendingLogout = page.evaluate(async () => {
+      const modulePath = '/src/api/auth.ts'
+      const { authApi } = await import(/* @vite-ignore */ modulePath)
+      await authApi.logout()
+    })
+    await held
+
+    secondPage = await context.newPage()
+    await installE2eLocale(secondPage)
+    await secondPage.goto('/login')
+    await secondPage.getByPlaceholder(e2eText('login.usernamePlaceholder')).fill(requiredEnvironment('E2E_AUDITOR_USERNAME'))
+    await secondPage.getByPlaceholder(e2eText('login.passwordPlaceholder')).fill(requiredEnvironment('E2E_AUDITOR_PASSWORD'))
+    const loginResponse = secondPage.waitForResponse(response =>
+      new URL(response.url()).pathname === '/api/console/auth/login' && response.request().method() === 'POST')
+    await secondPage.getByRole('button', { name: e2eText('login.submit') }).click()
+    await expect.poll(async () => secondPage!.evaluate(async (lockName) => {
+      const state = await navigator.locks.query()
+      return state.pending?.some(lock => lock.name === lockName) ?? false
+    }, AUTH_COOKIE_LOCK_NAME)).toBe(true)
+
+    releaseOldLogout()
+    await pendingLogout
+    expect((await loginResponse).status()).toBe(200)
+    await expect(secondPage).not.toHaveURL(/\/login/)
+    const response = await secondPage.request.get('/api/console/auth/me')
+    expect(response.status()).toBe(200)
+    const body = await response.json() as { data?: { username?: string } }
+    expect(body.data?.username).toBe(requiredEnvironment('E2E_AUDITOR_USERNAME'))
+  } finally {
+    releaseOldLogout()
+    await pendingLogout?.catch(() => undefined)
+    await page.unroute('**/api/console/auth/logout')
+    await secondPage?.close()
+    fixture.cleanup()
+    await testInfo.attach('owned-fixture-cleanup.json', {
+      body: JSON.stringify({ tenantId: fixture.tenantId, remainingRows: 0 }),
+      contentType: 'application/json',
+    })
+  }
+})
+
+test('失效认证 Cookie 不阻止登录页直接登录', async ({ page, context }, testInfo) => {
+  const fixture = new ClosureRecoveryFixture()
+  try {
+    fixture.run('prepare-tenants')
+    await context.addCookies([{
+      name: 'batch_console_token', value: 'invalid-e2e-cookie',
+      url: requiredEnvironment('E2E_BASE_URL'), httpOnly: true, sameSite: 'Lax',
+    }])
+    await installE2eLocale(page)
+    let logoutRequests = 0
+    page.on('request', request => {
+      if (new URL(request.url()).pathname === '/api/console/auth/logout') logoutRequests++
+    })
+    await page.goto('/login')
+    await page.getByPlaceholder(e2eText('login.usernamePlaceholder')).fill(requiredEnvironment('E2E_USERNAME'))
+    await page.getByPlaceholder(e2eText('login.passwordPlaceholder')).fill(requiredEnvironment('E2E_PASSWORD'))
+    const loginResponse = page.waitForResponse(response =>
+      new URL(response.url()).pathname === '/api/console/auth/login' && response.request().method() === 'POST')
+    await page.getByRole('button', { name: e2eText('login.submit') }).click()
+    expect((await loginResponse).status()).toBe(200)
+    await expect(page).not.toHaveURL(/\/login/)
+    const response = await page.request.get('/api/console/auth/me')
+    expect(response.status()).toBe(200)
+    const body = await response.json() as { data?: { username?: string } }
+    expect(body.data?.username).toBe(requiredEnvironment('E2E_USERNAME'))
+    expect(logoutRequests).toBe(0)
+  } finally {
+    fixture.cleanup()
+    await testInfo.attach('owned-fixture-cleanup.json', {
+      body: JSON.stringify({ tenantId: fixture.tenantId, remainingRows: 0 }),
+      contentType: 'application/json',
+    })
+  }
+})
+
+test('同一浏览器跨标签切账号后旧页面不能登出新账号', async ({ page, context }, testInfo) => {
+  const fixture = new ClosureRecoveryFixture()
+  let secondPage: Page | undefined
+  try {
+    fixture.run('prepare-tenants')
+    await installE2eLocale(page)
+    await page.goto('/login')
+    await page.getByPlaceholder(e2eText('login.usernamePlaceholder')).fill(requiredEnvironment('E2E_USERNAME'))
+    await page.getByPlaceholder(e2eText('login.passwordPlaceholder')).fill(requiredEnvironment('E2E_PASSWORD'))
+    const adminLogin = page.waitForResponse(response =>
+      new URL(response.url()).pathname === '/api/console/auth/login' && response.request().method() === 'POST')
+    await page.getByRole('button', { name: e2eText('login.submit') }).click()
+    expect((await adminLogin).status()).toBe(200)
+    await expect(page.locator('.user-chip__name')).toHaveText(requiredEnvironment('E2E_USERNAME'), { timeout: 45_000 })
+    const onboardingClose = page.locator('.driver-popover-close-btn')
+    await expect(onboardingClose).toBeVisible({ timeout: 10_000 })
+    await onboardingClose.click()
+    await page.locator('.user-chip').click()
+    await page.getByRole('menuitem', { name: e2eText('nav.logout') }).click()
+    const confirmation = page.locator('.el-message-box:visible')
+    await expect(confirmation).toBeVisible()
+    let logoutRequests = 0
+    page.on('request', request => {
+      if (new URL(request.url()).pathname === '/api/console/auth/logout') logoutRequests++
+    })
+
+    secondPage = await context.newPage()
+    await installE2eLocale(secondPage)
+    await secondPage.goto('/login')
+    await secondPage.getByPlaceholder(e2eText('login.usernamePlaceholder')).fill(requiredEnvironment('E2E_AUDITOR_USERNAME'))
+    await secondPage.getByPlaceholder(e2eText('login.passwordPlaceholder')).fill(requiredEnvironment('E2E_AUDITOR_PASSWORD'))
+    const auditorLogin = secondPage.waitForResponse(response =>
+      new URL(response.url()).pathname === '/api/console/auth/login' && response.request().method() === 'POST')
+    await secondPage.getByRole('button', { name: e2eText('login.submit') }).click()
+    expect((await auditorLogin).status()).toBe(200)
+    await expect(secondPage.locator('.user-chip__name')).toHaveText(requiredEnvironment('E2E_AUDITOR_USERNAME'), { timeout: 45_000 })
+
+    await expect(page.locator('.user-chip__name')).toHaveText(requiredEnvironment('E2E_AUDITOR_USERNAME'), { timeout: 45_000 })
+    const oldTabPrincipal = await page.evaluate(async () => {
+      const response = await fetch('/api/console/auth/me', { credentials: 'same-origin' })
+      return { status: response.status, body: await response.json() as { data?: { username?: string } } }
+    })
+    expect(oldTabPrincipal.status).toBe(200)
+    expect(oldTabPrincipal.body.data?.username).toBe(requiredEnvironment('E2E_AUDITOR_USERNAME'))
+
+    await confirmation.getByRole('button', { name: e2eText('nav.logout') }).click()
+    await expect(confirmation).toBeHidden()
+    const newAccountAfterLogout = await secondPage.request.get('/api/console/auth/me')
+    expect(newAccountAfterLogout.status(), '旧标签操作不能撤销新账号的会话').toBe(200)
+    expect(logoutRequests).toBe(0)
+  } finally {
+    await secondPage?.close()
+    fixture.cleanup()
+    await testInfo.attach('owned-fixture-cleanup.json', {
+      body: JSON.stringify({ tenantId: fixture.tenantId, remainingRows: 0 }),
+      contentType: 'application/json',
+    })
   }
 })

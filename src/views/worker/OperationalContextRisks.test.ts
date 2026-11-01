@@ -36,6 +36,7 @@ vi.mock('@/stores/tenant', () => ({ useTenantStore: () => mocks.state }))
 vi.mock('@/stores/app', () => ({ useAppStore: () => mocks.state }))
 vi.mock('@/stores/auth', () => ({
   useAuthStore: () => ({
+    profileLoaded: true,
     userInfo: { username: 'operator' },
     hasPermission: (role: string) => mocks.state.writer && role === 'ROLE_ADMIN',
   }),

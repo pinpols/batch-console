@@ -262,12 +262,9 @@
       </ProTable>
     </div>
 
-    <DetailDrawer
-      v-model:visible="detailVisible"
-      :title="detailTitle"
-      :meta-rows="detailMetaRows"
-      :raw="detailRow"
-    />
+    <DetailDrawer v-model:visible="detailVisible" :title="detailTitle" :raw="detailRow">
+      <OutboxRecordSummary v-if="detailRow" :kind="detailKind" :row="detailRow" />
+    </DetailDrawer>
   </PageContainer>
 </template>
 
@@ -307,6 +304,7 @@
   import EmptyState from '@/components/common/EmptyState.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
   import DetailDrawer from '@/components/common/DetailDrawer.vue'
+  import OutboxRecordSummary from './OutboxRecordSummary.vue'
   import BulkActionBar from '@/components/table/BulkActionBar.vue'
   import { useBulkSelection } from '@/composables/useBulkSelection'
   import { fmtNumber } from '@/utils/number'
@@ -351,21 +349,6 @@
       ? t('observability.outboxRetryDetailTitle')
       : t('observability.outboxDeliveryDetailTitle'),
   )
-  const detailMetaRows = computed(() => {
-    if (!detailRow.value) return []
-    const rows = [
-      { label: t('observability.outboxColEventType'), value: detailRow.value.eventType ?? '' },
-      { label: t('observability.outboxColKey'), value: detailRow.value.eventKey ?? '' },
-    ]
-    if (detailKind.value === 'delivery') {
-      rows.push({
-        label: t('observability.outboxColTopic'),
-        value: (detailRow.value as ConsoleOutboxDeliveryLogResponse).targetTopic ?? '',
-      })
-    }
-    return rows
-  })
-
   function openDetail(
     kind: 'retry' | 'delivery',
     row: ConsoleOutboxRetryLogResponse | ConsoleOutboxDeliveryLogResponse,

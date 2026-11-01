@@ -152,8 +152,17 @@ beforeEach(() => {
 })
 
 describe('BatchDayReplay range interaction', () => {
+  it('explains the preview and submission flow in the single-day drawer', async () => {
+    const page = renderPage()
+    await flushPromises()
+    await button(page, labels.submitBtn).trigger('click')
+    const drawer = page.get(`section[data-title="${labels.submitTitle}"]`)
+    expect(drawer.text()).toContain(labels.submitFlowHint)
+  })
+
   it('enables submission after preview and opens the returned operation with its child session', async () => {
     const { page, drawer } = await openRangeForm()
+    expect(drawer.text()).toContain(labels.submitFlowHint)
     expect(button(drawer, labels.submitConfirm).attributes('disabled')).toBeDefined()
     await button(drawer, labels.previewBtn).trigger('click')
     await flushPromises()

@@ -1,0 +1,13 @@
+{
+  "rows": 1201,
+  "fileBytes": 17131,
+  "sha256": "17571104f97d317cd0f0575e09d3190c6787ecd5a41b2c8eb80ac5732f806f40",
+  "checkpoint": [
+    {
+      "pipelineId": 11,
+      "stage": "GENERATE",
+      "processedCount": 1200,
+      "completed": true
+    }
+  ]
+}

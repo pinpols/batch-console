@@ -1,4 +1,21 @@
 const batchDayReplay = {
+  submitFlowHint: '先填写范围和原因，再预览并核对影响；提交后在详情查看处理状态和结果。如需审批，由授权人员处理。',
+  statusGuidanceUnknown: '状态由服务端返回，请结合下方明细核对。',
+  statusGuidance: {
+    PENDING_APPROVAL: '等待审批；具备权限的管理员可在详情中处理。',
+    RUNNING: '执行中，可在下方查看明细和已返回的计数。',
+    SUCCEEDED: '状态为成功，可在下方核对结果明细。',
+    PARTIAL_FAILED: '部分失败，可在下方查看失败条目或对应日期详情。',
+    FAILED: '状态为失败，可在下方查看明细。',
+    REJECTED: '请求已被拒绝，请查看当前记录。',
+    CANCELLED: '请求已取消，请查看当前记录。',
+  },
+  statusSummaryTitle: '处理摘要',
+  statusPreviewUnavailable: '历史详情不包含提交前的预览结果。',
+  statusApprovalId: '审批 ID',
+  statusStartedAt: '开始时间',
+  statusCompletedAt: '完成时间',
+  statusLabels: { PENDING_APPROVAL: '待审批', REJECTED: '已拒绝', RUNNING: '执行中', SUCCEEDED: '成功', PARTIAL_FAILED: '部分失败', FAILED: '失败', CANCELLED: '已取消' },
   colActions: '操作',
   resultGovernanceTitle: '结果版本治理',
   resultGovernanceHint:

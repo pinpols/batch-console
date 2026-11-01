@@ -18,7 +18,6 @@
             <div class="m-card__title">
               {{ detail.workflowName ?? detail.workflowCode }}
             </div>
-            <span v-if="runStatus" :class="['m-chip', runChipClass]">{{ runStatus }}</span>
           </div>
           <div class="m-card__sub">{{ detail.workflowCode }} · v{{ detail.version ?? '?' }}</div>
           <div class="m-card__meta">
@@ -26,38 +25,6 @@
               <span class="m-card__meta-key">{{ t('mobile.workflowViewer.fldType') }}</span>
               {{ detail.workflowType || '?' }}
             </div>
-            <div v-if="runId">
-              <span class="m-card__meta-key">{{ t('mobile.workflowViewer.fldRunId') }}</span>
-              <a class="m-link" @click="goToRun">#{{ runId }}</a>
-            </div>
-          </div>
-          <span v-if="pollingActive" class="m-poll-tag">
-            <span class="m-poll-dot" />
-            {{ t('mobile.workflowViewer.pollHint', { n: pollIntervalMs / 1000 }) }}
-          </span>
-        </div>
-
-        <!-- Legend(常驻):移动屏小,只展示色块,文案放小字 -->
-        <div class="m-card">
-          <div class="m-card__title" style="margin-bottom: 6px">
-            {{ t('mobile.workflowViewer.legend') }}
-          </div>
-          <div class="m-legend">
-            <span class="m-legend-chip m-legend-chip--running">{{
-              t('mobile.workflowViewer.statusRunning')
-            }}</span>
-            <span class="m-legend-chip m-legend-chip--success">{{
-              t('mobile.workflowViewer.statusSuccess')
-            }}</span>
-            <span class="m-legend-chip m-legend-chip--failed">{{
-              t('mobile.workflowViewer.statusFailed')
-            }}</span>
-            <span class="m-legend-chip m-legend-chip--waiting">{{
-              t('mobile.workflowViewer.statusWaiting')
-            }}</span>
-            <span class="m-legend-chip m-legend-chip--cancelled">{{
-              t('mobile.workflowViewer.statusCancelled')
-            }}</span>
           </div>
         </div>
 
@@ -110,108 +77,77 @@
    *   - 只看不操作(无编辑、无复制 mermaid 文本)
    *   - mermaid SVG 横向滚动 + 浏览器双指缩放(touch-action)
    *   - 节点点击弹底部 sheet 而非右侧 drawer(移动友好)
-   *   - 移动 oncall 场景:从 push 推送链 / 告警详情进入,看运行 DAG 状态
+   *   - 仅展示定义图；运行深链转到独立的冻结快照视图。
    */
-  import { computed, nextTick, ref, watch } from 'vue'
-  import { useRoute, useRouter } from 'vue-router'
+  import { computed, nextTick, onScopeDispose, ref, watch } from 'vue'
+  import { useRoute } from 'vue-router'
   import { useI18n } from 'vue-i18n'
-  import { ArrowLeft, RefreshCw as Refresh } from '@lucide/vue'
+  import { ArrowLeft } from '@lucide/vue'
   import MPullRefresh from '@/layout-mobile/MPullRefresh.vue'
   import { workflowApi } from '@/api/workflow'
-  import { queryWorkflowNodeRuns } from '@/api/workflowQueries'
-  import { instanceApi } from '@/api/instance'
   import { clearTrustedSvg, setTrustedMermaidSvg } from '@/utils/trustedMermaidSvg'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
-  import { useAutoRefresh } from '@/composables/useAutoRefresh'
   import { useSmartBack } from '@/composables/useSmartBack'
   import { loadMermaid } from '@/utils/mermaid'
   import { userErrorMessage } from '@/utils/userErrorMessage'
-  import {
-    workflowRunMermaidClassDefs,
-    workflowRunStatusClass,
-    workflowRunVisualCssVars,
-  } from '@/constants/workflowStatusTheme'
-  import type {
-    ConsoleWorkflowNodeRunResponse,
-    WorkflowDefinitionDetailResponse,
-  } from '@/types/console-api'
-
-  const pollIntervalMs = 10000
-  const TERMINAL = new Set(['SUCCESS', 'COMPLETED', 'FAILED', 'CANCELLED', 'TERMINATED'])
+  import { workflowRunVisualCssVars } from '@/constants/workflowStatusTheme'
+  import type { WorkflowDefinitionDetailResponse } from '@/types/console-api'
 
   const route = useRoute()
-  const router = useRouter()
   const tenant = useTenantStore()
   const { t } = useI18n({ useScope: 'global' })
   // useSmartBack 返回 () => void(非 { goBack }),直接当函数赋名
   const goBack = useSmartBack('/m/ops/summary')
 
   const id = computed(() => Number(route.params.id))
-  const runId = computed(() => {
-    const raw = route.query.runId
-    const queryValue = Array.isArray(raw) ? raw[0] : raw
-    const n = Number(queryValue)
-    return Number.isFinite(n) && n > 0 ? n : null
-  })
-
   const detail = ref<WorkflowDefinitionDetailResponse | null>(null)
   const mermaidText = ref('')
   const graphRef = ref<HTMLDivElement | null>(null)
   const loading = ref(false)
   const errorMessage = ref('')
-  const runStatus = ref<string | null>(null)
   const nodeCodeBySanitized = ref<Map<string, string>>(new Map())
   type NodeMeta = NonNullable<WorkflowDefinitionDetailResponse['nodes']>[number]
   const selectedNodeMeta = ref<NodeMeta | null>(null)
 
-  function normalizedRunStatus(): string {
-    return (runStatus.value || '').toUpperCase()
+  let loadRevision = 0
+  function invalidateView() {
+    loadRevision++
+    clearTrustedSvg(graphRef.value)
+    detail.value = null
+    mermaidText.value = ''
+    selectedNodeMeta.value = null
+    nodeCodeBySanitized.value = new Map()
+    loading.value = false
+    errorMessage.value = ''
   }
-
-  const runChipClass = computed(() => {
-    const s = normalizedRunStatus()
-    if (s === 'RUNNING') return 'm-chip--running'
-    if (s === 'SUCCESS' || s === 'COMPLETED') return 'm-chip--success'
-    if (s === 'FAILED' || s === 'TERMINATED') return 'm-chip--failed'
-    return 'm-chip--default'
-  })
-
-  const pollingActive = computed(() => {
-    if (!runId.value) return false
-    const runStatusIsTerminal = TERMINAL.has(normalizedRunStatus())
-    return !runStatusIsTerminal
-  })
-
   async function load() {
-    if (!Number.isFinite(id.value) || id.value <= 0) {
+    invalidateView()
+    const revision = loadRevision
+    const tenantId = tenant.tenantId
+    const workflowId = id.value
+    const isCurrent = () => revision === loadRevision && tenantId === tenant.tenantId && workflowId === id.value
+    if (!tenantId) return
+    if (!Number.isSafeInteger(workflowId) || workflowId <= 0) {
       errorMessage.value = t('mobile.workflowViewer.invalidId')
       return
     }
     loading.value = true
-    errorMessage.value = ''
     try {
-      const [d, mer, nodeRuns, run] = await Promise.all([
-        workflowApi.detailById(id.value, tenant.tenantId),
-        workflowApi.mermaid(id.value, tenant.tenantId),
-        runId.value
-          ? queryWorkflowNodeRuns(tenant.tenantId, runId.value)
-          : Promise.resolve<ConsoleWorkflowNodeRunResponse[]>([]),
-        runId.value
-          ? instanceApi.workflowRunDetail(runId.value, tenant.tenantId).catch(() => null)
-          : Promise.resolve(null),
+      const [d, mer] = await Promise.all([
+        workflowApi.detailById(workflowId, tenantId),
+        workflowApi.mermaid(workflowId, tenantId),
       ])
+      if (!isCurrent()) return
       detail.value = d
       mermaidText.value = mer.mermaid ?? ''
-      runStatus.value = run?.runStatus ?? null
       buildNodeMap(d)
-      const stateOverlayText = applyStateOverlay(mermaidText.value, nodeRuns)
-      await renderMermaid(stateOverlayText)
-      attachNodeClicks()
+      const renderId = await renderMermaid(mermaidText.value, isCurrent)
+      if (renderId && isCurrent()) attachNodeClicks(renderId)
     } catch (err: unknown) {
-      errorMessage.value = userErrorMessage(err)
+      if (isCurrent()) errorMessage.value = userErrorMessage(err)
     } finally {
-      loading.value = false
+      if (isCurrent()) loading.value = false
     }
   }
 
@@ -223,12 +159,13 @@
     nodeCodeBySanitized.value = m
   }
 
-  function attachNodeClicks() {
+  function attachNodeClicks(renderId: string) {
     if (!graphRef.value) return
     const nodes = graphRef.value.querySelectorAll<SVGGElement>('g.node')
-    const re = /^flowchart-(.+)-\d+$/
+    const prefix = `${renderId}-flowchart-`
     nodes.forEach((n) => {
-      const m = re.exec(n.id)
+      if (!n.id.startsWith(prefix)) return
+      const m = /^(.+)-\d+$/.exec(n.id.slice(prefix.length))
       if (!m) return
       const original = nodeCodeBySanitized.value.get(m[1])
       if (!original) return
@@ -241,30 +178,6 @@
     const meta = detail.value?.nodes?.find((x) => x.nodeCode === nodeCode)
     if (!meta) return
     selectedNodeMeta.value = meta
-  }
-
-  function applyStateOverlay(text: string, runs: ConsoleWorkflowNodeRunResponse[]) {
-    if (!text || runs.length === 0) return text
-    const latest = new Map<string, ConsoleWorkflowNodeRunResponse>()
-    for (const r of runs) {
-      if (!r.nodeCode) continue
-      const prior = latest.get(r.nodeCode)
-      const currentRunIsNewer = !prior || (r.id ?? 0) > (prior.id ?? 0)
-      if (currentRunIsNewer) latest.set(r.nodeCode, r)
-    }
-    const classLines: string[] = []
-    for (const [code, r] of latest) {
-      const klass = workflowRunStatusClass(r.nodeStatus)
-      if (klass) classLines.push(`class ${sanitize(code)} ${klass}`)
-    }
-    return (
-      text.trimEnd() +
-      '\n' +
-      workflowRunMermaidClassDefs() +
-      '\n' +
-      classLines.map((l) => '  ' + l).join('\n') +
-      '\n'
-    )
   }
 
   function sanitize(raw: string) {
@@ -280,35 +193,31 @@
     return isLetter ? out : 'n' + out
   }
 
-  async function renderMermaid(text: string) {
+  async function renderMermaid(text: string, isCurrent: () => boolean) {
     if (!text.trim()) {
       clearTrustedSvg(graphRef.value)
       return
     }
     try {
       const mermaid = await loadMermaid()
+      if (!isCurrent()) return
       const renderTimestamp = Date.now()
       const randomSuffix = Math.floor(Math.random() * 1e4)
       const renderId = `m-wf-graph-${renderTimestamp}-${randomSuffix}`
       const { svg } = await mermaid.render(renderId, text)
       await nextTick()
+      if (!isCurrent()) return
       setTrustedMermaidSvg(graphRef.value, svg)
+      return renderId
     } catch (err: unknown) {
-      errorMessage.value = t('mobile.workflowViewer.renderFailPrefix') + userErrorMessage(err)
+      if (isCurrent()) errorMessage.value = t('mobile.workflowViewer.renderFailPrefix') + userErrorMessage(err)
     }
   }
 
-  function goToRun() {
-    if (runId.value) void router.push(`/m/jobs/${runId.value}`)
-  }
-
+  watch([() => tenant.tenantId, () => route.params.id], invalidateView, { flush: 'sync' })
   useTenantReload(load)
-  watch(() => route.params.id, load)
-  watch(() => route.query.runId, load)
-  // 非终态 run 短轮询;无 runId 时 isRunning 恒 false → 不轮询
-  useAutoRefresh(() => {
-    if (pollingActive.value) void load()
-  }, pollIntervalMs)
+  watch(() => route.params.id, () => void load())
+  onScopeDispose(() => { loadRevision++ })
 </script>
 
 <style scoped>

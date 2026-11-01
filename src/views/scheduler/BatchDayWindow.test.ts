@@ -84,6 +84,8 @@ vi.mock('element-plus', () => ({
   ElDescriptionsItem: { name: 'ElDescriptionsItem' },
   ElTable: { name: 'ElTable' },
   ElTableColumn: { name: 'ElTableColumn' },
+  ElTimeline: { name: 'ElTimeline' },
+  ElTimelineItem: { name: 'ElTimelineItem' },
   ElTag: { name: 'ElTag' },
   ElForm: { name: 'ElForm' },
   ElFormItem: { name: 'ElFormItem' },
@@ -182,6 +184,9 @@ const i18n = createI18n({
         colWorkflow: 'Workflow',
         colScheduleVersion: '计划版本',
         colScheduledFire: '计划触发时间',
+        colActualFire: '实际回调时间',
+        actualFireUnknown: '暂无记录（未知）',
+        fireKinds: { SCHEDULED: '正常调度', READINESS_RETRY: '就绪重试' },
         colOccurrenceStatus: '触发状态',
         colRequestId: '请求 ID',
         colRejectionReason: '拒绝原因',
@@ -213,6 +218,75 @@ describe('BatchDayWindow', () => {
     tenantStore.tenantId = 'tenant-a'
     queryBatchDayWindow.mockReset()
     catchUpScheduledOccurrence.mockReset()
+  })
+
+  it('筛选时间线的工作流并同步过滤触发明细', async () => {
+    queryBatchDayWindow.mockResolvedValue({
+      bizDate: '2026-10-15',
+      dayStatus: 'OPEN',
+      currentSystemTime: '2026-10-15T03:00:00Z',
+      jobs: [],
+      scheduledOccurrences: [
+        {
+          workflowDefinitionId: 1,
+          workflowCode: 'FLOW_A',
+          scheduleVersion: 1,
+          scheduledFireTime: '2026-10-15T01:00:00Z',
+          bizDate: '2026-10-15',
+          occurrenceStatus: 'PLANNED',
+          catchUpPolicy: 'AUTO',
+          actualFires: [
+            { fireInstanceId: 'fire-1', refireCount: 0, actualFireTime: '2026-10-15T01:02:00Z', fireKind: 'SCHEDULED' },
+            { fireInstanceId: 'fire-2', refireCount: 0, actualFireTime: '2026-10-15T01:03:00Z', fireKind: 'READINESS_RETRY' },
+          ],
+        },
+        {
+          workflowDefinitionId: 2,
+          workflowCode: 'FLOW_B',
+          scheduleVersion: 1,
+          scheduledFireTime: '2026-10-15T02:00:00Z',
+          bizDate: '2026-10-15',
+          occurrenceStatus: 'PLANNED',
+          catchUpPolicy: 'AUTO',
+          actualFires: [],
+        },
+      ],
+    })
+    const wrapper = mountBatchDayWindow()
+    await flushPromises()
+    const occurrences = () => wrapper.findAll('.test-table')[1]!
+    expect(occurrences().text()).toContain('FLOW_A')
+    expect(occurrences().text()).toContain('FLOW_B')
+    expect(occurrences().text()).toContain('2026-10-15T01:02:00Z')
+    expect(occurrences().text()).toContain('就绪重试')
+    expect(occurrences().text()).toContain('暂无记录（未知）')
+    const select = wrapper.findAll('button').find((button) => button.text() === 'FLOW_A')
+    expect(select).toBeDefined()
+    await select!.trigger('click')
+    expect(occurrences().text()).toContain('FLOW_A')
+    expect(occurrences().text()).not.toContain('FLOW_B')
+  })
+
+  it('shows server window milestones with missing deadlines left unknown', async () => {
+    queryBatchDayWindow.mockResolvedValue({
+      bizDate: '2026-10-15',
+      dayStatus: 'OPEN',
+      currentSystemTime: '2026-10-15T03:00:00Z',
+      cutoffAt: '2026-10-15T10:00:00Z',
+      slaDeadlineAt: null,
+      lateArrivalWindowClosesAt: null,
+      jobs: [],
+      scheduledOccurrences: [],
+    })
+    const wrapper = mountBatchDayWindow()
+    await flushPromises()
+    const milestones = wrapper.findAll('.batch-day-milestones__item')
+    expect(milestones).toHaveLength(4)
+    expect(milestones[0].text()).toContain('2026-10-15T03:00:00Z')
+    expect(milestones[1].text()).toContain('2026-10-15T10:00:00Z')
+    expect(milestones[2].text()).toContain('—')
+    expect(milestones[3].text()).toContain('—')
+    wrapper.unmount()
   })
 
   it('retains the original catch-up key after a lost response and restores status on reload', async () => {
@@ -822,6 +896,8 @@ function mountBatchDayWindow() {
         ElTableColumn: ElTableColumnStub,
         ElButton: ElButtonStub,
         ElTag: { template: '<span><slot /></span>' },
+        ElTimeline: { template: '<div><slot /></div>' },
+        ElTimelineItem: { template: '<div><slot /></div>' },
         ElDescriptions: { template: '<div><slot /></div>' },
         ElDescriptionsItem: { template: '<div><slot /></div>' },
         ElForm: { template: '<form><slot /></form>' },
@@ -829,7 +905,7 @@ function mountBatchDayWindow() {
         ElInput: ElInputStub,
         ElDrawer: { template: '<div><slot /><slot name="footer" /></div>' },
         ElDialog: ElDialogStub,
-        DatetimeText: { props: ['value'], template: '<span>{{ value }}</span>' },
+        DatetimeText: { props: ['value'], template: "<span>{{ value ?? '—' }}</span>" },
         PageContainer: { template: '<main><slot /></main>' },
         PageHeader: { template: '<header><slot /><slot name="actions" /></header>' },
         SectionCard: { template: '<section><slot name="header" /><slot /></section>' },

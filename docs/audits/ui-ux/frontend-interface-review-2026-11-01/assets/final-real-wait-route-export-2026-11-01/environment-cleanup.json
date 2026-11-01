@@ -1,0 +1,16 @@
+{
+  "ownedDatabaseBeforeVolumeRemoval": {
+    "batch.job_execution_log": 3,
+    "batch.idempotency_record": 43,
+    "batch.console_usage_daily_202611": 10,
+    "batch.console_usage_daily": 10
+  },
+  "note": "console_usage_daily parent and monthly partition report the same 10 physical rows; prior exact retry residues were separately removed before this scan. The remaining data was in the task-owned isolated database volume.",
+  "ownedBucketObjectsBeforeRemoval": 0,
+  "resourcesAfterRemoval": {
+    "containers": [],
+    "volumes": [],
+    "networkExists": false,
+    "ownedProcessPids": []
+  }
+}

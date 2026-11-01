@@ -6,20 +6,9 @@
 
 ---
 
-## 1. 为什么不用 SSE
+## 1. 按数据性质选择刷新方式
 
-桌面运行与观测页面按接口能力使用 SSE；移动业务列表/详情的数据刷新采用短轮询或手动刷新。全局 AI 对话仍复用 POST SSE，它不是本节讨论的列表刷新连接。桌面 Catch-up 的当前入口是 `/approvals?tab=catch-up`，`/scheduler/catch-up-approvals` 是兼容重定向。
-
-| 维度 | SSE | 短轮询 |
-|---|---|---|
-| **弱网鲁棒** | 长连接经常被中断器/proxy/NAT 杀;断后重连发风暴 | 每次新请求独立,断网期间页面冻结一次,恢复后下次自动 catch up |
-| **电耗 (4G/5G)** | 长连接保活心跳持续唤醒 radio | 单次请求完毕进入 deep sleep,显著低耗 |
-| **后台行为** | iOS PWA 进后台,SSE 多数被系统挂起;再前台时连接断 | `useAutoRefresh` 已挂 visibilitychange,后台 0 请求 |
-| **服务端压力** | 每移动用户保活一条 TCP | 每用户 30s 一次 HTTP |
-| **实现复杂度** | 需要重连退避 / 心跳 / Last-Event-ID | `setInterval` |
-
-移动端是**oncall 应急定位**形态(从 push / 邮件 / 扫码 入页),不是"长时间盯屏"。
-轮询间隔按业务紧迫性选择；不能仅凭配置间隔宣称所有用户都可接受延迟。
+移动 Workflow 运行进度复用 `useWorkflowExecutionProgress`，首页租户每日进度复用 `useDailyProgress`：以完整快照推送为主，首屏、重连和 reset 读取快照，断线按共享策略回退。首页下拉刷新同时刷新概览和每日快照；30 秒轮询只用于概览。列表和未接入进度快照的详情继续按页面选择轮询或手动刷新；AI 对话使用独立的 POST SSE。不同链路的刷新状态各自展示，不能凭固定间隔推断任务完成度。
 
 ## 2. 统一的轮询档位
 
@@ -27,7 +16,7 @@
 
 | 档 | 时长 | 何时用 | 例子 |
 |---|---|---|---|
-| **HOT** | 10s | 详情运行中、workflow run overlay,oncall 必须看着翻转 | `MJobInstanceDetail`(运行态时短轮询)、`MWorkflowViewer`（有 runId 且满足运行态轮询条件时） |
+| **HOT** | 10s | 未接入推送的运行中详情 | `MJobInstanceDetail`(运行态时短轮询) |
 | **WARM** | 20s | 次实时列表 — 告警未读、待审批堆积 | `MAlerts` |
 | **COLD** | 30s | 一般概览 — 拓扑/计数类 | `MOpsSummary`、`MWorkers`、`MOutbox` |
 
@@ -51,14 +40,11 @@
   useAutoRefresh(() => { if (isRunning.value) void load() }, REFRESH_INTERVAL_HOT_MS)
   ```
 
-## 4. 何时考虑迁回 SSE
+## 4. Workflow 运行进度
 
-如果未来出现以下场景,可重新评估:
-- 移动端要做实时协作(多人同时操作同一审批,需要锁状态推送)
-- 4G/5G 流量价格大幅下降,且系统已上 HTTP/3
-- 监控周期被产品压到 < 5s
+`/m/workflow/run/:id` 的 `id` 是 Workflow 运行 ID；页面复用桌面运行进度组件和 `useWorkflowExecutionProgress`，以该运行冻结快照的节点、边和状态呈现 DAG。快照不可用时明确提示，不用当前定义图补画历史运行；切租户或运行 ID 时由共享 composable 清理旧作用域。下拉刷新复用同一面板，不再单独建立轮询。
 
-当前不在该 critical path。
+`/m/workflow/:id` 的 `id` 是 Workflow 定义 ID，只展示定义图。旧链接 `/m/workflow/:定义ID?runId=运行ID` 会跳转运行页；两类 ID 不互换，Workflow 运行 ID 也不作为 Job 实例 ID 跳转。
 
 ## 5. 深链 + 登录流转
 
@@ -68,7 +54,4 @@ PWA push / 邮件 / 扫码 进入未登录态时:
 2. `Login.vue` 自带 `@media (max-width: 480px)` 响应式样式 → 手机看就是手机布局
 3. 登录成功 → `router.push(redirect)` → `/m/jobs/123` → `MobileLayout` 渲染
 
-**`MOBILE_AUTO_REDIRECT_PATHS = {'/', '/ops/summary'}`** 是白名单,**只有访问根路径或桌面 dashboard
-才会被自动转 `/m/ops/summary`**;深链 `/m/*` 始终保留 mobile 路由,不会被覆盖。
-
-`/m/workflow/:id?runId=NNN` 是 2026-05-16 新增的 mobile 只读 workflow viewer,沿用同套机制。
+根路径和桌面 dashboard 会分流到移动首页；其他桌面深链按 `MOBILE_DEEPLINK_MAP` 分流。`/monitor/workflow-runs/:id` 进入移动运行页，`/workflow/viewer/:id` 进入移动定义页，`/m/*` 原生深链保留。

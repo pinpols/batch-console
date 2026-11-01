@@ -20,6 +20,12 @@ interface MultiCalendarState {
     calendarCode: string
     requestId: string | null
   }>
+  actualFires: Array<{
+    workflowId: number
+    scheduledFireTime: string
+    actualFireTime: string
+    fireKind: string
+  }>
   coverage: Array<{
     workflowId: number
     calendarCode: string
@@ -66,7 +72,13 @@ export class MultiCalendarProgressFixture extends QuartzDailyProgressFixture {
     const cleanup = await super.finish(request, reader)
     const finalCleanup = this.ownedSql<Record<string, number>>('workflow-replay-final-cleanup')
     expect(Object.values(finalCleanup).every((count) => count === 0)).toBe(true)
-    expect(this.ownedSql('workflow-replay-residue')).toEqual({})
+    // 配置失效 outbox 异步投递；等待本例租户所有表实际清零后再确认清理完成。
+    await expect
+      .poll(() => this.ownedSql('workflow-replay-residue'), {
+        timeout: 30_000,
+        intervals: [500, 1000, 2000],
+      })
+      .toEqual({})
     return { ...cleanup, ...finalCleanup, tenantTableRows: 0 }
   }
 }

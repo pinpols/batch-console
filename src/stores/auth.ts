@@ -6,6 +6,14 @@ import { useTenantStore } from '@/stores/tenant'
 import { roleOrder } from '@/constants/role'
 import { STORAGE_KEYS } from '@/constants/storageKeys'
 import type { UserInfo, Role, MenuGroup } from '@/types'
+import {
+  acceptSharedAuthRevision,
+  advanceAuthSession,
+  currentAuthSession,
+  initializeSharedAuthRevision,
+  isSharedAuthRevisionCurrent,
+  publishSharedAuthRevision,
+} from '@/api/authSession'
 
 /**
  * ADR-030 §D7 Stage B：token 已由后端下发为 HttpOnly cookie（JS 不可读），
@@ -43,6 +51,7 @@ function writePasswordNotice(username: string, mustChangePassword: boolean | und
 }
 
 export const useAuthStore = defineStore('auth', () => {
+  initializeSharedAuthRevision()
   const sessionActive = ref<boolean>(localStorage.getItem(SESSION_FLAG_KEY) === '1')
   const userInfoInternal = ref<UserInfo | null>(null)
   const profileLoaded = ref(false)
@@ -96,14 +105,27 @@ export const useAuthStore = defineStore('auth', () => {
     // D7 Stage B: token 由后端写入 HttpOnly cookie，浏览器自动维护；前端只标"已登录"flag。
     // 2026-05-16 后端 ConsoleAuthController.login 已落 Set-Cookie(batch_console_token,
     // HttpOnly + SameSite=Lax + 8h Max-Age),dev fallback 已删。
+    if (!isSharedAuthRevisionCurrent()) {
+      reconcileExternalSession()
+      return false
+    }
+    const loginSession = advanceAuthSession()
     invalidateProfileRequests()
-    const result = await authApi.login({ username, password, captchaToken })
+    let result
+    try {
+      result = await authApi.login({ username, password, captchaToken })
+    } catch (error) {
+      if (loginSession !== currentAuthSession()) return false
+      throw error
+    }
+    if (loginSession !== currentAuthSession()) return false
     // 登录等待期间也可能启动资料请求，成功切换身份时再次使这些请求失效。
     invalidateProfileRequests()
     sessionActive.value = true
     userInfoInternal.value = result.userInfo
     profileLoaded.value = false
     localStorage.setItem(SESSION_FLAG_KEY, '1')
+    publishSharedAuthRevision()
     writePasswordNotice(result.userInfo.username, result.userInfo.mustChangePassword)
     const tenant = useTenantStore()
     // 'system' 是 admin 账号宿主,不是业务工作租户;落地到 system 会让所有业务页空白。
@@ -111,20 +133,30 @@ export const useAuthStore = defineStore('auth', () => {
     if (result.tenantId && result.tenantId !== 'system') {
       tenant.setTenantId(result.tenantId)
     }
+    return true
   }
 
-  async function logout() {
+  async function logout(expectedSession = currentAuthSession()) {
+    if (expectedSession !== currentAuthSession()) return false
+    if (!isSharedAuthRevisionCurrent()) {
+      reconcileExternalSession()
+      return false
+    }
+    const logoutSession = advanceAuthSession()
+    sessionActive.value = false
+    localStorage.removeItem(SESSION_FLAG_KEY)
+    publishSharedAuthRevision()
     invalidateProfileRequests()
     // 后端 /logout 端点会 Set-Cookie max-age=0 清除 token cookie。
     await authApi.logout().catch((e) => {
       if (import.meta.env.DEV) console.warn('[auth] logout request failed:', e)
     })
+    if (logoutSession !== currentAuthSession()) return false
     invalidateProfileRequests()
-    sessionActive.value = false
     userInfoInternal.value = null
     profileLoaded.value = false
-    localStorage.removeItem(SESSION_FLAG_KEY)
     sessionStorage.removeItem(PASSWORD_NOTICE_KEY)
+    return true
   }
 
   async function fetchMe() {
@@ -168,17 +200,55 @@ export const useAuthStore = defineStore('auth', () => {
     return fetchMePromise
   }
 
+  /** 共享 Cookie 被其他标签切换后，先撤销旧界面权限，再向服务端确认身份。 */
+  function reconcileExternalSession() {
+    if (!acceptSharedAuthRevision()) return
+    const session = advanceAuthSession()
+    invalidateProfileRequests()
+    sessionActive.value = false
+    userInfoInternal.value = null
+    profileLoaded.value = false
+    sessionStorage.removeItem(PASSWORD_NOTICE_KEY)
+    if (localStorage.getItem(SESSION_FLAG_KEY) !== '1') return
+    void fetchMe().then(() => {
+      if (session === currentAuthSession() && isSharedAuthRevisionCurrent() && profileLoaded.value) {
+        sessionActive.value = true
+      }
+    }).catch(() => {
+      logError('auth-profile-refresh-failed', { kind: 'authProfile' })
+    })
+  }
+
+  if (typeof window !== 'undefined') {
+    const onStorage = (event: StorageEvent) => {
+      if (event.key === STORAGE_KEYS.authSessionRevision || event.key == null) reconcileExternalSession()
+    }
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') reconcileExternalSession()
+    }
+    window.addEventListener('storage', onStorage)
+    window.addEventListener('pageshow', reconcileExternalSession)
+    document.addEventListener('visibilitychange', onVisibilityChange)
+    onScopeDispose(() => {
+      window.removeEventListener('storage', onStorage)
+      window.removeEventListener('pageshow', reconcileExternalSession)
+      document.removeEventListener('visibilitychange', onVisibilityChange)
+    })
+  }
+
   // P3:auth store 自动跟随 tenant 切换刷新 profile,
   // 任何路径(Header / TenantList / Mobile / 未来 deep-link)切了租户都会触发,
   // 不再依赖每个调用方手动调 fetchMe。watch 默认非 immediate,初始值不触发。
   const tenantStore = useTenantStore()
   // 失效同步执行以识别租户往返；实际刷新仍在原异步 watch 中，等租户存储更新完成。
-  watch(() => tenantStore.tenantId, invalidateProfileRequests, { flush: 'sync' })
+  watch(() => tenantStore.tenantId, () => {
+    invalidateProfileRequests()
+    if (sessionActive.value) profileLoaded.value = false
+  }, { flush: 'sync' })
   watch(
     () => tenantStore.tenantId,
     () => {
       if (!sessionActive.value) return
-      profileLoaded.value = false
       void fetchMe().catch(() => {
         // HTTP 层已处理请求错误，此处承接后台拒绝并记录失败，不让异常脱离生命周期。
         logError('auth-profile-refresh-failed', { kind: 'authProfile' })

@@ -17,15 +17,20 @@ export class ControlProgressFixture extends WorkflowBulkFixture {
   readonly readerName = `progress-reader-${randomUUID()}`
   readonly password = randomBytes(24).toString('base64url')
   private accountIds: number[] = []
+  private credentialHash?: string
   private prepared = false
 
   prepare() {
-    this.run('prepare')
+    // SQL 超时可能发生在提交之后；先登记本例所有权，finally 才能恢复清理。
     this.prepared = true
+    this.run('prepare')
     const passwordHash = this.hashPassword()
-    this.accountIds = this.ownedSql<number[]>('credentials-prepare', {
-      password_hash: passwordHash,
-    })
+    this.credentialHash = passwordHash
+    this.accountIds = this.prepareCredentials(passwordHash)
+  }
+
+  protected prepareCredentials(passwordHash: string) {
+    return this.ownedSql<number[]>('credentials-prepare', { password_hash: passwordHash })
   }
 
   private hashPassword(): string {
@@ -65,6 +70,8 @@ export class ControlProgressFixture extends WorkflowBulkFixture {
     script:
       | 'credentials-prepare'
       | 'credentials-cleanup'
+      | 'credentials-recover'
+      | 'active-owned-sessions'
       | 'pipeline-prepare'
       | 'pipeline-advance'
       | 'pipeline-cleanup'
@@ -80,8 +87,10 @@ export class ControlProgressFixture extends WorkflowBulkFixture {
       | 'workflow-version-tenant-prepare'
       | 'workflow-version-tenant-cleanup'
       | 'persistent-waits-prepare'
+      | 'persistent-waits-accounts-state'
       | 'persistent-waits-seed'
       | 'persistent-waits-state'
+      | 'persistent-waits-job-state'
       | 'persistent-waits-cleanup'
       | 'persistent-waits-accounts-cleanup'
       | 'manual-upload-roles-prepare'
@@ -98,9 +107,15 @@ export class ControlProgressFixture extends WorkflowBulkFixture {
       | 'quartz-progress-prepare'
       | 'quartz-progress-state'
       | 'quartz-progress-cleanup'
+      | 'quartz-progress-historical'
       | 'multi-calendar-progress-prepare'
       | 'multi-calendar-progress-state'
       | 'export-replay-prepare'
+      | 'export-replay-other-batch'
+      | 'export-replay-relations-state'
+      | 'notification-route-prepare'
+      | 'notification-route-state'
+      | 'notification-route-cleanup'
       | 'export-replay-state'
       | 'export-replay-cleanup'
       | 'process-worker-prepare'
@@ -132,6 +147,8 @@ export class ControlProgressFixture extends WorkflowBulkFixture {
     const args = [
       'exec',
       '-i',
+      '-e',
+      `PGAPPNAME=${this.sqlApplicationName}`,
       requiredEnvironment('E2E_CLOSURE_PG_CONTAINER'),
       'psql',
       '-X',
@@ -149,13 +166,14 @@ export class ControlProgressFixture extends WorkflowBulkFixture {
       admin_name: this.adminName,
       reader_name: this.readerName,
       account_ids: this.accountIds.join(','),
+      application_name: this.sqlApplicationName,
       ...extra,
     }
     for (const [name, value] of Object.entries(values)) args.push('-v', `${name}=${value}`)
     const output = execFileSync('docker', args, {
       input: readFileSync(join(__dirname, 'sql', `${script}.sql`), 'utf8'),
       encoding: 'utf8',
-      timeout: 30_000,
+      timeout: 60_000,
     }).trim()
     return JSON.parse(output) as T
   }
@@ -213,6 +231,7 @@ export class ControlProgressFixture extends WorkflowBulkFixture {
 
   async finish(request: APIRequestContext, reader?: APIRequestContext) {
     if (!this.prepared) return {}
+    await this.waitForOwnedSqlSessions()
     for (const run of this.state().runs) {
       if (run.status === 'PAUSED')
         expect(
@@ -236,9 +255,27 @@ export class ControlProgressFixture extends WorkflowBulkFixture {
       .toBe(true)
     if (reader) await this.mutate(reader, '/api/console/auth/logout', {})
     await this.mutate(request, '/api/console/auth/logout', {})
+    if (this.credentialHash && this.accountIds.length === 0) {
+      const recovered = this.ownedSql<{ ids: number[]; mismatches: number }>(
+        'credentials-recover',
+        { password_hash: this.credentialHash },
+      )
+      expect(recovered.mismatches, '随机账号身份与本例哈希不符，拒绝清理').toBe(0)
+      this.accountIds = recovered.ids
+    }
     const credentialAccounts = this.ownedSql<number>('credentials-cleanup')
     expect(credentialAccounts, '本例凭据账户必须清零').toBe(0)
     return { ...this.cleanup(), credentialAccounts }
+  }
+
+  protected async waitForOwnedSqlSessions() {
+    await expect
+      .poll(() => this.ownedSql<number>('active-owned-sessions'), {
+        timeout: 60_000,
+        intervals: [250, 500, 1000],
+        message: '本例 SQL 会话仍在执行，拒绝宣布清理完成',
+      })
+      .toBe(0)
   }
 }
 
@@ -284,6 +321,13 @@ export class QuartzDailyProgressFixture extends ControlProgressFixture {
     return this.ownedSql<{
       definitionVersion: number | null
       occurrences: Array<{ status: string; bizDate: string | null; scheduledFireTime: string }>
+      actualFires: Array<{
+        scheduledFireTime: string
+        fireInstanceId: string
+        refireCount: number
+        actualFireTime: string
+        fireKind: string
+      }>
       coverage: {
         scheduleVersion: number
         coverageThrough: string
@@ -292,6 +336,13 @@ export class QuartzDailyProgressFixture extends ControlProgressFixture {
     }>('quartz-progress-state', {
       workflow_definition_id: String(this.scheduledWorkflowDefinitionId),
     })
+  }
+
+  prepareHistoricalOccurrence() {
+    return this.ownedSql<{ insertedRows: number; scheduledFireTime: string }>(
+      'quartz-progress-historical',
+      { workflow_definition_id: String(this.scheduledWorkflowDefinitionId) },
+    )
   }
 
   async disableScheduledWorkflow(request: APIRequestContext) {
@@ -329,18 +380,25 @@ export class PersistentWaitFixture extends ControlProgressFixture {
   readonly userName = `wait-user-${randomUUID()}`
   readonly readinessRequestId = `wait-readiness-${randomUUID()}`
   readonly capacityRequestId = `wait-capacity-${randomUUID()}`
+  readonly jobWaitRequestId = `wait-job-${randomUUID()}`
+  readonly jobWaitParentRequestId = `wait-job-parent-${randomUUID()}`
   workflowDefinitionId = 0
   workflowCode = ''
   private roleAccountsPrepared = false
   private waitsSeeded = false
 
   prepareWaitRoles() {
-    const result = this.ownedSql<{ roleAccountsCreated: number }>('persistent-waits-prepare', {
+    // 结果超时并不代表插入未提交；保留本例身份供 finally 清理。
+    this.roleAccountsPrepared = true
+    const result = this.insertWaitRoles()
+    expect(result.roleAccountsCreated).toBe(2)
+  }
+
+  protected insertWaitRoles() {
+    return this.ownedSql<{ roleAccountsCreated: number }>('persistent-waits-prepare', {
       auditor_name: this.auditorName,
       user_name: this.userName,
     })
-    this.roleAccountsPrepared = true
-    expect(result.roleAccountsCreated).toBe(2)
   }
 
   seedWaits(workflowDefinitionId: number, workflowCode: string) {
@@ -355,6 +413,8 @@ export class PersistentWaitFixture extends ControlProgressFixture {
         biz_date: this.bizDate,
         readiness_request_id: this.readinessRequestId,
         capacity_request_id: this.capacityRequestId,
+        job_wait_request_id: this.jobWaitRequestId,
+        job_wait_parent_request_id: this.jobWaitParentRequestId,
       },
     )
     expect(result).toEqual({ readinessCount: 1, capacityCount: 1 })
@@ -373,7 +433,15 @@ export class PersistentWaitFixture extends ControlProgressFixture {
     })
   }
 
+  jobDependencyWaitState() {
+    return this.ownedSql<{ status: string | null; attempts: number; reason: string | null }>(
+      'persistent-waits-job-state',
+      { job_wait_request_id: this.jobWaitRequestId },
+    )
+  }
+
   override async finish(request: APIRequestContext, reader?: APIRequestContext) {
+    await this.waitForOwnedSqlSessions()
     let waitCleanup: Record<string, number> = {}
     let roleAccountCleanup = 0
     if (this.waitsSeeded) {
@@ -381,6 +449,8 @@ export class PersistentWaitFixture extends ControlProgressFixture {
         workflow_definition_id: String(this.workflowDefinitionId),
         readiness_request_id: this.readinessRequestId,
         capacity_request_id: this.capacityRequestId,
+        job_wait_request_id: this.jobWaitRequestId,
+        job_wait_parent_request_id: this.jobWaitParentRequestId,
       })
       expect(Object.values(waitCleanup).reduce((sum, count) => sum + count, 0)).toBe(0)
     }

@@ -61,20 +61,150 @@
           />
         </div>
 
-        <section v-if="evidence" class="lineage-section">
-          <div class="lineage-section__header">{{ t('lineageEvidence.resultVersionTitle') }}</div>
-          <JsonPreview :data="evidence.resultVersion || {}" />
+        <section v-if="evidence" class="lineage-section" aria-labelledby="lineage-summary-title">
+          <h2 id="lineage-summary-title" class="lineage-section__header">
+            {{ t('lineageEvidence.summaryTitle') }}
+          </h2>
+          <p class="lineage-summary__hint">{{ t('lineageEvidence.summaryHint') }}</p>
+          <div class="lineage-summary">
+            <article class="lineage-summary__card">
+              <h3>{{ t('lineageEvidence.resultVersionTitle') }}</h3>
+              <p>{{ t('lineageEvidence.recordId') }}: {{ evidence.resultVersion.id ?? '—' }}</p>
+              <p>
+                {{ t('lineageEvidence.businessKeyLabel') }}:
+                {{ evidence.resultVersion.businessKey || '—' }}
+              </p>
+              <p>
+                {{ t('lineageEvidence.versionNo') }}: {{ evidence.resultVersion.versionNo ?? '—' }}
+              </p>
+              <p>
+                {{ t('lineageEvidence.jobInstanceId') }}:
+                {{ evidence.resultVersion.jobInstanceId ?? '—' }}
+              </p>
+            </article>
+            <article class="lineage-summary__card">
+              <h3>{{ t('lineageEvidence.jobInstanceTitle') }}</h3>
+              <template v-if="evidence.jobInstance">
+                <p>{{ t('lineageEvidence.recordId') }}: {{ evidence.jobInstance.id ?? '—' }}</p>
+                <p>
+                  {{ t('lineageEvidence.jobCodeLabel') }}:
+                  {{ evidence.jobInstance.job_code || '—' }}
+                </p>
+                <p>
+                  {{ t('lineageEvidence.recordStatus') }}:
+                  {{ evidence.jobInstance.instance_status || '—' }}
+                </p>
+                <p>
+                  {{ t('lineageEvidence.relatedFileId') }}:
+                  {{ evidence.jobInstance.related_file_id ?? '—' }}
+                </p>
+              </template>
+              <p v-else>{{ t('lineageEvidence.recordUnavailable') }}</p>
+            </article>
+          </div>
+          <div class="lineage-summary__groups">
+            <section>
+              <h3>{{ t('lineageEvidence.pipelineInstances') }}</h3>
+              <p v-if="!evidence.pipelineInstances?.length">{{ t('common.noData') }}</p>
+              <ul v-else>
+                <li
+                  v-for="(item, index) in evidence.pipelineInstances.slice(0, 3)"
+                  :key="item.id ?? index"
+                >
+                  <strong>#{{ item.id ?? '—' }}</strong>
+                  <span>{{ t('lineageEvidence.recordStatus') }}: {{ item.run_status || '—' }}</span>
+                  <span
+                    >{{ t('lineageEvidence.jobInstanceId') }}:
+                    {{ item.related_job_instance_id ?? '—' }}</span
+                  >
+                  <span>{{ t('lineageEvidence.relatedFileId') }}: {{ item.file_id ?? '—' }}</span>
+                </li>
+              </ul>
+              <p v-if="(evidence.pipelineInstances?.length ?? 0) > 3">
+                {{
+                  t('lineageEvidence.moreRecords', {
+                    count: (evidence.pipelineInstances?.length ?? 0) - 3,
+                  })
+                }}
+              </p>
+            </section>
+            <section>
+              <h3>{{ t('lineageEvidence.fileRecords') }}</h3>
+              <p v-if="!evidence.fileRecords?.length">{{ t('common.noData') }}</p>
+              <ul v-else>
+                <li
+                  v-for="(item, index) in evidence.fileRecords.slice(0, 3)"
+                  :key="item.id ?? index"
+                >
+                  <strong>#{{ item.id ?? '—' }}</strong>
+                  <span>{{ t('lineageEvidence.fileName') }}: {{ item.file_name || '—' }}</span>
+                  <span
+                    >{{ t('lineageEvidence.recordStatus') }}: {{ item.file_status || '—' }}</span
+                  >
+                </li>
+              </ul>
+              <p v-if="(evidence.fileRecords?.length ?? 0) > 3">
+                {{
+                  t('lineageEvidence.moreRecords', {
+                    count: (evidence.fileRecords?.length ?? 0) - 3,
+                  })
+                }}
+              </p>
+            </section>
+            <section>
+              <h3>{{ t('lineageEvidence.dispatchRecords') }}</h3>
+              <p v-if="!evidence.dispatchRecords?.length">{{ t('common.noData') }}</p>
+              <ul v-else>
+                <li
+                  v-for="(item, index) in evidence.dispatchRecords.slice(0, 3)"
+                  :key="item.id ?? index"
+                >
+                  <strong>#{{ item.id ?? '—' }}</strong>
+                  <span
+                    >{{ t('lineageEvidence.recordStatus') }}:
+                    {{ item.dispatch_status || '—' }}</span
+                  >
+                  <span>{{ t('lineageEvidence.relatedFileId') }}: {{ item.file_id ?? '—' }}</span>
+                  <span
+                    >{{ t('lineageEvidence.pipelineId') }}:
+                    {{ item.pipeline_instance_id ?? '—' }}</span
+                  >
+                </li>
+              </ul>
+              <p v-if="(evidence.dispatchRecords?.length ?? 0) > 3">
+                {{
+                  t('lineageEvidence.moreRecords', {
+                    count: (evidence.dispatchRecords?.length ?? 0) - 3,
+                  })
+                }}
+              </p>
+            </section>
+          </div>
+          <el-alert
+            v-if="evidence.coverage?.knownGaps?.length"
+            type="warning"
+            :closable="false"
+            show-icon
+          >
+            <template #title>{{ t('lineageEvidence.coverageGaps') }}</template>
+            <ul>
+              <li v-for="gap in evidence.coverage.knownGaps" :key="gap">{{ gap }}</li>
+            </ul>
+          </el-alert>
         </section>
 
-        <section v-if="evidence" class="lineage-section">
-          <div class="lineage-section__header">{{ t('lineageEvidence.jobInstanceTitle') }}</div>
-          <JsonPreview :data="evidence.jobInstance || {}" />
-        </section>
+        <LineageRelationExplorer v-if="evidence" :evidence="evidence" />
 
-        <section v-if="evidence" class="lineage-section">
-          <div class="lineage-section__header">{{ t('lineageEvidence.coverageTitle') }}</div>
-          <JsonPreview :data="evidence.coverage || {}" />
-        </section>
+        <el-collapse v-if="evidence" class="lineage-section">
+          <el-collapse-item :title="t('lineageEvidence.originalEvidence')" name="original">
+            <h3 class="lineage-section__header">{{ t('lineageEvidence.resultVersionTitle') }}</h3>
+            <JsonPreview :data="evidence.resultVersion || {}" />
+            <h3 class="lineage-section__header">{{ t('lineageEvidence.jobInstanceTitle') }}</h3>
+            <JsonPreview :data="evidence.jobInstance || {}" />
+            <h3 class="lineage-section__header">{{ t('lineageEvidence.coverageTitle') }}</h3>
+            <JsonPreview :data="evidence.coverage || {}" />
+          </el-collapse-item>
+        </el-collapse>
 
         <section v-if="evidence" class="lineage-section">
           <div class="lineage-section__header">{{ t('lineageEvidence.relatedRowsTitle') }}</div>
@@ -167,7 +297,7 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, defineComponent, h, reactive, ref, type PropType } from 'vue'
+  import { computed, defineComponent, h, reactive, ref, watch, type PropType } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage, ElTable, ElTableColumn } from 'element-plus'
   import { RefreshCw as Refresh } from '@lucide/vue'
@@ -180,15 +310,19 @@
   } from '@/api/lineage'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
+  import { useTenantRequestScope } from '@/composables/useTenantRequestScope'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import MetricCard from '@/components/common/MetricCard.vue'
   import JsonPreview from '@/components/common/JsonPreview.vue'
+  import LineageRelationExplorer from './LineageRelationExplorer.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import { todayBusinessDate } from '@/utils/datetime'
 
   const { t } = useI18n({ useScope: 'global' })
   const tenant = useTenantStore()
+  const evidenceScope = useTenantRequestScope()
+  const readinessScope = useTenantRequestScope()
   const activeTab = ref<'evidence' | 'readiness'>('evidence')
   const relatedTab = ref<'pipelines' | 'files' | 'dispatches'>('pipelines')
   const evidenceMode = ref<'businessKey' | 'resultVersion'>('businessKey')
@@ -218,22 +352,28 @@
       ElMessage.warning(t('lineageEvidence.resultVersionRequired'))
       return
     }
+    const scope = evidenceScope.begin()
+    if (!scope.tenantId) return
     loadingEvidence.value = true
     try {
-      evidence.value =
+      const response =
         evidenceMode.value === 'businessKey'
-          ? await getLineageEvidenceByBusinessKey(businessKey.value.trim(), tenant.tenantId)
-          : await getLineageEvidenceByResultVersion(
-              resultVersionId.value as number,
-              tenant.tenantId,
-            )
+          ? await getLineageEvidenceByBusinessKey(businessKey.value.trim(), scope.tenantId)
+          : await getLineageEvidenceByResultVersion(resultVersionId.value as number, scope.tenantId)
+      if (!evidenceScope.isCurrent(scope)) return
+      evidence.value = response
       ElMessage.success(t('lineageEvidence.loadOk'))
+    } catch (error) {
+      if (!evidenceScope.isCurrent(scope)) return
+      throw error
     } finally {
-      loadingEvidence.value = false
+      if (evidenceScope.isCurrent(scope)) loadingEvidence.value = false
     }
   }
 
   function resetEvidence() {
+    evidenceScope.begin()
+    loadingEvidence.value = false
     businessKey.value = ''
     resultVersionId.value = undefined
     evidence.value = null
@@ -244,20 +384,29 @@
       ElMessage.warning(t('lineageEvidence.readinessRequired'))
       return
     }
+    const scope = readinessScope.begin()
+    if (!scope.tenantId) return
     loadingReadiness.value = true
     try {
-      readiness.value = await getAssetPartitionReadiness({
-        tenantId: tenant.tenantId,
+      const response = await getAssetPartitionReadiness({
+        tenantId: scope.tenantId,
         jobCode: readinessQuery.jobCode.trim(),
         bizDate: readinessQuery.bizDate,
       })
+      if (!readinessScope.isCurrent(scope)) return
+      readiness.value = response
       ElMessage.success(t('lineageEvidence.loadOk'))
+    } catch (error) {
+      if (!readinessScope.isCurrent(scope)) return
+      throw error
     } finally {
-      loadingReadiness.value = false
+      if (readinessScope.isCurrent(scope)) loadingReadiness.value = false
     }
   }
 
   function resetReadiness() {
+    readinessScope.begin()
+    loadingReadiness.value = false
     readinessQuery.jobCode = ''
     readinessQuery.bizDate = todayBusinessDate()
     readiness.value = null
@@ -268,7 +417,29 @@
     else void loadEvidence()
   }
 
+  watch(
+    [evidenceMode, businessKey, resultVersionId],
+    () => {
+      evidenceScope.begin()
+      loadingEvidence.value = false
+      evidence.value = null
+    },
+    { flush: 'sync' },
+  )
+  watch(
+    [() => readinessQuery.jobCode, () => readinessQuery.bizDate],
+    () => {
+      readinessScope.begin()
+      loadingReadiness.value = false
+      readiness.value = null
+    },
+    { flush: 'sync' },
+  )
   useTenantReload(() => {
+    evidenceScope.begin()
+    readinessScope.begin()
+    loadingEvidence.value = false
+    loadingReadiness.value = false
     evidence.value = null
     readiness.value = null
   })
@@ -344,6 +515,49 @@
     color: var(--color-text-primary);
     font-size: 13px;
     font-weight: 650;
+  }
+
+  .lineage-summary__hint {
+    color: var(--color-text-secondary);
+  }
+  .lineage-summary,
+  .lineage-summary__groups {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+    gap: var(--space-md);
+    margin: var(--space-md) 0;
+  }
+  .lineage-summary__card,
+  .lineage-summary__groups section {
+    padding: var(--space-md);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-content);
+    background: var(--color-bg-card);
+    overflow-wrap: anywhere;
+  }
+  .lineage-summary h3,
+  .lineage-summary__groups h3 {
+    margin: 0 0 var(--space-sm);
+    font-size: 14px;
+  }
+  .lineage-summary p,
+  .lineage-summary__groups p {
+    margin: var(--space-xs) 0;
+  }
+  .lineage-summary__groups ul {
+    padding: 0;
+    margin: 0;
+    list-style: none;
+  }
+  .lineage-summary__groups li {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+    padding: var(--space-sm) 0;
+    border-bottom: 1px solid var(--color-border-light);
+  }
+  .lineage-summary__groups li:last-child {
+    border-bottom: 0;
   }
 
   .readiness-header {

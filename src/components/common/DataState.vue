@@ -1,6 +1,6 @@
 <template>
   <!-- loading 首屏(rows 都还没拿到):骨架 -->
-  <TableSkeleton v-if="loading && !hasData" :rows="skeletonRows" />
+  <TableSkeleton v-if="loading && !hasData" :rows="skeletonRows" layout="content" />
 
   <!-- error:用 EmptyState 'error' 变体 + 重试按钮(若 onRetry 提供) -->
   <EmptyState v-else-if="error" variant="error" :description="errorText">

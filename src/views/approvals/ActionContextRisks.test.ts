@@ -41,6 +41,7 @@ vi.mock('@/stores/tenant', () => ({ useTenantStore: () => mocks.state }))
 vi.mock('@/stores/app', () => ({ useAppStore: () => mocks.state }))
 vi.mock('@/stores/auth', () => ({
   useAuthStore: () => ({
+    profileLoaded: true,
     userInfo: { username: 'operator' },
     hasPermission: (role: string) => mocks.state.writer && role === 'ROLE_ADMIN',
   }),
@@ -146,6 +147,18 @@ const stubs = {
   PageContainer: pass,
   PageHeader: pass,
   SectionCard: pass,
+  DetailDrawer: {
+    name: 'DetailDrawer',
+    props: ['raw', 'visible', 'title', 'size'],
+    template: '<section><slot /></section>',
+  },
+  ElDescriptions: pass,
+  ElDescriptionsItem: { props: ['label'], template: '<div><span>{{ label }}</span><slot /></div>' },
+  ElTimeline: pass,
+  ElTimelineItem: {
+    props: ['timestamp'],
+    template: '<div class="timeline-item" :data-time="timestamp"><slot /></div>',
+  },
   ElTabs: pass,
   ElTabPane: pass,
   BulkActionBar: {
@@ -282,6 +295,36 @@ describe('审批提交与读取范围', () => {
     old.resolve({ items: [approval('AP-41')], total: 1 })
     await flushPromises()
     expect(wrapper.findComponent(table).props('data')).toEqual([approval('AP-52')])
+  })
+  it('审批详情仅展示实际发生的时间并保留申请摘要和原始载荷', async () => {
+    mocks.approvals.mockResolvedValue({
+      items: [
+        {
+          ...approval(),
+          approvalStatus: 'REJECTED',
+          targetType: 'JOB',
+          targetId: '77',
+          requesterId: 'alice',
+          rejectionReason: '需要补充信息',
+          payloadJson: '{"job":"daily"}',
+          createdAt: '2026-10-26T00:00:00Z',
+          approvedAt: '2026-10-26T01:00:00Z',
+          executedAt: null,
+        },
+      ],
+      total: 1,
+    })
+    const wrapper = renderApprovals()
+    await flushPromises()
+    await wrapper.find('.action-detail').trigger('click')
+    const detail = wrapper.findComponent({ name: 'DetailDrawer' })
+    expect(detail.text()).toContain('alice')
+    expect(detail.text()).toContain('需要补充信息')
+    expect(detail.text()).toContain('77')
+    expect(detail.findAll('.timeline-item')).toHaveLength(2)
+    expect(detail.text()).toContain('approvals.colApprovedAt')
+    expect(detail.text()).not.toContain('approvals.colExecutedAt')
+    expect(detail.props('raw')).toEqual({ job: 'daily' })
   })
   it('当前租户正常审批保持原目标和原因', async () => {
     const wrapper = renderApprovals()

@@ -8,11 +8,21 @@
 
 Pipeline完整SSE的真实传输与SQL投影验证使用`E2E_SKIP_GLOBAL_SETUP=1 npm run test:e2e:pipeline-progress:real`，该入口不代表Worker实际执行；环境与精确清理见[runtime-progress夹具说明](../../e2e/fixtures/runtime-progress/README.md)。
 
+字段映射助手的真实 SQL 模板导出使用 `E2E_SKIP_GLOBAL_SETUP=1 npm run test:e2e:export-mapping:real`；它校验真实 Worker 的文件内容、分页游标、租户与批次隔离、对象校验和及运行 DAG 键盘交互，环境与清理边界见 [runtime-progress 夹具说明](../../e2e/fixtures/runtime-progress/README.md)。
+
 DISPATCH真实字节传输与未知结果恢复使用`E2E_SKIP_GLOBAL_SETUP=1 npm run test:e2e:dispatch-worker-progress:real`，额外提供本地真实对象上游`E2E_DISPATCH_OBJECT_UPSTREAM`；正式NAS适配器到独占目录，进程中断后先验证未知结果阻断，再核实未发布并经不同身份申请／审批恢复。真实传输、页面推送、字节／SHA／回执、权限与清理分别留证，不能把local／test profile的NAS stub当真实传输；详见[runtime-progress说明](../../e2e/fixtures/runtime-progress/README.md)。
 
 当前运行DAG/每日进度真实验收：`npm run test:e2e:progress:real`，真实API操作Workflow暂停/恢复并由运行详情SSE呈现冻结图；运维总览展示手工业务日统计。本控制图无Job/Worker，日期不代表Quartz计划或当前业务日；环境要求与独占身份/清理流程见 [runtime-progress夹具说明](../../e2e/fixtures/runtime-progress/README.md)。这是一条定向真实业务链，不代替Worker、Quartz或全量发布验收。
 
-真实Atomic Worker作业进度闭环：`E2E_SKIP_GLOBAL_SETUP=1 npm run test:e2e:worker-progress:real`。该场景真实创建并触发Workflow作业、启动独占Worker，经Kafka/Orchestrator执行只读SQL，核对运行DAG、关联Job实时状态、租户每日统计及零残留；DAG显示状态使用关联实例的实际状态，同时保留Workflow节点自身状态。不能与SQL推进Pipeline的传输验收混为一谈。认证、端口、数据库及清理要求见 [runtime-progress夹具说明](../../e2e/fixtures/runtime-progress/README.md)。
+真实Atomic Worker作业进度闭环：`E2E_SKIP_GLOBAL_SETUP=1 npm run test:e2e:worker-progress:real`。该场景真实创建并触发Workflow作业、启动独占Worker，经Kafka/Orchestrator执行只读SQL，核对运行DAG、关联Job实时状态和租户每日统计；四类角色在同一真实运行上分别检查授权后的图、Job进度和SSE。DAG显示状态使用关联实例的实际状态，同时保留Workflow节点自身状态。不能与SQL推进Pipeline的传输验收混为一谈。认证、端口、数据库及清理范围见 [runtime-progress夹具说明](../../e2e/fixtures/runtime-progress/README.md)。
+
+四角色菜单、全局搜索、直链与后端权限的定向真实入口为：
+
+```bash
+E2E_SKIP_GLOBAL_SETUP=1 E2E_ROLE_NAVIGATION_REAL=1 node scripts/run-playwright.mjs test e2e/role-navigation-real.spec.ts --project=chromium --workers=1 --retries=0
+```
+
+它要求专属一次性数据库、独占验收窗口和真实认证，不运行固定身份的全局准备／清理；逐项检查六条代表性路径、移动底栏及其受限直链、两个权限不同的只读API。结果附件记录实际角色、入口、状态与脱敏路由观察，不保存凭据。夹具只回收本例身份和业务租户等指定表；登录审计与日用量派生数据需单独回读，并在结束后销毁专属隔离环境，不能据夹具计数声称整个数据库零残留。真实运行结论以对应日期验收证据为准；测试发现或静态检查不算真实通过。
 
 Atomic 执行器运行态验收：设置`E2E_ATOMIC_RUNTIME_MODE=available`并提供真实Worker地址`E2E_ATOMIC_WORKER_URL`，或设置`E2E_ATOMIC_RUNTIME_MODE=unavailable`并在真实Console配置中禁用反向查询；同时指定`E2E_BASE_URL`、`E2E_CLOSURE_PG_CONTAINER/USER/DATABASE`并启用真实认证，然后运行`E2E_SKIP_GLOBAL_SETUP=1 npm run test:e2e:atomic-runtime:real`。场景核对 Worker/Console 状态、四角色读取权限、禁用时的降级提示与隐藏明细，并精确清理独占数据；结果写入上海本地日期目录`docs/reports/assets/atomic-runtime-YYYY-MM-DD/`。详细夹具与运行包要求见[runtime-progress夹具说明](../../e2e/fixtures/runtime-progress/README.md)。
 

@@ -159,8 +159,12 @@ export function copyTenantConfig(body: {
   jobCodes?: string[]
   mode?: 'SKIP_EXISTING' | 'UPSERT'
   dryRun?: boolean
-}) {
-  return post<TenantConfigCopyResponse>('/api/console/config/tenant-copy', body)
+}, idempotencyKey?: string) {
+  return idempotencyKey
+    ? post<TenantConfigCopyResponse>('/api/console/config/tenant-copy', body, {
+        headers: { 'Idempotency-Key': idempotencyKey },
+      })
+    : post<TenantConfigCopyResponse>('/api/console/config/tenant-copy', body)
 }
 
 /** POST /api/console/config/tenant-copy/preview */

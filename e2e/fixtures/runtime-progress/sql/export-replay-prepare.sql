@@ -10,8 +10,11 @@ SELECT format('INSERT INTO biz.%I VALUES (1, %L, %L)', :'batch_table', :'tenant_
 SELECT format('INSERT INTO biz.%I SELECT %L, 1, n, lpad(n::text, 6, ''0''), n * 1.25 FROM generate_series(1, 1200) n', :'detail_table', :'tenant_id') \gexec
 SELECT format('INSERT INTO biz.%I VALUES (%L, 1, 999999, ''OUTSIDE-TENANT'', -1)', :'detail_table', :'tenant_id' || '-other') \gexec
 SELECT format('CREATE INDEX ON biz.%I (tenant_id, batch_id, row_no)', :'detail_table') \gexec
+SELECT format('CREATE INDEX ON biz.%I (tenant_id, row_no)', :'detail_table') \gexec
 SELECT format('ANALYZE biz.%I', :'detail_table') \gexec
-SELECT format('CREATE VIEW biz.%I WITH (security_invoker=true) AS SELECT tenant_id, batch_id, row_no, record_no, amount FROM biz.%I WHERE pg_sleep(0.04) IS NOT NULL', :'detail_view', :'detail_table') \gexec
+-- 映射文件验收不需要故障观察窗口；整轮恢复验收仍使用延迟视图。
+SELECT format('CREATE VIEW biz.%I WITH (security_invoker=true) AS SELECT tenant_id, batch_id, row_no, record_no, amount, row_no AS id FROM biz.%I%s',
+  :'detail_view', :'detail_table', CASE WHEN :'export_data_ref' = '' THEN '' ELSE ' WHERE pg_sleep(0.04) IS NOT NULL' END) \gexec
 GRANT USAGE ON SCHEMA biz TO batch_business_writer;
 SELECT format('GRANT SELECT ON biz.%I TO batch_business_writer', name) FROM unnest(ARRAY[:'batch_table', :'detail_table', :'detail_view']) name \gexec
 INSERT INTO batch.file_template_config (
@@ -32,7 +35,7 @@ INSERT INTO batch.file_template_config (
     'batchNoColumn', 'batch_no', 'batchSelectColumns', jsonb_build_array('id','batch_no','tenant_id'),
     'detailTable', :'detail_view', 'detailFkColumn', 'batch_id', 'detailOrderByColumn', 'row_no',
     'detailSelectColumns', jsonb_build_array('row_no','record_no','amount'))),
-  true, 25, 25, 25, 'jdbc_mapped_export', true, 1, 'e2e', 'e2e'
+  true, 25, 25, 25, NULLIF(:'export_data_ref', ''), true, 1, 'e2e', 'e2e'
 );
 COMMIT;
 SELECT json_build_object('templates', count(*)) FROM batch.file_template_config

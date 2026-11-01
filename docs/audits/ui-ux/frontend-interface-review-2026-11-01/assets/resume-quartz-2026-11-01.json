@@ -1,0 +1,48 @@
+{
+  "proof": {
+    "plannedOccurrencesBeforeFire": 1,
+    "scheduleVersionCovered": true,
+    "initialCoverage": {
+      "scheduledDefinitions": 1,
+      "uncoveredDefinitions": 0
+    },
+    "dailyCoverage": {
+      "scheduledDefinitions": 1,
+      "uncoveredDefinitions": 0
+    },
+    "occurrenceStatusAfterRun": "REQUESTED",
+    "observedActualFires": 1,
+    "historicalActualFires": 0,
+    "workflowRunStatus": "SUCCESS",
+    "pushedRunStatus": "RUN_SUCCESS",
+    "periodicDailyProgressGets": 0
+  },
+  "cleanup": {
+    "definitions": 0,
+    "nodes": 0,
+    "edges": 0,
+    "versions": 0,
+    "runs": 0,
+    "nodeRuns": 0,
+    "requests": 0,
+    "jobInstances": 0,
+    "terminalEvents": 0,
+    "terminalReceipts": 0,
+    "terminalDedupKeys": 0,
+    "calendars": 0,
+    "batchDays": 0,
+    "dayCursors": 0,
+    "dayAudits": 0,
+    "catchupControls": 0,
+    "catchupEvents": 0,
+    "tenants": 0,
+    "configurationRevisions": 0,
+    "operationAudits": 0,
+    "actualFiresRemaining": 0,
+    "catchUpAuditRemaining": 0,
+    "supersessionHistoryRemaining": 0,
+    "scheduledOccurrencesRemaining": 0,
+    "coverageRowsRemaining": 0,
+    "credentialAccounts": 0
+  }
+}

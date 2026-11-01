@@ -91,6 +91,7 @@
     </SectionCard>
 
     <el-drawer v-model="rangeDrawerOpen" :title="t('batchDayReplay.rangeSubmitTitle')" direction="rtl" size="560px">
+      <p class="replay-flow-hint">{{ t('batchDayReplay.submitFlowHint') }}</p>
       <el-form label-width="120px">
         <el-form-item :label="t('batchDayReplay.fieldMode')" required>
           <el-segmented
@@ -197,6 +198,7 @@
     </el-drawer>
 
     <el-drawer v-model="operationDrawerOpen" :title="t('batchDayReplay.operationDetailTitle')" direction="rtl" size="520px">
+      <ReplayStatusSummary v-if="currentOperation" :record="currentOperation" />
       <el-descriptions v-if="currentOperation" :column="1" border>
         <el-descriptions-item :label="t('batchDayReplay.colId')">{{ currentOperation.id }}</el-descriptions-item>
         <el-descriptions-item :label="t('batchDayReplay.operationRange')">{{ currentOperation.fromDate }} – {{ currentOperation.throughDate }}</el-descriptions-item>
@@ -211,8 +213,8 @@
         <el-table-column :label="t('batchDayReplay.colStatus')" prop="status" width="150" />
         <el-table-column :label="t('batchDayReplay.colProgress')" min-width="160">
           <template #default="{ row }">
-            {{ row.succeededCount ?? 0 }} / {{ row.totalCount ?? 0 }}
-            <span class="cell-mute">({{ row.failedCount ?? 0 }} {{ t('batchDayReplay.colFailed') }})</span>
+            {{ row.succeededCount ?? '—' }} / {{ row.totalCount ?? '—' }}
+            <span class="cell-mute">({{ row.failedCount ?? '—' }} {{ t('batchDayReplay.colFailed') }})</span>
           </template>
         </el-table-column>
         <el-table-column :label="t('common.actions')" width="100" fixed="right">
@@ -242,6 +244,7 @@
       size="640px"
       :before-close="onSubmitClose"
     >
+      <p v-if="!submissionOutcomeUnknown" class="replay-flow-hint">{{ t('batchDayReplay.submitFlowHint') }}</p>
       <el-alert
         v-if="submissionOutcomeUnknown"
         type="warning"
@@ -561,6 +564,7 @@
       size="720px"
     >
       <div v-if="currentSession">
+        <ReplayStatusSummary :record="currentSession" />
         <el-descriptions :column="2" border size="small">
           <el-descriptions-item :label="t('batchDayReplay.colStatus')">
             <el-tag :type="statusTagType(currentSession.status)">{{
@@ -591,6 +595,7 @@
         </el-descriptions>
 
         <el-progress
+          v-if="currentSession.totalCount != null && currentSession.totalCount > 0 && currentSession.succeededCount != null && currentSession.failedCount != null"
           :percentage="progressPct(currentSession)"
           :status="progressStatus(currentSession)"
           class="detail-progress"
@@ -598,10 +603,10 @@
         <div class="cell-mute">
           {{
             t('batchDayReplay.entriesSummary', {
-              ok: currentSession.succeededCount ?? 0,
-              fail: currentSession.failedCount ?? 0,
-              pending: currentSession.inFlightCount ?? 0,
-              total: currentSession.totalCount ?? 0,
+              ok: currentSession.succeededCount ?? '—',
+              fail: currentSession.failedCount ?? '—',
+              pending: currentSession.inFlightCount ?? '—',
+              total: currentSession.totalCount ?? '—',
             })
           }}
         </div>
@@ -645,7 +650,7 @@
           <el-table-column :label="t('common.actions')" width="150" fixed="right">
             <template #default="{ row }">
               <el-button
-                v-if="row.status === 'FAILED' && row.rerunInstanceId == null"
+                v-if="canRetryEntry(row as BatchDayReplayEntry)"
                 link
                 type="primary"
                 :disabled="writesFrozen || retryingEntryId === row.id"
@@ -691,6 +696,7 @@
   import StatusSegment from '@/components/table/StatusSegment.vue'
   import ResultVersionGovernancePanel from './components/ResultVersionGovernancePanel.vue'
   import BatchDayReplaySessionsTable from './components/BatchDayReplaySessionsTable.vue'
+  import ReplayStatusSummary from './components/ReplayStatusSummary.vue'
   import type { BatchDayReplaySession, BatchDayReplayEntry, ReplayOperation } from '@/api/batchDayReplay'
   import { useBatchDayReplay } from './composables/useBatchDayReplay'
 
@@ -771,12 +777,19 @@
     reloadCurrent,
     loadEntries,
     retryFailedSubmission,
+    canRetryEntry,
     doApprove,
     doCancel,
   } = useBatchDayReplay()
 </script>
 
 <style scoped>
+  .replay-flow-hint {
+    margin: 0 0 var(--space-md);
+    color: var(--color-text-secondary);
+    line-height: 1.6;
+  }
+
   .replay-card__title {
     display: flex;
     flex-wrap: wrap;

@@ -36,6 +36,14 @@
         <el-tab-pane :label="t('notificationManagement.tabWebhooks')" name="webhooks">
           <NotificationWebhooksTab ref="webhooksTabRef" />
         </el-tab-pane>
+        <el-tab-pane
+          v-if="canPreviewRoute"
+          :label="t('notificationManagement.tabRoutePreview')"
+          name="routePreview"
+          lazy
+        >
+          <NotificationRoutePreview />
+        </el-tab-pane>
         <el-tab-pane :label="t('notificationManagement.tabDeliveryLogs')" name="deliveryLogs">
           <NotificationDeliveryLogsTab />
         </el-tab-pane>
@@ -58,9 +66,17 @@
   import NotificationWebhooksTab from './components/NotificationWebhooksTab.vue'
   import NotificationDeliveryLogsTab from './components/NotificationDeliveryLogsTab.vue'
   import NotificationTerminalDeliveriesTab from './components/NotificationTerminalDeliveriesTab.vue'
+  import NotificationRoutePreview from './components/NotificationRoutePreview.vue'
+  import { useAuthStore } from '@/stores/auth'
 
   const { t } = useI18n({ useScope: 'global' })
-  type NotificationTab = 'channels' | 'rules' | 'webhooks' | 'deliveryLogs' | 'terminalDeliveries'
+  type NotificationTab =
+    | 'channels'
+    | 'rules'
+    | 'webhooks'
+    | 'routePreview'
+    | 'deliveryLogs'
+    | 'terminalDeliveries'
   type CreateTabExpose = {
     openChannelCreate?: () => void
     openRuleCreate?: () => void
@@ -68,6 +84,10 @@
   }
 
   const activeTab = ref<NotificationTab>('channels')
+  const auth = useAuthStore()
+  const canPreviewRoute = computed(
+    () => auth.hasPermission('ROLE_ADMIN') || auth.hasPermission('ROLE_TENANT_ADMIN'),
+  )
   const channelsTabRef = ref<CreateTabExpose | null>(null)
   const rulesTabRef = ref<CreateTabExpose | null>(null)
   const webhooksTabRef = ref<CreateTabExpose | null>(null)

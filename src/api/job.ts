@@ -203,12 +203,20 @@ export const jobApi = {
   clone: (id: number, tenantId: string, newJobCode: string) =>
     post<number>(`/api/console/job-definitions/${id}/clone`, { tenantId, newJobCode }),
 
-  createBundle: (body: JobBundleCreateRequest) =>
-    post<components['schemas']['JobBundleResultResponse']>('/api/console/jobs/bundle/create', body),
+  createBundle: (body: JobBundleCreateRequest, idempotencyKey?: string) =>
+    idempotencyKey
+      ? post<components['schemas']['JobBundleResultResponse']>('/api/console/jobs/bundle/create', body, {
+          headers: { 'Idempotency-Key': idempotencyKey },
+        })
+      : post<components['schemas']['JobBundleResultResponse']>('/api/console/jobs/bundle/create', body),
 
   exportBundle: (tenantId: string, jobCode: string) =>
     get<Record<string, unknown>>('/api/console/jobs/bundle/export', { tenantId, jobCode }),
 
-  importBundle: (body: JobBundleImportRequest) =>
-    post<components['schemas']['JobBundleResultResponse']>('/api/console/jobs/bundle/import', body),
+  importBundle: (body: JobBundleImportRequest, idempotencyKey?: string) =>
+    idempotencyKey
+      ? post<components['schemas']['JobBundleResultResponse']>('/api/console/jobs/bundle/import', body, {
+          headers: { 'Idempotency-Key': idempotencyKey },
+        })
+      : post<components['schemas']['JobBundleResultResponse']>('/api/console/jobs/bundle/import', body),
 }

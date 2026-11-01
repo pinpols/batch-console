@@ -7,6 +7,7 @@ describe('STORAGE_KEYS', () => {
       tenantId: 'batch-console-tenant-id',
       operationLog: 'batch-console-oplog',
       session: 'batch-console-session',
+      authSessionRevision: 'batch-console-auth-session-revision',
       passwordNotice: 'batch-console-password-notice',
       telemetry: 'batch-console-telemetry',
       onboardingDone: 'batch-console-onboarding-done',
@@ -22,6 +23,7 @@ describe('STORAGE_KEYS', () => {
       batchDayCatchUpRecoveryPrefix: 'batch-console:batch-day-catch-up:',
       batchDayGovernanceRecoveryPrefix: 'batch-console:batch-day-governance:',
       configSyncRecoveryPrefix: 'batch-console:config-sync-recovery:',
+      configBatchRecoveryPrefix: 'batch-console:config-batch-recovery:',
     })
   })
 })

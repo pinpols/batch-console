@@ -1,9 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import { filterNavigationByBackendMenus } from './permission'
+import { filterNavigationByBackendMenus, hasBackendMenuAccess } from './permission'
 import { navigationGroups } from '@/constants/navigation'
 import type { MenuGroup } from '@/types'
 
 describe('permission navigation filtering', () => {
+  it('treats an explicit empty menu as denying menu-controlled routes', () => {
+    expect(hasBackendMenuAccess([], '/ops/summary')).toBe(false)
+    expect(hasBackendMenuAccess(undefined, '/ops/summary')).toBe(true)
+  })
   it('keeps local menu copy when backend menus only define visibility', () => {
     const backendMenus: MenuGroup[] = [
       {

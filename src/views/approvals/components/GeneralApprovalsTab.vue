@@ -188,41 +188,68 @@
           </div>
           <StatusTag :value="String(detailRow.approvalStatus ?? '')" category="approval" />
         </div>
-        <el-descriptions :column="1" border>
-          <el-descriptions-item :label="t('approvals.colTarget')">
-            {{ detailRow.targetType || '—' }} / {{ detailRow.targetId || '—' }}
-          </el-descriptions-item>
-          <el-descriptions-item :label="t('approvals.colAction')">
-            {{ detailRow.actionType || '—' }}
-          </el-descriptions-item>
-          <el-descriptions-item :label="t('approvals.colRequester')">
-            {{ detailRow.requesterId || '—' }}
-          </el-descriptions-item>
-          <el-descriptions-item :label="t('approvals.colApprover')">
-            {{ detailRow.approverId || '—' }}
-          </el-descriptions-item>
-          <el-descriptions-item :label="t('approvals.colReason')">
-            {{ approvalReason(detailRow) }}
-          </el-descriptions-item>
-          <el-descriptions-item :label="t('approvals.colRequestedAt')">
-            {{ fmtDatetime(detailRow.createdAt) }}
-          </el-descriptions-item>
-          <el-descriptions-item :label="t('approvals.colApprovedAt')">
-            {{ fmtDatetime(detailRow.approvedAt) }}
-          </el-descriptions-item>
-          <el-descriptions-item :label="t('approvals.colExecutedAt')">
-            {{ fmtDatetime(detailRow.executedAt) }}
-          </el-descriptions-item>
-          <el-descriptions-item :label="t('approvals.colUpdatedAt')">
-            {{ fmtDatetime(detailRow.updatedAt) }}
-          </el-descriptions-item>
-          <el-descriptions-item :label="t('approvals.colTraceId')">
-            <CopyableText :text="detailRow.sourceTraceId || '—'" />
-          </el-descriptions-item>
-          <el-descriptions-item :label="t('approvals.colIdempotencyKey')">
-            <CopyableText :text="detailRow.sourceIdempotencyKey || '—'" />
-          </el-descriptions-item>
-        </el-descriptions>
+        <section class="approval-detail__section">
+          <h3>{{ t('approvals.detailSummary') }}</h3>
+          <el-descriptions :column="1" border>
+            <el-descriptions-item :label="t('approvals.colTarget')">
+              {{ detailRow.targetType || '—' }} /
+              <router-link
+                v-if="targetLink(detailRow)"
+                :to="targetLink(detailRow) || ''"
+                class="cell-link"
+                >{{ detailRow.targetId }}</router-link
+              >
+              <span v-else>{{ detailRow.targetId || '—' }}</span>
+            </el-descriptions-item>
+            <el-descriptions-item :label="t('approvals.colAction')">{{
+              detailRow.actionType || '—'
+            }}</el-descriptions-item>
+            <el-descriptions-item :label="t('approvals.colRequester')">{{
+              detailRow.requesterId || '—'
+            }}</el-descriptions-item>
+            <el-descriptions-item :label="t('approvals.colApprover')">{{
+              detailRow.approverId || '—'
+            }}</el-descriptions-item>
+            <el-descriptions-item :label="t('approvals.colReason')">{{
+              approvalReason(detailRow)
+            }}</el-descriptions-item>
+          </el-descriptions>
+        </section>
+        <section class="approval-detail__section">
+          <h3>{{ t('approvals.detailTimeline') }}</h3>
+          <el-timeline>
+            <el-timeline-item
+              v-if="detailRow.createdAt"
+              :timestamp="fmtDatetime(detailRow.createdAt)"
+              >{{ t('approvals.colRequestedAt') }}</el-timeline-item
+            >
+            <el-timeline-item
+              v-if="detailRow.approvedAt"
+              :timestamp="fmtDatetime(detailRow.approvedAt)"
+              >{{ t('approvals.colApprovedAt') }}</el-timeline-item
+            >
+            <el-timeline-item
+              v-if="detailRow.executedAt"
+              :timestamp="fmtDatetime(detailRow.executedAt)"
+              >{{ t('approvals.colExecutedAt') }}</el-timeline-item
+            >
+          </el-timeline>
+        </section>
+        <el-collapse>
+          <el-collapse-item :title="t('approvals.detailTechnical')" name="technical">
+            <el-descriptions :column="1" border>
+              <el-descriptions-item :label="t('approvals.colUpdatedAt')">{{
+                fmtDatetime(detailRow.updatedAt)
+              }}</el-descriptions-item>
+              <el-descriptions-item :label="t('approvals.colTraceId')"
+                ><CopyableText :text="detailRow.sourceTraceId || '—'"
+              /></el-descriptions-item>
+              <el-descriptions-item :label="t('approvals.colIdempotencyKey')"
+                ><CopyableText :text="detailRow.sourceIdempotencyKey || '—'"
+              /></el-descriptions-item>
+            </el-descriptions>
+          </el-collapse-item>
+        </el-collapse>
         <div class="approval-detail__payload-title">{{ t('approvals.payloadTitle') }}</div>
       </div>
     </DetailDrawer>
@@ -250,7 +277,7 @@
    * CONFIG_RELEASE → /config/releases?id={id}(配置发布列表过滤)
    * 其余类型返回空,展示纯文本。
    */
-  function targetLink(row: { approvalType?: string; targetId?: string }): string | null {
+  function targetLink(row: { approvalType?: string; targetId?: string | null }): string | null {
     if (!row?.targetId) return null
     const id = String(row.targetId)
     switch (row.approvalType) {
@@ -825,6 +852,22 @@
     border: 1px solid var(--color-border-light);
     border-radius: var(--radius-content);
     background: var(--color-bg-subtle);
+  }
+
+  .approval-detail__section h3 {
+    margin: 0 0 var(--space-sm);
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+  }
+
+  .approval-detail__section :deep(.el-descriptions__content) {
+    overflow-wrap: anywhere;
+  }
+
+  .approval-detail__section :deep(.el-timeline) {
+    padding-left: var(--space-sm);
+    margin: var(--space-md) 0 0;
   }
 
   .approval-detail__payload-title {
