@@ -13,9 +13,27 @@ VALUES
   (:'tenant_id', :'capacity_request_id', 'MANUAL', NULL,
    :'workflow_definition_id'::bigint, :'biz_date'::date,
    :'capacity_request_id', 'e2e-capacity-hash', 'ACCEPTED', 'e2e-capacity-trace', false),
-  (:'tenant_id', :'job_wait_request_id', 'MANUAL', 'upstream-a', NULL,
-   :'biz_date'::date, :'job_wait_request_id', 'e2e-job-wait-hash', 'ACCEPTED',
-   'e2e-job-wait-trace', true);
+  (:'tenant_id', :'job_wait_parent_request_id', 'MANUAL', NULL,
+   :'workflow_definition_id'::bigint, :'biz_date'::date, :'job_wait_parent_request_id',
+   'e2e-job-parent-hash', 'ACCEPTED', 'e2e-job-parent-trace', true);
+
+-- 暂停的父运行提供真实批次日身份，同时防止本夹具派发其他节点。
+INSERT INTO batch.workflow_run
+  (tenant_id, workflow_definition_id, biz_date, run_status, trigger_request_id, dry_run)
+SELECT :'tenant_id', :'workflow_definition_id'::bigint, :'biz_date'::date, 'PAUSED', id, true
+  FROM batch.trigger_request
+ WHERE tenant_id = :'tenant_id' AND request_id = :'job_wait_parent_request_id';
+
+INSERT INTO batch.trigger_request
+  (tenant_id, request_id, trigger_type, job_code, biz_date, dedup_key,
+   request_payload_hash, request_status, trace_id, dry_run, parent_workflow_run_id, parent_node_code)
+SELECT :'tenant_id', :'job_wait_request_id', 'MANUAL', 'upstream-a', :'biz_date'::date,
+       :'job_wait_request_id', 'e2e-job-wait-hash', 'ACCEPTED', 'e2e-job-wait-trace',
+       true, run.id, 'JOB'
+  FROM batch.workflow_run run
+  JOIN batch.trigger_request parent ON parent.tenant_id = run.tenant_id
+                                   AND parent.id = run.trigger_request_id
+ WHERE parent.tenant_id = :'tenant_id' AND parent.request_id = :'job_wait_parent_request_id';
 
 INSERT INTO batch.readiness_wait
   (tenant_id, workflow_definition_id, workflow_code, calendar_code, schedule_version,

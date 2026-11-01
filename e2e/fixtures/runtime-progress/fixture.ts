@@ -381,6 +381,7 @@ export class PersistentWaitFixture extends ControlProgressFixture {
   readonly readinessRequestId = `wait-readiness-${randomUUID()}`
   readonly capacityRequestId = `wait-capacity-${randomUUID()}`
   readonly jobWaitRequestId = `wait-job-${randomUUID()}`
+  readonly jobWaitParentRequestId = `wait-job-parent-${randomUUID()}`
   workflowDefinitionId = 0
   workflowCode = ''
   private roleAccountsPrepared = false
@@ -413,6 +414,7 @@ export class PersistentWaitFixture extends ControlProgressFixture {
         readiness_request_id: this.readinessRequestId,
         capacity_request_id: this.capacityRequestId,
         job_wait_request_id: this.jobWaitRequestId,
+        job_wait_parent_request_id: this.jobWaitParentRequestId,
       },
     )
     expect(result).toEqual({ readinessCount: 1, capacityCount: 1 })
@@ -448,6 +450,7 @@ export class PersistentWaitFixture extends ControlProgressFixture {
         readiness_request_id: this.readinessRequestId,
         capacity_request_id: this.capacityRequestId,
         job_wait_request_id: this.jobWaitRequestId,
+        job_wait_parent_request_id: this.jobWaitParentRequestId,
       })
       expect(Object.values(waitCleanup).reduce((sum, count) => sum + count, 0)).toBe(0)
     }
