@@ -40,7 +40,8 @@ describe('purifyHtml', () => {
     })
   })
 
-  it('returns the sanitized string unchanged', () => {
-    expect(purifyHtml('<b>bold</b>')).toBe('<b>bold</b>')
+  it('returns the sanitizer output', () => {
+    mockedSanitize.mockReturnValueOnce('<b>safe</b>')
+    expect(purifyHtml('<b>bold</b>')).toBe('<b>safe</b>')
   })
 })

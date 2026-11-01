@@ -47,7 +47,7 @@ describe('useAuthStore', () => {
     vi.mocked(authApi.logout).mockResolvedValue(undefined)
   })
 
-  it('isLoggedIn is false when no token', () => {
+  it('isLoggedIn is false when no session flag exists', () => {
     const auth = useAuthStore()
     expect(auth.isLoggedIn).toBe(false)
   })

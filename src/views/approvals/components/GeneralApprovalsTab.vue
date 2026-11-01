@@ -110,7 +110,7 @@
       <el-table-column
         type="selection"
         width="48"
-        :selectable="selectableRow"
+        :selectable="isPending"
         :reserve-selection="true"
       />
       <el-table-column prop="approvalNo" :label="t('approvals.colApprovalNo')" width="160">
@@ -420,10 +420,6 @@
         onClick: () => rejectRow(row),
       },
     ]
-  }
-
-  function selectableRow(row: ConsoleApprovalCommandResponse) {
-    return isPending(row)
   }
 
   function onSel(s: ConsoleApprovalCommandResponse[]) {

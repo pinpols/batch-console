@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { workerActionsForStatus } from './workerActions'
 
 describe('workerActionsForStatus', () => {
-  it('在线节点只展示下线和接管动作', () => {
+  it('在线节点展示排空、下线和接管动作', () => {
     expect(workerActionsForStatus('ONLINE')).toEqual(['drain', 'offline', 'takeover'])
   })
 
