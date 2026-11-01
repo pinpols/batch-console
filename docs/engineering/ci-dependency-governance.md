@@ -51,7 +51,7 @@
 
 ## 季度集中升级
 
-Renovate 只在每年 1、4、7、10 月首日以 `dryRun=full` 生成依赖盘点并创建一张 Issue，不修改分支、不创建 PR、不自动合并。维护者基于最新 `main` 创建一张人工依赖治理 PR；可达的 Critical/High 安全漏洞可以单独紧急修复，不等待季度窗口。
+Renovate 仓库配置使用 `mode=silent`，不自动创建依赖 PR；季度工作流在每年 1、4、7、10 月首日以 `dryRun=full` 生成依赖盘点并创建一张 Issue，不修改分支、不创建 PR、不自动合并。维护者基于最新 `main` 创建一张人工依赖治理 PR；可达的 Critical/High 安全漏洞可以单独紧急修复，不等待季度窗口。
 
 精确版本用于保证同一提交反复执行时解析相同内容，但不同生态还必须依赖不可变校验：Action SHA、Docker digest、npm lockfile integrity。只写一个语义版本号不能防止上游 tag 或制品被替换。
 
