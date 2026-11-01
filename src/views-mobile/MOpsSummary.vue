@@ -13,11 +13,19 @@
       <MTenantDailyProgress ref="dailyProgress" />
 
       <div v-if="summary" class="m-metric-grid">
-        <router-link to="/m/jobs?status=RUNNING" class="m-metric">
+        <component
+          :is="canOpenMobile('m-jobs') ? 'router-link' : 'div'"
+          :to="canOpenMobile('m-jobs') ? '/m/jobs?status=RUNNING' : undefined"
+          class="m-metric"
+        >
           <span class="m-metric__label">{{ t('mobile.summary.runningJobs') }}</span>
           <span class="m-metric__value">{{ summary.runningJobs }}</span>
-        </router-link>
-        <router-link to="/m/jobs?status=FAILED" class="m-metric">
+        </component>
+        <component
+          :is="canOpenMobile('m-jobs') ? 'router-link' : 'div'"
+          :to="canOpenMobile('m-jobs') ? '/m/jobs?status=FAILED' : undefined"
+          class="m-metric"
+        >
           <span class="m-metric__label">{{ t('mobile.summary.failedJobs') }}</span>
           <span
             class="m-metric__value"
@@ -25,8 +33,12 @@
           >
             {{ summary.failedJobs }}
           </span>
-        </router-link>
-        <router-link to="/m/approvals" class="m-metric">
+        </component>
+        <component
+          :is="canOpenMobile('m-approvals') ? 'router-link' : 'div'"
+          :to="canOpenMobile('m-approvals') ? '/m/approvals' : undefined"
+          class="m-metric"
+        >
           <span class="m-metric__label">{{ t('mobile.summary.pendingApprovals') }}</span>
           <span
             class="m-metric__value"
@@ -34,8 +46,12 @@
           >
             {{ summary.pendingApprovals }}
           </span>
-        </router-link>
-        <router-link to="/m/alerts" class="m-metric">
+        </component>
+        <component
+          :is="canOpenMobile('m-alerts') ? 'router-link' : 'div'"
+          :to="canOpenMobile('m-alerts') ? '/m/alerts' : undefined"
+          class="m-metric"
+        >
           <span class="m-metric__label">{{ t('mobile.summary.openAlerts') }}</span>
           <span
             class="m-metric__value"
@@ -43,8 +59,12 @@
           >
             {{ summary.openAlerts }}
           </span>
-        </router-link>
-        <router-link to="/m/jobs?slaBreached=1" class="m-metric">
+        </component>
+        <component
+          :is="canOpenMobile('m-jobs') ? 'router-link' : 'div'"
+          :to="canOpenMobile('m-jobs') ? '/m/jobs?slaBreached=1' : undefined"
+          class="m-metric"
+        >
           <span class="m-metric__label">{{ t('mobile.summary.slaBreaches') }}</span>
           <span
             class="m-metric__value"
@@ -52,16 +72,28 @@
           >
             {{ summary.slaBreaches }}
           </span>
-        </router-link>
-        <router-link to="/m/workers?filter=online" class="m-metric">
+        </component>
+        <component
+          :is="canOpenMobile('m-workers') ? 'router-link' : 'div'"
+          :to="canOpenMobile('m-workers') ? '/m/workers?filter=online' : undefined"
+          class="m-metric"
+        >
           <span class="m-metric__label">{{ t('mobile.summary.onlineWorkers') }}</span>
           <span class="m-metric__value m-metric__value--success">{{ summary.onlineWorkers }}</span>
-        </router-link>
-        <router-link to="/m/workers?filter=draining" class="m-metric">
+        </component>
+        <component
+          :is="canOpenMobile('m-workers') ? 'router-link' : 'div'"
+          :to="canOpenMobile('m-workers') ? '/m/workers?filter=draining' : undefined"
+          class="m-metric"
+        >
           <span class="m-metric__label">{{ t('mobile.summary.drainingWorkers') }}</span>
           <span class="m-metric__value">{{ summary.drainingWorkers }}</span>
-        </router-link>
-        <router-link to="/m/workers?filter=offline" class="m-metric">
+        </component>
+        <component
+          :is="canOpenMobile('m-workers') ? 'router-link' : 'div'"
+          :to="canOpenMobile('m-workers') ? '/m/workers?filter=offline' : undefined"
+          class="m-metric"
+        >
           <span class="m-metric__label">{{ t('mobile.summary.offlineWorkers') }}</span>
           <span
             class="m-metric__value"
@@ -69,7 +101,7 @@
           >
             {{ summary.offlineWorkers }}
           </span>
-        </router-link>
+        </component>
       </div>
 
       <MSkeleton v-else-if="loading" :count="4" />
@@ -77,15 +109,15 @@
 
       <!-- 快捷入口:Tab Bar 已占满 5 个槽位,这里导出二级常用列表 -->
       <div class="m-quick-grid">
-        <router-link to="/m/files" class="m-quick">
+        <router-link v-if="canOpenMobile('m-files')" to="/m/files" class="m-quick">
           <el-icon><Files /></el-icon>
           <span>{{ t('mobile.summary.filesQuick') }}</span>
         </router-link>
-        <router-link to="/m/catchup" class="m-quick">
+        <router-link v-if="canOpenMobile('m-catchup')" to="/m/catchup" class="m-quick">
           <el-icon><Memo /></el-icon>
           <span>{{ t('mobile.summary.catchupQuick') }}</span>
         </router-link>
-        <router-link to="/m/outbox" class="m-quick">
+        <router-link v-if="canOpenMobile('m-outbox')" to="/m/outbox" class="m-quick">
           <el-icon><Promotion /></el-icon>
           <span>{{ t('mobile.summary.outboxQuick') }}</span>
         </router-link>
@@ -95,7 +127,7 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, watch } from 'vue'
+  import { computed, ref, watch } from 'vue'
   import { useTenantReload } from '@/composables/useTenantReload'
   import { useTenantRequestScope } from '@/composables/useTenantRequestScope'
   import { useI18n } from 'vue-i18n'
@@ -109,6 +141,8 @@
 
   const { t } = useI18n({ useScope: 'global' })
   import { useTenantStore } from '@/stores/tenant'
+  import { usePermissionStore } from '@/stores/permission'
+  import { mobileMenuAccess } from '@/router/mobileMenuAccess'
   import { useAutoRefresh } from '@/composables/useAutoRefresh'
   import { REFRESH_INTERVAL_COLD_MS } from '@/layout-mobile/composables/refreshIntervals'
   import MPullRefresh from '@/layout-mobile/MPullRefresh.vue'
@@ -118,6 +152,18 @@
   import type { ConsoleOpsSummaryResponse } from '@/types/console-api'
 
   const tenant = useTenantStore()
+  const permission = usePermissionStore()
+  const visiblePaths = computed(
+    () =>
+      new Set(
+        permission.visibleGroups.flatMap((group) =>
+          group.children.map((item) => item.path.split('?')[0]),
+        ),
+      ),
+  )
+  function canOpenMobile(routeName: string) {
+    return visiblePaths.value.has(mobileMenuAccess[routeName])
+  }
   const scope = useTenantRequestScope()
   const loading = ref(false)
   const summary = ref<ConsoleOpsSummaryResponse | null>(null)
@@ -143,10 +189,14 @@
       if (scope.isCurrent(request)) loading.value = false
     }
   }
-  watch(() => tenant.tenantId, () => {
-    summary.value = null
-    loading.value = false
-  }, { flush: 'sync' })
+  watch(
+    () => tenant.tenantId,
+    () => {
+      summary.value = null
+      loading.value = false
+    },
+    { flush: 'sync' },
+  )
   useTenantReload(load)
   // 30s 轮询：页面在前台时自动刷新，切后台时暂停（oncall 场景）
   useAutoRefresh(load, REFRESH_INTERVAL_COLD_MS)
