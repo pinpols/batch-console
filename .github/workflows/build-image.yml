@@ -61,6 +61,7 @@ jobs:
     timeout-minutes: 75
     outputs:
       should_build: ${{ steps.gate.outputs.should_build }}
+      backend_sha: ${{ steps.gate.outputs.backend_sha }}
     steps:
       - name: Checkout frontend history
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -104,6 +105,8 @@ jobs:
           has_code_changes . && frontend_changed=true || true
           has_code_changes backend-sim-source && backend_changed=true || true
 
+          target_sha=$(git -C backend-sim-source rev-parse HEAD)
+          echo "backend_sha=${target_sha}" >> "$GITHUB_OUTPUT"
           echo "validation day: ${validation_day}"
           echo "frontend code changed: ${frontend_changed}"
           echo "backend code changed: ${backend_changed}"
@@ -153,6 +156,9 @@ jobs:
               echo "::error::后端 daily sim-strict 等待超时: run=${sim_run_id}"
               exit 1
             }
+
+            validated_sha=$(gh run view "$sim_run_id" --repo "$BACKEND_REPOSITORY" --json headSha --jq '.headSha')
+            bash scripts/ci/check-backend-validation-coverage.sh backend-sim-source "$validated_sha" "$target_sha"
           fi
 
           echo 'should_build=true' >> "$GITHUB_OUTPUT"
@@ -214,7 +220,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           repository: pinpols/file-batch-system
-          ref: ${{ inputs.backend_ref || 'main' }}
+          ref: ${{ inputs.backend_ref || needs.nightly-sim-gate.outputs.backend_sha || 'main' }}
           path: backend-docs-source
           persist-credentials: false
 
