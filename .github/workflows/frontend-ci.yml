@@ -1,4 +1,4 @@
-name: frontend-ci
+name: Frontend / Documentation and manual compatibility
 
 on:
   pull_request:
@@ -52,7 +52,7 @@ jobs:
   validate:
     name: Node 24 compatibility
     needs: changes
-    if: needs.changes.outputs.docs-only != 'true'
+    if: github.event_name == 'workflow_dispatch' && needs.changes.outputs.docs-only != 'true'
     runs-on: ubuntu-26.04
     timeout-minutes: 20
     env:

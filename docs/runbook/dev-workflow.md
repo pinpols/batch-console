@@ -82,7 +82,7 @@ npm run build:fast     # vite build
 | **full-ci-gate** | PR → main / push main / 每周一 02:00 UTC / 手动 | PR 上执行范围适配的回归与审计；Docker build/Trivy/Lighthouse 仅在非 PR 事件运行。**main 守底** | — |
 | **staging-gate** | tag `v*` push + 手动 | 对真 staging URL 跑 Playwright 真环境 e2e + Lighthouse | — |
 | **prepare-platform-release** | 后端仓库手动触发 | 创建两仓同版本 Release PR；不打 tag、不发布 | 需配置 GitHub App |
-| **renovate** | Renovate 计划 | 自动开依赖升级 PR(类 Dependabot) | — |
+| **renovate** | 季度依赖盘点 | 只读 dry-run，不自动创建依赖 PR | — |
 
 ### 一句话用法
 

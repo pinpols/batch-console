@@ -11,13 +11,15 @@ GitHub Security 告警的分类、修复、误报处理和合并后验证遵循[
 | Workflow                         | 文件                                 | 触发                                                                        | 角色                                                                                                                                            | 预估耗时  |
 | -------------------------------- | ------------------------------------ | --------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | --------- |
 | `pr-gate`                        | `.github/workflows/pr-gate.yml`      | PR → main / push main / 手动                                                | PR 必过门禁,fast feedback                                                                                                                       | 5-7 min   |
-| `frontend-ci`                    | `.github/workflows/frontend-ci.yml`  | PR → main / push main / 手动                                                | Node 24 兼容 + 前端文档构建；Markdown-only PR 跳过兼容构建                                                                                      | 8-12 min  |
+| `frontend-ci`                    | `.github/workflows/frontend-ci.yml`  | PR → main / push main / 手动                                                | 前端文档构建；Node 24 兼容套件仅手动执行                                                                                      | 8-12 min  |
 | `full-ci-gate`                   | `.github/workflows/full-ci-gate.yml` | PR → main / push main / 每周一 02:00 UTC（10:00 北京）/ 手动 | 全量回归；Markdown-only PR 保留 required check 但跳过构建和全量审计                                                                             | 15-20 min |
 | `staging-gate`                   | `.github/workflows/staging-gate.yml` | tag `v*` / 手动(可输入 base_url)                                            | 真实环境安全头、Playwright/axe、视觉及跨浏览器路由验收                                                                                          | 20-35 min |
 | `prepare-platform-release`        | 配对后端 `.github/workflows/prepare-platform-release.yml` | 后端仓库手动选择 bump 类型 | 校验版本并创建双仓 Release PR；不合并/发布，需 GitHub App | ≤15 min |
 | `codeql`                         | `.github/workflows/codeql.yml`       | PR / main / 每周 / 手动                                                     | JavaScript/TypeScript 静态安全分析                                                                                                              | 5-10 min  |
-| `build-image`                    | `.github/workflows/build-image.yml`  | main / tag / 每日 19:00 UTC（北京时间 03:00）/ 手动 / reusable workflow     | main 构建不可变镜像；定时任务先判断前后端前一日是否有相关变更，无变更跳过；后端有变更时等待配对后端 daily-sim-strict 成功；tag 在 staging 通过后晋级同一 digest；供后端 Compose CD 调用时固定前端与后端 docs SHA，并返回 frontend image digest | 10-75 min |
+| `build-image`                    | `.github/workflows/build-image.yml`  | main / tag / 每日 19:00 UTC（北京时间 03:00）/ 手动 / reusable workflow     | main 构建不可变镜像；定时任务先判断前后端前一日是否有相关变更，无变更跳过；后端有变更时等待配对后端 daily-sim-strict 成功并核对该结果覆盖目标提交；定时镜像固定检查时的后端提交；tag 在 staging 通过后晋级同一 digest；供后端 Compose CD 调用时固定前端与后端 docs SHA，并返回 frontend image digest | 10-75 min |
 | `Quarterly dependency inventory` | `.github/workflows/renovate.yml`     | 每季度 / 手动                                                               | 只生成 Renovate dry-run 盘点和一张 Issue，不创建 PR                                                                                             | 5-15 min  |
+
+Actions 页面使用 `Frontend / ...` 展示工作流用途；本手册中的 `pr-gate` 等名称指工作流文件标识。`label-automerge.yml` 的 `workflow_run.workflows` 必须与 PR 工作流展示名一致。Ruleset 必需检查名保持不变。
 
 ## pr-gate 详情
 
@@ -45,7 +47,7 @@ job 末尾一次性列出全部失败并返回非零。checkout、Node 安装、
 | 入口                                                               | 失败行为                                                                                                                                                    | 继续/停止边界                                                                                                    |
 | ------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
 | `npm run preflight:changed` / `preflight:changed:all`              | 通过统一 `run-gate.sh` 运行适用检查，独立失败继续执行并在末尾汇总                                                                                           | 提交前收集诊断；环境/runner 前置错误单独记录并最终失败                                                           |
-| PR `pr-gate`、`full-ci-gate` 和 `frontend-ci` 的静态/Node 兼容步骤 | `run-gate.sh` 在 `BATCH_GATE_COLLECT=1` 下记录单项结果并继续；`verify-governance.sh` 收集其内部独立门禁；各 job 末尾 `gate_assert_collected` 汇总并非零退出 | 同一 job 的独立 lint、配置、测试、构建等门禁尽量收齐；安装、checkout、运行时等前置步骤失败仍会阻断依赖它们的阶段 |
+| PR `pr-gate`、`full-ci-gate` 和手动 `frontend-ci` 的静态/Node 兼容步骤 | `run-gate.sh` 在 `BATCH_GATE_COLLECT=1` 下记录单项结果并继续；`verify-governance.sh` 收集其内部独立门禁；各 job 末尾 `gate_assert_collected` 汇总并非零退出 | 同一 job 的独立 lint、配置、测试、构建等门禁尽量收齐；安装、checkout、运行时等前置步骤失败仍会阻断依赖它们的阶段 |
 | `npm run verify:local`                                             | `scripts/ci.sh` 聚合独立检查并在结尾返回总结果                                                                                                              | 真实依赖/环境准备失败、必须依赖前序产物的步骤失败时，不执行依赖阶段                                              |
 | `frontend-ci` 的文档构建、`staging-gate` 的环境预检与浏览器验收    | job/步骤按依赖关系失败即停止                                                                                                                                | 文档站构建或真实环境预检失败时，不继续执行依赖该结果的发布/浏览器验收；不把未执行阶段算通过                      |
 
@@ -69,18 +71,20 @@ CI 使用 GitHub 托管的 `ubuntu-26.04`，Action 运行时统一到 Node 24 �
 - `docker/login-action` v4、`docker/metadata-action` v6、`docker/build-push-action` v7
 - `actions/create-github-app-token` v3（联合版本准备 workflow 位于配对后端仓库）、`renovatebot/github-action` v46.3.6
 
+前端静态资源与文档在构建机原生架构构建，最终运行镜像仍分别构建 `linux/amd64` 和 `linux/arm64`；这样避免 Node 构建通过 QEMU 模拟目标架构。
+
 上述版本仅用于阅读；workflow 实际引用必须是对应的 40 位 commit SHA。Node 基线由 `.node-version`/`.nvmrc` 固定到精确 patch，Dockerfile 基础镜像固定 tag + digest。
 
 artifact 上传下载升级后，必须手动运行一次 `full-ci-gate`，确认 `static-and-unit` 上传的 `dist` 能在 `lighthouse` job 下载、解压并启动预览；仅通过 workflow 语法检查不算闭环验证。
 
 ## frontend-ci 详情(Node 24 兼容 + 文档)
 
-`frontend-ci` 不再重复 `pr-gate` 的 lint / size / audit 主门禁,只做两件事:
+`frontend-ci` 自动构建文档，并保留按需手动运行的 Node 24 兼容套件：
 
-1. **Node 24 兼容构建**:在 Node 24 下跑 `check:version`、`typecheck`、`check:i18n`、`test:unit`、`build`。
+1. **Node 24 兼容构建（仅手动）**:在 Node 24 下跑 `check:version`、`typecheck`、`check:i18n`、`test:unit`、`build`。
 2. **统一文档构建**:检出配对后端文档并跑 `npm run docs:build`，先执行 `test:docs-publication` 无损分卷与导航回归，确保前后端共享的 `tools/docs-bridge/frontend` 站点可生成，再执行文档 chunk 与搜索索引预算检查（普通 chunk raw 850 KB / gzip 220 KB；搜索索引 raw 4.5 MB / gzip 1.23 MB）。带日期的后端设计稿、ADR与工程标准仅索引一至三级标题，页面正文仍完整发布；无日期的当前设计、API、产品指南与运维文档保留全文搜索。分卷及主题行为变化另验旧锚点和前后卷／目录导航，方法见[统一文档站](../engineering/unified-documentation-site.md)。
 
-这样 PR 必过门禁仍由 `pr-gate` 统一承担,Node 新版本兼容和文档站可独立暴露问题,避免同一 PR 出现两套相似 required check 一过一挂。
+PR 主门禁使用同一 `.node-version`，已覆盖版本检查、fixture 治理、类型检查、国际化、单测和生产构建；手动兼容套件用于独立复验，避免 PR 和 main push 重复执行相同套件。
 
 ## full-ci-gate 详情（范围探测 + 按依赖执行的 4 个 job）
 
@@ -168,7 +172,7 @@ E2E 使用 `test:e2e:all`（含 `@slow`），并运行 `smoke.spec.ts @cross-bro
 | `check-version-alignment.sh`                         | ✅                          | ✅                          | —                  | `preflight:changed`(package 变更)                                                                                                                   |
 | `docs:build`                                         | 统一文档 job                | Docker 文档构建             | —                  | `preflight:changed`(文档桥接、站点配置或构建脚本变更)                                                                                               |
 
-PR、Full 和 Node 兼容工作流保存 Vitest JSON，并生成包含成功、失败和跳过数的汇总；Staging 保存全量、视觉和跨浏览器三次 Playwright 的独立 JSON 后再汇总，避免后一次运行覆盖先前结果。报告显示未运行或缺失的状态；执行成功却缺少报告会使汇总失败。每行代表一次执行，不对不同 E2E 套件中的重复场景去重。汇总产物分别保存为 `frontend-pr-test-report`、`frontend-full-test-report`、`frontend-compatibility-test-report` 和 `frontend-staging-test-summary`；真实 Staging 验收仍以原测试及发布门禁结果为准。
+PR、Full 和手动 Node 兼容工作流保存 Vitest JSON，并生成包含成功、失败和跳过数的汇总；Staging 保存全量、视觉和跨浏览器三次 Playwright 的独立 JSON 后再汇总，避免后一次运行覆盖先前结果。报告显示未运行或缺失的状态；执行成功却缺少报告会使汇总失败。每行代表一次执行，不对不同 E2E 套件中的重复场景去重。汇总产物分别保存为 `frontend-pr-test-report`、`frontend-full-test-report`、`frontend-compatibility-test-report` 和 `frontend-staging-test-summary`；真实 Staging 验收仍以原测试及发布门禁结果为准。
 
 Shell 脚本统一使用 Bash/sh；`check:shell` 同时做语法与 ShellCheck 检查，CI 不再额外安装 zsh。
 

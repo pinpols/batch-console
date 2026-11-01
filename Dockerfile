@@ -3,7 +3,8 @@
 # 镜像最终 ~50MB(nginx alpine + dist),不含 node_modules。
 
 # ───── Stage 1: build ─────
-FROM node:24.21.0-alpine3.24@sha256:ebfe2f90462722a7a4de65e91990e97fe0d401c70e0e762c5b53302f905ec1c1 AS build
+# 静态资源与目标 CPU 架构无关；使用构建机架构避免 Node 在 QEMU 中构建失败。
+FROM --platform=$BUILDPLATFORM node:24.21.0-alpine3.24@sha256:ebfe2f90462722a7a4de65e91990e97fe0d401c70e0e762c5b53302f905ec1c1 AS build
 ENV LANG=C.UTF-8 \
     LC_ALL=C.UTF-8
 WORKDIR /app

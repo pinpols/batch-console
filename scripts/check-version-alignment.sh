@@ -26,7 +26,7 @@ if [[ -n "$EXPECTED_VERSION" && "$PACKAGE_VERSION" != "$EXPECTED_VERSION" ]]; th
   fail "前端版本 $PACKAGE_VERSION 与期望发布版本 $EXPECTED_VERSION 不一致"
 fi
 
-NODE_BASE_IMAGE="$(sed -nE 's/^FROM (node:[^ ]+) AS build$/\1/p' "$ROOT_DIR/Dockerfile")"
+NODE_BASE_IMAGE="$(sed -nE 's/^FROM (--platform=[^ ]+ )?(node:[^ ]+) AS build$/\2/p' "$ROOT_DIR/Dockerfile")"
 NGINX_BASE_IMAGE="$(sed -nE 's/^FROM (nginx:[^ ]+) AS runtime$/\1/p' "$ROOT_DIR/Dockerfile")"
 NODE_RUNTIME="$(tr -d '[:space:]' < "$ROOT_DIR/.node-version")"
 if [[ ! "$NODE_BASE_IMAGE" =~ ^node:([0-9]+\.[0-9]+\.[0-9]+)-alpine[0-9]+\.[0-9]+@sha256:[0-9a-f]{64}$ ]]; then
