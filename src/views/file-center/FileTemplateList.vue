@@ -118,9 +118,9 @@
                 inline-prompt
                 :active-text="t('fileTemplateList.switchOn')"
                 :inactive-text="t('fileTemplateList.switchOff')"
-                :loading="togglingTemplateId === row.id"
+                :loading="togglingTemplateIds.has(row.id)"
                 :disabled="!canMutateConfig"
-              @change="toggleTemplate(row as ConsoleFileTemplateResponse)"
+                @change="toggleTemplate(row as ConsoleFileTemplateResponse)"
               />
             </template>
           </el-table-column>
@@ -220,7 +220,7 @@
                 inline-prompt
                 :active-text="t('fileTemplateList.switchOn')"
                 :inactive-text="t('fileTemplateList.switchOff')"
-                :loading="togglingChannelId === row.id"
+                :loading="row.id != null && togglingChannelIds.has(row.id)"
                 :disabled="!canMutateConfig"
                 @change="toggleChannel(row)"
               />
@@ -512,7 +512,7 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, onScopeDispose, reactive, ref, watch } from 'vue'
+  import { computed, onScopeDispose, reactive, ref, shallowReactive, watch } from 'vue'
   import { useRoute } from 'vue-router'
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
@@ -622,12 +622,10 @@
     return scope.session === currentAuthSession() && scope.username === auth.userInfo?.username &&
       auth.isLoggedIn && auth.profileLoaded && isSharedAuthRevisionCurrent()
   }
-  const togglingTemplateId = ref<number | null>(null)
-  const togglingChannelId = ref<number | null>(null)
+  const togglingTemplateIds = shallowReactive(new Map<number, EditorScope>())
+  const togglingChannelIds = shallowReactive(new Map<number, EditorScope>())
   let templateToggleRevision = 0
   let channelToggleRevision = 0
-  let latestTemplateToggle = 0
-  let latestChannelToggle = 0
   const activeTab = ref<'templates' | 'channels'>(
     mode.value === 'channels' ? 'channels' : 'templates',
   )
@@ -1007,17 +1005,18 @@
   async function toggleTemplate(row: ConsoleFileTemplateResponse) {
     const scope = newContextScope()
     if (!scope || (row.tenantId && row.tenantId !== scope.tenantId)) return
+    const pending = togglingTemplateIds.get(row.id)
+    if (pending && contextIsCurrent(pending)) return
     const revision = templateToggleRevision
-    const request = ++latestTemplateToggle
     const enabled = !row.enabled
-    togglingTemplateId.value = row.id
+    togglingTemplateIds.set(row.id, scope)
     try {
       await toggleFileTemplate(row.id, scope.tenantId, enabled)
       if (revision !== templateToggleRevision || !contextIsCurrent(scope)) return
       row.enabled = enabled
       ElMessage.success(t('fileTemplateList.saveSuccess'))
     } finally {
-      if (revision === templateToggleRevision && request === latestTemplateToggle) togglingTemplateId.value = null
+      if (togglingTemplateIds.get(row.id) === scope) togglingTemplateIds.delete(row.id)
     }
   }
 
@@ -1098,17 +1097,18 @@
   async function toggleChannel(row: ConsoleFileChannelResponse) {
     const scope = newContextScope()
     if (!scope || row.id == null || (row.tenantId && row.tenantId !== scope.tenantId)) return
+    const pending = togglingChannelIds.get(row.id)
+    if (pending && contextIsCurrent(pending)) return
     const revision = channelToggleRevision
-    const request = ++latestChannelToggle
     const enabled = !row.enabled
-    togglingChannelId.value = row.id
+    togglingChannelIds.set(row.id, scope)
     try {
       await toggleFileChannel(row.id, scope.tenantId, enabled)
       if (revision !== channelToggleRevision || !contextIsCurrent(scope)) return
       row.enabled = enabled
       ElMessage.success(t('fileTemplateList.saveSuccess'))
     } finally {
-      if (revision === channelToggleRevision && request === latestChannelToggle) togglingChannelId.value = null
+      if (togglingChannelIds.get(row.id) === scope) togglingChannelIds.delete(row.id)
     }
   }
 
@@ -1149,8 +1149,8 @@
     channelSaving.value = false
     templateToggleRevision++
     channelToggleRevision++
-    togglingTemplateId.value = null
-    togglingChannelId.value = null
+    togglingTemplateIds.clear()
+    togglingChannelIds.clear()
     templateDialogVisible.value = false
     channelDialogVisible.value = false
   }

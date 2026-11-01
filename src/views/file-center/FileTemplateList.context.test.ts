@@ -71,8 +71,8 @@ function state(wrapper: ReturnType<typeof setup>) {
     openChannelCreate: () => void
     toggleTemplate: (row: Record<string, unknown>) => Promise<void>
     toggleChannel: (row: Record<string, unknown>) => Promise<void>
-    togglingTemplateId: number | null
-    togglingChannelId: number | null
+    togglingTemplateIds: Map<number, unknown>
+    togglingChannelIds: Map<number, unknown>
   } }).setupState
 }
 function byLabel(wrapper: ReturnType<typeof setup>, label: string) {
@@ -94,7 +94,7 @@ describe('file configuration editor context', () => {
     const oldRow = { id: 1, tenantId: 'tenant-a', enabled: true }
     const newRow = { id: 2, tenantId: 'tenant-b', enabled: true }
     const invoke = kind === 'template' ? state(wrapper).toggleTemplate : state(wrapper).toggleChannel
-    const busy = () => kind === 'template' ? state(wrapper).togglingTemplateId : state(wrapper).togglingChannelId
+    const busy = () => kind === 'template' ? state(wrapper).togglingTemplateIds : state(wrapper).togglingChannelIds
     const oldRequest = invoke(oldRow)
     expect(toggle).toHaveBeenNthCalledWith(1, 1, 'tenant-a', false)
     mocks.context.tenantId = 'tenant-b'
@@ -104,12 +104,12 @@ describe('file configuration editor context', () => {
     await oldRequest
     expect(oldRow.enabled).toBe(true)
     expect(mocks.success).not.toHaveBeenCalled()
-    expect(busy()).toBe(2)
+    expect(busy().has(2)).toBe(true)
     finishNew({})
     await newRequest
     expect(newRow.enabled).toBe(false)
     expect(mocks.success).toHaveBeenCalledTimes(1)
-    expect(busy()).toBeNull()
+    expect(busy().size).toBe(0)
   })
 
   it.each(['template', 'channel'] as const)('refuses a stale %s row from another tenant', async (kind) => {
@@ -136,12 +136,114 @@ describe('file configuration editor context', () => {
     finishFirst({})
     await firstRequest
     expect(first.enabled).toBe(false)
-    expect(kind === 'template' ? state(wrapper).togglingTemplateId : state(wrapper).togglingChannelId).toBe(2)
+    expect((kind === 'template' ? state(wrapper).togglingTemplateIds : state(wrapper).togglingChannelIds).has(2)).toBe(true)
     finishSecond({})
     await secondRequest
     expect(second.enabled).toBe(false)
     expect(mocks.success).toHaveBeenCalledTimes(2)
   })
+  it.each(['template', 'channel'] as const)('does not submit a second %s change while that row is pending', async (kind) => {
+    let finishFirst!: (value: object) => void
+    const toggle = kind === 'template' ? mocks.toggleTemplate : mocks.toggleChannel
+    toggle.mockReturnValueOnce(new Promise((resolve) => { finishFirst = resolve }))
+    const wrapper = setup()
+    await flushPromises()
+    const invoke = kind === 'template' ? state(wrapper).toggleTemplate : state(wrapper).toggleChannel
+    const first = { id: 1, tenantId: 'tenant-a', enabled: true }
+    const second = { id: 2, tenantId: 'tenant-a', enabled: true }
+    const pending = invoke(first)
+    await invoke(second)
+    await invoke(first)
+    expect(toggle).toHaveBeenCalledTimes(2)
+    finishFirst({})
+    await pending
+    expect(first.enabled).toBe(false)
+  })
+
+  it.each(['template', 'channel'] as const)('keeps each %s switch busy independently and rejects repeat clicks until its request completes', async (kind) => {
+    let finishFirst!: (value: object) => void
+    let finishSecond!: (value: object) => void
+    const toggle = kind === 'template' ? mocks.toggleTemplate : mocks.toggleChannel
+    toggle.mockReturnValueOnce(new Promise((resolve) => { finishFirst = resolve }))
+      .mockReturnValueOnce(new Promise((resolve) => { finishSecond = resolve }))
+    const wrapper = setup()
+    await flushPromises()
+    const first = { id: 1, tenantId: 'tenant-a', enabled: true }
+    const second = { id: 2, tenantId: 'tenant-a', enabled: true }
+    const invoke = kind === 'template' ? state(wrapper).toggleTemplate : state(wrapper).toggleChannel
+    const busy = () => kind === 'template' ? state(wrapper).togglingTemplateIds : state(wrapper).togglingChannelIds
+    const firstRequest = invoke(first)
+    const secondRequest = invoke(second)
+    expect(busy().has(1)).toBe(true)
+    expect(busy().has(2)).toBe(true)
+    await invoke(first)
+    expect(toggle).toHaveBeenCalledTimes(2)
+    finishSecond({})
+    await secondRequest
+    expect(second.enabled).toBe(false)
+    expect(first.enabled).toBe(true)
+    expect(busy().has(1)).toBe(true)
+    expect(busy().has(2)).toBe(false)
+    finishFirst({})
+    await firstRequest
+    expect(first.enabled).toBe(false)
+    expect(busy().size).toBe(0)
+  })
+
+  it.each(['template', 'channel'] as const)('discards the old %s switch response without clearing a same-id request in the new tenant', async (kind) => {
+    let finishOld!: (value: object) => void
+    let finishNew!: (value: object) => void
+    const toggle = kind === 'template' ? mocks.toggleTemplate : mocks.toggleChannel
+    toggle.mockReturnValueOnce(new Promise((resolve) => { finishOld = resolve }))
+      .mockReturnValueOnce(new Promise((resolve) => { finishNew = resolve }))
+    const wrapper = setup()
+    await flushPromises()
+    const oldRow = { id: 1, tenantId: 'tenant-a', enabled: true }
+    const newRow = { id: 1, tenantId: 'tenant-b', enabled: true }
+    const invoke = kind === 'template' ? state(wrapper).toggleTemplate : state(wrapper).toggleChannel
+    const busy = () => kind === 'template' ? state(wrapper).togglingTemplateIds : state(wrapper).togglingChannelIds
+    const oldRequest = invoke(oldRow)
+    mocks.context.tenantId = 'tenant-b'
+    const newRequest = invoke(newRow)
+    finishOld({})
+    await oldRequest
+    expect(oldRow.enabled).toBe(true)
+    expect(newRow.enabled).toBe(true)
+    expect(busy().has(1)).toBe(true)
+    finishNew({})
+    await newRequest
+    expect(newRow.enabled).toBe(false)
+    expect(busy().size).toBe(0)
+    expect(mocks.success).toHaveBeenCalledTimes(1)
+  })
+
+  it.each(['template', 'channel'] as const)('does not let a previous session settle or unlock a new %s change for the same row', async (kind) => {
+    let finishOld!: (value: object) => void
+    let finishNew!: (value: object) => void
+    const toggle = kind === 'template' ? mocks.toggleTemplate : mocks.toggleChannel
+    toggle.mockReturnValueOnce(new Promise((resolve) => { finishOld = resolve }))
+      .mockReturnValueOnce(new Promise((resolve) => { finishNew = resolve }))
+    const wrapper = setup()
+    await flushPromises()
+    const oldRow = { id: 1, tenantId: 'tenant-a', enabled: true }
+    const newRow = { id: 1, tenantId: 'tenant-a', enabled: true }
+    const invoke = kind === 'template' ? state(wrapper).toggleTemplate : state(wrapper).toggleChannel
+    const busy = () => kind === 'template' ? state(wrapper).togglingTemplateIds : state(wrapper).togglingChannelIds
+    const oldRequest = invoke(oldRow)
+    mocks.context.session++
+    const newRequest = invoke(newRow)
+    expect(toggle).toHaveBeenCalledTimes(2)
+    finishOld({})
+    await oldRequest
+    expect(oldRow.enabled).toBe(true)
+    expect(busy().has(1)).toBe(true)
+    finishNew({})
+    await newRequest
+    expect(newRow.enabled).toBe(false)
+    expect(busy().size).toBe(0)
+    expect(mocks.success).toHaveBeenCalledTimes(1)
+  })
+
   it('applies reviewed export SQL to an empty template and submits it in the template payload', async () => {
     const wrapper = setup()
     await flushPromises()
