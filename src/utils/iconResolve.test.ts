@@ -19,6 +19,5 @@ describe('resolveIcon', () => {
     const unknown = resolveIcon('NopeIcon')
     expect(known).toBe(Plus)
     expect(unknown).toBe(Menu)
-    expect(unknown).not.toBe(known)
   })
 })

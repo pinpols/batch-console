@@ -79,7 +79,7 @@
    *   - 节点点击弹底部 sheet 而非右侧 drawer(移动友好)
    *   - 仅展示定义图；运行深链转到独立的冻结快照视图。
    */
-  import { computed, nextTick, onScopeDispose, ref, watch } from 'vue'
+  import { computed, nextTick, ref, watch } from 'vue'
   import { useRoute } from 'vue-router'
   import { useI18n } from 'vue-i18n'
   import { ArrowLeft } from '@lucide/vue'
@@ -214,10 +214,8 @@
     }
   }
 
-  watch([() => tenant.tenantId, () => route.params.id], invalidateView, { flush: 'sync' })
   useTenantReload(load)
-  watch(() => route.params.id, () => void load())
-  onScopeDispose(() => { loadRevision++ })
+  watch(() => route.params.id, load)
 </script>
 
 <style scoped>

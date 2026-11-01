@@ -47,3 +47,5 @@ test-results-full/
 
 # vitest coverage output
 coverage/
+/.openidea/
+/output/playwright/

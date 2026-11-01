@@ -453,7 +453,33 @@
           ><el-switch v-model="windowForm.allowCrossDay"
         /></el-form-item>
         <el-form-item :label="t('queueConfig.windowPreviewTitle')">
-          <WindowSchedulePreview :start-time="windowForm.startTime" :end-time="windowForm.endTime" :timezone="windowForm.timezone" :allow-cross-day="windowForm.allowCrossDay" />
+          <div class="window-preview">
+            <template v-if="windowSchedule.mode !== 'incomplete'">
+              <div class="window-preview__track" role="img" :aria-label="windowPreviewText">
+                <span
+                  v-for="(segment, index) in windowSchedule.segments"
+                  :key="index"
+                  class="window-preview__segment"
+                  :style="{
+                    left: `${segment.start * 100}%`,
+                    width: `${(segment.end - segment.start) * 100}%`,
+                  }"
+                />
+              </div>
+              <div class="window-preview__axis" aria-hidden="true">
+                <span>00:00</span><span>12:00</span><span>24:00</span>
+              </div>
+              <p>{{ windowPreviewText }}</p>
+              <p>{{ t('queueConfig.windowPreviewZoneFallback') }}</p>
+              <p v-if="windowSchedule.fullDueCrossDay" class="window-preview__warning">
+                {{ t('queueConfig.windowPreviewFullCross') }}
+              </p>
+              <p v-if="windowSchedule.rangeInvalid" class="window-preview__warning">
+                {{ t('queueConfig.windowPreviewRangeInvalid') }}
+              </p>
+            </template>
+            <p v-else>{{ t('queueConfig.windowPreviewIncomplete') }}</p>
+          </div>
         </el-form-item>
         <el-form-item :label="t('queueConfig.fieldEnabled')"
           ><el-switch v-model="windowForm.enabled"
@@ -559,7 +585,7 @@
   import StatusTag from '@/components/common/StatusTag.vue'
   import GovernanceFilterBar from './components/GovernanceFilterBar.vue'
   import HolidayMonthView from './HolidayMonthView.vue'
-  import WindowSchedulePreview from './WindowSchedulePreview.vue'
+  import { windowPreview } from './windowPreview'
   import { userErrorMessage } from '@/utils/userErrorMessage'
 
   const tenant = useTenantStore()
@@ -670,6 +696,21 @@
     allowCrossDay: false,
     enabled: true,
     description: '',
+  })
+  const windowSchedule = computed(() =>
+    windowPreview(windowForm.startTime, windowForm.endTime, windowForm.allowCrossDay),
+  )
+  const windowPreviewText = computed(() => {
+    const values = {
+      start: windowForm.startTime,
+      end: windowForm.endTime,
+      timezone: windowForm.timezone,
+    }
+    if (windowSchedule.value.mode === 'full-day')
+      return t('queueConfig.windowPreviewFullDay', values)
+    if (windowSchedule.value.mode === 'overnight')
+      return t('queueConfig.windowPreviewOvernight', values)
+    return t('queueConfig.windowPreviewSameDay', values)
   })
 
 
@@ -1277,6 +1318,36 @@
 </script>
 
 <style scoped>
+  .window-preview {
+    width: 100%;
+    line-height: 1.5;
+  }
+  .window-preview__track {
+    position: relative;
+    height: 12px;
+    border-radius: 999px;
+    overflow: hidden;
+    background: var(--color-bg-subtle);
+    border: 1px solid var(--color-border);
+  }
+  .window-preview__segment {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    background: var(--color-primary);
+  }
+  .window-preview__axis {
+    display: flex;
+    justify-content: space-between;
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+  }
+  .window-preview p {
+    margin: var(--space-xs) 0 0;
+  }
+  .window-preview__warning {
+    color: var(--color-warning);
+  }
   .governance-workspace {
     display: flex;
     margin-bottom: var(--space-md);

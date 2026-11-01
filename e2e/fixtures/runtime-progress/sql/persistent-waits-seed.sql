@@ -55,19 +55,12 @@ VALUES
    jsonb_build_object('privateMarker', 'PERSISTENT_WAIT_PRIVATE_PAYLOAD', 'tenantId', :'tenant_id'),
    'WAITING', 3, current_timestamp + interval '2 minutes');
 
--- 作业等待使用独立的原请求和匹配的完整身份，允许真实恢复器检查后继续等待上游。
 -- 与 readiness 的 upstream-a 拼成同业务日链 source-job → upstream-a → workflow。
 INSERT INTO batch.job_dependency_waiting_launch
   (tenant_id, request_id, job_code, biz_date, dependency_snapshot, launch_payload, wait_status)
-VALUES (:'tenant_id', :'job_wait_request_id', 'upstream-a', :'biz_date'::date,
+VALUES (:'tenant_id', :'readiness_request_id', 'upstream-a', :'biz_date'::date,
         '[{"upstreamJobCode":"source-job","bizDateAlignment":"SAME_DAY"}]'::jsonb,
-        jsonb_build_object(
-          'tenantId', :'tenant_id', 'requestId', :'job_wait_request_id',
-          'jobCode', 'upstream-a', 'triggerType', 'MANUAL', 'dryRun', true,
-          'bizDate', jsonb_build_array(extract(year from :'biz_date'::date)::int,
-                                      extract(month from :'biz_date'::date)::int,
-                                      extract(day from :'biz_date'::date)::int),
-          'traceId', 'e2e-job-wait-trace', 'params', '{}'::jsonb), 'WAITING');
+        '{}'::jsonb, 'WAITING');
 
 SELECT json_build_object(
   'readinessCount', (SELECT count(*) FROM batch.readiness_wait
