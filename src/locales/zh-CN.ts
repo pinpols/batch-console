@@ -3716,8 +3716,6 @@ export default {
     bundleImportDryRunDone: 'Bundle dry-run 已校验 {n} 个租户',
     bundleImportDone: 'Bundle 已导入 {n} 个租户',
     bundleImportFailed: 'Bundle 未能完整导入；请检查并重试租户：{tenants}',
-    bundleImportUnknownOutcome:
-      '导入结果尚不明确，部分目标可能已提交。请先逐一核实目标配置，再决定后续操作。',
     exportBundleSuccess: '作业 {code} Bundle 已导出',
     queueEmptyPlaceholder: '当前租户无队列,可前往治理页新建后再回来',
     queueGoCreate: '+ 新建队列',
@@ -3785,8 +3783,6 @@ export default {
     prefillBadJson: 'Bundle JSON 格式不正确',
     createBundleSuccess: '作业 Bundle 已创建',
     createBundleFailed: '作业 Bundle 创建未完整成功，请检查租户：{tenants}',
-    createBundleUnknownOutcome:
-      '创建结果尚不明确，作业可能已提交。请先核实当前租户配置，再决定后续操作。',
     relatedJsonInvalid: '关联配置 JSON 格式不正确',
     selectChannelLabel: '选择 channel',
     selectChannelPlaceholder: '从当前租户已有 channel 选(选中即复用,提交时按 id 引用)',
@@ -4841,7 +4837,6 @@ export default {
     btnMatrix: '作业矩阵',
     btnRunFormal: '正式执行复制',
     toastFailed: '复制未完整成功，请查看结果明细。失败租户：{tenants}',
-    unknownOutcome: '复制结果尚不明确，部分目标可能已提交。请先逐一核实目标配置，再决定后续操作。',
     tabDiff: '差异预览',
     tabMatrix: '作业矩阵',
     metricTargets: '目标租户',

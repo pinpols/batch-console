@@ -81,12 +81,10 @@ const stubs = {
 }
 function pending<T>() {
   let resolve!: (value: T) => void
-  let reject!: (reason: unknown) => void
-  const promise = new Promise<T>((done, fail) => {
+  const promise = new Promise<T>((done) => {
     resolve = done
-    reject = fail
   })
-  return { promise, resolve, reject }
+  return { promise, resolve }
 }
 function diff(marker = 'current-preview') {
   return { summary: { targetTenantCount: 1 }, tenants: [{ tenantId: marker, items: [] }] }
@@ -244,51 +242,6 @@ describe('租户复制的输入与异步结果边界', () => {
       dryRun: false,
     })
     expect(wrapper.emitted('update:modelValue')).toEqual([[false]])
-    wrapper.unmount()
-  })
-
-  it.each([
-    { description: '网络中断', error: { code: 'ERR_NETWORK' } },
-    { description: '服务端异常', error: { response: { status: 500 } } },
-    { description: '幂等或状态冲突', error: { response: { status: 409 } } },
-  ])('正式复制$description 后提示先核实目标，不能假定未执行', async ({ error }) => {
-    state.copy.mockRejectedValueOnce(error)
-    const wrapper = await open()
-    wrapper.vm.$.appContext.config.errorHandler = vi.fn()
-    await click(wrapper, 'tenantCopyConfigDialog.btnRunFormal')
-    expect(ElMessage.warning).toHaveBeenCalledWith('tenantCopyConfigDialog.unknownOutcome')
-    expect(wrapper.emitted('update:modelValue')).toBeUndefined()
-    wrapper.unmount()
-  })
-
-  it('复制参数被明确拒绝时不提示结果未知', async () => {
-    state.copy.mockRejectedValueOnce({ response: { status: 400 } })
-    const wrapper = await open()
-    wrapper.vm.$.appContext.config.errorHandler = vi.fn()
-    await click(wrapper, 'tenantCopyConfigDialog.btnRunFormal')
-    expect(ElMessage.warning).not.toHaveBeenCalledWith('tenantCopyConfigDialog.unknownOutcome')
-    wrapper.unmount()
-  })
-
-  it('试运行中断不提示正式复制结果未知', async () => {
-    state.copy.mockRejectedValueOnce({ code: 'ERR_NETWORK' })
-    const wrapper = await open()
-    wrapper.vm.$.appContext.config.errorHandler = vi.fn()
-    await click(wrapper, 'tenantConfigShared.dryRunPreviewDiff')
-    expect(ElMessage.warning).not.toHaveBeenCalledWith('tenantCopyConfigDialog.unknownOutcome')
-    wrapper.unmount()
-  })
-
-  it('切换账号后旧复制失败不向新账号提示', async () => {
-    const request = pending<ReturnType<typeof success>>()
-    state.copy.mockReturnValueOnce(request.promise)
-    const wrapper = await open()
-    wrapper.vm.$.appContext.config.errorHandler = vi.fn()
-    await click(wrapper, 'tenantCopyConfigDialog.btnRunFormal')
-    state.context.actor = 'another-operator'
-    request.reject({ code: 'ERR_NETWORK' })
-    await flushPromises()
-    expect(ElMessage.warning).not.toHaveBeenCalledWith('tenantCopyConfigDialog.unknownOutcome')
     wrapper.unmount()
   })
 

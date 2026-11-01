@@ -369,7 +369,6 @@
   import JsonTextareaInput from '@/components/common/JsonTextareaInput.vue'
   import { jobApi, type JobBundlePayload } from '@/api/job'
   import { assessBatchInitOutcome } from '@/utils/batchInitOutcome'
-  import { isConsoleServiceUnavailable } from '@/utils/serviceAvailability'
   import { getMetaEnums, getMetaQueues, type MetaOption } from '@/api/meta'
   import { queryFileChannels } from '@/api/fileChannelsQuery'
   import { queryFileTemplates } from '@/api/system'
@@ -870,18 +869,15 @@
     const revision = submissionRevision
     const submittedJobCode = form.jobCode.trim()
     saving.value = true
-    let sent = false
     try {
       const tenantId = tenant.tenantId
       const bundle = buildBundle()
-      sent = true
       const response = await jobApi.createBundle({
         tenantId,
         mode: 'SKIP_EXISTING',
         dryRun: false,
         bundle,
       })
-      sent = false
       if (!submissionScope.isCurrent(scope) || revision !== submissionRevision) return
       const outcome = assessBatchInitOutcome(response.result)
       if (!outcome.fullySuccessful) {
@@ -900,15 +896,6 @@
       if (error instanceof SyntaxError) {
         ElMessage.error(t('jobDefinitionWizard.relatedJsonInvalid'))
       } else {
-        const status = (error as { response?: { status?: number } })?.response?.status
-        if (
-          sent &&
-          submissionScope.isCurrent(scope) &&
-          revision === submissionRevision &&
-          (isConsoleServiceUnavailable(error) || status === 409)
-        ) {
-          ElMessage.warning(t('jobDefinitionWizard.createBundleUnknownOutcome'))
-        }
         throw error
       }
     } finally {

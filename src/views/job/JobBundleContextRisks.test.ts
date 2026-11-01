@@ -145,12 +145,10 @@ const stubs = {
 }
 function pending<T>() {
   let resolve!: (value: T) => void
-  let reject!: (reason: unknown) => void
-  const promise = new Promise<T>((done, fail) => {
+  const promise = new Promise<T>((done) => {
     resolve = done
-    reject = fail
   })
-  return { promise, resolve, reject }
+  return { promise, resolve }
 }
 function success() {
   return {
@@ -251,55 +249,6 @@ describe('作业包导入的响应归属', () => {
     )
     expect(ElMessage.success).toHaveBeenCalledWith('jobDefinitionList.bundleImportDryRunDone')
   })
-
-  it.each([
-    { description: '网络中断', error: { code: 'ERR_NETWORK' } },
-    { description: '服务端异常', error: { response: { status: 500 } } },
-    { description: '幂等或状态冲突', error: { response: { status: 409 } } },
-  ])('正式导入$description 后提示先核实目标，不能假定未执行', async ({ error }) => {
-    mocks.importBundle.mockRejectedValueOnce(error)
-    const wrapper = await renderList()
-    wrapper.vm.$.appContext.config.errorHandler = vi.fn()
-    await click(wrapper, 'jobDefinitionList.bundleImportConfirm')
-    expect(ElMessage.warning).toHaveBeenCalledWith('jobDefinitionList.bundleImportUnknownOutcome')
-    expect(mocks.refetch).not.toHaveBeenCalled()
-  })
-
-  it('作业包参数被明确拒绝时不提示结果未知', async () => {
-    mocks.importBundle.mockRejectedValueOnce({ response: { status: 400 } })
-    const wrapper = await renderList()
-    wrapper.vm.$.appContext.config.errorHandler = vi.fn()
-    await click(wrapper, 'jobDefinitionList.bundleImportConfirm')
-    expect(ElMessage.warning).not.toHaveBeenCalledWith(
-      'jobDefinitionList.bundleImportUnknownOutcome',
-    )
-  })
-
-  it('试运行中断不提示正式导入结果未知', async () => {
-    mocks.importBundle.mockRejectedValueOnce({ code: 'ERR_NETWORK' })
-    const wrapper = await renderList()
-    wrapper.vm.$.appContext.config.errorHandler = vi.fn()
-    wrapper.findComponent({ name: 'ElCheckbox' }).vm.$emit('update:modelValue', true)
-    await flushPromises()
-    await click(wrapper, 'jobDefinitionList.bundleImportValidate')
-    expect(ElMessage.warning).not.toHaveBeenCalledWith(
-      'jobDefinitionList.bundleImportUnknownOutcome',
-    )
-  })
-
-  it('切换账号后旧导入失败不向新账号提示', async () => {
-    const request = pending<ReturnType<typeof success>>()
-    mocks.importBundle.mockReturnValueOnce(request.promise)
-    const wrapper = await renderList()
-    wrapper.vm.$.appContext.config.errorHandler = vi.fn()
-    await click(wrapper, 'jobDefinitionList.bundleImportConfirm')
-    mocks.context.actor = 'another-operator'
-    request.reject({ code: 'ERR_NETWORK' })
-    await flushPromises()
-    expect(ElMessage.warning).not.toHaveBeenCalledWith(
-      'jobDefinitionList.bundleImportUnknownOutcome',
-    )
-  })
 })
 describe('作业向导提交的响应归属', () => {
   it.each(['tenant', 'actor', 'permission', 'maintenance', 'input', 'unmount'])(
@@ -337,43 +286,6 @@ describe('作业向导提交的响应归属', () => {
       query: { jobCode: 'JOB_A' },
     })
     expect(ElMessage.success).toHaveBeenCalledTimes(1)
-  })
-
-  it.each([
-    { description: '网络中断', error: { code: 'ERR_NETWORK' } },
-    { description: '服务端异常', error: { response: { status: 500 } } },
-    { description: '幂等或状态冲突', error: { response: { status: 409 } } },
-  ])('向导提交$description 后提示先核实作业是否已创建', async ({ error }) => {
-    mocks.createBundle.mockRejectedValueOnce(error)
-    const { wrapper } = await renderWizard()
-    wrapper.vm.$.appContext.config.errorHandler = vi.fn()
-    await click(wrapper, 'jobDefinitionWizard.submitCreate')
-    expect(ElMessage.warning).toHaveBeenCalledWith('jobDefinitionWizard.createBundleUnknownOutcome')
-    expect(mocks.push).not.toHaveBeenCalled()
-  })
-
-  it('向导参数被明确拒绝时不提示结果未知', async () => {
-    mocks.createBundle.mockRejectedValueOnce({ response: { status: 400 } })
-    const { wrapper } = await renderWizard()
-    wrapper.vm.$.appContext.config.errorHandler = vi.fn()
-    await click(wrapper, 'jobDefinitionWizard.submitCreate')
-    expect(ElMessage.warning).not.toHaveBeenCalledWith(
-      'jobDefinitionWizard.createBundleUnknownOutcome',
-    )
-  })
-
-  it('切换账号后旧向导提交失败不向新账号提示', async () => {
-    const request = pending<ReturnType<typeof success>>()
-    mocks.createBundle.mockReturnValueOnce(request.promise)
-    const { wrapper } = await renderWizard()
-    wrapper.vm.$.appContext.config.errorHandler = vi.fn()
-    await click(wrapper, 'jobDefinitionWizard.submitCreate')
-    mocks.context.actor = 'another-operator'
-    request.reject({ code: 'ERR_NETWORK' })
-    await flushPromises()
-    expect(ElMessage.warning).not.toHaveBeenCalledWith(
-      'jobDefinitionWizard.createBundleUnknownOutcome',
-    )
   })
 })
 
