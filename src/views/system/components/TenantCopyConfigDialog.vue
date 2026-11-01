@@ -312,6 +312,7 @@
     type TenantConfigMatrixResponse,
   } from '@/api/ops'
   import { assessBatchInitOutcome } from '@/utils/batchInitOutcome'
+  import { isConsoleServiceUnavailable } from '@/utils/serviceAvailability'
   import type { Tenant } from '@/api/tenants'
   import { ALL_CONFIG_TYPES, isReservedTenant, isTemplateTenant } from './tenantConfigTypes'
   import { useFormValidate, rules } from '@/composables/useFormValidate'
@@ -557,12 +558,14 @@
       writeRevision === permissionRevision
     saving.value = true
     lastDryRun.value = dryRun
+    let sent = false
     try {
       if (!(await validateCopyForm()) || !isCurrent()) return
       if (form.targetTenantIds.includes(form.sourceTenantId)) {
         ElMessage.warning(t('tenantCopyConfigDialog.sourceTargetOverlap'))
         return
       }
+      sent = true
       const res = await copyTenantConfig({
         sourceTenantId: form.sourceTenantId,
         targetTenantIds: [...form.targetTenantIds],
@@ -585,6 +588,17 @@
         ElMessage.success(t('tenantCopyConfigDialog.toastDone'))
         emit('update:modelValue', false)
       }
+    } catch (error) {
+      const status = (error as { response?: { status?: number } })?.response?.status
+      if (
+        !dryRun &&
+        sent &&
+        isCurrent() &&
+        (isConsoleServiceUnavailable(error) || status === 409)
+      ) {
+        ElMessage.warning(t('tenantCopyConfigDialog.unknownOutcome'))
+      }
+      throw error
     } finally {
       saving.value = false
     }

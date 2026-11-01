@@ -648,6 +648,7 @@
   import type { FormInstance, FormItemRule, FormRules } from 'element-plus'
   import { jobApi, type JobBundlePayload } from '@/api/job'
   import { assessBatchInitOutcome } from '@/utils/batchInitOutcome'
+  import { isConsoleServiceUnavailable } from '@/utils/serviceAvailability'
   import { instanceApi } from '@/api/instance'
   import { fmtDatetime } from '@/utils/datetime'
   import { getMetaEnums, getMetaQueues, type MetaOption } from '@/api/meta'
@@ -975,6 +976,17 @@
       )
       bundleImportVisible.value = false
       void refetch()
+    } catch (error) {
+      const status = (error as { response?: { status?: number } })?.response?.status
+      if (
+        !dryRun &&
+        bundleImportScope.isCurrent(scope) &&
+        revision === bundleImportRevision &&
+        (isConsoleServiceUnavailable(error) || status === 409)
+      ) {
+        ElMessage.warning(t('jobDefinitionList.bundleImportUnknownOutcome'))
+      }
+      throw error
     } finally {
       bundleImportSaving.value = false
     }

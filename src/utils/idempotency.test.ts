@@ -3,8 +3,9 @@ import { createIdempotencyKey } from './idempotency'
 
 describe('createIdempotencyKey', () => {
   it('returns a non-empty string', () => {
-    expect(createIdempotencyKey()).toBeTruthy()
-    expect(typeof createIdempotencyKey()).toBe('string')
+    const key = createIdempotencyKey()
+    expect(typeof key).toBe('string')
+    expect(key).not.toBe('')
   })
 
   it('returns unique keys on each call', () => {
@@ -22,8 +23,11 @@ describe('createIdempotencyKey', () => {
     const original = globalThis.crypto
     // @ts-expect-error intentional override for test
     delete globalThis.crypto
-    const key = createIdempotencyKey()
-    expect(key).toMatch(/^\d+-\d+-[a-z0-9]+$/)
-    ;(globalThis as { crypto?: Crypto }).crypto = original
+    try {
+      const key = createIdempotencyKey()
+      expect(key).toMatch(/^\d+-\d+-[a-z0-9]+$/)
+    } finally {
+      ;(globalThis as { crypto?: Crypto }).crypto = original
+    }
   })
 })

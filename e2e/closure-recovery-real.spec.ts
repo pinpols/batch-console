@@ -169,3 +169,132 @@ test('真实 ConfigSync 核对已提交收据后刷新保持原结果且不重�
     await testInfo.attach('owned-fixture-cleanup.json', { body: cleanupEvidence, contentType: 'application/json' })
   }
 })
+
+test('页面发起配置导入后按原键核对已提交目标，刷新不重复执行', async ({
+  page,
+  network,
+}, testInfo) => {
+  const fixture = new ClosureRecoveryFixture()
+  const importPath = '/api/console/config/sync/import'
+  network.ignoreIf(
+    (entry) =>
+      entry.status === 500 && entry.method === 'POST' && new URL(entry.url).pathname === importPath,
+  )
+  try {
+    fixture.run('prepare-tenants')
+    const username = await authenticate(page, fixture.tenantId)
+    await enterDemoApp(page)
+    await page.goto('/config/management')
+    const syncTab = page.getByRole('tab', { name: e2eText('configManagement.tabSync') })
+    await syncTab.click()
+
+    const targetField = page.locator('.sync__target-grid .el-form-item').filter({
+      hasText: e2eText('configSyncTab.targetTenantsLabel'),
+    })
+    for (const tenantId of [fixture.targetA, fixture.targetB]) {
+      const input = targetField.locator('input')
+      await input.click()
+      await input.fill(tenantId)
+      await page
+        .locator('.el-select-dropdown:visible [role="option"]')
+        .filter({ hasText: tenantId })
+        .click()
+    }
+    await page.keyboard.press('Escape')
+    await expect(targetField).toContainText(fixture.targetA)
+    const payload = {
+      resourceQueues: [
+        { queueCode: fixture.queueCode, queueName: 'Closure browser queue', queueType: 'MIXED' },
+      ],
+    }
+    await page.locator('.sync__payload textarea').fill(JSON.stringify(payload))
+
+    fixture.run('install-sync-fault')
+    let requestKey = ''
+    try {
+      const imported = page.waitForResponse(
+        (response) =>
+          new URL(response.url()).pathname === importPath && response.request().method() === 'POST',
+      )
+      await page.getByRole('button', { name: e2eText('configSyncTab.btnImport') }).click()
+      const confirmation = page.locator('.el-message-box:visible')
+      await expect(confirmation).toBeVisible()
+      await confirmation
+        .getByRole('button', { name: e2eText('configSyncTab.importConfirmButton') })
+        .click()
+      const response = await imported
+      expect(response.status(), 'Only final audit persistence is faulted').toBe(500)
+      requestKey = response.request().headers()['idempotency-key'] ?? ''
+      expect(requestKey).toBeTruthy()
+      const sent = response.request().postDataJSON() as {
+        tenantId: string
+        targetTenantIds: string[]
+        dryRun: boolean
+        bundle: typeof payload
+      }
+      expect(sent).toMatchObject({
+        tenantId: fixture.tenantId,
+        targetTenantIds: [fixture.targetA, fixture.targetB],
+        bundle: payload,
+      })
+      expect(sent.dryRun ?? false).toBe(false)
+    } finally {
+      fixture.run('remove-sync-fault')
+    }
+
+    const before = fixture.run<SyncState>('config-sync-state')
+    expect(before).toMatchObject({ status: 'RUNNING', configCount: 2, receiptCount: 2 })
+    await expect(page.getByText(e2eText('configSyncTab.unknownOutcome'))).toBeVisible()
+    await page.reload()
+    await page.getByRole('tab', { name: e2eText('configManagement.tabSync') }).click()
+    const check = page.getByRole('button', { name: e2eText('configSyncTab.checkOriginal') })
+    await expect(check).toBeVisible()
+    const statusResponse = page.waitForResponse(
+      (response) =>
+        new URL(response.url()).pathname === '/api/console/config/sync/requests/status' &&
+        response.request().method() === 'GET',
+    )
+    const reconcilePath = `/api/console/config/sync/logs/${before.logId}/reconcile`
+    const reconcileResponse = page.waitForResponse(
+      (response) =>
+        new URL(response.url()).pathname === reconcilePath &&
+        response.request().method() === 'POST',
+    )
+    await check.click()
+    const status = await statusResponse
+    expect(status.status()).toBe(200)
+    expect(status.request().headers()['idempotency-key']).toBe(requestKey)
+    const reconciled = await reconcileResponse
+    expect(reconciled.status()).toBe(200)
+    await expect(check).toHaveCount(0)
+    const after = fixture.run<SyncState>('config-sync-state')
+    expect(after).toMatchObject({
+      status: 'SUCCESS',
+      successItems: 2,
+      skippedItems: 0,
+      configCount: 2,
+      receiptCount: 2,
+      reconciledBy: username,
+    })
+    expect(after.receiptResults).toEqual(before.receiptResults)
+    expect(
+      network.all.filter(
+        (entry) =>
+          entry.status === 500 &&
+          entry.method === 'POST' &&
+          new URL(entry.url).pathname === importPath,
+      ),
+    ).toHaveLength(1)
+    network.assertClean('real page ConfigSync import and original-key reconciliation')
+    await testInfo.attach('page-config-sync-reconcile-result.json', {
+      body: JSON.stringify({ tenantId: fixture.tenantId, requestKey, before, after }, null, 2),
+      contentType: 'application/json',
+    })
+  } finally {
+    fixture.cleanup()
+    await testInfo.attach('owned-fixture-cleanup.json', {
+      body: JSON.stringify({ tenantId: fixture.tenantId, remainingRows: 0 }),
+      contentType: 'application/json',
+    })
+  }
+})

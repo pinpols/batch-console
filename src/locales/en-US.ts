@@ -3832,6 +3832,8 @@ const messages: Messages = {
     bundleImportDryRunDone: 'Bundle dry-run validated {n} tenant(s)',
     bundleImportDone: 'Bundle imported to {n} tenant(s)',
     bundleImportFailed: 'Bundle import did not fully succeed. Check and retry tenant(s): {tenants}',
+    bundleImportUnknownOutcome:
+      'The import outcome is unknown and some targets may have committed. Check each target configuration before proceeding.',
     exportBundleSuccess: 'Job {code} bundle exported',
     queueEmptyPlaceholder: 'No queue for current tenant; create one in Governance first',
     queueGoCreate: '+ New queue',
@@ -3905,6 +3907,8 @@ const messages: Messages = {
     prefillBadJson: 'Invalid Bundle JSON',
     createBundleSuccess: 'Job Bundle created',
     createBundleFailed: 'Job Bundle creation did not fully succeed. Check tenant(s): {tenants}',
+    createBundleUnknownOutcome:
+      'The creation outcome is unknown and the job may have committed. Check the current tenant configuration before proceeding.',
     relatedJsonInvalid: 'Related config JSON is invalid',
     selectChannelLabel: 'Select channel',
     selectChannelPlaceholder: 'Pick from tenant channels (reused by id at submit)',
@@ -4950,6 +4954,8 @@ const messages: Messages = {
     btnMatrix: 'Job matrix',
     btnRunFormal: 'Run copy',
     toastFailed: 'Copy did not fully succeed. Review the result details. Failed tenants: {tenants}',
+    unknownOutcome:
+      'The copy outcome is unknown and some targets may have committed. Check each target configuration before proceeding.',
     tabDiff: 'Diff preview',
     tabMatrix: 'Job matrix',
     metricTargets: 'Targets',
