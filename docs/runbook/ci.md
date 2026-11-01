@@ -71,6 +71,8 @@ CI 使用 GitHub 托管的 `ubuntu-26.04`，Action 运行时统一到 Node 24 �
 - `docker/login-action` v4、`docker/metadata-action` v6、`docker/build-push-action` v7
 - `actions/create-github-app-token` v3（联合版本准备 workflow 位于配对后端仓库）、`renovatebot/github-action` v46.3.6
 
+前端静态资源与文档在构建机原生架构构建，最终运行镜像仍分别构建 `linux/amd64` 和 `linux/arm64`；这样避免 Node 构建通过 QEMU 模拟目标架构。
+
 上述版本仅用于阅读；workflow 实际引用必须是对应的 40 位 commit SHA。Node 基线由 `.node-version`/`.nvmrc` 固定到精确 patch，Dockerfile 基础镜像固定 tag + digest。
 
 artifact 上传下载升级后，必须手动运行一次 `full-ci-gate`，确认 `static-and-unit` 上传的 `dist` 能在 `lighthouse` job 下载、解压并启动预览；仅通过 workflow 语法检查不算闭环验证。
