@@ -8821,7 +8821,7 @@ export interface components {
       bizDateTo: string
       jobCodes?: string[]
       /**
-       * @description BUNDLE 默认（zip 含 manifest + 多个 json 文件）
+       * @description 默认 BUNDLE；JSON 和 CSV 为兼容参数，当前均生成包含 manifest 和 JSON 文件的 ZIP 包
        * @enum {string}
        */
       exportFormat?: 'BUNDLE' | 'JSON' | 'CSV'
