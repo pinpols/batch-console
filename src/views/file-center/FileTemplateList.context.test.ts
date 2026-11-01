@@ -71,8 +71,8 @@ function state(wrapper: ReturnType<typeof setup>) {
     openChannelCreate: () => void
     toggleTemplate: (row: Record<string, unknown>) => Promise<void>
     toggleChannel: (row: Record<string, unknown>) => Promise<void>
-    togglingTemplateId: number | null
-    togglingChannelId: number | null
+    togglingTemplateIds: Map<number, unknown>
+    togglingChannelIds: Map<number, unknown>
   } }).setupState
 }
 function byLabel(wrapper: ReturnType<typeof setup>, label: string) {
@@ -94,7 +94,7 @@ describe('file configuration editor context', () => {
     const oldRow = { id: 1, tenantId: 'tenant-a', enabled: true }
     const newRow = { id: 2, tenantId: 'tenant-b', enabled: true }
     const invoke = kind === 'template' ? state(wrapper).toggleTemplate : state(wrapper).toggleChannel
-    const busy = () => kind === 'template' ? state(wrapper).togglingTemplateId : state(wrapper).togglingChannelId
+    const busy = () => kind === 'template' ? state(wrapper).togglingTemplateIds : state(wrapper).togglingChannelIds
     const oldRequest = invoke(oldRow)
     expect(toggle).toHaveBeenNthCalledWith(1, 1, 'tenant-a', false)
     mocks.context.tenantId = 'tenant-b'
@@ -104,12 +104,12 @@ describe('file configuration editor context', () => {
     await oldRequest
     expect(oldRow.enabled).toBe(true)
     expect(mocks.success).not.toHaveBeenCalled()
-    expect(busy()).toBe(2)
+    expect(busy().has(2)).toBe(true)
     finishNew({})
     await newRequest
     expect(newRow.enabled).toBe(false)
     expect(mocks.success).toHaveBeenCalledTimes(1)
-    expect(busy()).toBeNull()
+    expect(busy().size).toBe(0)
   })
 
   it.each(['template', 'channel'] as const)('refuses a stale %s row from another tenant', async (kind) => {
@@ -136,7 +136,7 @@ describe('file configuration editor context', () => {
     finishFirst({})
     await firstRequest
     expect(first.enabled).toBe(false)
-    expect(kind === 'template' ? state(wrapper).togglingTemplateId : state(wrapper).togglingChannelId).toBe(2)
+    expect((kind === 'template' ? state(wrapper).togglingTemplateIds : state(wrapper).togglingChannelIds).has(2)).toBe(true)
     finishSecond({})
     await secondRequest
     expect(second.enabled).toBe(false)
