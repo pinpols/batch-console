@@ -98,7 +98,6 @@ npm run preflight:changed:all
 PR 至少应通过：
 
 - `Lint / Typecheck / Unit / Build`
-- `Node 24 compatibility`
 - `Frontend documentation build`
 - `Static checks + Unit`
 - `Security audit (full)`
