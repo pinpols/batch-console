@@ -95,8 +95,9 @@
 </template>
 
 <script setup lang="ts">
-  import { ref } from 'vue'
+  import { ref, watch } from 'vue'
   import { useTenantReload } from '@/composables/useTenantReload'
+  import { useTenantRequestScope } from '@/composables/useTenantRequestScope'
   import { useI18n } from 'vue-i18n'
   import {
     RefreshCw as Refresh,
@@ -117,6 +118,7 @@
   import type { ConsoleOpsSummaryResponse } from '@/types/console-api'
 
   const tenant = useTenantStore()
+  const scope = useTenantRequestScope()
   const loading = ref(false)
   const summary = ref<ConsoleOpsSummaryResponse | null>(null)
   const dailyProgress = ref<InstanceType<typeof MTenantDailyProgress> | null>(null)
@@ -126,16 +128,25 @@
   }
 
   async function load() {
+    const request = scope.begin()
+    if (!request.tenantId) return
     loading.value = true
     try {
-      summary.value = await getOpsSummary(tenant.tenantId)
+      const result = await getOpsSummary(request.tenantId)
+      if (scope.isCurrent(request)) summary.value = result
     } catch {
-      summary.value = null
-      ElMessage.error(t('mobile.common.loadFail'))
+      if (scope.isCurrent(request)) {
+        summary.value = null
+        ElMessage.error(t('mobile.common.loadFail'))
+      }
     } finally {
-      loading.value = false
+      if (scope.isCurrent(request)) loading.value = false
     }
   }
+  watch(() => tenant.tenantId, () => {
+    summary.value = null
+    loading.value = false
+  }, { flush: 'sync' })
   useTenantReload(load)
   // 30s 轮询：页面在前台时自动刷新，切后台时暂停（oncall 场景）
   useAutoRefresh(load, REFRESH_INTERVAL_COLD_MS)

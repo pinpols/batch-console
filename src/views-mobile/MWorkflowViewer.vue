@@ -79,7 +79,7 @@
    *   - 节点点击弹底部 sheet 而非右侧 drawer(移动友好)
    *   - 仅展示定义图；运行深链转到独立的冻结快照视图。
    */
-  import { computed, nextTick, ref, watch } from 'vue'
+  import { computed, nextTick, onScopeDispose, ref, watch } from 'vue'
   import { useRoute } from 'vue-router'
   import { useI18n } from 'vue-i18n'
   import { ArrowLeft } from '@lucide/vue'
@@ -110,27 +110,44 @@
   type NodeMeta = NonNullable<WorkflowDefinitionDetailResponse['nodes']>[number]
   const selectedNodeMeta = ref<NodeMeta | null>(null)
 
+  let loadRevision = 0
+  function invalidateView() {
+    loadRevision++
+    clearTrustedSvg(graphRef.value)
+    detail.value = null
+    mermaidText.value = ''
+    selectedNodeMeta.value = null
+    nodeCodeBySanitized.value = new Map()
+    loading.value = false
+    errorMessage.value = ''
+  }
   async function load() {
-    if (!Number.isFinite(id.value) || id.value <= 0) {
+    invalidateView()
+    const revision = loadRevision
+    const tenantId = tenant.tenantId
+    const workflowId = id.value
+    const isCurrent = () => revision === loadRevision && tenantId === tenant.tenantId && workflowId === id.value
+    if (!tenantId) return
+    if (!Number.isSafeInteger(workflowId) || workflowId <= 0) {
       errorMessage.value = t('mobile.workflowViewer.invalidId')
       return
     }
     loading.value = true
-    errorMessage.value = ''
     try {
       const [d, mer] = await Promise.all([
-        workflowApi.detailById(id.value, tenant.tenantId),
-        workflowApi.mermaid(id.value, tenant.tenantId),
+        workflowApi.detailById(workflowId, tenantId),
+        workflowApi.mermaid(workflowId, tenantId),
       ])
+      if (!isCurrent()) return
       detail.value = d
       mermaidText.value = mer.mermaid ?? ''
       buildNodeMap(d)
-      await renderMermaid(mermaidText.value)
-      attachNodeClicks()
+      const renderId = await renderMermaid(mermaidText.value, isCurrent)
+      if (renderId && isCurrent()) attachNodeClicks(renderId)
     } catch (err: unknown) {
-      errorMessage.value = userErrorMessage(err)
+      if (isCurrent()) errorMessage.value = userErrorMessage(err)
     } finally {
-      loading.value = false
+      if (isCurrent()) loading.value = false
     }
   }
 
@@ -142,12 +159,13 @@
     nodeCodeBySanitized.value = m
   }
 
-  function attachNodeClicks() {
+  function attachNodeClicks(renderId: string) {
     if (!graphRef.value) return
     const nodes = graphRef.value.querySelectorAll<SVGGElement>('g.node')
-    const re = /^flowchart-(.+)-\d+$/
+    const prefix = `${renderId}-flowchart-`
     nodes.forEach((n) => {
-      const m = re.exec(n.id)
+      if (!n.id.startsWith(prefix)) return
+      const m = /^(.+)-\d+$/.exec(n.id.slice(prefix.length))
       if (!m) return
       const original = nodeCodeBySanitized.value.get(m[1])
       if (!original) return
@@ -175,26 +193,31 @@
     return isLetter ? out : 'n' + out
   }
 
-  async function renderMermaid(text: string) {
+  async function renderMermaid(text: string, isCurrent: () => boolean) {
     if (!text.trim()) {
       clearTrustedSvg(graphRef.value)
       return
     }
     try {
       const mermaid = await loadMermaid()
+      if (!isCurrent()) return
       const renderTimestamp = Date.now()
       const randomSuffix = Math.floor(Math.random() * 1e4)
       const renderId = `m-wf-graph-${renderTimestamp}-${randomSuffix}`
       const { svg } = await mermaid.render(renderId, text)
       await nextTick()
+      if (!isCurrent()) return
       setTrustedMermaidSvg(graphRef.value, svg)
+      return renderId
     } catch (err: unknown) {
-      errorMessage.value = t('mobile.workflowViewer.renderFailPrefix') + userErrorMessage(err)
+      if (isCurrent()) errorMessage.value = t('mobile.workflowViewer.renderFailPrefix') + userErrorMessage(err)
     }
   }
 
+  watch([() => tenant.tenantId, () => route.params.id], invalidateView, { flush: 'sync' })
   useTenantReload(load)
-  watch(() => route.params.id, load)
+  watch(() => route.params.id, () => void load())
+  onScopeDispose(() => { loadRevision++ })
 </script>
 
 <style scoped>
