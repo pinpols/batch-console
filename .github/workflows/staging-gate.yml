@@ -1,4 +1,4 @@
-name: staging-gate
+name: Frontend / Staging acceptance
 
 # staging / pre-prod 部署前最终关:against 真实 staging URL 跑 Playwright + Lighthouse
 # 触发:release tag(v*)/ 手动 workflow_dispatch
@@ -29,6 +29,7 @@ concurrency:
 jobs:
   # 发布验收必须有真实环境和测试账号；缺少配置属于发布阻断，不允许静默跳过。
   precheck:
+    name: Validate staging environment and release version
     runs-on: ubuntu-26.04
     timeout-minutes: 2
     outputs:

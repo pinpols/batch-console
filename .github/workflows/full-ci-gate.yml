@@ -1,4 +1,4 @@
-name: full-ci-gate
+name: Frontend / Full CI gate
 
 # PR / main push / nightly 全量门禁(20-30 min)
 # 内容:pr-gate 全套 + 完整 npm audit；Docker build/Trivy 与 Lighthouse

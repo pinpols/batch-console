@@ -1,4 +1,4 @@
-name: Quarterly dependency inventory
+name: Frontend / Quarterly dependency inventory
 
 # Renovate self-hosted on GitHub Actions —— 无外部服务依赖。
 # 仅生成季度依赖盘点，不修改分支、不创建或自动合并 PR。
@@ -23,6 +23,7 @@ permissions:
 
 jobs:
   renovate:
+    name: Generate dependency inventory
     runs-on: ubuntu-26.04
     timeout-minutes: 30
     steps:
@@ -42,6 +43,7 @@ jobs:
           RENOVATE_REPOSITORIES: ${{ github.repository }}
 
   issue:
+    name: Publish dependency inventory issue
     needs: renovate
     runs-on: ubuntu-26.04
     timeout-minutes: 5

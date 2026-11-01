@@ -1,4 +1,4 @@
-name: Label auto-merge
+name: Frontend / Label-based auto-merge
 
 # 给 PR 打 'automerge' 标签 → 等所有 required check 绿了自动 admin squash merge
 #
@@ -18,7 +18,7 @@ on:
   pull_request:
     types: [labeled, synchronize, reopened, ready_for_review]
   workflow_run:
-    workflows: ['pr-gate']
+    workflows: ['Frontend / Pull request gate']
     types: [completed]
 
 permissions:
@@ -34,6 +34,7 @@ concurrency:
 
 jobs:
   admin-merge:
+    name: Enable approved label-based merge
     runs-on: ubuntu-26.04
     timeout-minutes: 5
     steps:

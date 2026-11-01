@@ -1,4 +1,4 @@
-name: build-image
+name: Frontend / Build and publish image
 
 # 前端镜像构建 + 推送 ghcr.io/pinpols/batch-console。
 # main push:构建 sha + latest 多架构不可变镜像。
@@ -158,6 +158,7 @@ jobs:
           echo 'should_build=true' >> "$GITHUB_OUTPUT"
 
   release-acceptance:
+    name: Verify staging acceptance before release
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-26.04
     timeout-minutes: 45
@@ -186,6 +187,7 @@ jobs:
           exit 1
 
   build:
+    name: Build and publish frontend image
     needs: nightly-sim-gate
     outputs:
       image_digest: ${{ steps.image.outputs.digest }}
@@ -290,6 +292,7 @@ jobs:
           cache-to: type=gha,mode=max
 
   promote-release:
+    name: Promote validated release image
     if: startsWith(github.ref, 'refs/tags/v')
     needs: release-acceptance
     runs-on: ubuntu-26.04
@@ -309,6 +312,7 @@ jobs:
         run: docker buildx imagetools create --tag "$RELEASE_IMAGE" "$SOURCE_IMAGE"
 
   release-sourcemaps:
+    name: Upload release source maps
     if: startsWith(github.ref, 'refs/tags/v')
     needs: promote-release
     runs-on: ubuntu-26.04

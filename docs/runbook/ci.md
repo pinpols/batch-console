@@ -19,6 +19,8 @@ GitHub Security 告警的分类、修复、误报处理和合并后验证遵循[
 | `build-image`                    | `.github/workflows/build-image.yml`  | main / tag / 每日 19:00 UTC（北京时间 03:00）/ 手动 / reusable workflow     | main 构建不可变镜像；定时任务先判断前后端前一日是否有相关变更，无变更跳过；后端有变更时等待配对后端 daily-sim-strict 成功；tag 在 staging 通过后晋级同一 digest；供后端 Compose CD 调用时固定前端与后端 docs SHA，并返回 frontend image digest | 10-75 min |
 | `Quarterly dependency inventory` | `.github/workflows/renovate.yml`     | 每季度 / 手动                                                               | 只生成 Renovate dry-run 盘点和一张 Issue，不创建 PR                                                                                             | 5-15 min  |
 
+Actions 页面使用 `Frontend / ...` 展示工作流用途；本手册中的 `pr-gate` 等名称指工作流文件标识。`label-automerge.yml` 的 `workflow_run.workflows` 必须与 PR 工作流展示名一致。Ruleset 必需检查名保持不变。
+
 ## pr-gate 详情
 
 ```mermaid

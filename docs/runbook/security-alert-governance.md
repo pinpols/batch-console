@@ -83,7 +83,7 @@ npm run typecheck
 npm run check:i18n
 npm run check:comments
 npm run test:unit -- <受影响测试文件>
-gh run list --repo pinpols/batch-console --workflow codeql --branch main --limit 3
+gh run list --repo pinpols/batch-console --workflow codeql.yml --branch main --limit 3
 gh api 'repos/pinpols/batch-console/code-scanning/alerts?state=open&ref=refs/heads/main&per_page=100' --paginate
 ```
 
