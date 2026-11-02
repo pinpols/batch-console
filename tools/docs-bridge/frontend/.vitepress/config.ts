@@ -376,6 +376,7 @@ export default withMermaid({
         items: [
           { text: '后端文档索引', link: '/backend/' },
           { text: '架构', link: '/backend/architecture/' },
+          { text: '架构图导览', link: '/architecture-diagrams/' },
           { text: 'ADR', link: '/backend/architecture/adr/' },
           { text: '运维', link: '/backend/runbook/' },
           { text: 'API', link: '/backend/api/' },

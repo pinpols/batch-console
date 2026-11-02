@@ -3,6 +3,7 @@ import { cp, lstat, mkdir, readFile, rm, stat, writeFile } from 'node:fs/promise
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { paginateEvidence } from './lib/docs-publication.mjs'
+import { writeDiagramPages } from './lib/docs-diagrams.mjs'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const frontendDocs = resolve(root, process.env.FRONTEND_DOCS_ROOT || 'docs')
@@ -103,6 +104,9 @@ await cp(frontendDocs, join(generated, 'frontend'), {
   filter: copyFilter(frontendDocs, frontendIgnoreRules),
 })
 
+// 构建期从已复制的后端权威文档提取图，不维护第二份图形源。
+await writeDiagramPages(join(generated, 'backend'), join(generated, 'architecture-diagrams'))
+
 // 只拆统一站点的发布副本，不改变配对后端的权威记录或移除历史正文。
 const largeEvidence = [
   'audit/backend-25-package-governance-2026-10-26.md',
@@ -159,6 +163,7 @@ await writeFile(
 
 - [后端文档索引](./backend/README.md)
 - [系统架构](./backend/architecture/README.md)
+- [架构图导览](./architecture-diagrams/README.md)
 - [后端运维手册](./backend/runbook/README.md)
 - [API 文档](./backend/api/README.md)
 `,
