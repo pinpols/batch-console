@@ -2,7 +2,13 @@
   <PageContainer>
     <PageHeader>
       <template #actions>
-        <el-button v-if="canMutateConfig" type="primary" :icon="Plus" :disabled="!auth.profileLoaded" @click="onCreateClick">
+        <el-button
+          v-if="canMutateConfig"
+          type="primary"
+          :icon="Plus"
+          :disabled="!auth.profileLoaded"
+          @click="onCreateClick"
+        >
           {{ activeCreateLabel }}
         </el-button>
       </template>
@@ -47,6 +53,7 @@
               <el-form-item :label="t('fileTemplateList.codeLabel')">
                 <el-input
                   v-model="keyword"
+                  class="query-w-280"
                   clearable
                   :placeholder="t('fileTemplateList.codePlaceholder')"
                 />
@@ -83,18 +90,20 @@
             </ListPageQueryBar>
           </template>
 
-          <el-table-column
-            prop="templateCode"
-            :label="t('fileTemplateList.colCode')"
-            width="220"
-            show-overflow-tooltip
-          />
+          <el-table-column prop="templateCode" :label="t('fileTemplateList.colCode')" width="220">
+            <template #default="{ row }">
+              <CopyableText v-if="row.templateCode" :text="row.templateCode" />
+            </template>
+          </el-table-column>
           <el-table-column
             prop="templateName"
             :label="t('fileTemplateList.colName')"
             min-width="260"
-            show-overflow-tooltip
-          />
+          >
+            <template #default="{ row }">
+              <CopyableText v-if="row.templateName" :text="row.templateName" />
+            </template>
+          </el-table-column>
           <el-table-column prop="templateType" :label="t('fileTemplateList.colType')" width="120">
             <template #default="{ row }">
               {{ resolveEnumLabel('fileTemplateType', row.templateType) }}
@@ -109,7 +118,11 @@
               {{ resolveEnumLabel('fileTemplateFormat', row.fileFormatType) }}
             </template>
           </el-table-column>
-          <el-table-column prop="bizType" :label="t('fileTemplateList.colBizType')" width="120" />
+          <el-table-column prop="bizType" :label="t('fileTemplateList.colBizType')" min-width="160">
+            <template #default="{ row }">
+              <CopyableText v-if="row.bizType" :text="row.bizType" />
+            </template>
+          </el-table-column>
           <el-table-column prop="version" :label="t('fileTemplateList.colVersion')" width="90" />
           <el-table-column :label="t('fileTemplateList.colEnabled')" width="90">
             <template #default="{ row }">
@@ -131,7 +144,10 @@
           />
           <el-table-column :label="t('fileTemplateList.colActions')" width="180" fixed="right">
             <template #default="{ row }">
-              <RowActions :actions="templateRowActions(row as ConsoleFileTemplateResponse)" :inline-limit="2" />
+              <RowActions
+                :actions="templateRowActions(row as ConsoleFileTemplateResponse)"
+                :inline-limit="2"
+              />
             </template>
           </el-table-column>
         </ProTable>
@@ -160,9 +176,9 @@
           <el-form-item :label="t('fileTemplateList.channelKeywordLabel')">
             <el-input
               v-model="channelKeyword"
+              class="query__search query-w-280"
               clearable
               :placeholder="t('fileTemplateList.channelKeywordPlaceholder')"
-              class="query__search"
             />
           </el-form-item>
           <el-form-item :label="t('fileTemplateList.enabledLabel')">
@@ -188,14 +204,20 @@
             prop="channelCode"
             :label="t('fileTemplateList.colChannelCode')"
             width="220"
-            show-overflow-tooltip
-          />
+          >
+            <template #default="{ row }">
+              <CopyableText v-if="row.channelCode" :text="row.channelCode" />
+            </template>
+          </el-table-column>
           <el-table-column
             prop="channelName"
             :label="t('fileTemplateList.colChannelName')"
             min-width="240"
-            show-overflow-tooltip
-          />
+          >
+            <template #default="{ row }">
+              <CopyableText v-if="row.channelName" :text="row.channelName" />
+            </template>
+          </el-table-column>
           <el-table-column
             prop="channelType"
             :label="t('fileTemplateList.colChannelType')"
@@ -205,14 +227,25 @@
             prop="targetEndpoint"
             :label="t('fileTemplateList.colTargetEndpoint')"
             min-width="320"
-            show-overflow-tooltip
-          />
-          <el-table-column prop="authType" :label="t('fileTemplateList.colAuthType')" width="120" />
+          >
+            <template #default="{ row }"
+              ><CopyableText v-if="row.targetEndpoint" :text="row.targetEndpoint" :copyable="false"
+            /></template>
+          </el-table-column>
+          <el-table-column prop="authType" :label="t('fileTemplateList.colAuthType')" width="120">
+            <template #default="{ row }">
+              {{ resolveEnumLabel('authType', row.authType) }}
+            </template>
+          </el-table-column>
           <el-table-column
             prop="receiptPolicy"
             :label="t('fileTemplateList.colReceiptPolicy')"
             width="140"
-          />
+          >
+            <template #default="{ row }">
+              {{ resolveEnumLabel('receiptPolicy', row.receiptPolicy) }}
+            </template>
+          </el-table-column>
           <el-table-column :label="t('fileTemplateList.colEnabled')" width="110">
             <template #default="{ row }">
               <el-switch
@@ -267,7 +300,7 @@
       size="800px"
       destroy-on-close
     >
-      <el-form :model="templateForm" label-width="120px">
+      <el-form :model="templateForm" label-position="top">
         <!-- 基本信息 -->
         <div class="form-section">
           <div class="section-title">{{ t('fileTemplateList.sectionBasic') }}</div>
@@ -301,7 +334,7 @@
             ><el-switch v-model="templateForm.enabled"
           /></el-form-item>
           <el-form-item :label="t('fileTemplateList.fieldVersion')"
-            ><el-input-number v-model="templateForm.version" :min="1"
+            ><el-input-number v-model="templateForm.version" :min="1" :max="2147483647"
           /></el-form-item>
           <el-form-item :label="t('fileTemplateList.fieldDescription')"
             ><el-input
@@ -313,47 +346,15 @@
         </div>
 
         <!-- 文件格式:按所选格式渐进披露;编码等高级项默认折叠 -->
-        <div class="form-section">
-          <div class="section-title">{{ t('fileTemplateList.sectionFormat') }}</div>
-          <el-form-item :label="t('fileTemplateList.fieldFileFormatType')"
-            ><MetaSelect
-              v-model="templateForm.fileFormatType"
-              enum-key="fileTemplateFormat"
-              class="query-w-full"
-              clearable
-          /></el-form-item>
-          <template v-if="isDelimited">
-            <el-form-item :label="t('fileTemplateList.fieldDelimiter')"
-              ><el-input v-model="templateForm.delimiter" maxlength="8"
-            /></el-form-item>
-            <el-form-item :label="t('fileTemplateList.fieldLineSeparator')"
-              ><el-input v-model="templateForm.lineSeparator" maxlength="16"
-            /></el-form-item>
-          </template>
-          <el-form-item>
-            <el-link
-              type="primary"
-              underline="never"
-              @click="showFormatAdvanced = !showFormatAdvanced"
-              >{{
-                showFormatAdvanced
-                  ? t('fileTemplateList.hideAdvanced')
-                  : t('fileTemplateList.showAdvanced')
-              }}</el-link
-            >
-          </el-form-item>
-          <template v-if="showFormatAdvanced">
-            <el-form-item :label="t('fileTemplateList.fieldCharset')"
-              ><el-input v-model="templateForm.charset" maxlength="32"
-            /></el-form-item>
-            <el-form-item :label="t('fileTemplateList.fieldTargetCharset')"
-              ><el-input v-model="templateForm.targetCharset" maxlength="32"
-            /></el-form-item>
-            <el-form-item :label="t('fileTemplateList.fieldWithBom')">
-              <el-checkbox v-model="templateForm.withBom" />
-            </el-form-item>
-          </template>
-        </div>
+        <FileTemplateFormatFields
+          v-model:file-format-type="templateForm.fileFormatType"
+          v-model:delimiter="templateForm.delimiter"
+          v-model:line-separator="templateForm.lineSeparator"
+          v-model:charset="templateForm.charset"
+          v-model:target-charset="templateForm.targetCharset"
+          v-model:with-bom="templateForm.withBom"
+          v-model:show-advanced="showFormatAdvanced"
+        />
 
         <!-- 字段映射 -->
         <div class="form-section">
@@ -367,18 +368,30 @@
             :tenant-id="tenant.tenantId"
             :direction="templateForm.templateType === 'EXPORT' ? 'EXPORT' : 'IMPORT'"
             :can-apply="
-              !templateForm.fieldMappingsJson.trim() && !templateForm.queryParamSchemaJson.trim() &&
+              !templateForm.fieldMappingsJson.trim() &&
+              !templateForm.queryParamSchemaJson.trim() &&
               (templateForm.templateType !== 'EXPORT' || !templateForm.defaultQuerySql.trim())
             "
             @apply="applyMappingDraft"
           />
           <el-form-item :label="t('fileTemplateList.fieldFieldMappingsJson')">
-            <JsonTextareaInput v-model="templateForm.fieldMappingsJson" :rows="4" />
+            <JsonTextareaInput
+              v-model="templateForm.fieldMappingsJson"
+              :rows="4"
+              :initialize-default="false"
+            />
           </el-form-item>
           <el-form-item :label="t('fileTemplateList.fieldQueryParamSchemaJson')">
-            <JsonTextareaInput v-model="templateForm.queryParamSchemaJson" :rows="3" />
+            <JsonTextareaInput
+              v-model="templateForm.queryParamSchemaJson"
+              :rows="3"
+              :initialize-default="false"
+            />
           </el-form-item>
-          <el-form-item v-if="templateForm.templateType === 'EXPORT'" :label="t('fileTemplateList.fieldDefaultQuerySql')">
+          <el-form-item
+            v-if="templateForm.templateType === 'EXPORT'"
+            :label="t('fileTemplateList.fieldDefaultQuerySql')"
+          >
             <el-input v-model="templateForm.defaultQuerySql" type="textarea" :rows="4" />
           </el-form-item>
         </div>
@@ -403,7 +416,7 @@
       size="800px"
       destroy-on-close
     >
-      <el-form :model="channelForm" label-width="120px">
+      <el-form :model="channelForm" label-position="top">
         <el-form-item :label="t('fileTemplateList.fieldChannelCode')" required>
           <el-input
             v-if="channelEditingId != null"
@@ -424,7 +437,7 @@
             class="query-w-full"
         /></el-form-item>
         <el-form-item :label="t('fileTemplateList.fieldTargetEndpoint')"
-          ><el-input v-model="channelForm.targetEndpoint" maxlength="1024"
+          ><el-input v-model="channelForm.targetEndpoint" maxlength="512"
         /></el-form-item>
         <el-form-item :label="t('fileTemplateList.fieldAuthType')"
           ><MetaSelect
@@ -468,8 +481,13 @@
   import { ElMessage } from 'element-plus'
   import { Pencil as Edit, Plus, Eye as View } from '@lucide/vue'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
+  import { createFileTemplateValidation, optionalText } from './fileTemplateValidation'
+  import { createFileTemplateForm } from './fileTemplateForm'
 
   const { t, te } = useI18n({ useScope: 'global' })
+  const { requireText, requireCode } = createFileTemplateValidation((key, label) =>
+    t(key, { label }),
+  )
   // P2 IA 拆分:route.meta.mode 限定本页只显示某一类资源,实现两条路由共用一个组件
   // 'templates' | 'channels' — 缺省视为单 tab 模式;不传则两个 tab 全显示(兼容老入口)
   const route = useRoute()
@@ -489,6 +507,7 @@
   import { getMetaBizTypes, type MetaOption } from '@/api/meta'
   import { userErrorMessage } from '@/utils/userErrorMessage'
   import MetaSelect from '@/components/common/MetaSelect.vue'
+  import CopyableText from '@/components/common/CopyableText.vue'
   import CodeNameBuilder from '@/components/common/CodeNameBuilder.vue'
   import {
     createFileChannel,
@@ -516,6 +535,7 @@
   import StatusSegment, { type StatusSegmentItem } from '@/components/table/StatusSegment.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
   import FileTemplateDetailDrawer from './FileTemplateDetailDrawer.vue'
+  import FileTemplateFormatFields from './FileTemplateFormatFields.vue'
   import JsonTextareaInput from '@/components/common/JsonTextareaInput.vue'
   import MappingDraftAssistant from './MappingDraftAssistant.vue'
   import type { FileTemplateMappingDraftResponse } from '@/api/system'
@@ -553,24 +573,47 @@
   let channelEditor: EditorScope | null = null
   function newContextScope(): EditorScope | null {
     const username = auth.userInfo?.username
-    if (!tenant.tenantId || !username || !auth.isLoggedIn || !auth.profileLoaded || !canMutateConfig.value || !isSharedAuthRevisionCurrent()) return null
+    if (
+      !tenant.tenantId ||
+      !username ||
+      !auth.isLoggedIn ||
+      !auth.profileLoaded ||
+      !canMutateConfig.value ||
+      !isSharedAuthRevisionCurrent()
+    )
+      return null
     return { tenantId: tenant.tenantId, username, session: currentAuthSession() }
   }
   function contextIsCurrent(scope: EditorScope) {
-    return scope.tenantId === tenant.tenantId && scope.username === auth.userInfo?.username &&
-      scope.session === currentAuthSession() && auth.isLoggedIn && auth.profileLoaded && canMutateConfig.value && isSharedAuthRevisionCurrent()
+    return (
+      scope.tenantId === tenant.tenantId &&
+      scope.username === auth.userInfo?.username &&
+      scope.session === currentAuthSession() &&
+      auth.isLoggedIn &&
+      auth.profileLoaded &&
+      canMutateConfig.value &&
+      isSharedAuthRevisionCurrent()
+    )
   }
   function editorIsCurrent(scope: EditorScope | null, kind: 'template' | 'channel') {
-    return !!scope && scope === (kind === 'template' ? templateEditor : channelEditor) &&
+    return (
+      !!scope &&
+      scope === (kind === 'template' ? templateEditor : channelEditor) &&
       (kind === 'template' ? templateDialogVisible.value : channelDialogVisible.value) &&
       contextIsCurrent(scope)
+    )
   }
   function captureReadSession() {
     return { username: auth.userInfo?.username, session: currentAuthSession() }
   }
   function readSessionIsCurrent(scope: ReturnType<typeof captureReadSession>) {
-    return scope.session === currentAuthSession() && scope.username === auth.userInfo?.username &&
-      auth.isLoggedIn && auth.profileLoaded && isSharedAuthRevisionCurrent()
+    return (
+      scope.session === currentAuthSession() &&
+      scope.username === auth.userInfo?.username &&
+      auth.isLoggedIn &&
+      auth.profileLoaded &&
+      isSharedAuthRevisionCurrent()
+    )
   }
   const togglingTemplateIds = shallowReactive(new Map<number, EditorScope>())
   const togglingChannelIds = shallowReactive(new Map<number, EditorScope>())
@@ -633,24 +676,7 @@
     enabled.value = value === 'ENABLED' ? true : value === 'DISABLED' ? false : undefined
   }
 
-  const templateForm = reactive({
-    templateCode: '',
-    templateName: '',
-    templateType: 'IMPORT',
-    bizType: '',
-    fileFormatType: 'DELIMITED',
-    charset: 'UTF-8',
-    targetCharset: 'UTF-8',
-    withBom: false,
-    delimiter: ',',
-    lineSeparator: '\\n',
-    fieldMappingsJson: '',
-    queryParamSchemaJson: '',
-    defaultQuerySql: '',
-    enabled: true,
-    version: 1,
-    description: '',
-  })
+  const templateForm = reactive(createFileTemplateForm())
 
   // 渐进式披露:分隔符/行分隔符仅对分隔符格式(DELIMITED)相关;其余格式隐藏(值仍保留在 model,提交语义不变)。
   const isDelimited = computed(() => templateForm.fileFormatType === 'DELIMITED')
@@ -685,27 +711,6 @@
     enabled: true,
   })
 
-  function optionalText(value: string) {
-    const text = value.trim()
-    return text ? text : undefined
-  }
-
-  function requireText(value: string, label: string) {
-    const text = value.trim()
-    if (!text) throw new Error(`${label} 必填`)
-    return text
-  }
-  // 资源 code 字段(templateCode / channelCode)统一校验,与 BE @ValidResourceCode 对齐:
-  // 字母开头 + 字母/数字/下划线/连字符,长度 ≤ 128
-  const RESOURCE_CODE_PATTERN = /^[a-zA-Z][a-zA-Z0-9_-]{0,127}$/
-  function requireCode(value: string, label: string) {
-    const text = requireText(value, label)
-    if (!RESOURCE_CODE_PATTERN.test(text)) {
-      throw new Error(`${label} 必须字母开头,仅含字母/数字/下划线/连字符,长度 ≤ 128`)
-    }
-    return text
-  }
-
   function handleValidationError(err: unknown) {
     if (err instanceof Error) ElMessage.warning(userErrorMessage(err))
   }
@@ -728,7 +733,8 @@
     if (!scope.tenantId) return
     try {
       const result = await getMetaBizTypes(scope.tenantId)
-      if (bizTypesScope.isCurrent(scope) && readSessionIsCurrent(session)) bizTypeOptions.value = result
+      if (bizTypesScope.isCurrent(scope) && readSessionIsCurrent(session))
+        bizTypeOptions.value = result
     } catch {
       if (bizTypesScope.isCurrent(scope) && readSessionIsCurrent(session)) bizTypeOptions.value = []
     }
@@ -790,8 +796,7 @@
     channelRows.value = allChannelRows.value.filter((row) => {
       if (k) {
         const searchableChannelText =
-          `${row.channelCode ?? ''} ${row.channelName ?? ''} ${row.channelType ?? ''}`
-            .toLowerCase()
+          `${row.channelCode ?? ''} ${row.channelName ?? ''} ${row.channelType ?? ''}`.toLowerCase()
         if (!searchableChannelText.includes(k)) return false
       }
       if (channelEnabled.value != null && row.enabled !== channelEnabled.value) return false
@@ -806,7 +811,8 @@
     loadingChannels.value = true
     try {
       const result = await listFileChannels(scope.tenantId)
-      if (channelsScope.isCurrent(scope) && readSessionIsCurrent(session)) allChannelRows.value = result
+      if (channelsScope.isCurrent(scope) && readSessionIsCurrent(session))
+        allChannelRows.value = result
     } catch {
       if (channelsScope.isCurrent(scope) && readSessionIsCurrent(session)) allChannelRows.value = []
     } finally {
@@ -859,24 +865,7 @@
     templateEditor = scope
     templateEditingId.value = null
     initialDefaultQuerySql.value = null
-    Object.assign(templateForm, {
-      templateCode: '',
-      templateName: '',
-      templateType: 'IMPORT',
-      bizType: '',
-      fileFormatType: 'DELIMITED',
-      charset: 'UTF-8',
-      targetCharset: 'UTF-8',
-      withBom: false,
-      delimiter: ',',
-      lineSeparator: '\\n',
-      fieldMappingsJson: '',
-      queryParamSchemaJson: '',
-      defaultQuerySql: '',
-      enabled: true,
-      version: 1,
-      description: '',
-    })
+    Object.assign(templateForm, createFileTemplateForm())
     templateDialogVisible.value = true
   }
 
@@ -911,10 +900,15 @@
     return {
       tenantId,
       ...(templateEditingId.value == null
-        ? { templateCode: requireCode(templateForm.templateCode, 'templateCode') }
+        ? {
+            templateCode: requireCode(
+              templateForm.templateCode,
+              t('fileTemplateList.fieldTemplateCode'),
+            ),
+          }
         : {}),
       templateName: optionalText(templateForm.templateName),
-      templateType: requireText(templateForm.templateType, 'templateType'),
+      templateType: requireText(templateForm.templateType, t('fileTemplateList.fieldTemplateType')),
       bizType: optionalText(templateForm.bizType),
       fileFormatType: optionalText(templateForm.fileFormatType),
       charset: optionalText(templateForm.charset),
@@ -924,9 +918,10 @@
       lineSeparator: optionalText(templateForm.lineSeparator),
       fieldMappingsJson: optionalText(templateForm.fieldMappingsJson),
       queryParamSchemaJson: optionalText(templateForm.queryParamSchemaJson),
-      defaultQuerySql: templateEditingId.value == null || initialDefaultQuerySql.value == null
-        ? optionalText(templateForm.defaultQuerySql)
-        : templateForm.defaultQuerySql,
+      defaultQuerySql:
+        templateEditingId.value == null || initialDefaultQuerySql.value == null
+          ? optionalText(templateForm.defaultQuerySql)
+          : templateForm.defaultQuerySql,
       enabled: templateForm.enabled,
       version: templateForm.version,
       description: optionalText(templateForm.description),
@@ -1009,16 +1004,31 @@
   }
 
   function buildChannelPayload(tenantId: string): FileChannelSavePayload {
+    const channelCode =
+      channelEditingId.value == null
+        ? requireCode(channelForm.channelCode, t('fileTemplateList.fieldChannelCode'))
+        : undefined
+    const channelType = requireText(channelForm.channelType, t('fileTemplateList.fieldChannelType'))
+    const configJson = optionalText(channelForm.configJson)
+    if (configJson) {
+      let parsed: unknown
+      try {
+        parsed = JSON.parse(configJson)
+      } catch {
+        throw new Error(t('fileTemplateList.validationConfigJson'))
+      }
+      if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+        throw new Error(t('fileTemplateList.validationConfigJson'))
+      }
+    }
     return {
       tenantId,
-      ...(channelEditingId.value == null
-        ? { channelCode: requireCode(channelForm.channelCode, 'channelCode') }
-        : {}),
+      ...(channelCode ? { channelCode } : {}),
       channelName: optionalText(channelForm.channelName),
-      channelType: requireText(channelForm.channelType, 'channelType'),
+      channelType,
       targetEndpoint: optionalText(channelForm.targetEndpoint),
       authType: optionalText(channelForm.authType),
-      configJson: optionalText(channelForm.configJson),
+      configJson,
       receiptPolicy: optionalText(channelForm.receiptPolicy),
       timeoutSeconds: channelForm.timeoutSeconds,
       enabled: channelForm.enabled,
@@ -1104,35 +1114,68 @@
     templateDialogVisible.value = false
     channelDialogVisible.value = false
   }
-  watch([() => tenant.tenantId, () => auth.userInfo?.username, () => auth.isLoggedIn, () => auth.profileLoaded, canMutateConfig], invalidateEditors, { flush: 'sync' })
-  watch(templateDialogVisible, (visible) => {
-    if (!visible) { templateEditor = null; templateSaving.value = false }
-  }, { flush: 'sync' })
-  watch(channelDialogVisible, (visible) => {
-    if (!visible) { channelEditor = null; channelSaving.value = false }
-  }, { flush: 'sync' })
+  watch(
+    [
+      () => tenant.tenantId,
+      () => auth.userInfo?.username,
+      () => auth.isLoggedIn,
+      () => auth.profileLoaded,
+      canMutateConfig,
+    ],
+    invalidateEditors,
+    { flush: 'sync' },
+  )
+  watch(
+    templateDialogVisible,
+    (visible) => {
+      if (!visible) {
+        templateEditor = null
+        templateSaving.value = false
+      }
+    },
+    { flush: 'sync' },
+  )
+  watch(
+    channelDialogVisible,
+    (visible) => {
+      if (!visible) {
+        channelEditor = null
+        channelSaving.value = false
+      }
+    },
+    { flush: 'sync' },
+  )
   onScopeDispose(invalidateEditors)
-  watch([() => tenant.tenantId, () => auth.userInfo?.username, () => auth.isLoggedIn, () => auth.profileLoaded], ([tenantId, username, loggedIn, profileLoaded], [oldTenantId]) => {
-    templatesScope.begin()
-    channelsScope.begin()
-    bizTypesScope.begin()
-    detailScope.begin()
-    allRows.value = []
-    allChannelRows.value = []
-    bizTypeOptions.value = []
-    detail.value = null
-    detailVisible.value = false
-    loadingTemplates.value = false
-    loadingChannels.value = false
-    loadError.value = null
-    syncPage()
-    syncChannelRows()
-    if (tenantId === oldTenantId && tenantId && username && loggedIn && profileLoaded) {
-      void load()
-      void loadChannels()
-      void loadBizTypes()
-    }
-  }, { flush: 'sync' })
+  watch(
+    [
+      () => tenant.tenantId,
+      () => auth.userInfo?.username,
+      () => auth.isLoggedIn,
+      () => auth.profileLoaded,
+    ],
+    ([tenantId, username, loggedIn, profileLoaded], [oldTenantId]) => {
+      templatesScope.begin()
+      channelsScope.begin()
+      bizTypesScope.begin()
+      detailScope.begin()
+      allRows.value = []
+      allChannelRows.value = []
+      bizTypeOptions.value = []
+      detail.value = null
+      detailVisible.value = false
+      loadingTemplates.value = false
+      loadingChannels.value = false
+      loadError.value = null
+      syncPage()
+      syncChannelRows()
+      if (tenantId === oldTenantId && tenantId && username && loggedIn && profileLoaded) {
+        void load()
+        void loadChannels()
+        void loadBizTypes()
+      }
+    },
+    { flush: 'sync' },
+  )
   watch([page, pageSize], syncPage)
   watch(activeTab, (tab) => {
     if (tab === 'channels' && allChannelRows.value.length === 0) void loadChannels()
@@ -1145,55 +1188,4 @@
   })
 </script>
 
-<style scoped>
-  .file-config-tabs :deep(.el-tabs__content) {
-    overflow: visible;
-  }
-
-  /* P2 单模式路由(/files/templates 或 /files/channels):隐藏 tab 头,
-     用户从侧栏菜单进入相应路由后直接看到内容,无需多看一层 tab */
-  .file-config-tabs.single-mode :deep(.el-tabs__header) {
-    display: none;
-  }
-
-  .panel-head {
-    margin-bottom: var(--space-sm);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-md);
-    flex-wrap: wrap;
-  }
-
-  .panel-title {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    font-size: var(--font-size-md);
-    font-weight: 700;
-    color: var(--color-text-primary);
-    line-height: var(--line-height-tight);
-  }
-
-  .dot {
-    width: 10px;
-    height: 10px;
-    border-radius: var(--radius-content);
-  }
-
-  .dot--primary {
-    background: var(--color-primary);
-  }
-
-  .dot--success {
-    background: var(--color-success);
-  }
-
-  .query {
-    margin-bottom: var(--page-block-gap);
-  }
-
-  .query__search {
-    width: min(360px, 100%);
-  }
-</style>
+<style scoped src="./FileTemplateList.css"></style>

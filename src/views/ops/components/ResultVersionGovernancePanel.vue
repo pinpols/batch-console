@@ -29,12 +29,13 @@
             clearable
             :disabled="Boolean(actionVersionId)"
             :placeholder="t('batchDayReplay.resultGovernanceBusinessKeyPlaceholder')"
-            @keyup.enter="search"
           />
         </el-form-item>
-        <el-button type="primary" :loading="loading" @click="search">
-          {{ t('batchDayReplay.resultGovernanceSearch') }}
-        </el-button>
+        <el-form-item>
+          <el-button type="primary" native-type="submit" :loading="loading">
+            {{ t('batchDayReplay.resultGovernanceSearch') }}
+          </el-button>
+        </el-form-item>
       </el-form>
 
       <el-alert
@@ -116,7 +117,7 @@
         <el-table-column
           :label="t('batchDayReplay.resultGovernanceColumns.actions')"
           width="235"
-          fixed="right"
+          :fixed="isMobile ? false : 'right'"
         >
           <template #default="{ row }">
             <el-button link type="primary" @click.stop="openDetail(row as ResultVersion)">
@@ -218,6 +219,7 @@
   import SectionCard from '@/components/common/SectionCard.vue'
   import { batchDayReplayApi, type ResultVersion } from '@/api/batchDayReplay'
   import { usePermission } from '@/composables/usePermission'
+  import { useResponsive } from '@/composables/useResponsive'
   import { useTenantReload } from '@/composables/useTenantReload'
   import { useTenantStore } from '@/stores/tenant'
   import { fmtDatetime } from '@/utils/datetime'
@@ -225,6 +227,7 @@
   const { t } = useI18n({ useScope: 'global' })
   const tenant = useTenantStore()
   const { canMutateConfig } = usePermission()
+  const { isMobile } = useResponsive()
   const businessKey = ref('')
   const versions = ref<ResultVersion[]>([])
   const effectiveVersion = ref<ResultVersion | null>(null)

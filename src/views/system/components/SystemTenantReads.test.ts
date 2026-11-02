@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import SelfServiceFailedJobsTab from './SelfServiceFailedJobsTab.vue'
 import SelfServiceNotifSubsTab from './SelfServiceNotifSubsTab.vue'
 import SelfServiceMyAuditsTab from './SelfServiceMyAuditsTab.vue'
+import CopyableText from '@/components/common/CopyableText.vue'
 import SelfServiceQuotaTab from './SelfServiceQuotaTab.vue'
 import SelfServiceQuotaChangeTab from './SelfServiceQuotaChangeTab.vue'
 import ConfigChangeLogsTab from './ConfigChangeLogsTab.vue'
@@ -285,6 +286,10 @@ describe('system tenant response isolation', () => {
       },
     })
     await flushPromises()
+    const errorViewer = wrapper
+      .findAllComponents(CopyableText)
+      .find((item) => item.props('text') === 'connection unavailable')
+    expect(errorViewer?.props('copyable')).toBe(false)
     let cells = wrapper.findAll('span').map((cell) => cell.text())
     expect(cells).toContain('CHANNEL_A')
     expect(cells).toContain('2')

@@ -86,7 +86,13 @@
         </template>
         <el-alert v-else :title="t('jobProgress.noGraph')" type="info" :closable="false" />
         <el-table v-if="progress.stages.length" :data="visibleStages" size="small">
-          <el-table-column prop="stageCode" :label="t('jobProgress.stage')" min-width="140" />
+          <el-table-column prop="stageCode" :label="t('jobProgress.stage')" min-width="140">
+            <template #default="{ row }"
+              ><CopyableText v-if="row.stageCode" :text="row.stageCode" /><span v-else
+                >—</span
+              ></template
+            >
+          </el-table-column>
           <el-table-column :label="t('workflowProgress.statusLabel')" min-width="200"
             ><template #default="{ row }">{{
               stateText(row.stageStatus)
@@ -96,12 +102,11 @@
           <el-table-column :label="t('jobProgress.processed')" min-width="120"
             ><template #default="{ row }">{{ row.rowsProcessed ?? '—' }}</template></el-table-column
           >
-          <el-table-column
-            prop="errorCode"
-            :label="t('workflowProgress.blocker')"
-            min-width="160"
-            show-overflow-tooltip
-          />
+          <el-table-column prop="errorCode" :label="t('workflowProgress.blocker')" min-width="160">
+            <template #default="{ row }"
+              ><span class="wrap-cell">{{ row.errorCode || '—' }}</span></template
+            >
+          </el-table-column>
         </el-table>
       </template>
     </DataState>
@@ -116,6 +121,7 @@
   import { jobExecutionCounts } from '@/utils/jobExecutionProgress'
   import { executionGraph } from '@/utils/workflowExecutionGraph'
   import SectionCard from '@/components/common/SectionCard.vue'
+  import CopyableText from '@/components/common/CopyableText.vue'
   import DataState from '@/components/common/DataState.vue'
   import LiveStatusBadge from '@/components/common/LiveStatusBadge.vue'
   import WorkflowMiniDag from '@/components/workflow/WorkflowMiniDag.vue'
@@ -186,6 +192,10 @@
   })
 </script>
 <style scoped>
+  .wrap-cell {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
   .job-progress__counts {
     margin-block: var(--space-4);
   }

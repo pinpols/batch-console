@@ -36,7 +36,7 @@ export function useInstanceNoSearch(
     try {
       const res = await queryJobInstances({
         tenantId: requestedTenantId,
-        jobCode: requestedJobCode,
+        exactJobCode: requestedJobCode,
         startDate: requestedBizDate,
         endDate: requestedBizDate,
         page: 1,

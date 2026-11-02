@@ -37,32 +37,69 @@
 </template>
 
 <script setup lang="ts">
-  import { ref } from 'vue'
+  import { onBeforeUnmount, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { Paperclip, X } from '@lucide/vue'
+  import { useTenantStore } from '@/stores/tenant'
+  import { useTenantChangeGuard } from '@/composables/useTenantChangeGuard'
   import {
     AiTextAttachmentError,
     readAiTextAttachment,
     type AiTextAttachment,
   } from '@/utils/aiTextAttachment'
 
-  defineProps<{ modelValue: AiTextAttachment | null; disabled?: boolean }>()
+  const props = defineProps<{
+    modelValue: AiTextAttachment | null
+    disabled?: boolean
+    contextRevision?: number
+  }>()
   const emit = defineEmits<{ 'update:modelValue': [value: AiTextAttachment | null] }>()
   const { t } = useI18n({ useScope: 'global' })
   const input = ref<HTMLInputElement | null>(null)
   const error = ref<AiTextAttachmentError['reason'] | null>(null)
+  const tenant = useTenantStore()
+  const reading = ref(false)
+  const readSequence = ref(0)
+  useTenantChangeGuard(
+    () => reading.value,
+    () => ({ reading: reading.value, sequence: readSequence.value }),
+  )
+  watch(
+    [() => tenant.revision, () => props.contextRevision],
+    () => {
+      readSequence.value += 1
+      reading.value = false
+      error.value = null
+    },
+    { flush: 'sync' },
+  )
+  onBeforeUnmount(() => {
+    readSequence.value += 1
+  })
 
   async function selectFile(event: Event) {
     const target = event.target as HTMLInputElement
     const file = target.files?.[0]
     target.value = ''
     if (!file) return
+    const sequence = ++readSequence.value
+    const tenantRevision = tenant.revision
+    const contextRevision = props.contextRevision
+    const isCurrent = () =>
+      sequence === readSequence.value &&
+      tenant.revision === tenantRevision &&
+      props.contextRevision === contextRevision
+    reading.value = true
     try {
       const result = await readAiTextAttachment(file)
+      if (!isCurrent()) return
       emit('update:modelValue', result)
       error.value = null
     } catch (cause) {
+      if (!isCurrent()) return
       error.value = cause instanceof AiTextAttachmentError ? cause.reason : 'encoding'
+    } finally {
+      if (isCurrent()) reading.value = false
     }
   }
 </script>

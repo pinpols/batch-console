@@ -94,7 +94,12 @@
                 prop="name"
                 :label="t('atomicTaskTypeCenter.colParamName')"
                 width="200"
-              />
+              >
+                <template #default="{ row }">
+                  <CopyableText v-if="row.name" :text="String(row.name)" />
+                  <span v-else class="cell-empty">—</span>
+                </template>
+              </el-table-column>
               <el-table-column
                 prop="type"
                 :label="t('atomicTaskTypeCenter.colParamType')"
@@ -122,12 +127,15 @@
                 show-overflow-tooltip
               >
                 <template #default="{ row }">
-                  {{
-                    tOr(
-                      `atomicTaskTypeCenter.paramDesc.${schema.taskType}.${row.name}`,
-                      row.description,
-                    )
-                  }}
+                  <CopyableText
+                    :text="
+                      tOr(
+                        `atomicTaskTypeCenter.paramDesc.${schema.taskType}.${row.name}`,
+                        row.description,
+                      ) || ''
+                    "
+                    :copyable="false"
+                  />
                 </template>
               </el-table-column>
             </el-table>
@@ -176,7 +184,15 @@
                 <el-input
                   v-else
                   :model-value="getDraftText(schema.taskType, p.name)"
-                  :type="p.type === 'list' || p.type === 'map' ? 'textarea' : 'text'"
+                  :type="
+                    p.type === 'list' ||
+                    p.type === 'map' ||
+                    (schema.taskType === 'sql' && p.name === 'sql') ||
+                    (schema.taskType === 'http' && p.name === 'body')
+                      ? 'textarea'
+                      : 'text'
+                  "
+                  :rows="4"
                   :placeholder="
                     p.type === 'list'
                       ? '[]'
@@ -201,14 +217,29 @@
               </el-form-item>
             </el-form>
             <div class="atc__form-actions">
-              <el-button :icon="DocumentCopy" @click="copyJson(schema.taskType)">
+              <el-button
+                :icon="DocumentCopy"
+                :disabled="preparedDraft(schema).invalidFields.length > 0"
+                @click="copyJson(schema)"
+              >
                 {{ t('atomicTaskTypeCenter.btnCopyJson') }}
               </el-button>
               <el-button @click="resetDraft(schema.taskType)">
                 {{ t('common.reset') }}
               </el-button>
             </div>
-            <JsonPreview :data="getDraft(schema.taskType)" />
+            <el-alert
+              v-if="preparedDraft(schema).invalidFields.length > 0"
+              type="warning"
+              :closable="false"
+              show-icon
+              :title="
+                t('atomicTaskTypeCenter.savedConfigInvalidParameterTypes', {
+                  fields: preparedDraft(schema).invalidFields.join(', '),
+                })
+              "
+            />
+            <JsonPreview v-else :data="preparedDraft(schema).parameters" />
 
             <section v-if="canManageSavedConfigs" class="atc__saved-config">
               <h3 class="atc__section-title">
@@ -242,6 +273,7 @@
                     v-model="selectedSavedConfigId"
                     :loading="savedConfigLoading"
                     :placeholder="t('atomicTaskTypeCenter.savedConfigSelectPlaceholder')"
+                    :aria-label="t('atomicTaskTypeCenter.savedConfigSelectPlaceholder')"
                     clearable
                     class="atc__saved-config-select"
                   >
@@ -304,12 +336,15 @@
                 show-overflow-tooltip
               >
                 <template #default="{ row }">
-                  {{
-                    tOr(
-                      `atomicTaskTypeCenter.gateMeaning.${schema.taskType}.${row.field}`,
-                      row.meaning,
-                    )
-                  }}
+                  <CopyableText
+                    :text="
+                      tOr(
+                        `atomicTaskTypeCenter.gateMeaning.${schema.taskType}.${row.field}`,
+                        row.meaning,
+                      ) || ''
+                    "
+                    :copyable="false"
+                  />
                 </template>
               </el-table-column>
             </el-table>
@@ -321,6 +356,7 @@
 </template>
 
 <script setup lang="ts">
+  import CopyableText from '@/components/common/CopyableText.vue'
   import AtomicRuntimePanel from './components/AtomicRuntimePanel.vue'
   import { ref, reactive, computed, watch, onUnmounted } from 'vue'
   import { useI18n } from 'vue-i18n'
@@ -447,9 +483,14 @@
     drafts[taskType] = {}
   }
 
-  async function copyJson(taskType: string) {
-    const draft = getDraft(taskType)
-    const text = JSON.stringify(draft, null, 2)
+  function preparedDraft(schema: AtomicTaskTypeSchema) {
+    return prepareAtomicTaskConfig(schema, getDraft(schema.taskType))
+  }
+
+  async function copyJson(schema: AtomicTaskTypeSchema) {
+    const prepared = preparedDraft(schema)
+    if (prepared.invalidFields.length > 0) return
+    const text = JSON.stringify(prepared.parameters, null, 2)
     try {
       await navigator.clipboard.writeText(text)
       ElMessage.success(t('atomicTaskTypeCenter.copySuccess'))
@@ -691,6 +732,7 @@
   }
 
   .atc__field-hint {
+    width: 100%;
     font-size: 12px;
     color: var(--color-text-tertiary);
     margin-top: 2px;
@@ -703,5 +745,19 @@
 
   .muted {
     color: var(--color-text-tertiary);
+  }
+
+  @media (max-width: 640px) {
+    .atc__form :deep(.el-form-item),
+    .atc__saved-config-form :deep(.el-form-item) {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .atc__form :deep(.el-form-item__label),
+    .atc__saved-config-form :deep(.el-form-item__label) {
+      width: 100% !important;
+      justify-content: flex-start;
+    }
   }
 </style>

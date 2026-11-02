@@ -18,7 +18,10 @@
       <div v-if="!singleSection" class="config-group__title">
         {{ t('jobConfigBasic.groupBasic') }}
       </div>
-      <el-form-item :label="t('jobDefinitionList.fieldJobCode')">
+      <el-form-item
+        :label="t('jobDefinitionList.fieldJobCode')"
+        :prop="readonlyIdentity ? undefined : 'jobCode'"
+      >
         <!-- 编辑/详情态走只读;新建态走 CodeNameBuilder(DOMAIN_BIZ[_vN] 拼接) -->
         <el-input v-if="readonlyIdentity" v-model="model.jobCode" disabled maxlength="128" />
         <CodeNameBuilder v-else v-model="model.jobCode" />
@@ -26,14 +29,12 @@
       <el-form-item :label="t('jobDefinitionList.fieldJobName')" prop="jobName">
         <el-input v-model="model.jobName" maxlength="256" show-word-limit />
       </el-form-item>
-      <el-form-item :label="t('jobDefinitionList.fieldJobType')">
+      <el-form-item
+        :label="t('jobDefinitionList.fieldJobType')"
+        :prop="readonlyIdentity ? undefined : 'jobType'"
+      >
         <el-input v-if="readonlyIdentity" :model-value="model.jobType" disabled />
-        <MetaSelect
-          v-else
-          v-model="model.jobType"
-          class="query-w-full"
-          enum-key="jobType"
-        />
+        <MetaSelect v-else v-model="model.jobType" class="query-w-full" enum-key="jobType" />
       </el-form-item>
       <el-form-item :label="t('jobDefinitionList.enabledLabel')" prop="enabled">
         <el-switch v-model="model.enabled" />
@@ -82,7 +83,7 @@
           <el-input
             v-model="model.dependsOnJobCode"
             clearable
-            maxlength="128"
+            maxlength="64"
             show-word-limit
             :placeholder="t('jobConfigBasic.placeholderDependsOnJobCode')"
           />
@@ -460,5 +461,17 @@
   .inline-create-btn {
     flex-shrink: 0;
     white-space: nowrap;
+  }
+
+  @media (max-width: 600px) {
+    .inline-create-wrapper {
+      align-items: stretch;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .inline-create-btn {
+      align-self: flex-start;
+    }
   }
 </style>

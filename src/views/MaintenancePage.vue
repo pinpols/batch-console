@@ -50,11 +50,14 @@
   import { Wrench as Tools, RefreshCw as Refresh } from '@lucide/vue'
   import { useAppStore } from '@/stores/app'
   import { getMaintenanceStatus } from '@/api/system.maintenance'
+  import { useMaintenancePolling } from '@/composables/useMaintenancePolling'
 
   const app = useAppStore()
   const router = useRouter()
   const route = useRoute()
   const { t } = useI18n({ useScope: 'global' })
+
+  useMaintenancePolling()
 
   const checking = ref(false)
   const now = ref(Date.now())
@@ -121,7 +124,8 @@
     background: var(--color-bg-page, #f5f7fa);
   }
   .maintenance-page__inner {
-    max-width: 480px;
+    width: min(100%, 480px);
+    min-width: 0;
     text-align: center;
     padding: 40px 32px;
     background: var(--color-bg-card, #fff);
@@ -142,6 +146,7 @@
     font-size: 15px;
     color: var(--color-text-secondary);
     line-height: 1.5;
+    overflow-wrap: anywhere;
   }
   .maintenance-page__eta {
     margin: 6px 0;
@@ -169,6 +174,8 @@
   }
   .maintenance-page__svc {
     display: inline-block;
+    max-width: 100%;
+    overflow-wrap: anywhere;
     padding: 2px 10px;
     border-radius: 12px;
     background: var(--color-danger-light, #fee2e2);

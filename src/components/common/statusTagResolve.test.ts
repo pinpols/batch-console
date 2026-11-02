@@ -70,6 +70,21 @@ describe('resolveStatusMeta — type 解析', () => {
     expect(resolveStatusMeta('UNKNOWN_STATUS', 'instance', null).type).toBe('info')
   })
 
+  it('distinguishes real file lifecycle stages and keeps unknown statuses neutral', () => {
+    expect(resolveStatusMeta('RECEIVED', 'file', null).type).toBe('info')
+    expect(resolveStatusMeta('PARSING', 'file', null).type).toBe('primary')
+    expect(resolveStatusMeta('PARSED', 'file', null).type).toBe('info')
+    expect(resolveStatusMeta('VALIDATED', 'file', null).type).toBe('info')
+    expect(resolveStatusMeta('DISPATCHING', 'file', null).type).toBe('primary')
+    expect(resolveStatusMeta('LOADED', 'file', null).type).toBe('success')
+    expect(resolveStatusMeta('GENERATED', 'file', null).type).toBe('info')
+    expect(resolveStatusMeta('DISPATCHED', 'file', null).type).toBe('success')
+    expect(resolveStatusMeta('ARCHIVED', 'file', null).type).toBe('success')
+    expect(resolveStatusMeta('FAILED', 'file', null).type).toBe('danger')
+    expect(resolveStatusMeta('DELETED', 'file', null).type).toBe('info')
+    expect(resolveStatusMeta('FUTURE_STATUS', 'file', null).type).toBe('info')
+  })
+
   it('uses local.type for categories without color map (yn/log/batchDay/sla)', () => {
     expect(resolveStatusMeta('false', 'yn', null).type).toBe('info')
     expect(resolveStatusMeta('ERROR', 'log', null).type).toBe('danger')

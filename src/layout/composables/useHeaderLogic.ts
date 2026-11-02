@@ -7,6 +7,7 @@ import { useAppStore } from '@/stores/app'
 import { usePermissionStore } from '@/stores/permission'
 import { useTabsStore } from '@/stores/tabs'
 import { useTenantStore } from '@/stores/tenant'
+import { useTenantSwitch } from '@/composables/useTenantSwitch'
 import { canSwitchTenant as checkCanSwitchTenant } from '@/utils/tenantAccess'
 import { pageTitleKey } from '@/constants/pageMeta'
 
@@ -18,6 +19,7 @@ export function useHeaderLogic() {
   const permission = usePermissionStore()
   const tabsStore = useTabsStore()
   const tenant = useTenantStore()
+  const { switchTenant } = useTenantSwitch()
   const { t, te } = useI18n({ useScope: 'global' })
   const paletteOpen = ref(false)
 
@@ -83,8 +85,7 @@ export function useHeaderLogic() {
   const canSwitchTenant = computed(() => checkCanSwitchTenant(auth.userInfo?.permissions ?? []))
 
   async function handleTenantSwitch(newTenantId: string) {
-    if (!newTenantId) return
-    tenant.setTenantId(newTenantId)
+    if (!(await switchTenant(newTenantId))) return
     ElMessage.success(`${t('nav.switchTenant')}: ${newTenantId}`)
     // 后端按 tenant+authorities 下发菜单,切租户必须刷 profile;await 避免
     // 过渡窗口期侧边栏 / 路由 guard 用旧 role/menus 渲染或放行。

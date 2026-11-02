@@ -50,7 +50,6 @@
             :placeholder="t('alertRoutingPanel.keywordPlaceholder')"
             clearable
             class="query__search"
-            @keyup.enter="onSearch"
           />
         </el-form-item>
       </ListPageQueryBar>
@@ -74,13 +73,25 @@
           prop="routeCode"
           :label="t('alertRoutingPanel.colRouteCode')"
           min-width="180"
-        />
+        >
+          <template #default="{ row }"
+            ><CopyableText v-if="row.routeCode" :text="row.routeCode"
+          /></template>
+        </el-table-column>
         <el-table-column
           prop="routeName"
           :label="t('alertRoutingPanel.colRouteName')"
           min-width="160"
-        />
-        <el-table-column prop="team" :label="t('alertRoutingPanel.fieldTeam')" min-width="120" />
+        >
+          <template #default="{ row }"
+            ><CopyableText v-if="row.routeName" :text="row.routeName"
+          /></template>
+        </el-table-column>
+        <el-table-column prop="team" :label="t('alertRoutingPanel.fieldTeam')" min-width="120">
+          <template #default="{ row }"
+            ><CopyableText v-if="row.team" :text="row.team" :copyable="false"
+          /></template>
+        </el-table-column>
         <el-table-column
           prop="severity"
           :label="t('alertRoutingPanel.fieldSeverity')"
@@ -90,14 +101,16 @@
           prop="receiver"
           :label="t('alertRoutingPanel.fieldReceiver')"
           min-width="180"
-          show-overflow-tooltip
-        />
-        <el-table-column
-          prop="groupBy"
-          :label="t('alertRoutingPanel.colGroupBy')"
-          min-width="140"
-          show-overflow-tooltip
-        />
+        >
+          <template #default="{ row }"
+            ><CopyableText v-if="row.receiver" :text="row.receiver" :copyable="false"
+          /></template>
+        </el-table-column>
+        <el-table-column prop="groupBy" :label="t('alertRoutingPanel.colGroupBy')" min-width="140">
+          <template #default="{ row }"
+            ><CopyableText v-if="row.groupBy" :text="row.groupBy" :copyable="false"
+          /></template>
+        </el-table-column>
         <el-table-column :label="t('alertRoutingPanel.fieldEnabled')" width="120">
           <template #default="{ row }">
             <el-switch
@@ -159,14 +172,14 @@
         <el-form-item :label="t('alertRoutingPanel.fieldRouteCode')" prop="routeCode">
           <el-input v-model="form.routeCode" :disabled="editingId != null" maxlength="128" />
         </el-form-item>
-        <el-form-item :label="t('alertRoutingPanel.fieldRouteName')">
-          <el-input v-model="form.routeName" maxlength="256" />
+        <el-form-item :label="t('alertRoutingPanel.fieldRouteName')" prop="routeName">
+          <el-input v-model="form.routeName" maxlength="128" />
         </el-form-item>
         <el-form-item :label="t('alertRoutingPanel.fieldTeam')" prop="team">
-          <el-input v-model="form.team" maxlength="128" />
+          <el-input v-model="form.team" maxlength="64" />
         </el-form-item>
-        <el-form-item :label="t('alertRoutingPanel.fieldAlertGroup')">
-          <el-input v-model="form.alertGroup" maxlength="128" />
+        <el-form-item :label="t('alertRoutingPanel.fieldAlertGroup')" prop="alertGroup">
+          <el-input v-model="form.alertGroup" maxlength="64" />
         </el-form-item>
         <el-form-item :label="t('alertRoutingPanel.fieldSeverity')" prop="severity">
           <MetaSelect v-model="form.severity" enum-key="severity" class="query-w-full" />
@@ -174,11 +187,11 @@
         <el-form-item :label="t('alertRoutingPanel.fieldReceiver')" prop="receiver">
           <el-input v-model="form.receiver" maxlength="256" />
         </el-form-item>
-        <el-form-item :label="t('alertRoutingPanel.fieldGroupBy')">
+        <el-form-item :label="t('alertRoutingPanel.fieldGroupBy')" prop="groupBy">
           <el-input
             v-model="form.groupBy"
             :placeholder="t('alertRoutingPanel.fieldGroupByPlaceholder')"
-            maxlength="512"
+            maxlength="128"
           />
         </el-form-item>
         <el-form-item :label="t('alertRoutingPanel.fieldGroupWaitSeconds')">
@@ -193,12 +206,12 @@
         <el-form-item :label="t('alertRoutingPanel.fieldEnabled')">
           <el-switch v-model="form.enabled" />
         </el-form-item>
-        <el-form-item :label="t('alertRoutingPanel.descriptionLabel')">
+        <el-form-item :label="t('alertRoutingPanel.descriptionLabel')" prop="description">
           <el-input
             v-model="form.description"
             type="textarea"
             :rows="3"
-            maxlength="1024"
+            maxlength="512"
             show-word-limit
           />
         </el-form-item>
@@ -218,7 +231,7 @@
   import { useI18n } from 'vue-i18n'
   import { Pencil as Edit, Plus } from '@lucide/vue'
   import { ElMessage, ElMessageBox } from 'element-plus'
-  import type { FormInstance, FormRules } from 'element-plus'
+  import type { FormInstance, FormItemRule, FormRules } from 'element-plus'
   import {
     governanceApi,
     type GovernanceAlertRoutingRow,
@@ -231,6 +244,7 @@
   import { useFormFocus } from '@/composables/useFormFocus'
   import { useTenantStore } from '@/stores/tenant'
   import PageContainer from '@/components/common/PageContainer.vue'
+  import CopyableText from '@/components/common/CopyableText.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
@@ -274,11 +288,48 @@
     enabled: true,
     description: '',
   })
+  function utf16MaxLength(max: number): FormItemRule {
+    return {
+      validator: (_rule, value: string | undefined, callback) => {
+        if (value && value.length > max) callback(new Error(t('form.maxLength', { max })))
+        else callback()
+      },
+      trigger: 'blur',
+    }
+  }
+
   const rules: FormRules = {
     routeCode: [{ required: true, message: t('alertRoutingPanel.ruleRouteCode'), trigger: 'blur' }],
-    team: [{ required: true, message: t('alertRoutingPanel.ruleTeam'), trigger: 'blur' }],
+    routeName: [utf16MaxLength(128)],
+    team: [
+      {
+        required: true,
+        whitespace: true,
+        message: t('alertRoutingPanel.ruleTeam'),
+        trigger: 'blur',
+      },
+      utf16MaxLength(64),
+    ],
+    alertGroup: [
+      {
+        required: true,
+        whitespace: true,
+        message: t('alertRoutingPanel.ruleAlertGroup'),
+        trigger: 'blur',
+      },
+      utf16MaxLength(64),
+    ],
     severity: [{ required: true, message: t('alertRoutingPanel.ruleSeverity'), trigger: 'change' }],
-    receiver: [{ required: true, message: t('alertRoutingPanel.ruleReceiver'), trigger: 'blur' }],
+    receiver: [
+      {
+        required: true,
+        whitespace: true,
+        message: t('alertRoutingPanel.ruleReceiver'),
+        trigger: 'blur',
+      },
+    ],
+    groupBy: [utf16MaxLength(128)],
+    description: [utf16MaxLength(512)],
   }
 
   function onSearch() {

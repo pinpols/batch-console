@@ -30,7 +30,7 @@
 
       <el-alert :title="modeMessage" type="info" :closable="false" show-icon />
 
-      <el-descriptions :column="2" border class="profile-panel">
+      <el-descriptions :column="isMobile ? 1 : 2" border class="profile-panel">
         <el-descriptions-item :label="t('userRole.fieldUsername')">
           {{ currentUser?.username || '—' }}
         </el-descriptions-item>
@@ -158,6 +158,7 @@
   import { ElMessage } from 'element-plus'
   import { RefreshCw as Refresh } from '@lucide/vue'
   import { useRefreshAction } from '@/composables/useRefreshAction'
+  import { useResponsive } from '@/composables/useResponsive'
   import { navigationGroups, navigationItemTitleKey } from '@/constants/navigation'
   import {
     authorityRoleLabelKeyMap,
@@ -199,6 +200,7 @@
 
   const { t, te } = useI18n({ useScope: 'global' })
   const refreshAction = useRefreshAction()
+  const { isMobile } = useResponsive()
 
   const auth = useAuthStore()
   const permission = usePermissionStore()
@@ -265,7 +267,11 @@
     if (typeof node.label !== 'string') return false
     const query = value.toLocaleLowerCase()
     if (node.label.toLocaleLowerCase().includes(query)) return true
-    return node.kind === 'item' && typeof node.path === 'string' && node.path.toLocaleLowerCase().includes(query)
+    return (
+      node.kind === 'item' &&
+      typeof node.path === 'string' &&
+      node.path.toLocaleLowerCase().includes(query)
+    )
   }
 
   watch(accessFilter, (value) => accessTreeRef.value?.filter(value))

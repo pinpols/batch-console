@@ -7,6 +7,7 @@
           <div class="obs-trace-quick">
             <TraceIdInput
               v-model="traceQuick"
+              :go-to="false"
               :placeholder="t('observability.traceQuickPlaceholder')"
               class="obs-trace-quick__input"
               @keyup.enter="jumpTrace"

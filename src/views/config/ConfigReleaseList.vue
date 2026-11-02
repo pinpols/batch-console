@@ -30,7 +30,7 @@
     >
       <el-form-item :label="t('configReleaseList.keyLabel')">
         <el-input
-          class="query-w-180"
+          class="query-w-240"
           v-model="filters.key"
           clearable
           :placeholder="t('configReleaseList.keyPlaceholder')"
@@ -38,7 +38,7 @@
       </el-form-item>
       <el-form-item :label="t('configReleaseList.nameLabel')">
         <el-input
-          class="query-w-180"
+          class="query-w-220"
           v-model="filters.name"
           clearable
           :placeholder="t('configReleaseList.namePlaceholder')"
@@ -204,14 +204,24 @@
       <el-table v-loading="governanceLoading" :data="governanceItems" height="calc(100vh - 180px)">
         <el-table-column :label="t('configReleaseList.governanceClass')" min-width="210">
           <template #default="{ row }">
-            <span class="cr-governance__class">{{ row.className }}</span>
+            <CopyableText
+              v-if="row.className"
+              class="cr-governance__class"
+              :text="String(row.className)"
+            />
+            <span v-else>—</span>
           </template>
         </el-table-column>
         <el-table-column
           prop="prefix"
           :label="t('configReleaseList.governancePrefix')"
           min-width="240"
-        />
+        >
+          <template #default="{ row }">
+            <CopyableText v-if="row.prefix" :text="String(row.prefix)" />
+            <span v-else>—</span>
+          </template>
+        </el-table-column>
         <el-table-column :label="t('configReleaseList.configSource')" width="140">
           <template #default="{ row }">
             <el-tag size="small" effect="plain">{{ configSourceLabel(row.source) }}</el-tag>
@@ -240,13 +250,14 @@
       :title="t('configReleaseList.createTitle')"
       size="520px"
       :before-close="onCreateClose"
+      @opened="focusCreateForm"
     >
       <el-form
         ref="createFormRef"
         :model="createForm"
         :rules="createRules"
         :disabled="createSaving"
-        label-width="120px"
+        label-position="top"
         @submit.prevent="submitCreate"
       >
         <el-form-item :label="t('configReleaseList.createKeyLabel')" prop="configKey">
@@ -267,7 +278,7 @@
         <el-form-item :label="t('configReleaseList.createNameLabel')" prop="configName">
           <el-input
             v-model="createForm.configName"
-            maxlength="128"
+            maxlength="256"
             show-word-limit
             :placeholder="t('configReleaseList.createNamePlaceholder')"
           />
@@ -286,7 +297,7 @@
             v-model="createForm.releaseNote"
             type="textarea"
             :rows="4"
-            maxlength="500"
+            maxlength="512"
             show-word-limit
             :placeholder="t('configReleaseList.createNotePlaceholder')"
           />
@@ -317,7 +328,11 @@
       </div>
     </el-drawer>
 
-    <el-dialog v-model="diffVisible" :title="t('configReleaseList.diffTitle')" width="800px">
+    <el-dialog
+      v-model="diffVisible"
+      :title="t('configReleaseList.diffTitle')"
+      width="min(800px, calc(100vw - 32px))"
+    >
       <el-form :inline="true" class="diff-form">
         <el-form-item :label="t('configReleaseList.diffVersionA')">
           <el-select
@@ -362,13 +377,39 @@
       </el-form>
       <div v-if="diffData" class="diff-result">
         <el-descriptions :column="1" border>
-          <el-descriptions-item :label="t('configReleaseList.diffPayload')">{{ t(diffData.payloadChanged ? 'configReleaseList.diffChanged' : 'configReleaseList.diffUnchanged') }}</el-descriptions-item>
-          <el-descriptions-item :label="t('configReleaseList.diffGray')">{{ t(diffData.grayScopeChanged ? 'configReleaseList.diffChanged' : 'configReleaseList.diffUnchanged') }}</el-descriptions-item>
-          <el-descriptions-item :label="t('configReleaseList.diffStatus')">{{ t(diffData.statusChanged ? 'configReleaseList.diffChanged' : 'configReleaseList.diffUnchanged') }} · {{ diffData.releaseA.configStatus }} → {{ diffData.releaseB.configStatus }}</el-descriptions-item>
+          <el-descriptions-item :label="t('configReleaseList.diffPayload')">{{
+            t(
+              diffData.payloadChanged
+                ? 'configReleaseList.diffChanged'
+                : 'configReleaseList.diffUnchanged',
+            )
+          }}</el-descriptions-item>
+          <el-descriptions-item :label="t('configReleaseList.diffGray')">{{
+            t(
+              diffData.grayScopeChanged
+                ? 'configReleaseList.diffChanged'
+                : 'configReleaseList.diffUnchanged',
+            )
+          }}</el-descriptions-item>
+          <el-descriptions-item :label="t('configReleaseList.diffStatus')"
+            >{{
+              t(
+                diffData.statusChanged
+                  ? 'configReleaseList.diffChanged'
+                  : 'configReleaseList.diffUnchanged',
+              )
+            }}
+            · {{ statusLabel(diffData.releaseA.configStatus) }} →
+            {{ statusLabel(diffData.releaseB.configStatus) }}</el-descriptions-item
+          >
         </el-descriptions>
         <template v-if="diffData.payloadChanged && diffPaths.paths.length">
           <p>{{ t('configReleaseList.diffPaths') }}</p>
-          <ul><li v-for="path in diffPaths.paths" :key="path"><code>{{ path }}</code></li></ul>
+          <ul>
+            <li v-for="path in diffPaths.paths" :key="path">
+              <code>{{ path }}</code>
+            </li>
+          </ul>
           <p v-if="diffPaths.truncated">{{ t('configReleaseList.diffPathsTruncated') }}</p>
         </template>
         <el-collapse>
@@ -385,7 +426,7 @@
       :title="t('configReleaseList.detailTitle')"
       size="640px"
     >
-      <el-descriptions v-if="detail" :column="2" border size="small">
+      <el-descriptions v-if="detail" :column="isMobile ? 1 : 2" border size="small">
         <el-descriptions-item :label="t('common.id')">{{ detail.id }}</el-descriptions-item>
         <el-descriptions-item :label="t('configReleaseList.detailConfigKey')">{{
           detail.configKey
@@ -394,15 +435,18 @@
           detail.configName
         }}</el-descriptions-item>
         <el-descriptions-item :label="t('configReleaseList.detailConfigStatus')">{{
-          detail.configStatus
+          statusLabel(typeof detail.configStatus === 'string' ? detail.configStatus : undefined)
         }}</el-descriptions-item>
         <el-descriptions-item :label="t('configReleaseList.detailVersion')">{{
           detail.versionNo
         }}</el-descriptions-item>
         <el-descriptions-item :label="t('configReleaseList.detailPublishedAt')">{{
-          detail.publishedAt
+          fmtDatetime(typeof detail.publishedAt === 'string' ? detail.publishedAt : undefined)
         }}</el-descriptions-item>
-        <el-descriptions-item :label="t('configReleaseList.detailRawResponse')" :span="2">
+        <el-descriptions-item
+          :label="t('configReleaseList.detailRawResponse')"
+          :span="isMobile ? 1 : 2"
+        >
           <JsonPreview :data="detail" />
         </el-descriptions-item>
       </el-descriptions>
@@ -422,6 +466,7 @@
   import { useDirtyForm } from '@/composables/useDirtyForm'
   import { useFormFocus } from '@/composables/useFormFocus'
   import { usePermission } from '@/composables/usePermission'
+  import { useResponsive } from '@/composables/useResponsive'
   import { useWriteAvailability } from '@/composables/useWriteAvailability'
   import {
     createConfigRelease,
@@ -449,6 +494,7 @@
   import MetaSelect from '@/components/common/MetaSelect.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
+  import CopyableText from '@/components/common/CopyableText.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import JsonPreview from '@/components/common/JsonPreview.vue'
   import type { FormInstance, FormRules } from 'element-plus'
@@ -460,6 +506,7 @@
   const { t, te } = useI18n({ useScope: 'global' })
   const statusLabel = createConfigReleaseStatusLabel(t, te)
   const { canManageSystem } = usePermission()
+  const { isMobile } = useResponsive()
   const { writesFrozen } = useWriteAvailability()
 
   const tenant = useTenantStore()
@@ -686,7 +733,7 @@
 
   // 脏数据保护 + autofocus
   const createDirty = useDirtyForm(() => createForm, { enabled: () => createVisible.value })
-  useFormFocus(createFormRef, () => createVisible.value)
+  const { focusFirst: focusCreateForm } = useFormFocus(createFormRef)
 
   function openCreate() {
     if (!canManageSystem.value || writesFrozen.value || !tenant.tenantId) return
@@ -849,12 +896,14 @@
   const diffVisible = ref(false)
   const diffLoading = ref(false)
   const diffData = ref<components['schemas']['ConfigReleaseDiffResponse'] | null>(null)
-  const diffPaths = computed(() => releaseDiffPaths(diffData.value?.payloadA, diffData.value?.payloadB))
-  const diffForm = reactive({ releaseIdA: 0, releaseIdB: 0 })
+  const diffPaths = computed(() =>
+    releaseDiffPaths(diffData.value?.payloadA, diffData.value?.payloadB),
+  )
+  const diffForm = reactive<{ releaseIdA?: number; releaseIdB?: number }>({})
 
   function openDiff(row: ConsoleConfigReleaseResponse) {
     diffForm.releaseIdA = row.id
-    diffForm.releaseIdB = 0
+    diffForm.releaseIdB = undefined
     diffData.value = null
     diffVisible.value = true
   }
@@ -928,8 +977,8 @@
       diffVisible.value = false
       diffData.value = null
       diffLoading.value = false
-      diffForm.releaseIdA = 0
-      diffForm.releaseIdB = 0
+      diffForm.releaseIdA = undefined
+      diffForm.releaseIdB = undefined
     },
     { flush: 'sync' },
   )

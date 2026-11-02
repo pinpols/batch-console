@@ -47,10 +47,16 @@ export const instanceStatusColor: Record<InstanceStatus, StatusTagType> = {
 /** /meta/enums: `fileStatus` */
 export const fileStatusColor: Record<FileStatus, StatusTagType> = {
   RECEIVED: 'info',
-  PROCESSING: 'warning',
-  COMPLETED: 'success',
+  PARSING: 'primary',
+  PARSED: 'info',
+  VALIDATED: 'info',
+  LOADED: 'success',
+  GENERATED: 'info',
+  DISPATCHING: 'primary',
+  DISPATCHED: 'success',
+  ARCHIVED: 'success',
   FAILED: 'danger',
-  DISPATCHED: 'primary',
+  DELETED: 'info',
 }
 
 /** /meta/enums: `partitionStatus` */
@@ -149,6 +155,7 @@ export const alertStatusColor: Record<string, StatusTagType> = {
 export const arrivalStateColor: Record<ArrivalState, StatusTagType> &
   Record<string, StatusTagType> = {
   WAITING: 'warning',
+  WAITING_ARRIVAL: 'warning',
   PARTIAL: 'info',
   COMPLETE: 'success',
   TIMEOUT: 'danger',

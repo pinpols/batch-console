@@ -5,6 +5,7 @@ import { ElMessage, ElNotification } from 'element-plus'
 import { getOpsSummary } from '@/api/ops'
 import { useTenantStore } from '@/stores/tenant'
 import { useTenantReload } from '@/composables/useTenantReload'
+import { useTenantRequestScope } from '@/composables/useTenantRequestScope'
 import { getDashboardBundle, getDashboardSlaReport, getDashboardTenantUsage } from '@/api/dashboard'
 import { logError } from '@/utils/logger'
 import type { ConsoleOpsSummaryResponse } from '@/types/console-api'
@@ -25,6 +26,9 @@ export function useOpsSummary() {
   const { t } = useI18n({ useScope: 'global' })
   const router = useRouter()
   const tenant = useTenantStore()
+  const summaryScope = useTenantRequestScope()
+  const chartScope = useTenantRequestScope()
+  const extraScope = useTenantRequestScope()
 
   // ---- 核心状态 ----
   const loading = ref(false)
@@ -75,10 +79,14 @@ export function useOpsSummary() {
 
   async function loadCharts() {
     if (!summary.value) return
+    const request = chartScope.begin()
+    if (!request.tenantId) return
+    const requestedRange = rangeKey.value
     chartsLoading.value = true
     try {
-      const days = rangeKey.value === '1h' ? 1 : rangeKey.value === '6h' ? 1 : 7
-      const bundle = await getDashboardBundle(tenant.tenantId, days)
+      const days = requestedRange === '1h' ? 1 : requestedRange === '6h' ? 1 : 7
+      const bundle = await getDashboardBundle(request.tenantId, days)
+      if (!chartScope.isCurrent(request) || rangeKey.value !== requestedRange) return
       jobsTrendOption.value = buildLineOption({
         x: bundle.jobs.labels.length ? bundle.jobs.labels : [t('opsSummary.legendNow')],
         series: [
@@ -268,6 +276,7 @@ export function useOpsSummary() {
         })
       }
     } catch (e) {
+      if (!chartScope.isCurrent(request) || rangeKey.value !== requestedRange) return
       logError('opsSummary.charts.load_failed', {
         reason: e instanceof Error ? e.message : String(e),
       })
@@ -284,24 +293,31 @@ export function useOpsSummary() {
       outboxHealthOption.value = emptyOption(t('opsSummary.loadFailed'), { axes: false })
       slaGaugeOption.value = emptyOption(t('opsSummary.loadFailed'), { axes: false })
     } finally {
-      chartsLoading.value = false
+      if (chartScope.isCurrent(request)) chartsLoading.value = false
     }
   }
 
   async function load() {
+    const request = summaryScope.begin()
+    if (!request.tenantId) return
     loading.value = true
     try {
-      summary.value = await getOpsSummary(tenant.tenantId)
+      const nextSummary = await getOpsSummary(request.tenantId)
+      if (!summaryScope.isCurrent(request)) return
+      summary.value = nextSummary
       void loadCharts()
     } catch {
+      if (!summaryScope.isCurrent(request)) return
       summary.value = null
       ElMessage.error(t('opsSummary.summaryLoadFailed'))
     } finally {
-      loading.value = false
+      if (summaryScope.isCurrent(request)) loading.value = false
     }
   }
 
   async function loadExtraPanels() {
+    const request = extraScope.begin()
+    if (!request.tenantId) return
     extraLoading.value = true
     // SLA 达标率 gauge 依赖 dashboard bundle,与 SLA 报告 / 租户用量 一起刷,
     // 避免「点了 extra 刷新但 gauge 不动」的不一致体验
@@ -311,9 +327,10 @@ export function useOpsSummary() {
     tenantUsageError.value = null
     try {
       const [slaResult, usageResult] = await Promise.allSettled([
-        getDashboardSlaReport(tenant.tenantId),
-        getDashboardTenantUsage(tenant.tenantId),
+        getDashboardSlaReport(request.tenantId),
+        getDashboardTenantUsage(request.tenantId),
       ])
+      if (!extraScope.isCurrent(request)) return
       // 图表刷新失败 loadCharts 内部已有 ElMessage.error + emptyOption(t('opsSummary.loadFailed')) 兜底,这里 fire-and-forget
       void loadCharts()
       if (slaResult.status === 'fulfilled') {
@@ -336,7 +353,7 @@ export function useOpsSummary() {
         })
       }
     } finally {
-      extraLoading.value = false
+      if (extraScope.isCurrent(request)) extraLoading.value = false
     }
   }
 
@@ -357,6 +374,36 @@ export function useOpsSummary() {
     void loadCharts()
   })
 
+  watch(
+    () => tenant.tenantId,
+    (tenantId) => {
+      summary.value = null
+      loading.value = false
+      chartsLoading.value = false
+      extraLoading.value = false
+      slaReport.value = null
+      tenantUsage.value = null
+      slaReportError.value = null
+      tenantUsageError.value = null
+      const loadingOption = emptyOption(t('common.loading'))
+      for (const option of [
+        jobsTrendOption,
+        alertsTrendOption,
+        slaTrendOption,
+        failRateTrendOption,
+        triggerTypeTopNOption,
+        workerLoadTopNOption,
+        jobStatusOption,
+        workerStatusOption,
+        alertSeverityOption,
+        outboxHealthOption,
+      ])
+        option.value = loadingOption
+      slaGaugeOption.value = emptyOption(t('common.loading'), { axes: false })
+      if (tenantId && opsTab.value === 'extra') void loadExtraPanels()
+    },
+    { flush: 'sync' },
+  )
   useTenantReload(load)
 
   return {

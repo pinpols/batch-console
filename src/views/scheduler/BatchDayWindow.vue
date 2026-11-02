@@ -151,12 +151,16 @@
         </ul>
         <p>{{ t('batchDayWindow.milestonesSnapshot') }}</p>
       </div>
-      <el-descriptions :column="2" border size="small">
+      <el-descriptions :column="isMobile ? 1 : 2" border size="small">
         <el-descriptions-item :label="t('batchDayWindow.bizDate')">
           {{ window.bizDate }}
         </el-descriptions-item>
         <el-descriptions-item :label="t('batchDayWindow.dayStatus')">
-          {{ window.dayStatus }}
+          {{
+            window.dayStatus
+              ? t(`batchDayGovernance.dayStatuses.${window.dayStatus}`, window.dayStatus)
+              : '—'
+          }}
         </el-descriptions-item>
         <el-descriptions-item :label="t('batchDayWindow.secondsToCutoff')">
           {{ window.timeUntilCutoffSeconds ?? '—' }}
@@ -196,13 +200,14 @@
       >
         <el-table-column prop="jobCode" :label="t('batchDayWindow.colJob')" min-width="160">
           <template #default="{ row }">
-            <router-link
-              v-if="row.jobCode"
-              class="cell-link"
-              :to="`/monitor/job-instances?jobCode=${row.jobCode}&startDate=${bizDate}&endDate=${bizDate}`"
-            >
-              {{ row.jobCode }}
-            </router-link>
+            <CopyableText v-if="row.jobCode" :text="String(row.jobCode)" :copy-on-click="false">
+              <router-link
+                class="cell-link"
+                :to="`/monitor/job-instances?jobCode=${row.jobCode}&startDate=${bizDate}&endDate=${bizDate}`"
+              >
+                {{ row.jobCode }}
+              </router-link>
+            </CopyableText>
             <span v-else>—</span>
           </template>
         </el-table-column>
@@ -279,8 +284,18 @@
           :key="`${event.kind}-${event.time}-${index}`"
         >
           <DatetimeText :value="event.time" />
-          <template v-if="(event.kind === 'scheduled' || event.kind === 'actual') && event.occurrence">
-            · {{ t(event.kind === 'actual' ? 'batchDayWindow.colActualFire' : 'batchDayWindow.colScheduledFire') }} ·
+          <template
+            v-if="(event.kind === 'scheduled' || event.kind === 'actual') && event.occurrence"
+          >
+            ·
+            {{
+              t(
+                event.kind === 'actual'
+                  ? 'batchDayWindow.colActualFire'
+                  : 'batchDayWindow.colScheduledFire',
+              )
+            }}
+            ·
             <el-button
               link
               type="primary"
@@ -288,7 +303,9 @@
               >{{ event.occurrence.workflowCode }}</el-button
             >
             · {{ occurrenceStatusLabel(event.occurrence.occurrenceStatus) }}
-            <template v-if="event.fire"> · {{ t(`batchDayWindow.fireKinds.${event.fire.fireKind}`) }}</template>
+            <template v-if="event.fire">
+              · {{ t(`batchDayWindow.fireKinds.${event.fire.fireKind}`) }}</template
+            >
           </template>
           <template v-else> · {{ timelineLabel(event.kind) }}</template>
         </el-timeline-item>
@@ -304,7 +321,12 @@
           prop="workflowCode"
           :label="t('batchDayWindow.colWorkflow')"
           min-width="180"
-        />
+        >
+          <template #default="{ row }">
+            <CopyableText v-if="row.workflowCode" :text="String(row.workflowCode)" />
+            <span v-else>—</span>
+          </template>
+        </el-table-column>
         <el-table-column
           prop="scheduleVersion"
           :label="t('batchDayWindow.colScheduleVersion')"
@@ -322,8 +344,12 @@
         <el-table-column :label="t('batchDayWindow.colActualFire')" min-width="240">
           <template #default="{ row }">
             <template v-if="row.actualFires?.length">
-              <div v-for="fire in row.actualFires" :key="`${fire.fireInstanceId}-${fire.refireCount}`">
-                <DatetimeText :value="fire.actualFireTime" /> · {{ t(`batchDayWindow.fireKinds.${fire.fireKind}`) }}
+              <div
+                v-for="fire in row.actualFires"
+                :key="`${fire.fireInstanceId}-${fire.refireCount}`"
+              >
+                <DatetimeText :value="fire.actualFireTime" /> ·
+                {{ t(`batchDayWindow.fireKinds.${fire.fireKind}`) }}
               </div>
             </template>
             <span v-else>{{ t('batchDayWindow.actualFireUnknown') }}</span>
@@ -341,15 +367,24 @@
           </template>
         </el-table-column>
         <el-table-column prop="requestId" :label="t('batchDayWindow.colRequestId')" min-width="180">
-          <template #default="{ row }">{{ row.requestId || '—' }}</template>
+          <template #default="{ row }">
+            <CopyableText v-if="row.requestId" :text="String(row.requestId)" />
+            <span v-else>—</span>
+          </template>
         </el-table-column>
         <el-table-column
           prop="lastRejectionReason"
           :label="t('batchDayWindow.colRejectionReason')"
           min-width="260"
-          show-overflow-tooltip
         >
-          <template #default="{ row }">{{ row.lastRejectionReason || '—' }}</template>
+          <template #default="{ row }">
+            <CopyableText
+              v-if="row.lastRejectionReason"
+              :text="String(row.lastRejectionReason)"
+              :copyable="false"
+            />
+            <span v-else>—</span>
+          </template>
         </el-table-column>
         <el-table-column :label="t('batchDayWindow.occurrenceAction')" width="150" fixed="right">
           <template #default="{ row }">
@@ -434,7 +469,7 @@
     <el-dialog
       v-model="occurrenceCatchUpVisible"
       :title="t('batchDayWindow.occurrenceCatchUpTitle')"
-      width="520px"
+      width="min(520px, calc(100vw - 32px))"
       :close-on-click-modal="false"
     >
       <el-form label-position="top">
@@ -484,6 +519,7 @@
   import { computed, ref, watch } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
+  import { useResponsive } from '@/composables/useResponsive'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import { RefreshCw as Refresh } from '@lucide/vue'
   import { useRefreshAction } from '@/composables/useRefreshAction'
@@ -496,6 +532,7 @@
   const { writesFrozen } = useWriteAvailability()
 
   const { t } = useI18n({ useScope: 'global' })
+  const { isMobile } = useResponsive()
   import {
     abandonUnpreparedBatchDayCatchUp,
     continueBatchDayCatchUpRequest,
@@ -515,6 +552,7 @@
   import SectionCard from '@/components/common/SectionCard.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
   import DatetimeText from '@/components/common/DatetimeText.vue'
+  import CopyableText from '@/components/common/CopyableText.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import type { ConsoleBatchDayWindowResponse } from '@/types/console-api'
@@ -939,6 +977,23 @@
       jobCodes = trimmedJobCodes.filter(Boolean)
     }
 
+    let invalidField: string | undefined
+    let maxLength = 128
+    if (catchupForm.value.calendarCode.length > maxLength) {
+      invalidField = 'batchDayWindow.fieldCalendar'
+    } else if (jobCodes?.some((jobCode) => jobCode.length > maxLength)) {
+      invalidField = 'batchDayWindow.fieldJobCodes'
+    } else if (catchupForm.value.reason.length > 512) {
+      invalidField = 'batchDayWindow.fieldReason'
+      maxLength = 512
+    }
+    if (invalidField) {
+      const fieldLabel = t(invalidField)
+      const lengthMessage = t('common.maxLength', { max: maxLength })
+      ElMessage.warning(`${fieldLabel}: ${lengthMessage}`)
+      return
+    }
+
     const key = createIdempotencyKey()
     try {
       if (localStorage.getItem(scope) !== null) {
@@ -1111,7 +1166,14 @@
 
     .batch-day-context__field :deep(.el-date-editor),
     .batch-day-context__field :deep(.el-select) {
+      flex: 1 1 0;
+      min-width: 0;
       width: 100%;
+    }
+
+    .batch-day-context__field > span {
+      flex: 0 0 auto;
+      white-space: nowrap;
     }
   }
 </style>

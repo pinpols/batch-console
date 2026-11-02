@@ -28,7 +28,6 @@
               v-model="kwDraft"
               clearable
               :placeholder="t('approvals.catchUpKeywordPlaceholder')"
-              @keyup.enter="onSearch"
             />
           </el-form-item>
           <el-form-item :label="t('approvals.catchUpColBizDate')">
@@ -59,7 +58,8 @@
       <el-table-column prop="requestId" :label="t('approvals.catchUpColRequestId')" min-width="180">
         <template #default="{ row }">
           <!-- dump:单号 mono 蓝 -->
-          <span class="cu-no">{{ row.requestId }}</span>
+          <CopyableText v-if="row.requestId" class="cu-no" :text="row.requestId" @click.stop />
+          <span v-else>—</span>
         </template>
       </el-table-column>
       <el-table-column
@@ -68,7 +68,13 @@
         min-width="140"
       >
         <template #default="{ row }">
-          <span class="cu-mono">{{ row.workflowCode }}</span>
+          <CopyableText
+            v-if="row.workflowCode"
+            class="cu-mono"
+            :text="row.workflowCode"
+            @click.stop
+          />
+          <span v-else>—</span>
         </template>
       </el-table-column>
       <el-table-column prop="bizDate" :label="t('approvals.catchUpColBizDate')" width="120">
@@ -76,9 +82,13 @@
           <span class="cu-mono">{{ row.bizDate }}</span>
         </template>
       </el-table-column>
-      <el-table-column prop="requestStatus" :label="t('approvals.colStatus')" width="120">
+      <el-table-column
+        prop="requestStatus"
+        :label="t('approvals.catchUpRequestStatus')"
+        width="120"
+      >
         <template #default="{ row }">
-          <StatusTag :value="String(row.requestStatus ?? '')" category="approval" />
+          {{ requestStatusText(row.requestStatus) }}
         </template>
       </el-table-column>
       <DatetimeColumn prop="createdAt" :label="t('approvals.catchUpColCreatedAt')" width="160" />
@@ -108,7 +118,7 @@
             <div class="catch-up-detail__label">{{ t('approvals.catchUpColRequestId') }}</div>
             <CopyableText class="cu-no" :text="detailRow.requestId" />
           </div>
-          <StatusTag :value="String(detailRow.requestStatus ?? '')" category="approval" />
+          <span>{{ requestStatusText(detailRow.requestStatus) }}</span>
         </div>
         <el-descriptions :column="1" border>
           <el-descriptions-item :label="t('approvals.catchUpColWorkflowCode')">
@@ -120,8 +130,16 @@
           <el-descriptions-item :label="t('approvals.colApprovalNo')">
             {{ detailRow.approvalNo || '—' }}
           </el-descriptions-item>
-          <el-descriptions-item :label="t('approvals.colStatus')">
-            {{ detailRow.approvalStatus || detailRow.requestStatus || '—' }}
+          <el-descriptions-item :label="t('approvals.catchUpRequestStatus')">
+            {{ requestStatusText(detailRow.requestStatus) }}
+          </el-descriptions-item>
+          <el-descriptions-item :label="t('approvals.catchUpApprovalStatus')">
+            <StatusTag
+              v-if="detailRow.approvalStatus"
+              :value="detailRow.approvalStatus"
+              category="approval"
+            />
+            <span v-else>—</span>
           </el-descriptions-item>
           <el-descriptions-item :label="t('approvals.catchUpColTrace')">
             <CopyableText :text="detailRow.traceId || '—'" />
@@ -143,7 +161,7 @@
   import { computed, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
 
-  const { t } = useI18n({ useScope: 'global' })
+  const { t, te } = useI18n({ useScope: 'global' })
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
@@ -182,6 +200,12 @@
   const kwApplied = ref('')
   const bizDateApplied = ref('')
   const hasActiveFilters = computed(() => !!(kwApplied.value || bizDateApplied.value))
+
+  function requestStatusText(status: string | null | undefined) {
+    if (!status) return '—'
+    const key = `enum.triggerRequestStatus.${status}`
+    return te(key) ? t(key) : status
+  }
 
   // 服务端分页 + 服务端筛选(bizDate 精确 / keyword 跨 requestId·workflowCode·traceId 模糊)。
   // catch-up 列表后端恒为 ACCEPTED 状态,故无 status 维度。

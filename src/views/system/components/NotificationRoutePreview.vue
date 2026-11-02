@@ -10,7 +10,7 @@
         <el-option
           v-for="event in events"
           :key="event.eventType"
-          :label="`${event.eventType} — ${event.description}`"
+          :label="t(`notificationRoutePreview.eventNames.${event.eventType}`, event.description)"
           :value="event.eventType"
         />
       </el-select>
@@ -25,7 +25,7 @@
           v-for="option in severityOptions"
           :key="option.value"
           :value="option.value"
-          :label="option.label"
+          :label="t(`enum.severity.${option.value}`, option.label)"
         />
       </el-select>
     </el-form-item>
@@ -72,8 +72,18 @@
       :image-size="60"
     />
     <el-table v-else :data="result.rules">
-      <el-table-column prop="name" :label="t('notificationRoutePreview.ruleName')" />
-      <el-table-column prop="channelCode" :label="t('notificationRoutePreview.channelCode')" />
+      <el-table-column prop="name" :label="t('notificationRoutePreview.ruleName')">
+        <template #default="{ row }">
+          <CopyableText v-if="row.name" :text="String(row.name)" />
+          <span v-else class="cell-empty">—</span>
+        </template>
+      </el-table-column>
+      <el-table-column prop="channelCode" :label="t('notificationRoutePreview.channelCode')">
+        <template #default="{ row }">
+          <CopyableText v-if="row.channelCode" :text="String(row.channelCode)" />
+          <span v-else class="cell-empty">—</span>
+        </template>
+      </el-table-column>
       <el-table-column prop="channelType" :label="t('notificationRoutePreview.channelType')" />
     </el-table>
     <h3>{{ t('notificationRoutePreview.webhooks') }}</h3>
@@ -83,12 +93,18 @@
       :image-size="60"
     />
     <el-table v-else :data="result.webhooks">
-      <el-table-column prop="name" :label="t('notificationRoutePreview.subscriptionName')" />
+      <el-table-column prop="name" :label="t('notificationRoutePreview.subscriptionName')">
+        <template #default="{ row }">
+          <CopyableText v-if="row.name" :text="String(row.name)" />
+          <span v-else class="cell-empty">—</span>
+        </template>
+      </el-table-column>
     </el-table>
   </section>
 </template>
 
 <script setup lang="ts">
+  import CopyableText from '@/components/common/CopyableText.vue'
   import { computed, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { listEventTypes, type EventCatalogTypeRow } from '@/api/eventCatalog'

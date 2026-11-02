@@ -16,9 +16,10 @@ export default {
   messageLabel: '维护公告',
   messagePlaceholder: '说明维护原因或用户需要了解的信息',
   etaLabel: '预计恢复时间',
-  etaPlaceholder: '可留空；通知窗口默认 2 小时，最长 24 小时',
+  etaPlaceholder: '可留空',
+  etaHint: '通知窗口默认 2 小时，最长 24 小时。',
   startsAtLabel: '计划开始时间',
-  startsAtPlaceholder: '留空表示保存后立即开始',
+  startsAtPlaceholder: '可留空',
   startsAtHint:
     '计划公告会立即展示倒计时；到达该时间后，后端自动启用所选维护模式。留空则立即生效。',
   affectedServicesLabel: '受影响服务标记',

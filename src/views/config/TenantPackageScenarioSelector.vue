@@ -5,7 +5,10 @@
         <h3>{{ t('tenantPackageImportWizard.templateScopeTitle') }}</h3>
         <p>{{ t('tenantPackageImportWizard.templateScopeHint') }}</p>
       </div>
-      <el-checkbox :model-value="model.includes('ALL')" @change="(checked: unknown) => toggleAll(checked === true)">
+      <el-checkbox
+        :model-value="model.includes('ALL')"
+        @change="(checked: unknown) => toggleAll(checked === true)"
+      >
         {{ t('tenantPackageImportWizard.scenarioAll') }}
       </el-checkbox>
     </div>
@@ -260,15 +263,15 @@
 
   .scenario-template-control :deep(.el-checkbox) {
     min-width: 0;
+    height: auto;
     margin-right: 0;
     min-height: 28px;
     white-space: normal;
   }
 
   .scenario-template-control :deep(.el-checkbox__label) {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    white-space: normal;
+    overflow-wrap: anywhere;
     line-height: 1.35;
   }
 
@@ -312,10 +315,6 @@
 
     .scenario-template-control__options {
       grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-    .scenario-template-control :deep(.el-checkbox__label) {
-      white-space: normal;
     }
   }
 </style>

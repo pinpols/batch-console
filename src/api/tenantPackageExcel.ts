@@ -1,5 +1,5 @@
 import { apiClient, get, post } from '@/api/client'
-import { readStoredTenantId } from '@/api/interceptors'
+import { readActiveTenantId } from '@/utils/tenantContext'
 import type { components } from '@/types/api.generated'
 
 const TENANT_PKG_BASE = '/api/console/config/tenant-package/excel'
@@ -55,7 +55,7 @@ export async function refreshTenantPackagePreviewOnConflict(
 }
 
 function currentTenantParams() {
-  return { tenantId: readStoredTenantId() }
+  return { tenantId: readActiveTenantId() }
 }
 
 /** GET …/scenario-template — 下载所选业务场景的空白模板 */

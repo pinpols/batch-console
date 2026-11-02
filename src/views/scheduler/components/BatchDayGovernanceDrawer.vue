@@ -16,7 +16,7 @@
       <template #header>{{ t('batchDayGovernance.catchup') }}</template>
       <DataState :loading="loading" :has-data="Boolean(preview)">
         <template v-if="preview">
-          <el-descriptions :column="2" border>
+          <el-descriptions :column="isMobile ? 1 : 2" border>
             <el-descriptions-item :label="t('batchDayGovernance.currentDate')">{{
               preview.currentBizDate
             }}</el-descriptions-item>
@@ -53,19 +53,21 @@
     </SectionCard>
     <SectionCard>
       <template #header>{{ t('batchDayGovernance.gaps') }}</template>
-      <el-form inline>
+      <el-form inline :label-position="isMobile ? 'top' : 'right'" class="batch-day-gap-form">
         <el-form-item :label="t('batchDayGovernance.from')"
           ><el-date-picker v-model="fromDate" type="date" value-format="YYYY-MM-DD"
         /></el-form-item>
         <el-form-item :label="t('batchDayGovernance.through')"
           ><el-date-picker v-model="throughDate" type="date" value-format="YYYY-MM-DD"
         /></el-form-item>
-        <el-button
-          :loading="gapsLoading"
-          :disabled="!preview || !validGapRange(fromDate, throughDate, preview.currentBizDate)"
-          @click="loadGaps"
-          >{{ t('batchDayGovernance.inspect') }}</el-button
-        >
+        <el-form-item>
+          <el-button
+            :loading="gapsLoading"
+            :disabled="!preview || !validGapRange(fromDate, throughDate, preview.currentBizDate)"
+            @click="loadGaps"
+            >{{ t('batchDayGovernance.inspect') }}</el-button
+          >
+        </el-form-item>
       </el-form>
       <p>{{ t('batchDayGovernance.gapHint') }}</p>
       <el-alert
@@ -114,7 +116,9 @@
         <p>
           {{
             t('batchDayGovernance.dayState', {
-              status: day.dayStatus || t('batchDayGovernance.unknown'),
+              status: day.dayStatus
+                ? t(`batchDayGovernance.dayStatuses.${day.dayStatus}`, day.dayStatus)
+                : t('batchDayGovernance.unknown'),
               frozen:
                 day.frozen == null
                   ? t('batchDayGovernance.unknown')
@@ -159,7 +163,12 @@
       @click="execute(pending)"
       >{{ t('batchDayGovernance.retryOriginal') }}</el-button
     >
-    <el-dialog v-model="confirmation" :title="t('batchDayGovernance.confirmTitle')" append-to-body>
+    <el-dialog
+      v-model="confirmation"
+      :title="t('batchDayGovernance.confirmTitle')"
+      width="min(560px, calc(100% - 32px))"
+      append-to-body
+    >
       <p>
         {{
           t('batchDayGovernance.confirmScope', {
@@ -218,6 +227,7 @@
   import { useTenantReload } from '@/composables/useTenantReload'
   import { useTenantStore } from '@/stores/tenant'
   import { useAuthStore } from '@/stores/auth'
+  import { useResponsive } from '@/composables/useResponsive'
   import { createIdempotencyKey } from '@/utils/idempotency'
   import { todayBusinessDate } from '@/utils/datetime'
   import DataState from '@/components/common/DataState.vue'
@@ -234,6 +244,7 @@
   const { t } = useI18n()
   const tenant = useTenantStore()
   const auth = useAuthStore()
+  const { isMobile } = useResponsive()
   const actor = computed(() => auth.userInfo?.username || '')
   const { canManageSystem, canWriteSystem, hasPermission } = usePermission()
   const recoveryBlocked = ref(false)
@@ -458,3 +469,22 @@
     ++gapSequence
   })
 </script>
+
+<style scoped>
+  .batch-day-gap-form :deep(.el-form-item:last-child) {
+    margin-bottom: var(--space-md);
+  }
+
+  @media (max-width: 768px) {
+    .batch-day-gap-form :deep(.el-form-item) {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      margin-right: 0;
+    }
+
+    .batch-day-gap-form :deep(.el-date-editor) {
+      width: 100%;
+    }
+  }
+</style>

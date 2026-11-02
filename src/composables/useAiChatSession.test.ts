@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
+import { watch } from 'vue'
 import { cancelAiChatStream, streamAiChat } from '@/api/aiStream'
 import {
   deleteAiAttachment,
@@ -47,6 +48,150 @@ describe('useAiChatSession', () => {
       createObjectURL: vi.fn(() => 'blob:preview'),
       revokeObjectURL: vi.fn(),
     })
+  })
+
+  it('检测当前和其他会话中未提交的文本与附件草稿', () => {
+    const chat = useAiChatSession()
+    expect(chat.hasUnsavedDraft()).toBe(false)
+    chat.prompt.value = 'draft in first conversation'
+    expect(chat.hasUnsavedDraft()).toBe(true)
+    chat.restore('session-2', [], 'empty')
+    expect(chat.hasUnsavedDraft()).toBe(true)
+    chat.restore('', [], 'empty')
+    chat.prompt.value = ''
+    expect(chat.hasUnsavedDraft()).toBe(false)
+    chat.images.value.push({
+      clientAttachmentId: 'local-image',
+      name: 'image.png',
+      size: 1,
+      previewUrl: 'blob:preview',
+      status: 'uploading',
+    })
+    expect(chat.hasUnsavedDraft()).toBe(true)
+    chat.reset(true)
+    expect(chat.hasUnsavedDraft()).toBe(false)
+  })
+
+  it('取消切租户保留草稿，确认后清理且不以新租户删除原租户附件', async () => {
+    const tenant = useTenantStore()
+    const chat = useAiChatSession()
+    mockedCapabilities.mockResolvedValue({
+      imageInput: true,
+      maxImages: 4,
+      maxImageBytes: 1024,
+      maxTotalBytes: 4096,
+    })
+    mockedUpload.mockImplementation(async (_file, clientAttachmentId) => ({
+      id: 'attachment-1',
+      clientAttachmentId,
+      status: 'DRAFT',
+      mediaType: 'image/png',
+      byteSize: 4,
+      width: 1,
+      height: 1,
+      expiresAt: '2026-10-02T00:00:00Z',
+    }))
+    await chat.loadImageCapabilities()
+    await chat.addImages([new File(['data'], 'screen.png', { type: 'image/png' })])
+    chat.prompt.value = 'draft'
+    const unregister = tenant.registerTenantChangeGuard(chat.hasUnsavedDraft)
+    const unwatch = watch(
+      () => tenant.tenantId,
+      () => chat.reset(true),
+      { flush: 'sync' },
+    )
+    expect(await tenant.requestTenantSwitch('tb', async () => false)).toBe(false)
+    expect(chat.prompt.value).toBe('draft')
+    expect(chat.images.value).toHaveLength(1)
+    expect(await tenant.requestTenantSwitch('tb', async () => true)).toBe(true)
+    expect(chat.hasUnsavedDraft()).toBe(false)
+    expect(mockedDelete).not.toHaveBeenCalled()
+    unwatch()
+    unregister()
+  })
+
+  it('切换后旧上传响应即使回到原租户也不能恢复附件', async () => {
+    const tenant = useTenantStore()
+    const chat = useAiChatSession()
+    mockedCapabilities.mockResolvedValue({
+      imageInput: true,
+      maxImages: 4,
+      maxImageBytes: 1024,
+      maxTotalBytes: 4096,
+    })
+    let resolveUpload!: (value: Awaited<ReturnType<typeof uploadAiAttachment>>) => void
+    mockedUpload.mockReturnValue(
+      new Promise((resolve) => {
+        resolveUpload = resolve
+      }),
+    )
+    await chat.loadImageCapabilities()
+    const upload = chat.addImages([new File(['data'], 'screen.png', { type: 'image/png' })])
+    expect(chat.hasUnsavedDraft()).toBe(true)
+    tenant.setTenantId('tb')
+    chat.reset(true)
+    tenant.setTenantId('ta')
+    resolveUpload({
+      id: 'old',
+      clientAttachmentId: 'old',
+      status: 'DRAFT',
+      mediaType: 'image/png',
+      byteSize: 4,
+      width: 1,
+      height: 1,
+      expiresAt: '2026-10-02T00:00:00Z',
+    })
+    await upload
+    expect(chat.images.value).toHaveLength(0)
+    expect(mockedDelete).not.toHaveBeenCalled()
+  })
+
+  it('租户往返时迟到的能力查询不能覆盖当前租户结果', async () => {
+    const tenant = useTenantStore()
+    const chat = useAiChatSession()
+    let resolveOld!: (value: Awaited<ReturnType<typeof getAiCapabilities>>) => void
+    mockedCapabilities.mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveOld = resolve
+      }),
+    )
+    const old = chat.loadImageCapabilities()
+    tenant.setTenantId('tb')
+    tenant.setTenantId('ta')
+    mockedCapabilities.mockResolvedValueOnce({
+      imageInput: true,
+      maxImages: 2,
+      maxImageBytes: 100,
+      maxTotalBytes: 200,
+    })
+    await chat.loadImageCapabilities()
+    resolveOld({ imageInput: false, maxImages: 0, maxImageBytes: 0, maxTotalBytes: 0 })
+    await old
+    expect(chat.imageCapabilities.value?.maxImages).toBe(2)
+  })
+
+  it('旧回执核对响应不能污染新会话或清除新待核对请求', async () => {
+    const chat = useAiChatSession()
+    chat.pendingTurnId.value = 'turn-old'
+    let resolveOld!: (value: Awaited<ReturnType<typeof getAiTurnByClientId>>) => void
+    mockedTurnByClientId.mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveOld = resolve
+      }),
+    )
+    const old = chat.reconcileTurn()
+    chat.reset(true)
+    chat.sessionId.value = 'new-session'
+    chat.pendingTurnId.value = 'turn-new'
+    chat.messages.value = [{ id: 'new-a', role: 'assistant', content: 'new content' }]
+    resolveOld({
+      sessionId: 'old-session',
+      turn: { status: 'COMPLETE', response: 'old content', promptDecision: 'APPROVED' },
+    } as Awaited<ReturnType<typeof getAiTurnByClientId>>)
+    await old
+    expect(chat.sessionId.value).toBe('new-session')
+    expect(chat.messages.value[0]?.content).toBe('new content')
+    expect(chat.pendingTurnId.value).toBe('turn-new')
   })
 
   it('sends uploaded images by stable IDs and releases the local preview', async () => {

@@ -44,6 +44,7 @@
             <TenantSelect
               v-if="canSwitchTenant"
               :model-value="tenant.tenantId"
+              :disabled="tenant.tenantSwitchPending"
               size="small"
               :placeholder="t('mobile.appBar.switchTenantPlaceholder')"
               :select-class="''"
@@ -118,7 +119,11 @@
             @confirm="handleLogout"
           >
             <template #reference>
-              <button type="button" class="mobile-appbar__link mobile-appbar__link--danger" @click="logoutSession = currentAuthSession()">
+              <button
+                type="button"
+                class="mobile-appbar__link mobile-appbar__link--danger"
+                @click="logoutSession = currentAuthSession()"
+              >
                 {{ t('mobile.appBar.logout') }}
               </button>
             </template>
@@ -144,6 +149,7 @@
   import { ElMessage } from 'element-plus'
   import { useAuthStore } from '@/stores/auth'
   import { useTenantStore } from '@/stores/tenant'
+  import { useTenantSwitch } from '@/composables/useTenantSwitch'
   import { useTabsStore } from '@/stores/tabs'
   import { useAppStore } from '@/stores/app'
   import { canSwitchTenant as checkCanSwitchTenant } from '@/utils/tenantAccess'
@@ -169,6 +175,7 @@
   const { t, te } = useI18n({ useScope: 'global' })
   const auth = useAuthStore()
   const tenant = useTenantStore()
+  const { switchTenant } = useTenantSwitch()
   const tabsStore = useTabsStore()
   const app = useAppStore()
   const { current: currentLocale, setLocale } = useLocale()
@@ -237,8 +244,7 @@
   }
 
   async function handleTenantSwitch(newTenantId: string) {
-    if (!newTenantId) return
-    tenant.setTenantId(newTenantId)
+    if (!(await switchTenant(newTenantId))) return
     ElMessage.success(t('mobile.appBar.switchedTenant', { id: newTenantId }))
     try {
       await auth.fetchMe()

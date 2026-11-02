@@ -4,7 +4,7 @@
       ref="quotaFormRef"
       :model="quotaForm"
       :rules="quotaFormRules"
-      label-width="88px"
+      label-position="top"
       class="form-section"
       @submit.prevent="submitQuotaChange"
     >
@@ -81,7 +81,7 @@
           const valueText = String(v)
           const trimmedValue = valueText.trim()
           const n = Number.parseInt(trimmedValue, 10)
-          if (Number.isFinite(n) && n > 0) cb()
+          if (/^\d+$/.test(trimmedValue) && Number.isFinite(n) && n > 0) cb()
           else {
             const errorMessage = t('selfServiceQuotaChangeTab.ruleValuePositive')
             const validationError = new Error(errorMessage)
@@ -176,4 +176,9 @@
   })
 </script>
 
-<style scoped></style>
+<style scoped>
+  .form-section :deep(.el-form-item__error) {
+    position: static;
+    width: 100%;
+  }
+</style>

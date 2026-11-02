@@ -10,11 +10,15 @@ const mocks = vi.hoisted(() => ({
   permission: null as unknown as { allowed: boolean },
   query: vi.fn(),
   republish: vi.fn(),
+  translations: {} as Record<string, string>,
 }))
 vi.mock('@/stores/tenant', () => ({ useTenantStore: () => mocks.tenant }))
 vi.mock('vue-i18n', async (original) => ({
   ...(await original<typeof import('vue-i18n')>()),
-  useI18n: () => ({ t: (key: string) => key, te: () => false }),
+  useI18n: () => ({
+    t: (key: string) => mocks.translations[key] ?? key,
+    te: (key: string) => key in mocks.translations,
+  }),
 }))
 vi.mock('element-plus', async (original) => ({
   ...(await original<typeof import('element-plus')>()),
@@ -36,6 +40,7 @@ beforeEach(() => {
   vi.clearAllMocks()
   mocks.tenant = reactive({ tenantId: 'tenant-a' })
   mocks.permission = reactive({ allowed: true })
+  mocks.translations = {}
   mocks.query
     .mockReset()
     .mockResolvedValue([
@@ -50,7 +55,7 @@ function render() {
     global: {
       stubs: {
         MPullRefresh: { template: '<div><slot /></div>' },
-        ElSegmented: {
+        ElSelect: {
           template: `<div><button class="show-giveup" @click="$emit('update:modelValue', 'giveup')" /><button class="show-pending" @click="$emit('update:modelValue', 'pending')" /><button class="show-published" @click="$emit('update:modelValue', 'published')" /></div>`,
         },
       },
@@ -59,6 +64,70 @@ function render() {
 }
 
 describe('移动 Outbox 重投', () => {
+  it('查询失败时显示重试而不是空结果，重试成功后展示事件', async () => {
+    mocks.query
+      .mockReset()
+      .mockRejectedValueOnce(new Error('offline'))
+      .mockResolvedValueOnce([
+        {
+          id: 7,
+          outboxEventId: 42,
+          tenantId: 'tenant-a',
+          retryStatus: 'FAILED',
+          eventType: 'restored-event',
+        },
+      ])
+    const wrapper = render()
+    await flushPromises()
+    expect(wrapper.find('.m-empty').text()).not.toContain('mobile.outbox.empty')
+    expect(wrapper.find('[role="alert"]').text()).toContain('mobile.common.loadFail')
+    expect(wrapper.find('.m-page__subtitle').exists()).toBe(false)
+    await wrapper.get('[role="alert"] button').trigger('click')
+    await flushPromises()
+    expect(mocks.query).toHaveBeenCalledTimes(2)
+    expect(wrapper.text()).toContain('restored-event')
+    expect(wrapper.find('[role="alert"]').exists()).toBe(false)
+  })
+
+  it('按重试状态与策略字典展示名称', async () => {
+    mocks.translations = {
+      'enum.retryScheduleStatus.FAILED': '失败',
+      'enum.retryPolicy.EXPONENTIAL': '指数退避',
+    }
+    mocks.query.mockResolvedValueOnce([
+      {
+        id: 7,
+        outboxEventId: 42,
+        tenantId: 'tenant-a',
+        retryStatus: 'FAILED',
+        retryPolicy: 'EXPONENTIAL',
+        eventType: 'test',
+      },
+    ])
+    const wrapper = render()
+    await flushPromises()
+    expect(wrapper.text()).toContain('失败')
+    expect(wrapper.text()).toContain('指数退避')
+  })
+
+  it('没有重试策略时只显示重试次数', async () => {
+    mocks.query.mockResolvedValueOnce([
+      {
+        id: 7,
+        outboxEventId: 42,
+        tenantId: 'tenant-a',
+        retryStatus: 'FAILED',
+        retryCount: 3,
+        retryPolicy: null,
+        eventType: 'test',
+      },
+    ])
+    const wrapper = render()
+    await flushPromises()
+    expect(wrapper.find('.m-card__meta').text()).toContain('mobile.outbox.retryCount 3')
+    expect(wrapper.find('.m-card__meta').text()).not.toContain('·')
+  })
+
   it('耗尽状态的重试记录可进入重投', async () => {
     mocks.query.mockResolvedValueOnce([
       {

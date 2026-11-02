@@ -4,34 +4,36 @@
 
     <SectionCard>
       <template #header>
-        <div class="trace-search">
-          <el-input
-            v-model="traceIdInput"
-            :placeholder="t('traceDiagnostic.placeholder')"
-            :maxlength="128"
-            clearable
-            class="trace-search__input"
-            @keyup.enter="search"
-          >
-            <template #prefix>
-              <el-icon><Search /></el-icon>
-            </template>
-          </el-input>
-          <el-button
-            type="primary"
-            :loading="loading"
-            :disabled="!traceIdInput.trim()"
-            @click="search"
-          >
-            {{ t('traceDiagnostic.search') }}
-          </el-button>
-          <el-button v-if="hasResult" :icon="Refresh" @click="reset">
-            {{ t('traceDiagnostic.reset') }}
-          </el-button>
+        <div class="trace-search-header">
+          <div class="trace-search">
+            <el-input
+              v-model="traceIdInput"
+              :placeholder="t('traceDiagnostic.placeholder')"
+              :maxlength="128"
+              clearable
+              class="trace-search__input"
+              @keyup.enter="search"
+            >
+              <template #prefix>
+                <el-icon><Search /></el-icon>
+              </template>
+            </el-input>
+            <el-button
+              type="primary"
+              :loading="loading"
+              :disabled="!traceIdInput.trim()"
+              @click="search"
+            >
+              {{ t('traceDiagnostic.search') }}
+            </el-button>
+            <el-button v-if="hasResult" :icon="Refresh" @click="reset">
+              {{ t('traceDiagnostic.reset') }}
+            </el-button>
+          </div>
+          <p class="trace-search__hint">
+            {{ t('traceDiagnostic.hint') }}
+          </p>
         </div>
-        <p class="trace-search__hint">
-          {{ t('traceDiagnostic.hint') }}
-        </p>
       </template>
 
       <!-- 未查询前的引导 -->
@@ -182,11 +184,21 @@
                     :prop="col.prop"
                     :label="col.label"
                     :width="col.width"
-                    show-overflow-tooltip
+                    :show-overflow-tooltip="!col.inspect"
                   >
                     <template #default="{ row }">
+                      <CopyableText
+                        v-if="col.inspect && hasCellValue(row[col.prop])"
+                        :text="formatCell(row[col.prop])"
+                        :copyable="false"
+                      >
+                        <router-link v-if="col.linkTo" :to="col.linkTo(row)" class="cell-link">
+                          {{ formatCell(row[col.prop]) }}
+                        </router-link>
+                        <span v-else>{{ formatCell(row[col.prop]) }}</span>
+                      </CopyableText>
                       <router-link
-                        v-if="col.linkTo && hasCellValue(row[col.prop])"
+                        v-else-if="col.linkTo && hasCellValue(row[col.prop])"
                         :to="col.linkTo(row)"
                         class="cell-link"
                       >
@@ -222,6 +234,7 @@
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
+  import CopyableText from '@/components/common/CopyableText.vue'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantRequestScope } from '@/composables/useTenantRequestScope'
   import { queryTraceSnapshot } from '@/api/observabilityQueries'
@@ -268,6 +281,7 @@
     prop: string
     label: string
     width?: number | string
+    inspect?: boolean
     linkTo?: (row: Record<string, unknown>) => string
   }
   interface DomainResult {
@@ -404,9 +418,10 @@
             prop: 'instanceNo',
             label: t('traceDiagnostic.colInstanceNo'),
             width: 200,
+            inspect: true,
             linkTo: (row) => `/monitor/job-instances/${row.id}`,
           },
-          { prop: 'jobCode', label: t('traceDiagnostic.colJobCode'), width: 180 },
+          { prop: 'jobCode', label: t('traceDiagnostic.colJobCode'), width: 180, inspect: true },
           { prop: 'instanceStatus', label: t('traceDiagnostic.colStatus'), width: 110 },
           { prop: 'bizDate', label: t('traceDiagnostic.colBizDate'), width: 110 },
           { prop: 'startedAt', label: t('traceDiagnostic.colStartedAt'), width: 170 },
@@ -423,7 +438,7 @@
             width: 100,
             linkTo: (row) => `/files/list?fileId=${row.id}`,
           },
-          { prop: 'fileName', label: t('traceDiagnostic.colFileName'), width: 240 },
+          { prop: 'fileName', label: t('traceDiagnostic.colFileName'), width: 240, inspect: true },
           { prop: 'fileStatus', label: t('traceDiagnostic.colStatus'), width: 110 },
           { prop: 'createdAt', label: t('traceDiagnostic.colCreatedAt'), width: 170 },
         ],
@@ -439,7 +454,7 @@
             width: 100,
             linkTo: (row) => `/files/pipeline-obs?pipelineInstanceId=${row.id}`,
           },
-          { prop: 'jobCode', label: t('traceDiagnostic.colJobCode'), width: 180 },
+          { prop: 'jobCode', label: t('traceDiagnostic.colJobCode'), width: 180, inspect: true },
           { prop: 'pipelineType', label: t('traceDiagnostic.colPipelineType'), width: 120 },
           { prop: 'runStatus', label: t('traceDiagnostic.colStatus'), width: 110 },
           { prop: 'currentStage', label: t('traceDiagnostic.colCurrentStage'), width: 140 },
@@ -452,7 +467,12 @@
         rows: audits as Record<string, unknown>[],
         columns: [
           { prop: 'operationType', label: t('traceDiagnostic.colOperation'), width: 160 },
-          { prop: 'operatorId', label: t('traceDiagnostic.colOperator'), width: 120 },
+          {
+            prop: 'operatorId',
+            label: t('traceDiagnostic.colOperator'),
+            width: 120,
+            inspect: true,
+          },
           { prop: 'operationResult', label: t('traceDiagnostic.colResult'), width: 100 },
           { prop: 'createdAt', label: t('traceDiagnostic.colCreatedAt'), width: 170 },
         ],
@@ -462,10 +482,20 @@
         label: t('traceDiagnostic.domainOperationAudit'),
         rows: operationAudits as Record<string, unknown>[],
         columns: [
-          { prop: 'action', label: t('traceDiagnostic.colOperation'), width: 160 },
-          { prop: 'operatorId', label: t('traceDiagnostic.colOperator'), width: 120 },
+          { prop: 'action', label: t('traceDiagnostic.colOperation'), width: 160, inspect: true },
+          {
+            prop: 'operatorId',
+            label: t('traceDiagnostic.colOperator'),
+            width: 120,
+            inspect: true,
+          },
           { prop: 'result', label: t('traceDiagnostic.colResult'), width: 100 },
-          { prop: 'aggregateType', label: t('traceDiagnostic.colAggregateType'), width: 140 },
+          {
+            prop: 'aggregateType',
+            label: t('traceDiagnostic.colAggregateType'),
+            width: 140,
+            inspect: true,
+          },
           { prop: 'createdAt', label: t('traceDiagnostic.colCreatedAt'), width: 170 },
         ],
       },
@@ -476,7 +506,7 @@
         columns: [
           { prop: 'operationType', label: t('traceDiagnostic.colOperation'), width: 160 },
           { prop: 'operationResult', label: t('traceDiagnostic.colResult'), width: 100 },
-          { prop: 'message', label: t('traceDiagnostic.colMessage') },
+          { prop: 'message', label: t('traceDiagnostic.colMessage'), inspect: true },
           { prop: 'createdAt', label: t('traceDiagnostic.colCreatedAt'), width: 170 },
         ],
       },
@@ -491,7 +521,12 @@
             width: 100,
             linkTo: (row) => `/monitor/workflow-runs/${row.id}`,
           },
-          { prop: 'workflowCode', label: t('traceDiagnostic.colWorkflowCode'), width: 180 },
+          {
+            prop: 'workflowCode',
+            label: t('traceDiagnostic.colWorkflowCode'),
+            width: 180,
+            inspect: true,
+          },
           { prop: 'runStatus', label: t('traceDiagnostic.colStatus'), width: 110 },
           { prop: 'startedAt', label: t('traceDiagnostic.colStartedAt'), width: 170 },
         ],
@@ -501,7 +536,7 @@
         label: t('traceDiagnostic.domainWorkflowNodeRun'),
         rows: workflowNodeRuns as Record<string, unknown>[],
         columns: [
-          { prop: 'nodeCode', label: t('traceDiagnostic.colNodeCode'), width: 180 },
+          { prop: 'nodeCode', label: t('traceDiagnostic.colNodeCode'), width: 180, inspect: true },
           { prop: 'nodeType', label: t('traceDiagnostic.colNodeType'), width: 120 },
           { prop: 'nodeStatus', label: t('traceDiagnostic.colStatus'), width: 110 },
           { prop: 'retryCount', label: t('traceDiagnostic.colRetryCount'), width: 100 },
@@ -513,7 +548,12 @@
         label: t('traceDiagnostic.domainAlert'),
         rows: alerts as Record<string, unknown>[],
         columns: [
-          { prop: 'alertType', label: t('traceDiagnostic.colAlertType'), width: 160 },
+          {
+            prop: 'alertType',
+            label: t('traceDiagnostic.colAlertType'),
+            width: 160,
+            inspect: true,
+          },
           { prop: 'severity', label: t('traceDiagnostic.colSeverity'), width: 100 },
           { prop: 'alertStatus', label: t('traceDiagnostic.colStatus'), width: 110 },
           { prop: 'createdAt', label: t('traceDiagnostic.colCreatedAt'), width: 170 },
@@ -524,9 +564,19 @@
         label: t('traceDiagnostic.domainOutbox'),
         rows: outboxes as Record<string, unknown>[],
         columns: [
-          { prop: 'eventType', label: t('traceDiagnostic.colEventType'), width: 180 },
+          {
+            prop: 'eventType',
+            label: t('traceDiagnostic.colEventType'),
+            width: 180,
+            inspect: true,
+          },
           { prop: 'deliveryStatus', label: t('traceDiagnostic.colStatus'), width: 110 },
-          { prop: 'targetTopic', label: t('traceDiagnostic.colTargetTopic'), width: 200 },
+          {
+            prop: 'targetTopic',
+            label: t('traceDiagnostic.colTargetTopic'),
+            width: 200,
+            inspect: true,
+          },
           { prop: 'createdAt', label: t('traceDiagnostic.colCreatedAt'), width: 170 },
         ],
       },
@@ -536,7 +586,7 @@
         rows: deadLetters as Record<string, unknown>[],
         columns: [
           { prop: 'taskType', label: t('traceDiagnostic.colTaskType'), width: 160 },
-          { prop: 'failureReason', label: t('traceDiagnostic.colReason') },
+          { prop: 'failureReason', label: t('traceDiagnostic.colReason'), inspect: true },
           { prop: 'createdAt', label: t('traceDiagnostic.colCreatedAt'), width: 170 },
         ],
       },
@@ -619,6 +669,10 @@
 </script>
 
 <style scoped>
+  .trace-search-header {
+    width: 100%;
+    min-width: 0;
+  }
   .trace-search {
     display: flex;
     gap: 8px;
@@ -626,12 +680,25 @@
   }
   .trace-search__input {
     flex: 1;
+    min-width: 0;
     max-width: 560px;
+  }
+  .trace-search :deep(.el-button + .el-button) {
+    margin-left: 0;
   }
   .trace-search__hint {
     color: var(--color-text-tertiary);
     font-size: 12px;
     margin: 6px 0 0;
+  }
+  @media (max-width: 600px) {
+    .trace-search {
+      flex-wrap: wrap;
+    }
+    .trace-search__input {
+      flex-basis: 100%;
+      max-width: none;
+    }
   }
   .trace-loading {
     display: flex;

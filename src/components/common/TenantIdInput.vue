@@ -18,7 +18,8 @@
       <template v-else>{{ errMsg }}</template>
     </div>
     <div v-else-if="!model" class="tii-hint">
-      {{ t('tenantIdInput.hint') }}
+      <span v-if="showSuggestion">{{ t('tenantIdInput.hint') }} </span
+      >{{ t('tenantIdInput.reservedHint') }}
     </div>
   </div>
 </template>
@@ -45,8 +46,9 @@
     defineProps<{
       modelValue: string
       placeholder?: string
+      showSuggestion?: boolean
     }>(),
-    { placeholder: '' },
+    { placeholder: '', showSuggestion: true },
   )
 
   const emit = defineEmits<{ (e: 'update:modelValue', v: string): void }>()
@@ -96,7 +98,9 @@
   .tii-msg {
     margin-top: 4px;
     font-size: 12px;
+    line-height: 1.5;
     color: var(--el-color-success);
+    overflow-wrap: anywhere;
   }
   .tii-msg--err {
     color: var(--el-color-danger);
@@ -104,7 +108,9 @@
   .tii-hint {
     margin-top: 4px;
     font-size: 12px;
+    line-height: 1.5;
     color: var(--color-text-tertiary);
+    overflow-wrap: anywhere;
   }
   .tii-ok {
     color: var(--el-color-success);

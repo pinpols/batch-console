@@ -11,7 +11,7 @@
 
 | Item | Count |
 |---|---:|
-| Runtime direct dependencies | 33 |
+| Runtime direct dependencies | 34 |
 | Development direct dependencies | 37 |
 | Resolved lockfile components | 935 |
 
@@ -70,6 +70,7 @@
 | `markdown-it` | `^15.0.3` |
 | `pinia` | `^4.1.0` |
 | `svg-pan-zoom` | `^3.6.2` |
+| `tabbable` | `6.5.0` |
 | `vue` | `^3.5.44` |
 | `vue-echarts` | `^8.3.2` |
 | `vue-i18n` | `^11.4.14` |

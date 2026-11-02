@@ -3,11 +3,16 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { computed, defineComponent, h, reactive, ref } from 'vue'
 import { enableAutoUnmount, flushPromises, shallowMount } from '@vue/test-utils'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { createPinia, setActivePinia } from 'pinia'
 import DefinitionList from './JobDefinitionList.vue'
 import DefinitionWizard from './JobDefinitionWizard.vue'
 import { STORAGE_KEYS } from '@/constants/storageKeys'
 import { advanceAuthSession, initializeSharedAuthRevision } from '@/api/authSession'
-import { createConfigBatchRecovery, listConfigBatchRecoveries, saveConfigBatchRecovery } from '@/utils/configBatchRecovery'
+import {
+  createConfigBatchRecovery,
+  listConfigBatchRecoveries,
+  saveConfigBatchRecovery,
+} from '@/utils/configBatchRecovery'
 
 // confirm 在非输入模式下运行时返回动作字符串；Element Plus 类型将其错误地与输入对象取交集。
 const confirmed = 'confirm' as unknown as Awaited<ReturnType<typeof ElMessageBox.confirm>>
@@ -29,6 +34,8 @@ const mocks = vi.hoisted(() => ({
   channels: vi.fn(),
   queues: vi.fn(),
   validate: vi.fn(),
+  listRuns: vi.fn(),
+  useRealTenant: false,
 }))
 vi.mock('vue-router', () => ({
   useRoute: () => ({ query: {}, params: {} }),
@@ -42,7 +49,15 @@ vi.mock('vue-i18n', async (original) => ({
     te: () => false,
   }),
 }))
-vi.mock('@/stores/tenant', () => ({ useTenantStore: () => mocks.context }))
+vi.mock('@/stores/tenant', async (original) => {
+  const actual = await original<typeof import('@/stores/tenant')>()
+  return {
+    useTenantStore: () =>
+      mocks.useRealTenant
+        ? actual.useTenantStore()
+        : Object.assign(mocks.context, { registerTenantChangeGuard: () => () => {} }),
+  }
+})
 vi.mock('@/stores/app', () => ({ useAppStore: () => mocks.context }))
 vi.mock('@/stores/auth', () => ({
   useAuthStore: () => ({
@@ -60,13 +75,19 @@ vi.mock('@/composables/usePermission', () => ({
     ),
   }),
 }))
-vi.mock('@/composables/useDirtyForm', () => ({
-  useDirtyForm: () => ({
-    markPristine: vi.fn(),
-    confirmDiscard: vi.fn().mockResolvedValue(true),
-    isDirty: ref(false),
-  }),
-}))
+vi.mock('@/composables/useDirtyForm', async (original) => {
+  const actual = await original<typeof import('@/composables/useDirtyForm')>()
+  return {
+    useDirtyForm: (...args: Parameters<typeof actual.useDirtyForm>) =>
+      mocks.useRealTenant
+        ? actual.useDirtyForm(...args)
+        : {
+            markPristine: vi.fn(),
+            confirmDiscard: vi.fn().mockResolvedValue(true),
+            isDirty: ref(false),
+          },
+  }
+})
 vi.mock('@/composables/useDrawerAutoClose', () => ({ useDrawerAutoClose: vi.fn() }))
 vi.mock('@/composables/queries/useJobDefinitionsPaged', () => ({
   useJobDefinitionsPaged: () => ({
@@ -87,6 +108,8 @@ vi.mock('@/api/job', () => ({
     createBundle: mocks.createBundle,
   },
 }))
+vi.mock('@/api/instance', () => ({ instanceApi: { list: mocks.listRuns } }))
+vi.mock('@/api/pipelineMeta', () => ({ fetchPipelineStages: vi.fn().mockResolvedValue({}) }))
 vi.mock('@/api/configBatchRecovery', () => ({
   getConfigBatchOperation: mocks.getConfigBatchOperation,
 }))
@@ -218,6 +241,8 @@ function changeContext(change: string) {
   }
 }
 beforeEach(() => {
+  setActivePinia(createPinia())
+  mocks.useRealTenant = false
   vi.clearAllMocks()
   sessionStorage.clear()
   localStorage.setItem(STORAGE_KEYS.tenantId, 'tenant-a')
@@ -237,6 +262,72 @@ beforeEach(() => {
   mocks.queues.mockReset().mockResolvedValue([])
   mocks.validate.mockReset().mockResolvedValue(true)
   mocks.refetch.mockReset().mockResolvedValue({})
+  mocks.listRuns.mockReset().mockResolvedValue({ records: [] })
+})
+
+describe('作业详情最近运行的响应归属', () => {
+  function detailVm(wrapper: Wrapper) {
+    return wrapper.vm as unknown as {
+      openDetail: (row: { jobCode: string; tenantId: string }) => void
+      detailRunsRows: { instanceNo: string }[]
+      detailRunsLoading: boolean
+    }
+  }
+
+  it('A 的迟到成功不能覆盖 B，也不能提前关闭 B 的加载状态', async () => {
+    const a = pending<{ records: { instanceNo: string }[] }>()
+    const b = pending<{ records: { instanceNo: string }[] }>()
+    mocks.listRuns.mockReturnValueOnce(a.promise).mockReturnValueOnce(b.promise)
+    const wrapper = shallowMount(DefinitionList, { global: { stubs } })
+    await flushPromises()
+    const vm = detailVm(wrapper)
+    vm.openDetail({ jobCode: 'A', tenantId: 'tenant-a' })
+    vm.openDetail({ jobCode: 'B', tenantId: 'tenant-a' })
+    a.resolve({ records: [{ instanceNo: 'a' }] })
+    await flushPromises()
+    expect(vm.detailRunsRows).toEqual([])
+    expect(vm.detailRunsLoading).toBe(true)
+    b.resolve({ records: [{ instanceNo: 'b' }] })
+    await flushPromises()
+    expect(vm.detailRunsRows).toEqual([{ instanceNo: 'b' }])
+    expect(vm.detailRunsLoading).toBe(false)
+  })
+
+  it('租户切换再切回后旧响应不能覆盖当前详情', async () => {
+    const old = pending<{ records: { instanceNo: string }[] }>()
+    const current = pending<{ records: { instanceNo: string }[] }>()
+    mocks.listRuns.mockReturnValueOnce(old.promise).mockReturnValueOnce(current.promise)
+    const wrapper = shallowMount(DefinitionList, { global: { stubs } })
+    await flushPromises()
+    const vm = detailVm(wrapper)
+    vm.openDetail({ jobCode: 'A', tenantId: 'tenant-a' })
+    mocks.context.tenantId = 'tenant-b'
+    mocks.context.tenantId = 'tenant-a'
+    vm.openDetail({ jobCode: 'A', tenantId: 'tenant-a' })
+    current.resolve({ records: [{ instanceNo: 'current' }] })
+    await flushPromises()
+    old.resolve({ records: [{ instanceNo: 'old' }] })
+    await flushPromises()
+    expect(vm.detailRunsRows).toEqual([{ instanceNo: 'current' }])
+  })
+
+  it('旧请求失败不能清空新作业或结束新加载', async () => {
+    const old = pending<{ records: { instanceNo: string }[] }>()
+    const current = pending<{ records: { instanceNo: string }[] }>()
+    mocks.listRuns.mockReturnValueOnce(old.promise).mockReturnValueOnce(current.promise)
+    const wrapper = shallowMount(DefinitionList, { global: { stubs } })
+    await flushPromises()
+    const vm = detailVm(wrapper)
+    vm.openDetail({ jobCode: 'A', tenantId: 'tenant-a' })
+    vm.openDetail({ jobCode: 'B', tenantId: 'tenant-a' })
+    old.reject(new Error('late failure'))
+    await flushPromises()
+    expect(vm.detailRunsRows).toEqual([])
+    expect(vm.detailRunsLoading).toBe(true)
+    current.resolve({ records: [{ instanceNo: 'b' }] })
+    await flushPromises()
+    expect(vm.detailRunsRows).toEqual([{ instanceNo: 'b' }])
+  })
 })
 
 describe('作业向导的配置包预填', () => {
@@ -244,7 +335,9 @@ describe('作业向导的配置包预填', () => {
     const wrapper = shallowMount(DefinitionWizard, { global: { stubs } })
     await flushPromises()
     await click(wrapper, 'jobDefinitionWizard.importBundleJson')
-    const payload = JSON.stringify({ jobDefinitions: [{ jobCode: 'PREFILLED', jobName: 'Prefilled job' }] })
+    const payload = JSON.stringify({
+      jobDefinitions: [{ jobCode: 'PREFILLED', jobName: 'Prefilled job' }],
+    })
     wrapper.findComponent({ name: 'JsonTextareaInput' }).vm.$emit('update:modelValue', payload)
     await flushPromises()
     await click(wrapper, 'common.cancel')
@@ -421,36 +514,136 @@ describe('作业向导提交的响应归属', () => {
   })
 })
 
-describe('作业包原请求回查', () => {
-  it.each(['import', 'create'])('另一标签切换请求租户后，旧 %s 成功不清理记录或更新页面', async (kind) => {
+describe('作业向导租户切换', () => {
+  it('切换租户后旧创建请求的解析异常不提示到新租户', async () => {
+    mocks.useRealTenant = true
+    const { useTenantStore } =
+      await vi.importActual<typeof import('@/stores/tenant')>('@/stores/tenant')
+    const tenant = useTenantStore()
+    tenant.setTenantId('tenant-a')
     const response = pending<ReturnType<typeof success>>()
-    const request = kind === 'import' ? mocks.importBundle : mocks.createBundle
-    request.mockReturnValueOnce(response.promise)
-    const wrapper = kind === 'import' ? await renderList() : (await renderWizard()).wrapper
-    await click(wrapper, kind === 'import' ? 'jobDefinitionList.bundleImportConfirm' : 'jobDefinitionWizard.submitCreate')
-    const key = request.mock.calls[0]?.[1]
-
-    localStorage.setItem(STORAGE_KEYS.tenantId, 'tenant-b')
-    response.resolve(success())
+    mocks.createBundle.mockReturnValueOnce(response.promise)
+    const { wrapper } = await renderWizard()
+    await click(wrapper, 'jobDefinitionWizard.submitCreate')
+    expect(await tenant.requestTenantSwitch('tenant-b', async () => true)).toBe(true)
+    response.reject(new SyntaxError('old response'))
     await flushPromises()
-
-    expect(listConfigBatchRecoveries('operator', 'tenant-a').commands.map((item) => item.key)).toContain(key)
-    expect(ElMessage.success).not.toHaveBeenCalled()
-    expect(mocks.refetch).not.toHaveBeenCalled()
+    expect(ElMessage.error).not.toHaveBeenCalled()
     expect(mocks.push).not.toHaveBeenCalled()
-    expect(request).toHaveBeenCalledTimes(1)
-    if (kind === 'import') expect(wrapper.findComponent({ name: 'ElDialog' }).props('modelValue')).toBe(true)
+    wrapper.unmount()
   })
 
-  it.each(['import', 'create'])('另一标签切换租户后，旧 %s 失败不向新上下文提示', async (kind) => {
+  it('空向导直接切换；取消后保留草稿，确认后清空所有旧租户字段', async () => {
+    mocks.useRealTenant = true
+    const { useTenantStore } =
+      await vi.importActual<typeof import('@/stores/tenant')>('@/stores/tenant')
+    const tenant = useTenantStore()
+    tenant.setTenantId('tenant-a')
+    const wrapper = shallowMount(DefinitionWizard, { global: { stubs } })
+    await flushPromises()
+    const confirm = vi.fn().mockResolvedValueOnce(false).mockResolvedValueOnce(true)
+    expect(await tenant.requestTenantSwitch('tenant-b', confirm)).toBe(true)
+    expect(confirm).not.toHaveBeenCalled()
+    const form = wrapper.findComponent({ name: 'JobConfigBasicForm' }).props('model')
+    form.jobCode = 'OLD_JOB'
+    form.jobName = 'Old name'
+    form.queueCode = 'OLD_QUEUE'
+    expect(await tenant.requestTenantSwitch('tenant-c', confirm)).toBe(false)
+    expect(form.jobCode).toBe('OLD_JOB')
+    expect(form.queueCode).toBe('OLD_QUEUE')
+    expect(await tenant.requestTenantSwitch('tenant-c', confirm)).toBe(true)
+    await flushPromises()
+    expect(form.jobCode).toBe('')
+    expect(form.jobName).toBe('')
+    expect(form.queueCode).toBe('')
+    expect(wrapper.findComponent({ name: 'JobConfigBasicForm' }).props('tenantId')).toBe('tenant-c')
+    expect(await tenant.requestTenantSwitch('tenant-d', confirm)).toBe(true)
+    expect(confirm).toHaveBeenCalledTimes(2)
+    wrapper.unmount()
+  })
+
+  it('导入粘贴内容也是草稿，确认后不会传到新租户', async () => {
+    mocks.useRealTenant = true
+    const { useTenantStore } =
+      await vi.importActual<typeof import('@/stores/tenant')>('@/stores/tenant')
+    const tenant = useTenantStore()
+    tenant.setTenantId('tenant-a')
+    const wrapper = shallowMount(DefinitionWizard, { global: { stubs } })
+    await flushPromises()
+    const prefill = wrapper.findComponent({ name: 'JobBundlePrefillDialog' })
+    prefill.vm.$emit('update:json', '{"jobDefinitions":[{"jobCode":"OLD"}]}')
+    const confirm = vi.fn().mockResolvedValueOnce(false).mockResolvedValueOnce(true)
+    expect(await tenant.requestTenantSwitch('tenant-b', confirm)).toBe(false)
+    await flushPromises()
+    expect(prefill.props('json')).toContain('OLD')
+    expect(await tenant.requestTenantSwitch('tenant-b', confirm)).toBe(true)
+    await flushPromises()
+    expect(prefill.props('json')).toBe('')
+    wrapper.unmount()
+  })
+
+  it('成功创建后不再提示放弃已保存内容', async () => {
+    mocks.useRealTenant = true
+    const { useTenantStore } =
+      await vi.importActual<typeof import('@/stores/tenant')>('@/stores/tenant')
+    const tenant = useTenantStore()
+    tenant.setTenantId('tenant-a')
+    const { wrapper } = await renderWizard()
+    await click(wrapper, 'jobDefinitionWizard.submitCreate')
+    expect(mocks.createBundle).toHaveBeenCalledOnce()
+    const confirm = vi.fn(async () => false)
+    expect(await tenant.requestTenantSwitch('tenant-b', confirm)).toBe(true)
+    expect(confirm).not.toHaveBeenCalled()
+    wrapper.unmount()
+  })
+})
+
+describe('作业包原请求回查', () => {
+  it.each(['import', 'create'])(
+    '当前标签切换租户后，旧 %s 成功不清理记录或更新页面',
+    async (kind) => {
+      const response = pending<ReturnType<typeof success>>()
+      const request = kind === 'import' ? mocks.importBundle : mocks.createBundle
+      request.mockReturnValueOnce(response.promise)
+      const wrapper = kind === 'import' ? await renderList() : (await renderWizard()).wrapper
+      await click(
+        wrapper,
+        kind === 'import'
+          ? 'jobDefinitionList.bundleImportConfirm'
+          : 'jobDefinitionWizard.submitCreate',
+      )
+      const key = request.mock.calls[0]?.[1]
+
+      mocks.context.tenantId = 'tenant-b'
+      response.resolve(success())
+      await flushPromises()
+
+      expect(
+        listConfigBatchRecoveries('operator', 'tenant-a').commands.map((item) => item.key),
+      ).toContain(key)
+      expect(ElMessage.success).not.toHaveBeenCalled()
+      expect(mocks.refetch).not.toHaveBeenCalled()
+      expect(mocks.push).not.toHaveBeenCalled()
+      expect(request).toHaveBeenCalledTimes(1)
+      if (kind === 'import')
+        expect(wrapper.findComponent({ name: 'ElDialog' }).props('modelValue')).toBe(true)
+    },
+  )
+
+  it.each(['import', 'create'])('当前标签切换租户后，旧 %s 失败不向新上下文提示', async (kind) => {
     const response = pending<ReturnType<typeof success>>()
     const request = kind === 'import' ? mocks.importBundle : mocks.createBundle
     request.mockReturnValueOnce(response.promise)
     const wrapper = kind === 'import' ? await renderList() : (await renderWizard()).wrapper
     wrapper.vm.$.appContext.config.errorHandler = vi.fn()
-    await click(wrapper, kind === 'import' ? 'jobDefinitionList.bundleImportConfirm' : 'jobDefinitionWizard.submitCreate')
+    await click(
+      wrapper,
+      kind === 'import'
+        ? 'jobDefinitionList.bundleImportConfirm'
+        : 'jobDefinitionWizard.submitCreate',
+    )
 
-    localStorage.setItem(STORAGE_KEYS.tenantId, 'tenant-b')
+    mocks.context.tenantId = 'tenant-b'
     response.reject({ code: 'ERR_NETWORK' })
     await flushPromises()
 
@@ -459,22 +652,37 @@ describe('作业包原请求回查', () => {
     expect(request).toHaveBeenCalledTimes(1)
   })
 
-  it.each(['list', 'wizard'])('%s 回查期间另一标签切租户，不展示旧回执或旧错误', async (page) => {
+  it.each(['list', 'wizard'])('%s 回查期间当前标签切租户，不展示旧回执或旧错误', async (page) => {
     const command = createConfigBatchRecovery({
-      actor: 'operator', headerTenant: 'tenant-a', auditTenantId: 'tenant-a', operationKind: 'JOB_BUNDLE_IMPORT',
+      actor: 'operator',
+      headerTenant: 'tenant-a',
+      auditTenantId: 'tenant-a',
+      operationKind: 'JOB_BUNDLE_IMPORT',
     })
     expect(saveConfigBatchRecovery(command)).toBe(true)
-    const wrapper = page === 'list'
-      ? shallowMount(DefinitionList, { global: { stubs } })
-      : shallowMount(DefinitionWizard, { global: { stubs } })
+    const wrapper =
+      page === 'list'
+        ? shallowMount(DefinitionList, { global: { stubs } })
+        : shallowMount(DefinitionWizard, { global: { stubs } })
     await flushPromises()
-    const response = pending<{ operationId: string; operationKind: string; responseMetadata: object; status: string; targets: object[] }>()
+    const response = pending<{
+      operationId: string
+      operationKind: string
+      responseMetadata: object
+      status: string
+      targets: object[]
+    }>()
     mocks.getConfigBatchOperation.mockReturnValueOnce(response.promise)
     await click(wrapper, 'configBatchRecovery.check')
-    localStorage.setItem(STORAGE_KEYS.tenantId, 'tenant-b')
+    mocks.context.tenantId = 'tenant-b'
     response.resolve({
-      operationId: 'old-operation', operationKind: 'JOB_BUNDLE_IMPORT', responseMetadata: {}, status: 'COMPLETE',
-      targets: [{ ordinal: 0, tenantId: 'old-target', status: 'COMPLETE', result: { success: true } }],
+      operationId: 'old-operation',
+      operationKind: 'JOB_BUNDLE_IMPORT',
+      responseMetadata: {},
+      status: 'COMPLETE',
+      targets: [
+        { ordinal: 0, tenantId: 'old-target', status: 'COMPLETE', result: { success: true } },
+      ],
     })
     await flushPromises()
 
@@ -485,19 +693,23 @@ describe('作业包原请求回查', () => {
     expect(mocks.createBundle).not.toHaveBeenCalled()
   })
 
-  it.each(['list', 'wizard'])('%s 回查期间另一标签切租户，不展示旧 404', async (page) => {
+  it.each(['list', 'wizard'])('%s 回查期间当前标签切租户，不展示旧 404', async (page) => {
     const command = createConfigBatchRecovery({
-      actor: 'operator', headerTenant: 'tenant-a', auditTenantId: 'tenant-a', operationKind: 'JOB_BUNDLE_IMPORT',
+      actor: 'operator',
+      headerTenant: 'tenant-a',
+      auditTenantId: 'tenant-a',
+      operationKind: 'JOB_BUNDLE_IMPORT',
     })
     expect(saveConfigBatchRecovery(command)).toBe(true)
-    const wrapper = page === 'list'
-      ? shallowMount(DefinitionList, { global: { stubs } })
-      : shallowMount(DefinitionWizard, { global: { stubs } })
+    const wrapper =
+      page === 'list'
+        ? shallowMount(DefinitionList, { global: { stubs } })
+        : shallowMount(DefinitionWizard, { global: { stubs } })
     await flushPromises()
     const response = pending<never>()
     mocks.getConfigBatchOperation.mockReturnValueOnce(response.promise)
     await click(wrapper, 'configBatchRecovery.check')
-    localStorage.setItem(STORAGE_KEYS.tenantId, 'tenant-b')
+    mocks.context.tenantId = 'tenant-b'
     response.reject({ response: { status: 404 } })
     await flushPromises()
 
@@ -510,7 +722,12 @@ describe('作业包原请求回查', () => {
     const request = kind === 'import' ? mocks.importBundle : mocks.createBundle
     request.mockReturnValueOnce(response.promise)
     const wrapper = kind === 'import' ? await renderList() : (await renderWizard()).wrapper
-    await click(wrapper, kind === 'import' ? 'jobDefinitionList.bundleImportConfirm' : 'jobDefinitionWizard.submitCreate')
+    await click(
+      wrapper,
+      kind === 'import'
+        ? 'jobDefinitionList.bundleImportConfirm'
+        : 'jobDefinitionWizard.submitCreate',
+    )
     const key = request.mock.calls[0]?.[1]
     const remove = vi.spyOn(Storage.prototype, 'removeItem').mockImplementation(() => {
       throw new Error('storage unavailable')
@@ -520,7 +737,9 @@ describe('作业包原请求回查', () => {
       await flushPromises()
       expect(ElMessage.success).toHaveBeenCalledTimes(1)
       expect(ElMessage.warning).toHaveBeenCalledWith('configBatchRecovery.cleanupFailed')
-      expect(listConfigBatchRecoveries('operator', 'tenant-a').commands.map((item) => item.key)).toContain(key)
+      expect(
+        listConfigBatchRecoveries('operator', 'tenant-a').commands.map((item) => item.key),
+      ).toContain(key)
       expect(request).toHaveBeenCalledTimes(1)
     } finally {
       remove.mockRestore()
@@ -532,7 +751,12 @@ describe('作业包原请求回查', () => {
     const request = kind === 'import' ? mocks.importBundle : mocks.createBundle
     request.mockReturnValueOnce(response.promise)
     const wrapper = kind === 'import' ? await renderList() : (await renderWizard()).wrapper
-    await click(wrapper, kind === 'import' ? 'jobDefinitionList.bundleImportConfirm' : 'jobDefinitionWizard.submitCreate')
+    await click(
+      wrapper,
+      kind === 'import'
+        ? 'jobDefinitionList.bundleImportConfirm'
+        : 'jobDefinitionWizard.submitCreate',
+    )
     advanceAuthSession()
     response.resolve(success())
     await flushPromises()
@@ -547,7 +771,12 @@ describe('作业包原请求回查', () => {
     const request = kind === 'import' ? mocks.importBundle : mocks.createBundle
     request.mockReturnValueOnce(response.promise)
     const wrapper = kind === 'import' ? await renderList() : (await renderWizard()).wrapper
-    await click(wrapper, kind === 'import' ? 'jobDefinitionList.bundleImportConfirm' : 'jobDefinitionWizard.submitCreate')
+    await click(
+      wrapper,
+      kind === 'import'
+        ? 'jobDefinitionList.bundleImportConfirm'
+        : 'jobDefinitionWizard.submitCreate',
+    )
     localStorage.setItem(STORAGE_KEYS.authSessionRevision, 'other-session')
     response.resolve(success())
     await flushPromises()
@@ -576,7 +805,12 @@ describe('作业包原请求回查', () => {
       responseMetadata: {},
       status: 'UNKNOWN',
       targets: [
-        { ordinal: 0, tenantId: 'tenant-a', status: 'COMPLETE', result: { tenantId: 'tenant-a', success: false } },
+        {
+          ordinal: 0,
+          tenantId: 'tenant-a',
+          status: 'COMPLETE',
+          result: { tenantId: 'tenant-a', success: false },
+        },
         { ordinal: 1, tenantId: 'tenant-b', status: 'UNKNOWN', result: null },
       ],
     })
@@ -608,7 +842,14 @@ describe('作业包原请求回查', () => {
       operationKind: 'JOB_BUNDLE_CREATE',
       responseMetadata: {},
       status: 'COMPLETE',
-      targets: [{ ordinal: 0, tenantId: 'tenant-a', status: 'COMPLETE', result: { tenantId: 'tenant-a', success: true } }],
+      targets: [
+        {
+          ordinal: 0,
+          tenantId: 'tenant-a',
+          status: 'COMPLETE',
+          result: { tenantId: 'tenant-a', success: true },
+        },
+      ],
     })
     await click(list, 'configBatchRecovery.check')
     expect(mocks.getConfigBatchOperation).toHaveBeenCalledWith(
@@ -726,7 +967,9 @@ describe('作业包原请求回查', () => {
     wrapper.vm.$.appContext.config.errorHandler = vi.fn()
     await click(wrapper, 'jobDefinitionList.bundleImportConfirm')
     await click(wrapper, 'jobDefinitionList.bundleImportConfirm')
-    const checks = wrapper.findAll('button').filter((button) => button.text() === 'configBatchRecovery.check')
+    const checks = wrapper
+      .findAll('button')
+      .filter((button) => button.text() === 'configBatchRecovery.check')
     expect(checks).toHaveLength(2)
     mocks.getConfigBatchOperation.mockRejectedValue({ response: { status: 404 } })
     await checks[1]!.trigger('click')
@@ -759,7 +1002,9 @@ describe('作业包原请求回查', () => {
       operationKind: 'JOB_BUNDLE_IMPORT',
       responseMetadata: {},
       status: 'COMPLETE',
-      targets: [{ ordinal: 0, tenantId: 'old-tenant', status: 'COMPLETE', result: { success: true } }],
+      targets: [
+        { ordinal: 0, tenantId: 'old-tenant', status: 'COMPLETE', result: { success: true } },
+      ],
     })
     await flushPromises()
     expect(wrapper.text()).not.toContain('old-tenant')
@@ -772,7 +1017,12 @@ describe('作业包原请求回查', () => {
       throw new Error('storage unavailable')
     })
     try {
-      await click(wrapper, kind === 'import' ? 'jobDefinitionList.bundleImportConfirm' : 'jobDefinitionWizard.submitCreate')
+      await click(
+        wrapper,
+        kind === 'import'
+          ? 'jobDefinitionList.bundleImportConfirm'
+          : 'jobDefinitionWizard.submitCreate',
+      )
       expect(ElMessage.error).toHaveBeenCalledWith('configBatchRecovery.storageUnavailable')
       expect(mocks.importBundle).not.toHaveBeenCalled()
       expect(mocks.createBundle).not.toHaveBeenCalled()
@@ -795,6 +1045,7 @@ describe('作业向导关联选项的租户边界', () => {
     for (let i = 0; i < 4; i++) await click(wrapper, 'jobDefinitionWizard.nextStep')
     mocks.context.tenantId = 'tenant-b'
     await flushPromises()
+    for (let i = 0; i < 4; i++) await click(wrapper, 'jobDefinitionWizard.nextStep')
     expect(wrapper.text()).toContain('CHANNEL_B')
     oldChannels.resolve([{ id: 11, channelCode: 'CHANNEL_A', channelName: 'stale-channel' }])
     await flushPromises()
@@ -833,6 +1084,7 @@ describe('作业向导关联选项的租户边界', () => {
     await flushPromises()
     mocks.context.tenantId = 'tenant-b'
     await flushPromises()
+    for (let i = 0; i < 4; i++) await click(wrapper, 'jobDefinitionWizard.nextStep')
     expect(wrapper.findAllComponents({ name: 'ElSelect' })[0]!.props('modelValue')).toEqual([])
     expect(wrapper.text()).not.toContain('CHANNEL_A')
     nextChannels.resolve([])
@@ -841,6 +1093,32 @@ describe('作业向导关联选项的租户边界', () => {
 })
 
 describe('作业向导步骤校验边界', () => {
+  it('限制上游作业引用为 64 字符，同时保留作业编码 128 字符', async () => {
+    const wrapper = shallowMount(DefinitionWizard, { global: { stubs } })
+    await flushPromises()
+    const formRules = (
+      wrapper.vm as unknown as {
+        rules: Record<
+          string,
+          Array<{
+            validator?: (rule: object, value: string, done: (error?: Error) => void) => void
+          }>
+        >
+      }
+    ).rules
+    const dependencyValidator = formRules.dependsOnJobCode.find(
+      (rule) => rule.validator,
+    )!.validator!
+    const codeValidator = formRules.jobCode.find((rule) => rule.validator)!.validator!
+    const done = vi.fn()
+    dependencyValidator({}, 'a'.repeat(64), done)
+    expect(done).toHaveBeenLastCalledWith()
+    dependencyValidator({}, 'a'.repeat(65), done)
+    expect(done).toHaveBeenLastCalledWith(expect.any(Error))
+    codeValidator({}, 'a'.repeat(128), done)
+    expect(done).toHaveBeenLastCalledWith()
+    wrapper.unmount()
+  })
   it('同一次异步校验期间重复点击不能跳过步骤', async () => {
     const validation = pending<boolean>()
     mocks.validate.mockReturnValueOnce(validation.promise)

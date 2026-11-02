@@ -4,11 +4,11 @@
 
     <div class="arrival-summary">
       <MetricCard
-        :label="t('arrivalGroupList.metricProgress')"
-        :value="`${arrivalSummary.progress}%`"
+        :label="t('arrivalGroupList.metricRecords')"
+        :value="arrivalSummary.arrivedFiles"
         :description="
-          t('arrivalGroupList.metricProgressDesc', {
-            arrived: arrivalSummary.arrivedFiles,
+          t('arrivalGroupList.metricRecordsDesc', {
+            triggered: arrivalSummary.triggeredFiles,
             waiting: arrivalSummary.waitingFiles,
           })
         "
@@ -58,11 +58,10 @@
           >
             <el-form-item :label="t('arrivalGroupList.groupCodeLabel')">
               <el-input
-                class="query-w-200"
+                class="query-w-260"
                 v-model="kwDraft"
                 clearable
                 :placeholder="t('arrivalGroupList.groupCodePlaceholder')"
-                @keyup.enter="onSearch"
               />
             </el-form-item>
             <el-form-item :label="t('arrivalGroupList.stateLabel')">
@@ -71,7 +70,6 @@
                 v-model="stateDraft"
                 clearable
                 :placeholder="t('arrivalGroupList.statePlaceholder')"
-                @keyup.enter="onSearch"
               />
             </el-form-item>
           </ListPageQueryBar>
@@ -79,9 +77,13 @@
         <el-table-column
           prop="fileGroupCode"
           :label="t('arrivalGroupList.colGroupCode')"
-          min-width="140"
-        />
-        <el-table-column prop="arrivalState" :label="t('arrivalGroupList.colState')" width="130">
+          min-width="180"
+        >
+          <template #default="{ row }">
+            <CopyableText v-if="row.fileGroupCode" :text="row.fileGroupCode" />
+          </template>
+        </el-table-column>
+        <el-table-column prop="arrivalState" :label="t('arrivalGroupList.colState')" width="180">
           <template #default="{ row }">
             <StatusTag :value="String(row.arrivalState ?? '')" category="arrival" />
           </template>
@@ -95,8 +97,11 @@
           prop="requiredFileSet"
           :label="t('arrivalGroupList.colRequired')"
           min-width="160"
-          show-overflow-tooltip
-        />
+        >
+          <template #default="{ row }">
+            <CopyableText v-if="row.requiredFileSet" :text="row.requiredFileSet" />
+          </template>
+        </el-table-column>
         <el-table-column
           prop="arrivalTimeoutAction"
           :label="t('arrivalGroupList.colTimeoutAction')"
@@ -105,7 +110,7 @@
         <el-table-column
           prop="arrivedCount"
           :label="t('arrivalGroupList.colArrived')"
-          width="70"
+          width="120"
           align="right"
         />
         <el-table-column
@@ -149,7 +154,13 @@
         >
           <template #default="{ row }">
             <div class="table-actions">
-              <el-button size="small" plain type="primary" :icon="CircleCheck" @click="confirm(row as ConsoleFileArrivalGroupResponse)">
+              <el-button
+                size="small"
+                plain
+                type="primary"
+                :icon="CircleCheck"
+                @click="confirm(row as ConsoleFileArrivalGroupResponse)"
+              >
                 {{ t('arrivalGroupList.actionConfirm') }}
               </el-button>
             </div>
@@ -166,7 +177,7 @@
   import { useI18n } from 'vue-i18n'
   import { ElMessageBox } from 'element-plus'
 
-  const { t } = useI18n({ useScope: 'global' })
+  const { t, te } = useI18n({ useScope: 'global' })
   import { toPageResult } from '@/api/adapters'
   import { fileApi } from '@/api/file'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
@@ -174,6 +185,7 @@
   import { useTenantReload } from '@/composables/useTenantReload'
   import { usePermission } from '@/composables/usePermission'
   import PageContainer from '@/components/common/PageContainer.vue'
+  import CopyableText from '@/components/common/CopyableText.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import ProTable from '@/components/table/ProTable.vue'
@@ -209,8 +221,15 @@
     const trimmedKeyword = kwApplied.value.trim()
     const k = trimmedKeyword.toLowerCase()
     if (k) r = r.filter((row) => row.fileGroupCode?.toLowerCase().includes(k))
-    const s = stateApplied.value.trim()
-    if (s) r = r.filter((row) => String(row.arrivalState ?? '').includes(s))
+    const s = stateApplied.value.trim().toLowerCase()
+    if (s) {
+      r = r.filter((row) => {
+        const state = String(row.arrivalState ?? '')
+        const key = `enum.arrivalState.${state}`
+        const label = te(key) ? t(key) : state
+        return state.toLowerCase().includes(s) || label.toLowerCase().includes(s)
+      })
+    }
     return r
   })
   const arrivalSummary = computed(() => summarizeArrivalGroups(filtered.value))
@@ -298,12 +317,6 @@
   @media (max-width: 1080px) {
     .arrival-summary {
       grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-  }
-
-  @media (max-width: 640px) {
-    .arrival-summary {
-      grid-template-columns: 1fr;
     }
   }
 </style>

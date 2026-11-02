@@ -17366,7 +17366,7 @@
           }
         }
       ],
-      "scope": "optional",
+      "scope": "required",
       "externalReferences": [
         {
           "type": "distribution",

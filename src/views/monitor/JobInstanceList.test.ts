@@ -1,9 +1,20 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { defineComponent, h, reactive, ref } from 'vue'
+import {
+  computed,
+  defineComponent,
+  h,
+  inject,
+  provide,
+  reactive,
+  ref,
+  type Component,
+  type Ref,
+} from 'vue'
 import { enableAutoUnmount, flushPromises, shallowMount } from '@vue/test-utils'
 import { ElMessage } from 'element-plus'
 import JobInstanceList from './JobInstanceList.vue'
+import TraceIdInput from '@/components/common/TraceIdInput.vue'
 
 const mocks = vi.hoisted(() => ({
   page: vi.fn(),
@@ -11,11 +22,13 @@ const mocks = vi.hoisted(() => ({
   republish: vi.fn(),
   cancel: vi.fn(),
   confirm: vi.fn(),
+  route: { query: {} as Record<string, string> },
+  replace: vi.fn(),
   state: null as unknown as { tenantId: string; writer: boolean; writesFrozen: boolean },
 }))
 vi.mock('vue-router', () => ({
-  useRoute: () => ({ query: {} }),
-  useRouter: () => ({ replace: vi.fn() }),
+  useRoute: () => mocks.route,
+  useRouter: () => ({ replace: mocks.replace }),
 }))
 vi.mock('vue-i18n', async (original) => ({
   ...(await original<typeof import('vue-i18n')>()),
@@ -48,7 +61,7 @@ vi.mock('@/api/job', () => ({ jobApi: { listDefinitionsPaged: mocks.jobs } }))
 vi.mock('@/composables/useSavedFilters', () => ({ useSavedFilters: () => ({ sets: ref([]) }) }))
 vi.mock('element-plus', async (original) => ({
   ...(await original<typeof import('element-plus')>()),
-  ElMessage: { success: vi.fn(), warning: vi.fn(), error: vi.fn() },
+  ElMessage: Object.assign(vi.fn(), { success: vi.fn(), warning: vi.fn(), error: vi.fn() }),
   ElMessageBox: { confirm: mocks.confirm },
 }))
 enableAutoUnmount(afterEach)
@@ -77,18 +90,20 @@ function row(id: number, status = 'FAILED') {
     instanceStatus: status,
   }
 }
-function render() {
+function render(extraStubs: Record<string, Component | boolean> = {}) {
   return shallowMount(JobInstanceList, {
     global: {
       stubs: {
         PageContainer: { template: '<main><slot /></main>' },
         OpsFilterToolbar: { template: '<section><slot /><slot name="status" /></section>' },
-        ElSelect: { template: '<div><slot /></div>' },
+        ElSelect: { name: 'ElSelect', template: '<div><slot /></div>' },
         ElOption: { name: 'ElOption', props: ['label'], template: '<span />' },
+        ElTag: { template: '<span><slot /></span>' },
         RouterLink: true,
         ProTable: table,
         BulkActionBar: { template: '<div><slot :running="false" /></div>' },
         ElButton: { template: '<button><slot /></button>' },
+        ...extraStubs,
       },
     },
   })
@@ -101,6 +116,8 @@ async function selectAndSubmit(wrapper: ReturnType<typeof render>, action = 'bul
 
 describe('作业实例列表的读取与批量操作上下文', () => {
   beforeEach(() => {
+    mocks.route.query = {}
+    mocks.replace.mockReset()
     mocks.state = reactive({ tenantId: 'tenant-a', writer: true, writesFrozen: false })
     mocks.jobs.mockReset().mockResolvedValue({ records: [] })
     mocks.page.mockReset().mockResolvedValue({ records: [row(41)], total: 1 })
@@ -109,6 +126,121 @@ describe('作业实例列表的读取与批量操作上下文', () => {
     mocks.confirm.mockReset().mockResolvedValue(undefined)
     vi.mocked(ElMessage.success).mockClear()
     vi.mocked(ElMessage.error).mockClear()
+  })
+
+  it('详情深链的精确编码贯穿列表和状态计数，编辑编码后恢复模糊查询', async () => {
+    vi.mocked(ElMessage).mockClear()
+    mocks.route.query = { exactJobCode: 'JOB_A', range: 'all' }
+    const wrapper = render()
+    await flushPromises()
+    expect(mocks.page).toHaveBeenCalledWith(
+      expect.objectContaining({ exactJobCode: 'JOB_A', pageSize: 15 }),
+    )
+    expect(mocks.page).toHaveBeenCalledWith(
+      expect.objectContaining({ exactJobCode: 'JOB_A', pageSize: 1 }),
+    )
+    expect(wrapper.text()).toContain('jobInstanceList.exactJobCodeHint')
+
+    mocks.page.mockClear()
+    const input = wrapper.getComponent({ name: 'ElSelect' })
+    input.vm.$emit('update:modelValue', 'JOB_B')
+    input.vm.$emit('change', 'JOB_B')
+    await flushPromises()
+    expect(mocks.page).toHaveBeenCalledWith(
+      expect.objectContaining({ jobCode: 'JOB_B', exactJobCode: '' }),
+    )
+    expect(mocks.replace).toHaveBeenCalledWith({ query: { jobCode: 'JOB_B', range: 'all' } })
+    await vi.waitFor(() => expect(ElMessage).toHaveBeenCalledOnce())
+  })
+
+  it('uses Enter to search the trace filter without enabling diagnostic navigation', async () => {
+    vi.mocked(ElMessage).mockClear()
+    const wrapper = render()
+    await flushPromises()
+    const input = wrapper.getComponent(TraceIdInput)
+    expect(input.props('goTo')).toBe(false)
+    input.vm.$emit('update:modelValue', 'trace-filter-value')
+    await input.trigger('keyup.enter')
+    await flushPromises()
+    expect(mocks.page).toHaveBeenCalledWith(
+      expect.objectContaining({ traceId: 'trace-filter-value' }),
+    )
+    await vi.waitFor(() => expect(ElMessage).toHaveBeenCalledOnce())
+  })
+
+  it('队列和 Worker 组可分别查看完整值，空值仍显示占位符', async () => {
+    const queueCode = `queue-${'q'.repeat(100)}`
+    const workerGroup = `worker-${'w'.repeat(100)}`
+    mocks.page.mockResolvedValue({
+      records: [{ ...row(41), queueCode, workerGroup }, row(42)],
+      total: 2,
+    })
+    const queueTable = defineComponent({
+      props: ['data'],
+      setup(props, { slots }) {
+        provide(
+          'queueTestRows',
+          computed(() => props.data ?? []),
+        )
+        return () =>
+          h('section', slots.default?.({ isColVisible: (key: string) => key === 'queueGroup' }))
+      },
+    })
+    const queueColumn = defineComponent({
+      props: ['label'],
+      setup(props, { slots }) {
+        const rows = inject<Ref<Array<Record<string, unknown>>>>('queueTestRows')!
+        return () =>
+          props.label === 'jobInstanceList.colQueueGroup'
+            ? h(
+                'div',
+                rows.value.map((item) =>
+                  h('div', { class: 'queue-row' }, slots.default?.({ row: item })),
+                ),
+              )
+            : null
+      },
+    })
+    const popover = defineComponent({
+      setup(_props, { expose, slots }) {
+        const open = ref(false)
+        expose({
+          hide: () => {
+            open.value = false
+          },
+        })
+        return () =>
+          h(
+            'span',
+            {
+              onClickCapture: () => {
+                open.value = !open.value
+              },
+            },
+            [slots.reference?.(), open.value ? slots.default?.() : null],
+          )
+      },
+    })
+    const wrapper = render({
+      ProTable: queueTable,
+      ElTableColumn: queueColumn,
+      CopyableText: false,
+      ElPopover: popover,
+    })
+    await flushPromises()
+    const rows = wrapper.findAll('.queue-row')
+    expect(rows).toHaveLength(2)
+    const buttons = rows[0]!.findAll('button[aria-label="common.viewFullValue"]')
+    expect(buttons).toHaveLength(2)
+    await buttons[0]!.trigger('click')
+    expect(rows[0]!.get('.copyable-text__full-value').text()).toBe(queueCode)
+    await buttons[1]!.trigger('click')
+    expect(rows[0]!.findAll('.copyable-text__full-value').map((item) => item.text())).toEqual([
+      queueCode,
+      workerGroup,
+    ])
+    expect(rows[1]!.text()).toContain('—')
+    expect(rows[1]!.find('button').exists()).toBe(false)
   })
 
   it('旧租户列表晚到不覆盖新租户，也不影响当前加载状态', async () => {

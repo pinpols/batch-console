@@ -30,7 +30,12 @@
           :label="t('configChangeLogsTab.colConfigKey')"
           min-width="200"
           show-overflow-tooltip
-        />
+        >
+          <template #default="{ row }">
+            <CopyableText v-if="row.configKey" :text="String(row.configKey)" />
+            <span v-else class="cell-empty">—</span>
+          </template>
+        </el-table-column>
         <el-table-column prop="versionNo" :label="t('configChangeLogsTab.colVersion')" width="80" />
         <el-table-column
           prop="changeAction"
@@ -56,7 +61,12 @@
           :label="t('configChangeLogsTab.colOperator')"
           width="140"
           show-overflow-tooltip
-        />
+        >
+          <template #default="{ row }">
+            <CopyableText v-if="row.operatorId" :text="String(row.operatorId)" :copyable="false" />
+            <span v-else class="cell-empty">—</span>
+          </template>
+        </el-table-column>
         <el-table-column
           prop="traceId"
           :label="t('configChangeLogsTab.colTrace')"

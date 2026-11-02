@@ -230,10 +230,17 @@
   .cron-next__label {
     flex-shrink: 0;
   }
+  .cron-next__list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    min-width: 0;
+  }
   .cron-next__time {
     background: var(--color-bg-page);
     padding: 0 6px;
     border-radius: 3px;
     font-family: 'SF Mono', Monaco, monospace;
+    white-space: nowrap;
   }
 </style>

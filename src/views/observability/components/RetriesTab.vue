@@ -24,7 +24,6 @@
           v-model="retryDraft.relatedId"
           clearable
           :placeholder="t('observability.retryRelatedIdPlaceholder')"
-          @keyup.enter="applyFilter"
         />
       </el-form-item>
       <el-form-item :label="t('observability.retryStatusLabel')">
@@ -89,7 +88,13 @@
         <el-table-column :label="t('observability.retryColActions')" width="120" fixed="right">
           <template #default="{ row }">
             <div class="table-actions">
-              <el-button size="small" plain type="primary" :icon="Eye" @click="openDetail(row as ConsoleRetryScheduleResponse)">
+              <el-button
+                size="small"
+                plain
+                type="primary"
+                :icon="Eye"
+                @click="openDetail(row as ConsoleRetryScheduleResponse)"
+              >
                 {{ t('observability.retryActionDetail') }}
               </el-button>
             </div>

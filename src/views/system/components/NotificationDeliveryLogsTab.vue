@@ -30,7 +30,6 @@
             v-model="logFilterDraft.keyword"
             clearable
             :placeholder="t('notificationDeliveryLogsTab.kwPlaceholder')"
-            @keyup.enter="applyLogFilter"
           />
         </el-form-item>
         <el-form-item :label="t('notificationDeliveryLogsTab.statusLabel')">
@@ -52,14 +51,23 @@
       :label="t('notificationDeliveryLogsTab.colChannelCode')"
       width="140"
     >
-      <template #default="{ row }">{{ row.channelCode ?? '—' }}</template>
+      <template #default="{ row }">
+        <CopyableText
+          v-if="row.channelCode != null && String(row.channelCode) !== ''"
+          :text="String(row.channelCode)"
+        />
+        <span v-else>{{ row.channelCode ?? '—' }}</span>
+      </template>
     </el-table-column>
     <el-table-column
       prop="eventType"
       :label="t('notificationDeliveryLogsTab.colEventType')"
       width="160"
     >
-      <template #default="{ row }">{{ row.eventType || '—' }}</template>
+      <template #default="{ row }">
+        <CopyableText v-if="row.eventType" :text="String(row.eventType)" />
+        <span v-else class="cell-empty">—</span>
+      </template>
     </el-table-column>
     <el-table-column
       prop="deliveryStatus"
@@ -88,7 +96,10 @@
       min-width="200"
       show-overflow-tooltip
     >
-      <template #default="{ row }">{{ row.errorMessage || '—' }}</template>
+      <template #default="{ row }">
+        <CopyableText v-if="row.errorMessage" :text="String(row.errorMessage)" :copyable="false" />
+        <span v-else class="cell-empty">—</span>
+      </template>
     </el-table-column>
     <DatetimeColumn
       prop="createdAt"
@@ -99,6 +110,7 @@
 </template>
 
 <script setup lang="ts">
+  import CopyableText from '@/components/common/CopyableText.vue'
   import { ref, reactive, computed, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { listNotificationDeliveryLogs } from '@/api/notifications'

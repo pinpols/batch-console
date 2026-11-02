@@ -8,6 +8,10 @@ import JobMonitoringFields from './JobMonitoringFields.vue'
 
 enableAutoUnmount(afterEach)
 const slot = defineComponent({ setup: (_, context) => () => h('div', context.slots.default?.()) })
+const option = defineComponent({
+  props: ['label', 'value'],
+  setup: (props) => () => h('span', { 'data-value': props.value }, props.label),
+})
 const mode = defineComponent({
   name: 'ElRadioGroup',
   props: ['modelValue'],
@@ -50,7 +54,7 @@ function render(overrides: Record<string, unknown> = {}) {
         ElFormItem: slot,
         ElInputNumber: slot,
         ElSelect: slot,
-        ElOption: slot,
+        ElOption: option,
         ElTimePicker: slot,
         ElRadioGroup: mode,
         ElRadioButton: slot,
@@ -60,6 +64,13 @@ function render(overrides: Record<string, unknown> = {}) {
 }
 
 describe('Workflow 子作业的监控策略配置', () => {
+  it('告警级别显示本地化名称并保留原有值', () => {
+    const wrapper = render()
+    expect(wrapper.get('[data-value="WARN"]').text()).toBe('警告')
+    expect(wrapper.get('[data-value="ERROR"]').text()).toBe('错误')
+    expect(wrapper.get('[data-value="CRITICAL"]').text()).toBe('严重')
+  })
+
   it('MANUAL 定义仍可配置启动和完成规则，运行时资格由服务端判断', () => {
     const wrapper = render()
     expect(wrapper.text()).toContain('启动过晚')

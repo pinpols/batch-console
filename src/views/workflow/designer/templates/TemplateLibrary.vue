@@ -3,17 +3,22 @@
    * 模板库(Polish 阶段)。
    *
    * - 4 个内置模板(templates.ts 定义),纯前端不接 BE
-   * - 用户选中后替换当前画布;若 dirty 弹 confirm(避免误覆盖)
+   * - 用户选中后替换当前画布;未保存内容需要确认
    * - 不调任何 BE API
    */
   import { useI18n } from 'vue-i18n'
+  import { watch } from 'vue'
   import { ElMessage } from 'element-plus'
   import { confirmDanger } from '@/composables/useDangerConfirm'
   import { useDesignerStore } from '../store/useDesignerStore'
   import { definitionToGraph } from '../codec/definitionToGraph'
   import { BUILTIN_TEMPLATES, type DesignerTemplate } from './templates'
 
-  const props = defineProps<{ visible: boolean }>()
+  const props = defineProps<{
+    visible: boolean
+    hasUnsavedChanges: () => boolean
+    getOverwriteState: () => string
+  }>()
   const emit = defineEmits<{
     (e: 'update:visible', v: boolean): void
     (e: 'applied', key: string): void
@@ -32,7 +37,20 @@
       ElMessage.warning(t('workflowDesignerMvp.lock.readonlyGuard'))
       return
     }
-    if (store.dirty) {
+    if (props.hasUnsavedChanges()) {
+      let changed = false
+      const stop = watch(
+        [
+          () => store.inspectorScope,
+          () => store.editable,
+          () => store.lock?.lockedBy,
+          props.getOverwriteState,
+        ],
+        () => {
+          changed = true
+        },
+        { flush: 'sync' },
+      )
       try {
         await confirmDanger({
           verb: t('workflowDesignerPolish.templateOverwriteTitle'),
@@ -41,6 +59,12 @@
           irreversible: true,
         })
       } catch {
+        return
+      } finally {
+        stop()
+      }
+      if (changed || !store.editable) {
+        ElMessage.warning(t('workflowDesignerPolish.templateOverwriteChanged'))
         return
       }
     }

@@ -13,11 +13,15 @@ const mocks = vi.hoisted(() => ({
 }))
 vi.mock('@/stores/tenant', () => ({ useTenantStore: () => mocks.tenant }))
 vi.mock('vue-router', () => ({ useRoute: () => mocks.route }))
-vi.mock('vue-i18n', async (original) => ({ ...(await original<typeof import('vue-i18n')>()), useI18n: () => ({ t: (key: string) => key }) }))
-vi.mock('@/api/workflow', () => ({ workflowApi: { detailById: mocks.detail, mermaid: mocks.mermaid } }))
+vi.mock('vue-i18n', async (original) => ({
+  ...(await original<typeof import('vue-i18n')>()),
+  useI18n: () => ({ t: (key: string) => key }),
+}))
+vi.mock('@/api/workflow', () => ({
+  workflowApi: { detailById: mocks.detail, mermaid: mocks.mermaid },
+}))
 vi.mock('@/composables/useSmartBack', () => ({ useSmartBack: () => vi.fn() }))
 vi.mock('@/utils/mermaid', () => ({ loadMermaid: async () => ({ render: mocks.render }) }))
-
 
 enableAutoUnmount(afterEach)
 beforeEach(() => {
@@ -30,13 +34,20 @@ beforeEach(() => {
 function deferred<T>() {
   let resolve!: (value: T) => void
   let reject!: (reason: unknown) => void
-  const promise = new Promise<T>((ok, fail) => { resolve = ok; reject = fail })
+  const promise = new Promise<T>((ok, fail) => {
+    resolve = ok
+    reject = fail
+  })
   return { promise, resolve, reject }
 }
 function setup() {
-  return shallowMount(MWorkflowViewer, { global: { stubs: { MPullRefresh: { template: '<div><slot /></div>' } } } })
+  return shallowMount(MWorkflowViewer, {
+    global: { stubs: { MPullRefresh: { template: '<div><slot /></div>' } } },
+  })
 }
-function detail(name: string) { return { workflowCode: name, workflowName: name, nodes: [] } }
+function detail(name: string) {
+  return { workflowCode: name, workflowName: name, nodes: [] }
+}
 
 describe('mobile workflow definition context', () => {
   it('keeps the new tenant loading until its result and ignores the late old tenant', async () => {
@@ -66,7 +77,9 @@ describe('mobile workflow definition context', () => {
   it('clears the previous definition immediately and ignores a late render after navigating', async () => {
     const oldRender = deferred<{ svg: string }>()
     mocks.detail.mockResolvedValueOnce(detail('OLD')).mockResolvedValueOnce(detail('NEW'))
-    mocks.mermaid.mockResolvedValueOnce({ mermaid: 'old-graph' }).mockResolvedValueOnce({ mermaid: 'new-graph' })
+    mocks.mermaid
+      .mockResolvedValueOnce({ mermaid: 'old-graph' })
+      .mockResolvedValueOnce({ mermaid: 'new-graph' })
     mocks.render.mockReturnValueOnce(oldRender.promise).mockResolvedValueOnce({ svg: 'new-graph' })
     const wrapper = setup()
     await flushPromises()
@@ -87,7 +100,9 @@ describe('mobile workflow definition context', () => {
     const oldDetail = deferred<ReturnType<typeof detail>>()
     const oldGraph = deferred<{ mermaid: string }>()
     mocks.detail.mockReturnValueOnce(oldDetail.promise).mockResolvedValueOnce(detail('NEW'))
-    mocks.mermaid.mockReturnValueOnce(oldGraph.promise).mockResolvedValueOnce({ mermaid: 'new-graph' })
+    mocks.mermaid
+      .mockReturnValueOnce(oldGraph.promise)
+      .mockResolvedValueOnce({ mermaid: 'new-graph' })
     const wrapper = setup()
     mocks.tenant.tenantId = 'tenant-b'
     await flushPromises()
@@ -104,7 +119,10 @@ describe('mobile workflow definition context', () => {
   it('opens the matching node sheet for the current Mermaid render only', async () => {
     mocks.detail.mockResolvedValue({
       workflowCode: 'WF',
-      nodes: [{ nodeCode: 'task-A', nodeName: 'Current Task' }, { nodeCode: 'task-B', nodeName: 'Other Task' }],
+      nodes: [
+        { nodeCode: 'task-A', nodeName: 'Current Task' },
+        { nodeCode: 'task-B', nodeName: 'Other Task' },
+      ],
     })
     mocks.mermaid.mockResolvedValue({ mermaid: 'graph' })
     mocks.render.mockImplementation(async (id: string) => ({
@@ -131,14 +149,19 @@ describe('mobile workflow definition context', () => {
     expect(wrapper.text()).toContain('mobile.workflowViewer.invalidId')
     expect(wrapper.text()).not.toContain('OLD')
     expect(wrapper.text()).not.toContain('old-graph')
+    expect(wrapper.text()).not.toContain('common.retry')
     expect(mocks.detail).toHaveBeenCalledTimes(1)
   })
 
   it('does not restore old tenant data if a new tenant request fails', async () => {
     const oldDetail = deferred<ReturnType<typeof detail>>()
     const oldGraph = deferred<{ mermaid: string }>()
-    mocks.detail.mockReturnValueOnce(oldDetail.promise).mockRejectedValueOnce(new Error('new failed'))
-    mocks.mermaid.mockReturnValueOnce(oldGraph.promise).mockResolvedValueOnce({ mermaid: 'new-graph' })
+    mocks.detail
+      .mockReturnValueOnce(oldDetail.promise)
+      .mockRejectedValueOnce(new Error('new failed'))
+    mocks.mermaid
+      .mockReturnValueOnce(oldGraph.promise)
+      .mockResolvedValueOnce({ mermaid: 'new-graph' })
     const wrapper = setup()
     mocks.tenant.tenantId = 'tenant-b'
     await flushPromises()
@@ -148,5 +171,20 @@ describe('mobile workflow definition context', () => {
     expect(wrapper.text()).not.toContain('OLD')
     expect(wrapper.text()).not.toContain('old-graph')
     expect(wrapper.find('.m-empty').exists()).toBe(true)
+  })
+
+  it('allows retrying a failed definition request', async () => {
+    mocks.detail
+      .mockRejectedValueOnce(new Error('load failed'))
+      .mockResolvedValueOnce(detail('RECOVERED'))
+    mocks.mermaid.mockResolvedValue({ mermaid: 'new-graph' })
+    const wrapper = setup()
+    await flushPromises()
+    const retry = wrapper.findAll('button').find((button) => button.text() === 'common.retry')
+    expect(retry).toBeDefined()
+    await retry!.trigger('click')
+    await flushPromises()
+    expect(wrapper.text()).toContain('RECOVERED')
+    expect(mocks.detail).toHaveBeenCalledTimes(2)
   })
 })

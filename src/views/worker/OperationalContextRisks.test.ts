@@ -20,6 +20,7 @@ const mocks = vi.hoisted(() => ({
   snapshot: vi.fn(),
   history: vi.fn(),
   invalidate: vi.fn(),
+  workerMeta: [] as { value: string; label: string }[],
 }))
 vi.mock('vue-router', () => ({
   useRoute: () => ({ query: {} }),
@@ -29,7 +30,7 @@ vi.mock('vue-i18n', async (original) => ({
   ...(await original<typeof import('vue-i18n')>()),
   useI18n: () => ({
     t: (key: string, params?: { id?: string }) => (params?.id ? key + ':' + params.id : key),
-    te: () => false,
+    te: (key: string) => key === 'enum.workerStatus.DECOMMISSIONED',
   }),
 }))
 vi.mock('@/stores/tenant', () => ({ useTenantStore: () => mocks.state }))
@@ -57,7 +58,7 @@ vi.mock('@/composables/queries/useWorkers', () => ({
   }),
 }))
 vi.mock('@/composables/queries/useConsoleMeta', () => ({
-  useConsoleMetaEnumsQuery: () => ({ data: ref({}) }),
+  useConsoleMetaEnumsQuery: () => ({ data: computed(() => ({ workerStatus: mocks.workerMeta })) }),
   useMetaWorkerGroupsQuery: () => ({ data: ref([]) }),
 }))
 vi.mock('@/composables/useSseAutoReload', () => ({
@@ -97,8 +98,11 @@ const stubs = {
   PageContainer: pass,
   PageHeader: pass,
   SectionCard: pass,
+  ListPageQueryBar: pass,
   ElTabs: { name: 'ElTabs', props: ['modelValue'], template: '<div><slot /></div>' },
   ElTabPane: pass,
+  ElFormItem: pass,
+  StatusSegment: { name: 'StatusSegment', props: ['items'], template: '<div />' },
   ElButton: { name: 'ElButton', props: ['loading'], template: '<button><slot /></button>' },
 }
 function pending<T>() {
@@ -124,6 +128,7 @@ async function click(wrapper: ReturnType<typeof renderWorkers>, label: string) {
     .trigger('click')
 }
 beforeEach(() => {
+  mocks.workerMeta = []
   mocks.state = reactive({
     tenantId: 'tenant-a',
     writer: true,
@@ -138,6 +143,22 @@ beforeEach(() => {
   mocks.history.mockReset().mockResolvedValue([])
 })
 describe('Worker 操作的租户身份', () => {
+  it('状态筛选优先使用已翻译的名称，未知状态使用元数据名称', () => {
+    mocks.workerMeta = [
+      { value: 'DECOMMISSIONED', label: '已下线' },
+      { value: 'CUSTOM', label: '自定义状态' },
+    ]
+    const wrapper = renderWorkers()
+    const segment = wrapper.findComponent({ name: 'StatusSegment' })
+    expect(segment.props('items')).toEqual([
+      expect.objectContaining({ value: '', label: 'common.all' }),
+      expect.objectContaining({
+        value: 'DECOMMISSIONED',
+        label: 'enum.workerStatus.DECOMMISSIONED',
+      }),
+      expect.objectContaining({ value: 'CUSTOM', label: '自定义状态' }),
+    ])
+  })
   it.each([
     ['actionDrain', 'drain'],
     ['actionOffline', 'offline'],

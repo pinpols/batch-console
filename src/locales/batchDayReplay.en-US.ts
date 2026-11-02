@@ -1,11 +1,13 @@
 const batchDayReplay = {
-  submitFlowHint: 'Enter the scope and reason, preview and review the impact, then submit. Review the status and results in the details. If approval is required, an authorized user can act.',
+  submitFlowHint:
+    'Enter the scope and reason, preview and review the impact, then submit. Review the status and results in the details. If approval is required, an authorized user can act.',
   statusGuidanceUnknown: 'The status is returned by the server; review the details below.',
   statusGuidance: {
     PENDING_APPROVAL: 'Awaiting approval; an authorized administrator can act in the details.',
     RUNNING: 'Running; review the details and returned counts below.',
     SUCCEEDED: 'Succeeded; review the results below.',
-    PARTIAL_FAILED: 'Partially failed; inspect failed entries or the corresponding date details below.',
+    PARTIAL_FAILED:
+      'Partially failed; inspect failed entries or the corresponding date details below.',
     FAILED: 'Failed; review the details below.',
     REJECTED: 'The request was rejected; review the current record.',
     CANCELLED: 'The request was cancelled; review the current record.',
@@ -15,7 +17,15 @@ const batchDayReplay = {
   statusApprovalId: 'Approval ID',
   statusStartedAt: 'Started at',
   statusCompletedAt: 'Completed at',
-  statusLabels: { PENDING_APPROVAL: 'Awaiting approval', REJECTED: 'Rejected', RUNNING: 'Running', SUCCEEDED: 'Succeeded', PARTIAL_FAILED: 'Partially failed', FAILED: 'Failed', CANCELLED: 'Cancelled' },
+  statusLabels: {
+    PENDING_APPROVAL: 'Awaiting approval',
+    REJECTED: 'Rejected',
+    RUNNING: 'Running',
+    SUCCEEDED: 'Succeeded',
+    PARTIAL_FAILED: 'Partially failed',
+    FAILED: 'Failed',
+    CANCELLED: 'Cancelled',
+  },
   colActions: 'Actions',
   resultGovernanceTitle: 'Result version governance',
   resultGovernanceHint:
@@ -81,6 +91,12 @@ const batchDayReplay = {
   rangeSubmitTitle: 'New date-range replay',
   fieldDateRange: 'Business-date range',
   rangePreviewSummary: '{days} date(s), {candidates} candidate(s)',
+  rangeCandidates: 'Candidates',
+  rangeDisposition: {
+    READY: 'Candidates found',
+    NO_CANDIDATES: 'No candidates',
+    CALENDAR_BLOCKED: 'Calendar blocked',
+  },
   rangeMissingRequired: 'Calendar, date range, and reason are required',
   invalidRange: 'Start date must be on or before end date',
   rangeVersionIdsHint: 'Enter result-version IDs for the range, separated by spaces or commas.',
@@ -161,6 +177,8 @@ const batchDayReplay = {
   entriesSummary: '✓ {ok}  ✗ {fail}  ⏳ {pending}  / total {total}',
   allEntries: 'All',
   noEntries: 'No entries',
+  calendarCodeTooLong: 'Calendar code must be at most 128 characters',
+  reasonTooLong: 'Replay reason must be at most 512 characters',
   missingRequired: 'Biz date and reason are required',
   missingJobCodes: 'Select “Selected jobs” and enter at least one job code',
   missingVersionIds: 'Select “Output results” and enter at least one result version ID',

@@ -4,7 +4,7 @@
       <div class="m-page__header">
         <div>
           <div class="m-page__title">{{ t('mobile.executionLog.title') }}</div>
-          <div class="m-page__subtitle">
+          <div v-if="!loadError || rows.length" class="m-page__subtitle">
             {{ t('mobile.executionLog.summary', { total }) }}
           </div>
         </div>
@@ -14,16 +14,21 @@
         <el-input
           v-model="traceDraft"
           :placeholder="t('mobile.executionLog.placeholderTrace')"
+          :aria-label="t('mobile.executionLog.placeholderTrace')"
           clearable
           size="small"
           class="u-w-full"
           @change="onTraceChange"
-          @keyup.enter="onTraceChange"
+          @keydown.enter="onTraceEnterDown"
+          @keyup.enter="onTraceEnterUp"
+          @compositionstart="traceComposing = true"
+          @compositionend="onTraceCompositionEnd"
+          @blur="onTraceBlur"
         />
       </div>
 
       <MSkeleton v-if="loading && rows.length === 0" :count="3" />
-      <div v-else-if="rows.length === 0" class="m-empty">
+      <div v-else-if="!loadError && rows.length === 0" class="m-empty">
         {{ t('mobile.executionLog.empty') }}
       </div>
 
@@ -52,16 +57,21 @@
         <details v-if="row.detailSummary" class="m-details">
           <summary>{{ t('mobile.executionLog.fullDetail') }}</summary>
           <pre>{{ decodeHtmlEntities(row.detailSummary) }}</pre>
-          <button
-            class="m-btn"
-            type="button"
-            @click="copyDecodedDetailSummary(row.detailSummary)"
-          >
+          <button class="m-btn" type="button" @click="copyDecodedDetailSummary(row.detailSummary)">
             {{ t('common.copy') }}
           </button>
         </details>
       </div>
-      <div v-if="rows.length > 0" class="m-load-more">
+      <div
+        v-if="loadError"
+        class="m-load-error"
+        :class="rows.length ? 'm-load-error--inline' : 'm-empty'"
+        role="alert"
+      >
+        <div>{{ t('mobile.common.loadFail') }}</div>
+        <button class="m-btn" type="button" @click="retryLoad">{{ t('common.retry') }}</button>
+      </div>
+      <div v-if="rows.length > 0 && !loadError" class="m-load-more">
         <button v-if="hasMore" class="m-btn" :disabled="loading" @click="loadMore">
           {{ loading ? t('mobile.common.loadingMore') : t('mobile.common.loadMore') }}
         </button>
@@ -76,7 +86,6 @@
   import { useTenantReload } from '@/composables/useTenantReload'
   import { useRoute, useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
-  import { ElMessage } from 'element-plus'
   import { useTenantStore } from '@/stores/tenant'
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
   import MPullRefresh from '@/layout-mobile/MPullRefresh.vue'
@@ -102,12 +111,21 @@
   }
 
   const loading = ref(false)
+  const loadError = ref(false)
+  const failedMore = ref(false)
   const rows = ref<ConsoleAuditLogResponse[]>([])
   const page = ref(1)
   const pageSize = 30
   const total = ref(0)
   const hasMore = ref(false)
+  let requestSequence = 0
   const traceDraft = ref<string>((route.query.traceId as string) ?? '')
+  const traceComposing = ref(false)
+  // 文本变更后的 Enter 会先触发 change，再触发 keyup；只跳过同一次按键的重复提交。
+  let traceEnterPhase: 'idle' | 'normal' | 'composing' = 'idle'
+  let traceChangedOnEnter = false
+  let pendingTraceChange: string | null = null
+  let traceBlurredDuringComposition = false
 
   function fmt(ts?: string | null) {
     return fmtDatetime(ts)
@@ -125,42 +143,133 @@
   }
 
   async function load(reset = true) {
+    const sequence = ++requestSequence
+    const tenantId = tenant.tenantId
+    if (!tenantId) return
     loading.value = true
+    loadError.value = false
+    const requestedPage = reset ? 1 : page.value + 1
+    if (reset) {
+      rows.value = []
+      total.value = 0
+      hasMore.value = false
+    }
     try {
-      if (reset) page.value = 1
       const trace = traceDraft.value.trim()
       const result = await queryAuditsPage(
-        tenant.tenantId,
-        page.value,
+        tenantId,
+        requestedPage,
         pageSize,
         trace ? { traceId: trace } : undefined,
       )
+      if (sequence !== requestSequence) return
       const next = result.items ?? []
       rows.value = reset ? next : [...rows.value, ...next]
+      page.value = requestedPage
       total.value = result.total ?? rows.value.length
       hasMore.value = rows.value.length < total.value
     } catch {
-      rows.value = []
-      ElMessage.error(t('mobile.common.loadFail'))
+      if (sequence !== requestSequence) return
+      failedMore.value = !reset
+      loadError.value = true
     } finally {
-      loading.value = false
+      if (sequence === requestSequence) loading.value = false
     }
   }
 
   async function loadMore() {
     if (loading.value || !hasMore.value) return
-    page.value += 1
     await load(false)
   }
 
-  function onTraceChange() {
+  function retryLoad() {
+    void load(!failedMore.value)
+  }
+
+  function onTraceChange(value: string) {
+    if (traceComposing.value || traceEnterPhase === 'composing') {
+      pendingTraceChange = value
+      traceDraft.value = value
+      return
+    }
+    if (traceEnterPhase === 'normal') traceChangedOnEnter = true
+    submitTrace()
+  }
+
+  function onTraceEnterDown(event: Event | KeyboardEvent) {
+    if (!(event instanceof KeyboardEvent)) return
+    if (event.repeat) return
+    traceEnterPhase = event.isComposing || traceComposing.value ? 'composing' : 'normal'
+    traceChangedOnEnter = false
+  }
+
+  function resetTraceEnter() {
+    traceEnterPhase = 'idle'
+    traceChangedOnEnter = false
+  }
+
+  function onTraceCompositionEnd(event: CompositionEvent) {
+    traceComposing.value = false
+    if (pendingTraceChange !== null && event.target instanceof HTMLInputElement) {
+      pendingTraceChange = event.target.value
+    }
+    if (traceBlurredDuringComposition && pendingTraceChange !== null) {
+      traceDraft.value = pendingTraceChange
+      submitTrace()
+    }
+    traceBlurredDuringComposition = false
+  }
+
+  function onTraceBlur() {
+    resetTraceEnter()
+    if (pendingTraceChange === null) return
+    if (traceComposing.value) {
+      traceBlurredDuringComposition = true
+      return
+    }
+    traceDraft.value = pendingTraceChange
+    submitTrace()
+  }
+
+  function onTraceEnterUp(event: KeyboardEvent) {
+    const shouldSubmit =
+      !event.isComposing &&
+      !traceComposing.value &&
+      traceEnterPhase !== 'composing' &&
+      !traceChangedOnEnter
+    resetTraceEnter()
+    if (shouldSubmit) submitTrace()
+  }
+
+  function submitTrace() {
+    pendingTraceChange = null
+    traceBlurredDuringComposition = false
     const trace = traceDraft.value.trim()
+    if (traceDraft.value !== trace) traceDraft.value = trace
     void router.replace({
       path: '/m/logs',
       query: trace ? { traceId: trace } : {},
     })
     void load(true)
   }
+  watch(
+    () => tenant.tenantId,
+    () => {
+      requestSequence += 1
+      rows.value = []
+      total.value = 0
+      page.value = 1
+      hasMore.value = false
+      loading.value = false
+      loadError.value = false
+      failedMore.value = false
+      pendingTraceChange = null
+      traceBlurredDuringComposition = false
+      traceEnterPhase = traceComposing.value ? 'composing' : 'idle'
+      traceChangedOnEnter = false
+    },
+    { flush: 'sync' },
+  )
   useTenantReload(() => load(true))
   watch(
     () => route.query.traceId,
@@ -173,3 +282,17 @@
     },
   )
 </script>
+
+<style scoped>
+  .m-load-error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .m-load-error--inline {
+    padding: 12px;
+    color: var(--ios-label-secondary);
+  }
+</style>

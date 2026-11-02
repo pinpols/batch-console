@@ -90,7 +90,11 @@
             :placeholder="t('aiChat.inputPlaceholder')"
             :aria-label="t('aiChat.promptLabel')"
           />
-          <AiTextAttachmentPicker v-model="chat.attachment.value" :disabled="chat.sending.value" />
+          <AiTextAttachmentPicker
+            v-model="chat.attachment.value"
+            :disabled="chat.sending.value"
+            :context-revision="chat.contextRevision.value"
+          />
           <AiImageAttachmentPicker ref="imagePicker" :chat="chat" :disabled="chat.sending.value" />
           <div class="ai-panel__actions">
             <el-button
@@ -136,6 +140,7 @@
   import AiSourceReferences from '@/components/common/AiSourceReferences.vue'
   import AiTextAttachmentPicker from '@/components/common/AiTextAttachmentPicker.vue'
   import { useAiChatSession } from '@/composables/useAiChatSession'
+  import { useTenantChangeGuard } from '@/composables/useTenantChangeGuard'
   import { useAiAutoScroll } from '@/composables/useAiAutoScroll'
   import { aiMessageBody } from '@/utils/aiMessagePresentation'
   import { useTenantReload } from '@/composables/useTenantReload'
@@ -149,6 +154,7 @@
   const tenant = useTenantStore()
   const route = useRoute()
   const chat = useAiChatSession()
+  useTenantChangeGuard(chat.hasUnsavedDraft, chat.tenantGuardState)
   const imagePicker = ref<InstanceType<typeof AiImageAttachmentPicker> | null>(null)
   function handleImagePaste(event: Event) {
     imagePicker.value?.onPaste(event as ClipboardEvent)

@@ -4,23 +4,31 @@
       <div class="m-page__header">
         <div>
           <div class="m-page__title">{{ t('mobile.files.title') }}</div>
-          <div class="m-page__subtitle">
+          <div v-if="!error || rows.length" class="m-page__subtitle">
             {{ t('mobile.files.subtitle', { total: total || rows.length }) }}
           </div>
         </div>
       </div>
 
       <div class="m-page__header">
-        <el-segmented
+        <el-select
           v-model="statusFilter"
-          :options="statusOptions"
+          :aria-label="t('mobile.files.statusFilter')"
+          :placeholder="t('mobile.files.statusAll')"
           size="small"
           class="u-w-full"
-        />
+        >
+          <el-option
+            v-for="option in statusOptions"
+            :key="option.value"
+            :label="option.label"
+            :value="option.value"
+          />
+        </el-select>
       </div>
 
       <MSkeleton v-if="loading && rows.length === 0" :count="4" />
-      <div v-else-if="!loading && rows.length === 0" class="m-empty">
+      <div v-else-if="!loading && !error && rows.length === 0" class="m-empty">
         {{ t('empty.default') }}
       </div>
 
@@ -46,14 +54,21 @@
             {{ receivedAtLabel(row) }}
           </div>
           <div v-if="row.traceId">
-            <span class="m-card__meta-key">trace</span>
-            {{ String(row.traceId).slice(0, 8) }}
+            <span class="m-card__meta-key">{{ t('common.trace') }}</span>
+            <CopyableText class="m-file-trace" :text="String(row.traceId)" :copyable="false">
+              <span>{{ String(row.traceId).slice(0, 8) }}</span>
+            </CopyableText>
           </div>
         </div>
       </div>
 
+      <div v-if="error" class="m-file-error" :class="{ 'm-empty': rows.length === 0 }" role="alert">
+        <div>{{ t('mobile.common.loadFail') }}</div>
+        <button class="m-btn" type="button" @click="loadMore">{{ t('common.retry') }}</button>
+      </div>
+
       <!-- IntersectionObserver 哨兵:进入视口前 200px 自动加载下一页 -->
-      <div v-if="rows.length > 0" ref="sentinel" class="m-sentinel">
+      <div v-if="rows.length > 0 && !error" ref="sentinel" class="m-sentinel">
         <span v-if="loading">{{ t('common.loading') }}</span>
         <span v-else-if="!hasMore">{{ t('mobile.files.allLoaded') }}</span>
         <button v-else class="m-btn" @click="loadMore">{{ t('mobile.files.loadMore') }}</button>
@@ -68,11 +83,14 @@
   import { RefreshCw as Refresh } from '@lucide/vue'
   import MPullRefresh from '@/layout-mobile/MPullRefresh.vue'
   import MSkeleton from '@/layout-mobile/MSkeleton.vue'
+  import CopyableText from '@/components/common/CopyableText.vue'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
   import { useInfiniteList } from '@/composables/useInfiniteList'
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
   import { fileApi, type FileQuery } from '@/api/file'
+  import { fileStatusColor } from '@/constants/status'
+  import type { FileStatus } from '@/types'
   import type { ConsoleFileRecordResponse } from '@/types/console-api'
   import { fmtDatetime } from '@/utils/datetime'
 
@@ -83,10 +101,12 @@
 
   const statusOptions = computed(() => [
     { value: '', label: t('mobile.files.statusAll') },
-    { value: 'RECEIVED', label: resolveEnumLabel('fileStatus', 'RECEIVED') },
-    { value: 'PROCESSING', label: resolveEnumLabel('fileStatus', 'PROCESSING') },
-    { value: 'COMPLETED', label: resolveEnumLabel('fileStatus', 'COMPLETED') },
-    { value: 'FAILED', label: resolveEnumLabel('fileStatus', 'FAILED') },
+    ...(
+      metaEnums.value?.fileStatus?.map((option) => option.value) ?? Object.keys(fileStatusColor)
+    ).map((value) => ({
+      value,
+      label: resolveEnumLabel('fileStatus', value),
+    })),
   ])
 
   const { data: metaEnums } = useConsoleMetaEnumsQuery()
@@ -113,7 +133,7 @@
     },
   })
 
-  const { rows, total, hasMore, loading, loadMore, reset, attach } = list
+  const { rows, total, hasMore, loading, error, loadMore, reset, attach } = list
 
   // 在哨兵 DOM 就绪 / 重新挂载时绑定 IntersectionObserver
   watch(
@@ -173,13 +193,15 @@
   }
 
   function statusChipClass(status?: string | null): string {
-    switch (status) {
-      case 'COMPLETED':
+    const color = status ? fileStatusColor[status as FileStatus] : undefined
+    switch (color) {
+      case 'success':
         return 'm-chip--success'
-      case 'PROCESSING':
-      case 'DISPATCHED':
+      case 'primary':
         return 'm-chip--info'
-      case 'FAILED':
+      case 'warning':
+        return 'm-chip--warning'
+      case 'danger':
         return 'm-chip--danger'
       default:
         return ''
@@ -188,6 +210,19 @@
 </script>
 
 <style scoped>
+  .m-file-error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding-block: 24px;
+  }
+
+  .m-file-trace :deep(.copyable-text__inspect) {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
   .m-sentinel {
     display: flex;
     justify-content: center;

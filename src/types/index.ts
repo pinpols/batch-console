@@ -91,7 +91,18 @@ export interface UserInfo {
 }
 
 // ─── 文件中心 ─────────────────────────────────────────────────
-export type FileStatus = 'RECEIVED' | 'PROCESSING' | 'COMPLETED' | 'FAILED' | 'DISPATCHED'
+export type FileStatus =
+  | 'RECEIVED'
+  | 'PARSING'
+  | 'PARSED'
+  | 'VALIDATED'
+  | 'LOADED'
+  | 'GENERATED'
+  | 'DISPATCHING'
+  | 'DISPATCHED'
+  | 'ARCHIVED'
+  | 'FAILED'
+  | 'DELETED'
 
 export interface FileRecord {
   id: number

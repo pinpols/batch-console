@@ -2,15 +2,23 @@
   <el-dialog
     v-model="visible"
     :title="t('workflowDefinitionList.monitoring.title', { code: workflowCode })"
-    width="640px"
+    width="min(640px, calc(100% - 32px))"
     :close-on-click-modal="!saving"
     :close-on-press-escape="!saving"
     :show-close="!saving"
   >
     <el-alert :title="t('workflowDefinitionList.monitoring.hint')" type="info" :closable="false" />
-    <el-alert v-if="error" :title="error" type="error" :closable="false" />
-    <el-form v-loading="loading" label-position="top" :disabled="loading || saving || !canEdit">
-      <el-form-item :label="t('workflowDefinitionList.monitoring.startGrace')">
+    <el-alert v-if="error" class="policy-error" :title="error" type="error" :closable="false" />
+    <el-form
+      v-loading="loading"
+      class="policy-form"
+      label-position="top"
+      :disabled="loading || saving || !canEdit"
+    >
+      <el-form-item
+        class="policy-controls"
+        :label="t('workflowDefinitionList.monitoring.startGrace')"
+      >
         <el-input-number
           v-model="form.startGraceSeconds"
           :min="0"
@@ -29,7 +37,7 @@
           />
         </el-select>
       </el-form-item>
-      <el-form-item :label="t('workflowDefinitionList.monitoring.runtime')">
+      <el-form-item class="policy-controls" :label="t('workflowDefinitionList.monitoring.runtime')">
         <el-input-number
           v-model="form.softRuntimeSeconds"
           :min="0"
@@ -48,7 +56,10 @@
           />
         </el-select>
       </el-form-item>
-      <el-form-item :label="t('workflowDefinitionList.monitoring.completion')">
+      <el-form-item
+        class="policy-controls"
+        :label="t('workflowDefinitionList.monitoring.completion')"
+      >
         <el-time-picker
           v-model="form.completionDeadlineLocalTime"
           value-format="HH:mm:ss"
@@ -253,3 +264,23 @@
     generation++
   })
 </script>
+
+<style scoped>
+  .policy-error,
+  .policy-form {
+    margin-top: var(--space-md);
+  }
+
+  .policy-controls :deep(.el-form-item__content) {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr));
+    gap: 10px;
+  }
+
+  .policy-controls :deep(.el-input-number),
+  .policy-controls :deep(.el-select),
+  .policy-controls :deep(.el-date-editor) {
+    width: 100%;
+    min-width: 0;
+  }
+</style>

@@ -134,6 +134,8 @@
     justify-content: flex-end;
     gap: 6px;
     flex: 0 0 auto;
+    flex-wrap: wrap;
+    max-width: 100%;
   }
 
   .ops-filter-toolbar__actions :deep(.el-button + .el-button) {
@@ -181,10 +183,23 @@
       flex-direction: column;
     }
 
+    .ops-filter-toolbar__main {
+      flex-wrap: nowrap;
+    }
+
     .ops-filter-toolbar__status,
     .ops-filter-toolbar__filters,
     .ops-filter-toolbar__actions {
       width: 100%;
+    }
+
+    .ops-filter-toolbar__filters {
+      order: 0;
+      flex-basis: auto;
+    }
+
+    .ops-filter-toolbar__actions {
+      margin-left: 0;
     }
 
     .ops-filter-toolbar__actions :deep(.el-button) {

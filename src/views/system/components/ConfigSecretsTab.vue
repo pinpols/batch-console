@@ -55,7 +55,7 @@
             <el-tag v-if="row.revokedAt" type="danger" size="small" effect="plain">
               {{ t('configSecretsTab.tagRevoked') }}
             </el-tag>
-            <span v-else>{{ row.secretStatus }}</span>
+            <span v-else>{{ t(`enum.configStatus.${row.secretStatus}`, row.secretStatus) }}</span>
           </template>
         </el-table-column>
         <DatetimeColumn
@@ -83,13 +83,27 @@
           :label="t('configSecretsTab.colRotationReason')"
           min-width="160"
           show-overflow-tooltip
-        />
+        >
+          <template #default="{ row }">
+            <CopyableText
+              v-if="row.rotationReason"
+              :text="String(row.rotationReason)"
+              :copyable="false"
+            />
+            <span v-else class="cell-empty">—</span>
+          </template>
+        </el-table-column>
         <el-table-column
           prop="createdBy"
           :label="t('configSecretsTab.colCreatedBy')"
           width="120"
           show-overflow-tooltip
-        />
+        >
+          <template #default="{ row }">
+            <CopyableText v-if="row.createdBy" :text="String(row.createdBy)" :copyable="false" />
+            <span v-else class="cell-empty">—</span>
+          </template>
+        </el-table-column>
         <DatetimeColumn prop="createdAt" :label="t('configSecretsTab.colCreatedAt')" width="160" />
         <el-table-column :label="t('configSecretsTab.colActions')" width="160" fixed="right">
           <template #default="{ row }">
@@ -136,7 +150,9 @@
           <el-tag v-if="secretDetail.revokedAt" type="danger" size="small" effect="plain">
             {{ t('configSecretsTab.tagRevoked') }}
           </el-tag>
-          <span v-else>{{ secretDetail.secretStatus }}</span>
+          <span v-else>{{
+            t(`enum.configStatus.${secretDetail.secretStatus}`, secretDetail.secretStatus)
+          }}</span>
         </el-descriptions-item>
         <el-descriptions-item
           v-if="secretDetail.revokedAt"
@@ -321,6 +337,7 @@
           inputType: 'textarea',
           inputValidator: (value) => {
             if (!value?.trim()) return t('configSecretsTab.rotatePayloadRequired')
+            if (value.length > 65535) return t('form.maxLength', { max: 65535 })
             try {
               JSON.parse(value)
               return true

@@ -75,5 +75,5 @@ export function deleteTenantPlacement(tenantId: string) {
   return del<void>(`/api/console/ops/tenant-placements/${encodeURIComponent(tenantId)}`)
 }
 
-/** placementKey 命名约束(与后端 `^[a-z0-9-]+$` 一致),前端表单校验复用。 */
-export const PLACEMENT_KEY_PATTERN = /^[a-z0-9-]+$/
+/** placementKey 的字符集及 64 字符长度上限与后端一致。 */
+export const PLACEMENT_KEY_PATTERN = /^[a-z0-9-]{1,64}$/

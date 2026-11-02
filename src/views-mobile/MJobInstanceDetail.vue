@@ -16,6 +16,10 @@
         :title="t('mobile.jobDetail.notificationTenantMismatch')"
       />
       <div v-else-if="loading && !row" class="m-loading">{{ t('mobile.common.loading') }}</div>
+      <div v-else-if="loadError" class="m-empty m-detail-load-error" role="alert">
+        <div>{{ t('mobile.common.loadFail') }}</div>
+        <button class="m-btn" type="button" @click="load">{{ t('common.retry') }}</button>
+      </div>
       <div v-else-if="!row || !hasCurrentRow" class="m-empty">
         {{ t('mobile.jobDetail.empty') }}
       </div>
@@ -108,6 +112,10 @@
             {{ t('mobile.jobDetail.sectionSteps') }}
           </div>
           <div v-if="stepsLoading" class="m-loading">{{ t('mobile.common.loading') }}</div>
+          <div v-else-if="stepsError" class="m-empty m-step-load-error" role="alert">
+            <div>{{ t('mobile.common.loadFail') }}</div>
+            <button class="m-btn" type="button" @click="retrySteps">{{ t('common.retry') }}</button>
+          </div>
           <div v-else-if="steps.length === 0" class="m-empty">
             {{ t('mobile.jobDetail.stepEmpty') }}
           </div>
@@ -230,9 +238,11 @@
     return metaEnums.value?.[group]?.find((o) => o.value === value)?.label ?? value
   }
   const loading = ref(false)
+  const loadError = ref(false)
   const row = ref<ConsoleJobInstanceResponse | null>(null)
   const steps = ref<ConsoleJobStepInstanceResponse[]>([])
   const stepsLoading = ref(false)
+  const stepsError = ref(false)
 
   const instanceId = () => Number(route.params.id)
   const notificationContextAllowed = computed(() =>
@@ -314,6 +324,7 @@
 
   async function loadSteps(id: number, expectedTenant: string, generation: number) {
     stepsLoading.value = true
+    stepsError.value = false
     try {
       const list = (await instanceApi.partitions(
         id,
@@ -322,10 +333,18 @@
       if (isCurrentLoad(id, expectedTenant, generation))
         steps.value = Array.isArray(list) ? list : []
     } catch {
-      if (isCurrentLoad(id, expectedTenant, generation)) steps.value = []
+      if (isCurrentLoad(id, expectedTenant, generation)) {
+        steps.value = []
+        stepsError.value = true
+      }
     } finally {
       if (isCurrentLoad(id, expectedTenant, generation)) stepsLoading.value = false
     }
+  }
+
+  function retrySteps() {
+    const target = currentTarget()
+    if (target && !stepsLoading.value) void loadSteps(target.id, target.tenantId, loadGeneration)
   }
 
   async function load() {
@@ -335,6 +354,8 @@
     row.value = null
     steps.value = []
     stepsLoading.value = false
+    stepsError.value = false
+    loadError.value = false
     loadedTenant.value = ''
     loading.value = false
     const instanceIdIsValid = Number.isSafeInteger(id) && id > 0
@@ -346,7 +367,8 @@
       const hasTenantMismatch = Boolean(
         detail && detail.tenantId && detail.tenantId !== expectedTenant,
       )
-      if (!detail || hasTenantMismatch) throw new Error('Job tenant mismatch')
+      if (!detail) return
+      if (hasTenantMismatch) throw new Error('Job tenant mismatch')
       row.value = detail
       loadedTenant.value = expectedTenant
       await loadSteps(id, expectedTenant, generation)
@@ -354,7 +376,7 @@
       if (isCurrentLoad(id, expectedTenant, generation)) {
         row.value = null
         loadedTenant.value = ''
-        ElMessage.error(t('mobile.common.loadFail'))
+        loadError.value = true
       }
     } finally {
       if (isCurrentLoad(id, expectedTenant, generation)) loading.value = false
@@ -478,6 +500,14 @@
 </script>
 
 <style scoped>
+  .m-detail-load-error,
+  .m-step-load-error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+
   .m-pre {
     max-height: 400px;
     overflow: auto;
@@ -519,6 +549,8 @@
   }
 
   .m-step__title {
+    min-width: 0;
+    overflow-wrap: anywhere;
     font-weight: 600;
     font-size: 13px;
   }

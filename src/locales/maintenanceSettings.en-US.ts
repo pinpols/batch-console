@@ -18,9 +18,10 @@ export default {
   messageLabel: 'Announcement',
   messagePlaceholder: 'Explain the reason or information users need',
   etaLabel: 'Estimated recovery time',
-  etaPlaceholder: 'Optional; notification window defaults to 2 hours, capped at 24 hours',
+  etaPlaceholder: 'Optional',
+  etaHint: 'The notification window defaults to 2 hours and is capped at 24 hours.',
   startsAtLabel: 'Scheduled start time',
-  startsAtPlaceholder: 'Leave blank to start immediately when saved',
+  startsAtPlaceholder: 'Optional',
   startsAtHint:
     'The announcement and countdown appear immediately. The backend activates the selected mode at this time; leave blank for immediate activation.',
   affectedServicesLabel: 'Affected service labels',

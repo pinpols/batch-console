@@ -8,12 +8,13 @@
    */
   import { computed, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
-  import { useDesignerStore } from '../store/useDesignerStore'
+  import { useDesignerStore, type InspectorDraftField } from '../store/useDesignerStore'
   import { useJobCodeOptions } from '@/composables/useJobCodeOptions'
   import { useJobDefinitionDependencies } from '@/composables/useJobDefinitionDependencies'
   import { useMetaWindowsQuery } from '@/composables/queries/useConsoleMeta'
   import { edgeTypeOf } from '../canvas/edgePresentation'
   import type { DesignerNode } from '../types'
+  import { useInspectorTextDraft } from './useInspectorTextDraft'
 
   const props = defineProps<{ node: DesignerNode; readonly: boolean }>()
   const { t } = useI18n()
@@ -42,7 +43,29 @@
   }
 
   const local = ref<JobAttrs>(readAttrs(props.node))
-  const localName = ref(props.node.nodeName)
+  const {
+    value: localName,
+    update: updateName,
+    captureInput: captureName,
+    isCurrent,
+    scope,
+    id,
+  } = useInspectorTextDraft(
+    'nodeName',
+    () => props.node.id,
+    () => props.node.nodeName,
+    () => props.readonly,
+  )
+  const {
+    value: localSkip,
+    update: updateSkip,
+    captureInput: captureSkip,
+  } = useInspectorTextDraft(
+    'nodeSkipExpression',
+    () => props.node.id,
+    () => readAttrs(props.node).skipExpression ?? '',
+    () => props.readonly,
+  )
   const linkedJobCode = computed(() => {
     const rawJobCode = String(props.node.attrs?.jobCode ?? '')
     return rawJobCode.trim()
@@ -95,8 +118,15 @@
     () => [props.node.id, props.node.nodeName, JSON.stringify(props.node.attrs ?? {})],
     () => {
       local.value = readAttrs(props.node)
-      localName.value = props.node.nodeName
+      for (const [field, key] of [
+        ['nodeMaxRetries', 'maxRetries'],
+        ['nodeTimeoutSeconds', 'timeoutSeconds'],
+      ] as const) {
+        const draft = store.getInspectorDraft(field, props.node.id)
+        if (draft && /^\d+$/.test(draft.value)) local.value[key] = Number(draft.value)
+      }
     },
+    { immediate: true },
   )
 
   watch(
@@ -128,22 +158,43 @@
   }
 
   function writeAttr(field: keyof JobAttrs, raw: unknown) {
-    if (props.readonly) return
+    if (!isCurrent() || props.readonly || !store.editable) return
     // 数字字段空 → undefined(避免落 0 覆盖 default)
     let v: unknown = raw
     if (field === 'maxRetries' || field === 'timeoutSeconds') {
       v = raw === '' || raw == null ? undefined : Number(raw)
     }
+    const draftField =
+      field === 'maxRetries'
+        ? 'nodeMaxRetries'
+        : field === 'timeoutSeconds'
+          ? 'nodeTimeoutSeconds'
+          : null
+    const draft = draftField && store.getInspectorDraft(draftField, props.node.id)
+    if (draft && !store.validInspectorDraft(draft)) return
     const prevAttrs = (props.node.attrs ?? {}) as Record<string, unknown>
-    if (prevAttrs[field] === v) return
-    store.updateNode(props.node.id, { attrs: { [field]: v } })
+    if (prevAttrs[field] !== v) store.updateNode(props.node.id, { attrs: { [field]: v } })
+    if (draftField) store.setInspectorDraft(draftField, props.node.id, v == null ? '' : String(v))
   }
 
-  function onBlurName() {
-    if (props.readonly) return
-    if (localName.value === props.node.nodeName) return
-    store.updateNode(props.node.id, { nodeName: localName.value })
+  function captureNumber(field: InspectorDraftField, event: Event) {
+    const target = event.target
+    if (isCurrent() && !props.readonly && target instanceof HTMLInputElement) {
+      store.setInspectorDraft(field, id, target.value, scope)
+    }
   }
+
+  function hasDraft() {
+    return store.inspectorDrafts.some(
+      (draft) => draft.elementId === props.node.id && draft.field !== 'edgeCondition',
+    )
+  }
+
+  function flushDraft() {
+    if (!isCurrent() || props.readonly || !hasDraft()) return
+    store.applyInspectorDrafts(props.node.id)
+  }
+  defineExpose({ hasDraft, flushDraft })
 </script>
 
 <template>
@@ -154,8 +205,21 @@
     <el-form-item :label="t('workflowDesignerMvp.field.nodeCode')">
       <el-input :model-value="props.node.nodeCode" readonly />
     </el-form-item>
-    <el-form-item :label="t('workflowDesignerMvp.field.nodeName')">
-      <el-input v-model="localName" :readonly="props.readonly" @blur="onBlurName" />
+    <el-form-item
+      :label="t('workflowDesignerMvp.field.nodeName')"
+      :error="
+        Array.from(localName).length > 256
+          ? t('workflowDesignerMvp.validation.nodeNameTooLong')
+          : undefined
+      "
+      @input.capture="captureName"
+    >
+      <el-input
+        :model-value="localName"
+        :readonly="props.readonly"
+        @update:model-value="updateName"
+        @blur="flushDraft"
+      />
     </el-form-item>
     <el-form-item
       :label="t('workflowDesignerMvp.field.jobCode')"
@@ -192,7 +256,10 @@
         />
       </el-select>
     </el-form-item>
-    <el-form-item :label="t('workflowDesignerMvp.field.maxRetries')">
+    <el-form-item
+      :label="t('workflowDesignerMvp.field.maxRetries')"
+      @input.capture="captureNumber('nodeMaxRetries', $event)"
+    >
       <el-input-number
         v-model="local.maxRetries"
         :min="0"
@@ -202,7 +269,10 @@
         @change="writeAttr('maxRetries', $event)"
       />
     </el-form-item>
-    <el-form-item :label="t('workflowDesignerMvp.field.timeoutSeconds')">
+    <el-form-item
+      :label="t('workflowDesignerMvp.field.timeoutSeconds')"
+      @input.capture="captureNumber('nodeTimeoutSeconds', $event)"
+    >
       <el-input-number
         v-model="local.timeoutSeconds"
         :min="0"
@@ -211,12 +281,16 @@
         @change="writeAttr('timeoutSeconds', $event)"
       />
     </el-form-item>
-    <el-form-item :label="t('workflowDesignerMvp.field.skipExpression')">
+    <el-form-item
+      :label="t('workflowDesignerMvp.field.skipExpression')"
+      @input.capture="captureSkip"
+    >
       <el-input
-        v-model="local.skipExpression"
+        :model-value="localSkip"
         :readonly="props.readonly"
         :placeholder="t('workflowDesignerMvp.field.skipExpressionPlaceholder')"
-        @blur="writeAttr('skipExpression', local.skipExpression)"
+        @update:model-value="updateSkip"
+        @blur="flushDraft"
       />
     </el-form-item>
 
@@ -419,9 +493,10 @@
     font-size: 12px;
   }
   .job-dependencies__item > span:first-child {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    flex: 1;
+    min-width: 0;
+    overflow-wrap: anywhere;
+    white-space: normal;
   }
   .job-dependencies__empty,
   .job-dependencies__code-detail {

@@ -1,34 +1,93 @@
 <template>
-  <ProTable :data="pagedRows" :loading="loading" :error="error" :on-retry="load"
-    :total="rows.length" v-model:page="page" v-model:page-size="pageSize" @change="() => {}">
+  <ProTable
+    :data="pagedRows"
+    :loading="loading"
+    :error="error"
+    :on-retry="load"
+    :total="rows.length"
+    v-model:page="page"
+    v-model:page-size="pageSize"
+    @change="() => {}"
+  >
     <template #toolbar>
-      <el-button :loading="loading" @click="load">{{ t('terminalNotifications.refresh') }}</el-button>
+      <el-button :loading="loading" @click="load">{{
+        t('terminalNotifications.refresh')
+      }}</el-button>
     </template>
     <el-table-column prop="source" :label="t('terminalNotifications.source')" width="100" />
     <el-table-column prop="id" :label="t('terminalNotifications.id')" width="90" />
-    <el-table-column prop="eventType" :label="t('terminalNotifications.eventType')" width="180" />
-    <el-table-column prop="terminalEventKey" :label="t('terminalNotifications.eventKey')" min-width="240" show-overflow-tooltip />
+    <el-table-column prop="eventType" :label="t('terminalNotifications.eventType')" width="180">
+      <template #default="{ row }">
+        <CopyableText v-if="row.eventType" :text="String(row.eventType)" />
+        <span v-else>{{ row.eventType }}</span>
+      </template>
+    </el-table-column>
+    <el-table-column
+      prop="terminalEventKey"
+      :label="t('terminalNotifications.eventKey')"
+      min-width="240"
+      show-overflow-tooltip
+    >
+      <template #default="{ row }">
+        <CopyableText
+          v-if="row.terminalEventKey"
+          :text="String(row.terminalEventKey)"
+          :copyable="false"
+        />
+        <span v-else class="cell-empty">—</span>
+      </template>
+    </el-table-column>
     <el-table-column prop="deliveryStatus" :label="t('terminalNotifications.status')" width="180">
       <template #default="{ row }">
         {{ displayStatus(row as TerminalDelivery) }}
       </template>
     </el-table-column>
     <el-table-column prop="attempt" :label="t('terminalNotifications.attempt')" width="110" />
-    <el-table-column prop="errorMessage" :label="t('terminalNotifications.error')" min-width="220" show-overflow-tooltip />
+    <el-table-column
+      prop="errorMessage"
+      :label="t('terminalNotifications.error')"
+      min-width="220"
+      show-overflow-tooltip
+    >
+      <template #default="{ row }">
+        <CopyableText v-if="row.errorMessage" :text="String(row.errorMessage)" :copyable="false" />
+        <span v-else class="cell-empty">—</span>
+      </template>
+    </el-table-column>
     <DatetimeColumn prop="createdAt" :label="t('terminalNotifications.createdAt')" width="160" />
     <el-table-column :label="t('terminalNotifications.actions')" width="220" fixed="right">
       <template #default="{ row }">
-        <el-button v-if="canManage" link type="primary" :disabled="!canRetryTerminalDelivery(row as TerminalDelivery)" @click="open(row as TerminalDelivery)">
+        <el-button
+          v-if="canManage"
+          link
+          type="primary"
+          :disabled="!canRetryTerminalDelivery(row as TerminalDelivery)"
+          @click="open(row as TerminalDelivery)"
+        >
           {{ t('terminalNotifications.reconcileRetry') }}
         </el-button>
-        <RouterLink :to="{ path: '/observability/operation-audits', query: { aggregateType: 'NOTIFICATION_DELIVERY', aggregateId: `${row.source}:${row.id}` } }">
+        <RouterLink
+          :to="{
+            path: '/observability/operation-audits',
+            query: {
+              aggregateType: 'NOTIFICATION_DELIVERY',
+              aggregateId: `${row.source}:${row.id}`,
+            },
+          }"
+        >
           {{ t('terminalNotifications.audit') }}
         </RouterLink>
       </template>
     </el-table-column>
   </ProTable>
-  <el-dialog v-model="visible" :title="t('terminalNotifications.reconcileRetry')" width="560px"
-    :close-on-click-modal="false" :close-on-press-escape="!submitting" :show-close="!submitting">
+  <el-dialog
+    v-model="visible"
+    :title="t('terminalNotifications.reconcileRetry')"
+    width="min(560px, calc(100vw - 32px))"
+    :close-on-click-modal="false"
+    :close-on-press-escape="!submitting"
+    :show-close="!submitting"
+  >
     <el-alert type="warning" :closable="false" :title="t('terminalNotifications.reconcileHint')" />
     <p>{{ selected?.row.terminalEventKey }}</p>
     <el-form label-position="top" @submit.prevent="submit">
@@ -41,7 +100,9 @@
       <el-checkbox v-model="confirmed">{{ t('terminalNotifications.confirmed') }}</el-checkbox>
     </el-form>
     <template #footer>
-      <el-button :disabled="submitting" @click="visible = false">{{ t('terminalNotifications.cancel') }}</el-button>
+      <el-button :disabled="submitting" @click="visible = false">{{
+        t('terminalNotifications.cancel')
+      }}</el-button>
       <el-button type="primary" :loading="submitting" :disabled="!ready" @click="submit">
         {{ t('terminalNotifications.queueRetry') }}
       </el-button>
@@ -50,11 +111,16 @@
 </template>
 
 <script setup lang="ts">
+  import CopyableText from '@/components/common/CopyableText.vue'
   import { computed, ref } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { RouterLink } from 'vue-router'
   import { ElMessage } from 'element-plus'
-  import { listTerminalDeliveries, retryTerminalDelivery, type TerminalDelivery } from '@/api/terminalNotifications'
+  import {
+    listTerminalDeliveries,
+    retryTerminalDelivery,
+    type TerminalDelivery,
+  } from '@/api/terminalNotifications'
   import { toPageResult } from '@/api/adapters'
   import { useTenantStore } from '@/stores/tenant'
   import { useAuthStore } from '@/stores/auth'
@@ -78,9 +144,18 @@
   const reference = ref('')
   const confirmed = ref(false)
   const selected = ref<{ tenantId: string; row: TerminalDelivery; requestId: string } | null>(null)
-  const canManage = computed(() => auth.hasPermission('ROLE_ADMIN') || auth.hasPermission('ROLE_TENANT_ADMIN'))
-  const ready = computed(() => canManage.value && !!selected.value && confirmed.value &&
-    !!reason.value.trim() && !!reference.value.trim() && !submitting.value)
+  const canManage = computed(
+    () => auth.hasPermission('ROLE_ADMIN') || auth.hasPermission('ROLE_TENANT_ADMIN'),
+  )
+  const ready = computed(
+    () =>
+      canManage.value &&
+      !!selected.value &&
+      confirmed.value &&
+      !!reason.value.trim() &&
+      !!reference.value.trim() &&
+      !submitting.value,
+  )
   const pagedRows = computed(() => toPageResult(rows.value, page.value, pageSize.value).records)
 
   function displayStatus(row: TerminalDelivery): string {
@@ -122,8 +197,11 @@
     submitting.value = true
     try {
       await retryTerminalDelivery(target.tenantId, target.row.source, target.row.id, {
-        requestId: target.requestId, expectedAttempt: target.row.attempt,
-        reason: reason.value.trim(), reconciliationReference: reference.value.trim(), confirmedNotDelivered: true,
+        requestId: target.requestId,
+        expectedAttempt: target.row.attempt,
+        reason: reason.value.trim(),
+        reconciliationReference: reference.value.trim(),
+        confirmedNotDelivered: true,
       })
       if (target.tenantId === tenant.tenantId && selected.value?.requestId === target.requestId) {
         visible.value = false

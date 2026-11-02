@@ -16,8 +16,14 @@ const mocks = vi.hoisted(() => ({
   objectUrl: vi.fn(),
   status: vi.fn(),
   reconcile: vi.fn(),
+  guard: null as null | (() => boolean),
 }))
 vi.mock('@/stores/tenant', () => ({ useTenantStore: () => mocks.state }))
+vi.mock('@/composables/useTenantChangeGuard', () => ({
+  useTenantChangeGuard: (guard: () => boolean) => {
+    mocks.guard = guard
+  },
+}))
 vi.mock('@/stores/auth', () => ({ useAuthStore: () => mocks.auth }))
 vi.mock('@/composables/usePermission', () => ({
   usePermission: () => ({
@@ -47,7 +53,7 @@ afterEach(() => {
   vi.restoreAllMocks()
 })
 const pass = { template: '<section><slot /></section>' }
-function render() {
+function render(realJsonInput = false) {
   return shallowMount(ConfigSyncTab, {
     global: {
       directives: { 'track-click': () => {} },
@@ -58,13 +64,15 @@ function render() {
           props: ['disabled', 'loading'],
           template: '<button :disabled="disabled || loading"><slot /></button>',
         },
-        JsonTextareaInput: {
-          name: 'JsonTextareaInput',
-          props: ['modelValue'],
-          emits: ['update:modelValue'],
-          template:
-            '<section><textarea :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" /><slot name="actions" /></section>',
-        },
+        JsonTextareaInput: realJsonInput
+          ? false
+          : {
+              name: 'JsonTextareaInput',
+              props: ['modelValue'],
+              emits: ['update:modelValue'],
+              template:
+                '<section><textarea :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)" /><slot name="actions" /></section>',
+            },
         JsonPreview: { props: ['data'], template: '<pre>{{ JSON.stringify(data) }}</pre>' },
       },
     },
@@ -106,6 +114,7 @@ beforeEach(() => {
   vi.mocked(ElMessage.success).mockClear()
   vi.mocked(ElMessage.error).mockClear()
   mocks.state = reactive({ tenantId: 'tenant-a', writer: true, writesFrozen: false })
+  mocks.guard = null
   mocks.auth = reactive({ userInfo: { username: 'operator' } })
   mocks.export.mockReset().mockResolvedValue(exportResult())
   mocks.import.mockReset().mockResolvedValue({
@@ -129,6 +138,63 @@ beforeEach(() => {
   vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {})
 })
 describe('配置同步确认与输入快照一致', () => {
+  it('真实 JSON 控件在空配置下不生成草稿或触发切租户提示', async () => {
+    const wrapper = render(true)
+    await flushPromises()
+    expect(wrapper.getComponent({ name: 'JsonTextareaInput' }).props('modelValue')).toBe('')
+    expect(mocks.guard?.()).toBe(false)
+  })
+
+  it('切租户保护未提交配置并在确认后清理草稿', async () => {
+    const wrapper = render()
+    await flushPromises()
+    expect(mocks.guard?.()).toBe(false)
+    await wrapper.get('textarea').setValue('{"key":"draft"}')
+    expect(mocks.guard?.()).toBe(true)
+    // 取消切换时，当前租户和输入均保持不变。
+    expect((wrapper.get('textarea').element as HTMLTextAreaElement).value).toBe('{"key":"draft"}')
+    mocks.state.tenantId = 'tenant-b'
+    await flushPromises()
+    expect((wrapper.get('textarea').element as HTMLTextAreaElement).value).toBe('')
+    expect(mocks.guard?.()).toBe(false)
+  })
+
+  it('切租户前保护待导出的类型选择', async () => {
+    const wrapper = render()
+    await flushPromises()
+    wrapper.findComponent({ name: 'ElCheckboxGroup' }).vm.$emit('update:modelValue', ['JOB'])
+    await flushPromises()
+    expect(mocks.guard?.()).toBe(true)
+    mocks.state.tenantId = 'tenant-b'
+    await flushPromises()
+    expect(mocks.guard?.()).toBe(false)
+  })
+
+  it('已成功导入且输入未变时不再提示，后续修改重新提示', async () => {
+    const wrapper = render()
+    await flushPromises()
+    await wrapper.get('textarea').setValue('{"key":"draft"}')
+    await click(wrapper, 'configSyncTab.btnImport')
+    expect(mocks.import).toHaveBeenCalled()
+    expect(mocks.guard?.()).toBe(false)
+    await wrapper.get('textarea').setValue('{"key":"changed"}')
+    expect(mocks.guard?.()).toBe(true)
+  })
+
+  it.each(['[]', 'null', '"text"', '123'])('非对象 JSON %s 不发送预览或导入', async (value) => {
+    const wrapper = render()
+    await flushPromises()
+    await wrapper.get('textarea').setValue(value)
+    for (const key of ['configSyncTab.btnPreview', 'configSyncTab.btnImport']) {
+      const button = wrapper.findAll('button').find((element) => element.text() === key)!
+      await button.trigger('click')
+      await flushPromises()
+    }
+    expect(mocks.import).not.toHaveBeenCalled()
+    expect(mocks.confirm).not.toHaveBeenCalled()
+    expect(ElMessage.error).toHaveBeenCalledWith('jsonTextareaInput.expectObject')
+  })
+
   it.each(['source', 'target', 'tenants', 'payload'])(
     '确认期间修改 %s 后不提交旧同步',
     async (field) => {

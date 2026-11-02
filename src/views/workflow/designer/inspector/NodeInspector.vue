@@ -10,8 +10,8 @@
   import { computed, ref } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { X } from '@lucide/vue'
-  import { ElMessage } from 'element-plus'
-  import { useDesignerStore } from '../store/useDesignerStore'
+  import { ElMessage, ElMessageBox } from 'element-plus'
+  import { useDesignerStore, type InspectorDraft } from '../store/useDesignerStore'
   import StartNodeForm from './StartNodeForm.vue'
   import EndNodeForm from './EndNodeForm.vue'
   import JobNodeForm from './JobNodeForm.vue'
@@ -41,6 +41,47 @@
 
   const readonly = computed(() => !store.editable)
   const dependencyDialogVisible = ref(false)
+  const formRef = ref<{
+    hasDraft: () => boolean
+    flushDraft: () => void
+    getDraftState?: () => unknown
+  } | null>(null)
+
+  function hasDraft() {
+    return store.inspectorDrafts.length > 0 || (formRef.value?.hasDraft() ?? false)
+  }
+
+  function flushDraft() {
+    if (!readonly.value) formRef.value?.flushDraft()
+  }
+  defineExpose({
+    hasDraft,
+    flushDraft,
+    getDraftState: () => [store.inspectorDrafts, formRef.value?.getDraftState?.()],
+  })
+
+  async function discardDraft(draft: InspectorDraft) {
+    const scope = store.inspectorScope
+    try {
+      await ElMessageBox.confirm(t('workflowDesignerMvp.drafts.discardConfirm'), undefined, {
+        type: 'warning',
+        confirmButtonText: t('common.confirm'),
+        cancelButtonText: t('common.cancel'),
+      })
+      if (
+        store.inspectorScope === scope &&
+        store.getInspectorDraft(draft.field, draft.elementId) === draft
+      ) {
+        store.resolveInspectorDraft(draft.field, draft.elementId, 'discard')
+      }
+    } catch {
+      // 取消时继续保留草稿。
+    }
+  }
+
+  function useDraft(draft: InspectorDraft) {
+    store.resolveInspectorDraft(draft.field, draft.elementId, 'apply')
+  }
 
   const selectedEdgeId = computed(() => selectedEdge.value?.id ?? '')
 
@@ -111,6 +152,41 @@
         />
       </div>
     </div>
+    <div v-if="store.inspectorDrafts.length" class="node-inspector__drafts" role="status">
+      <strong>{{
+        t('workflowDesignerMvp.drafts.pending', { count: store.inspectorDrafts.length })
+      }}</strong>
+      <div
+        v-for="draft in store.inspectorDraftConflicts"
+        :key="`${draft.field}:${draft.elementId}`"
+        class="node-inspector__draft"
+      >
+        <div>
+          {{ draft.elementId }} · {{ t(`workflowDesignerMvp.drafts.fields.${draft.field}`) }}
+        </div>
+        <div>
+          {{ t('workflowDesignerMvp.drafts.current') }}:
+          {{
+            store.inspectorValue(draft.field, draft.elementId) ??
+            t('workflowDesignerMvp.drafts.missing')
+          }}
+        </div>
+        <div>{{ t('workflowDesignerMvp.drafts.proposed') }}: {{ draft.value }}</div>
+        <el-button
+          size="small"
+          :disabled="
+            readonly ||
+            store.inspectorValue(draft.field, draft.elementId) === null ||
+            !store.validInspectorDraft(draft)
+          "
+          @click="useDraft(draft)"
+          >{{ t('workflowDesignerMvp.drafts.useDraft') }}</el-button
+        >
+        <el-button size="small" @click="discardDraft(draft)">{{
+          t('workflowDesignerMvp.drafts.discard')
+        }}</el-button>
+      </div>
+    </div>
     <el-select
       v-if="store.edges.length > 0"
       class="node-inspector__dependency-picker"
@@ -137,6 +213,8 @@
     </div>
     <EdgeInspector
       v-else-if="selectedEdge"
+      :key="selectedEdge.id"
+      ref="formRef"
       :edge="selectedEdge"
       :readonly="readonly"
       @topology-changed="emit('topology-changed')"
@@ -144,21 +222,29 @@
     <template v-else-if="selectedNode">
       <StartNodeForm
         v-if="selectedNode.nodeType === 'START'"
+        :key="selectedNode.id"
+        ref="formRef"
         :node="selectedNode"
         :readonly="readonly"
       />
       <EndNodeForm
         v-else-if="selectedNode.nodeType === 'END'"
+        :key="selectedNode.id"
+        ref="formRef"
         :node="selectedNode"
         :readonly="readonly"
       />
       <JobNodeForm
         v-else-if="selectedNode.nodeType === 'JOB'"
+        :key="selectedNode.id"
+        ref="formRef"
         :node="selectedNode"
         :readonly="readonly"
       />
       <GatewayNodeForm
         v-else-if="selectedNode.nodeType === 'GATEWAY'"
+        :key="selectedNode.id"
+        ref="formRef"
         :node="selectedNode"
         :readonly="readonly"
       />
@@ -218,6 +304,16 @@
     text-align: center;
     padding: 32px 8px;
     line-height: 1.6;
+  }
+  .node-inspector__drafts {
+    color: var(--color-warning);
+    font-size: 12px;
+    overflow-wrap: anywhere;
+  }
+  .node-inspector__draft {
+    margin-top: 8px;
+    line-height: 1.5;
+    white-space: pre-wrap;
   }
   .node-inspector__dependency-picker {
     width: 100%;

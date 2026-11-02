@@ -2,8 +2,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { computed, reactive, ref } from 'vue'
 import { enableAutoUnmount, flushPromises, shallowMount } from '@vue/test-utils'
+import { ElMessage } from 'element-plus'
 import Detail from './JobInstanceDetail.vue'
 import WorkflowList from './WorkflowRunList.vue'
+import TraceIdInput from '@/components/common/TraceIdInput.vue'
 import Alerts from '../observability/AlertList.vue'
 
 const mocks = vi.hoisted(() => ({
@@ -21,6 +23,7 @@ const mocks = vi.hoisted(() => ({
   close: vi.fn(),
   defs: vi.fn(),
   runs: vi.fn(),
+  translations: {} as Record<string, string>,
 }))
 vi.mock('vue-router', () => ({
   useRoute: () => mocks.route,
@@ -28,7 +31,10 @@ vi.mock('vue-router', () => ({
 }))
 vi.mock('vue-i18n', async (original) => ({
   ...(await original<typeof import('vue-i18n')>()),
-  useI18n: () => ({ t: (k: string) => k, te: () => false }),
+  useI18n: () => ({
+    t: (k: string) => mocks.translations[k] ?? k,
+    te: (k: string) => k in mocks.translations,
+  }),
 }))
 vi.mock('@/stores/tenant', () => ({ useTenantStore: () => mocks.state }))
 vi.mock('@/stores/auth', () => ({
@@ -79,7 +85,7 @@ vi.mock('@/api/alertsCommands', () => ({
 vi.mock('@/api/workflowQueries', () => ({ queryWorkflowDefinitions: mocks.defs }))
 vi.mock('element-plus', async (original) => ({
   ...(await original<typeof import('element-plus')>()),
-  ElMessage: { success: vi.fn(), error: vi.fn(), warning: vi.fn() },
+  ElMessage: Object.assign(vi.fn(), { success: vi.fn(), error: vi.fn(), warning: vi.fn() }),
   ElMessageBox: { prompt: mocks.prompt },
 }))
 enableAutoUnmount(afterEach)
@@ -127,6 +133,7 @@ async function click(wrapper: ReturnType<typeof renderDetail>, label: string) {
 }
 
 beforeEach(() => {
+  mocks.translations = {}
   mocks.state = reactive({ tenantId: 'tenant-a', writer: true, writesFrozen: false })
   mocks.route = reactive({ params: { id: '41' }, query: {} })
   mocks.detail.mockReset().mockImplementation(async (id: number) => detail(id, 'RUNNING'))
@@ -152,6 +159,27 @@ beforeEach(() => {
 })
 
 describe('实例详情危险操作目标', () => {
+  it('状态摘要显示本地化名称，未知状态保留原码', async () => {
+    mocks.translations['enum.instanceStatus.FAILED'] = '失败'
+    mocks.detail.mockResolvedValueOnce(detail(41, 'FAILED'))
+    const wrapper = renderDetail()
+    await flushPromises()
+    const cards = wrapper.findAll('metric-card-stub')
+    expect(
+      cards
+        .find((card) => card.attributes('label') === 'monitor.detailMetricStatus')
+        ?.attributes('value'),
+    ).toBe('失败')
+    mocks.detail.mockResolvedValueOnce(detail(42, 'NEW_STATUS'))
+    mocks.route.params.id = '42'
+    await flushPromises()
+    const updated = wrapper.findAll('metric-card-stub')
+    expect(
+      updated
+        .find((card) => card.attributes('label') === 'monitor.detailMetricStatus')
+        ?.attributes('value'),
+    ).toBe('NEW_STATUS')
+  })
   it.each([
     ['monitor.detailCancelRequestBtn', 'cancel', 'RUNNING'],
     ['monitor.detailTerminateBtn', 'terminate', 'RUNNING'],
@@ -260,6 +288,30 @@ describe('告警状态操作合法路径', () => {
 })
 
 describe('Workflow 运行列表的筛选依赖', () => {
+  it('keeps the trace filter in the list search instead of navigating to diagnostics', async () => {
+    vi.mocked(ElMessage).mockClear()
+    const wrapper = shallowMount(WorkflowList, {
+      global: {
+        stubs: {
+          ...stubs,
+          ProTable: { template: '<div><slot name="query" /></div>' },
+          ListPageQueryBar: { name: 'ListPageQueryBar', template: '<div><slot /></div>' },
+          ElFormItem: { template: '<div><slot /></div>' },
+        },
+      },
+    })
+    await flushPromises()
+    const input = wrapper.getComponent(TraceIdInput)
+    expect(input.props('goTo')).toBe(false)
+    input.vm.$emit('update:modelValue', 'trace-filter-value')
+    wrapper.findComponent({ name: 'ListPageQueryBar' }).vm.$emit('search')
+    await flushPromises()
+    expect(mocks.runs).toHaveBeenCalledWith(
+      expect.objectContaining({ traceId: 'trace-filter-value' }),
+    )
+    await vi.waitFor(() => expect(ElMessage).toHaveBeenCalledOnce())
+  })
+
   it('深链首次加载等待定义编码解析，不能按全部 Workflow 发起查询', async () => {
     mocks.route.query = { workflowCode: 'WF', page: '3' }
     let definitions!: (value: unknown) => void

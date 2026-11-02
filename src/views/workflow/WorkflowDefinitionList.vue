@@ -19,10 +19,18 @@
         {{ t('workflowDefinitionList.bulk.open') }}
       </el-button>
     </BulkActionBar>
-    <WorkflowBulkTriggerDialog v-model="bulkTriggerVisible" :tenant-id="tenant.tenantId"
-      :can-trigger="canTriggerWorkflows" :targets="bulkSelection.selected.value" />
-    <WorkflowMonitoringPolicyDialog v-model="monitoringVisible" :workflow-id="monitoringTarget?.id"
-      :workflow-code="monitoringTarget?.workflowCode ?? ''" :can-edit="canMutateConfig" />
+    <WorkflowBulkTriggerDialog
+      v-model="bulkTriggerVisible"
+      :tenant-id="tenant.tenantId"
+      :can-trigger="canTriggerWorkflows"
+      :targets="bulkSelection.selected.value"
+    />
+    <WorkflowMonitoringPolicyDialog
+      v-model="monitoringVisible"
+      :workflow-id="monitoringTarget?.id"
+      :workflow-code="monitoringTarget?.workflowCode ?? ''"
+      :can-edit="canMutateConfig"
+    />
 
     <SectionCard>
       <ProTable
@@ -67,7 +75,7 @@
           >
             <el-form-item :label="t('workflowDefinitionList.codeLabel')">
               <el-input
-                class="query-w-160"
+                class="query-w-240"
                 v-model="filters.workflowCode"
                 clearable
                 :placeholder="t('workflowDefinitionList.codePlaceholder')"
@@ -75,7 +83,7 @@
             </el-form-item>
             <el-form-item :label="t('workflowDefinitionList.nameLabel')">
               <el-input
-                class="query-w-160"
+                class="query-w-220"
                 v-model="filters.workflowName"
                 clearable
                 :placeholder="t('workflowDefinitionList.namePlaceholder')"
@@ -127,20 +135,35 @@
           </ListPageQueryBar>
         </template>
 
-        <el-table-column v-if="canTriggerWorkflows" type="selection" width="48"
-          :selectable="(row: ConsoleWorkflowDefinitionResponse) => row.enabled === true && row.tenantId === tenant.tenantId" />
+        <el-table-column
+          v-if="canTriggerWorkflows"
+          type="selection"
+          width="48"
+          :selectable="
+            (row: ConsoleWorkflowDefinitionResponse) =>
+              row.enabled === true && row.tenantId === tenant.tenantId
+          "
+        />
         <el-table-column
           prop="workflowCode"
           :label="t('workflowDefinitionList.colCode')"
           width="220"
-          show-overflow-tooltip
-        />
+        >
+          <template #default="{ row }">
+            <CopyableText v-if="row.workflowCode" :text="String(row.workflowCode)" />
+            <span v-else>—</span>
+          </template>
+        </el-table-column>
         <el-table-column
           prop="workflowName"
           :label="t('workflowDefinitionList.colName')"
           min-width="240"
-          show-overflow-tooltip
-        />
+        >
+          <template #default="{ row }">
+            <CopyableText v-if="row.workflowName" :text="String(row.workflowName)" />
+            <span v-else>—</span>
+          </template>
+        </el-table-column>
         <el-table-column
           prop="workflowType"
           :label="t('workflowDefinitionList.colType')"
@@ -150,10 +173,7 @@
             {{ resolveEnumLabel('workflowType', row.workflowType) }}
           </template>
         </el-table-column>
-        <el-table-column
-          :label="t('workflowDefinitionList.colRelation')"
-          width="140"
-        >
+        <el-table-column :label="t('workflowDefinitionList.colRelation')" width="140">
           <template #default="{ row }">
             <el-tag size="small" :type="row.singleJobDefinitionId ? 'primary' : 'success'">
               {{
@@ -174,9 +194,15 @@
           prop="description"
           :label="t('workflowDefinitionList.colDescription')"
           min-width="320"
-          show-overflow-tooltip
         >
-          <template #default="{ row }">{{ decodeBasicEntities(row.description) }}</template>
+          <template #default="{ row }">
+            <CopyableText
+              v-if="row.description"
+              :text="decodeBasicEntities(row.description)"
+              :copyable="false"
+            />
+            <span v-else>—</span>
+          </template>
         </el-table-column>
         <el-table-column prop="enabled" :label="t('workflowDefinitionList.colEnabled')" width="80">
           <template #default="{ row }">
@@ -200,7 +226,10 @@
         />
         <el-table-column :label="t('workflowDefinitionList.colActions')" width="220" fixed="right">
           <template #default="{ row }">
-            <RowActions :actions="rowActions(row as ConsoleWorkflowDefinitionResponse)" :inline-limit="2" />
+            <RowActions
+              :actions="rowActions(row as ConsoleWorkflowDefinitionResponse)"
+              :inline-limit="2"
+            />
           </template>
         </el-table-column>
       </ProTable>
@@ -215,7 +244,7 @@
       <el-tabs v-if="detailRow" v-model="activeDetailTab">
         <!-- Tab: 概览 -->
         <el-tab-pane name="overview" :label="t('workflowDefinitionList.detailTabOverview')">
-          <el-descriptions :column="2" border size="small">
+          <el-descriptions :column="isMobile ? 1 : 2" border size="small">
             <el-descriptions-item :label="t('workflowDefinitionList.detailCode')">{{
               detailRow.workflowCode
             }}</el-descriptions-item>
@@ -235,10 +264,10 @@
               detailRow.tenantId
             }}</el-descriptions-item>
             <el-descriptions-item :label="t('common.createdAt')">{{
-              detailRow.createdAt || '—'
+              fmtDatetime(detailRow.createdAt)
             }}</el-descriptions-item>
             <el-descriptions-item :label="t('common.updatedAt')">{{
-              detailRow.updatedAt || '—'
+              fmtDatetime(detailRow.updatedAt)
             }}</el-descriptions-item>
             <el-descriptions-item :label="t('workflowDefinitionList.detailNodes')">{{
               detailRow.nodes?.length ?? 0
@@ -246,7 +275,10 @@
             <el-descriptions-item :label="t('workflowDefinitionList.detailEdges')">{{
               detailRow.edges?.length ?? 0
             }}</el-descriptions-item>
-            <el-descriptions-item :label="t('workflowDefinitionList.detailDescription')" :span="2">
+            <el-descriptions-item
+              :label="t('workflowDefinitionList.detailDescription')"
+              :span="isMobile ? 1 : 2"
+            >
               <JsonPreview :data="detailRow.description || '—'" />
             </el-descriptions-item>
           </el-descriptions>
@@ -285,8 +317,16 @@
               prop="currentNodeCode"
               :label="t('runs.colCurrentNode')"
               min-width="140"
-              show-overflow-tooltip
-            />
+            >
+              <template #default="{ row }">
+                <CopyableText
+                  v-if="row.currentNodeCode"
+                  :text="String(row.currentNodeCode)"
+                  @click.stop
+                />
+                <span v-else>—</span>
+              </template>
+            </el-table-column>
             <el-table-column :label="t('runs.colStarted')" width="160">
               <template #default="{ row }">{{ fmtDatetime(row.startedAt) }}</template>
             </el-table-column>
@@ -327,31 +367,17 @@
       </el-tabs>
     </el-drawer>
 
-    <el-dialog v-model="triggerVisible" :title="t('workflowDefinitionList.triggerTitle')" width="440px">
-      <el-form label-position="top">
-        <el-form-item :label="t('workflowDefinitionList.triggerBizDate')" required>
-          <el-date-picker
-            v-model="triggerBizDate"
-            type="date"
-            value-format="YYYY-MM-DD"
-            :placeholder="t('workflowDefinitionList.triggerBizDatePlaceholder')"
-            class="w-full"
-          />
-        </el-form-item>
-        <el-alert :title="t('workflowDefinitionList.triggerHint')" type="info" :closable="false" />
-      </el-form>
-      <template #footer>
-        <el-button @click="triggerVisible = false">{{ t('common.cancel') }}</el-button>
-        <el-button type="primary" :loading="triggerBusy" :disabled="!triggerBizDate" @click="submitTrigger">
-          {{ t('workflowDefinitionList.actionTrigger') }}
-        </el-button>
-      </template>
-    </el-dialog>
+    <WorkflowTriggerDialog
+      v-model="triggerVisible"
+      v-model:biz-date="triggerBizDate"
+      :busy="triggerBusy"
+      @submit="submitTrigger"
+    />
 
     <el-dialog
       v-model="scheduleVisible"
       :title="t('workflowDefinitionList.scheduleTitle')"
-      width="560px"
+      width="min(560px, calc(100% - 32px))"
       :close-on-click-modal="false"
     >
       <el-form v-loading="scheduleLoading" label-position="top">
@@ -372,18 +398,27 @@
           :label="t('workflowDefinitionList.scheduleExpression')"
           required
         >
-          <el-input v-model="scheduleForm.scheduleExpr" :placeholder="scheduleExprPlaceholder" />
+          <el-input
+            v-model="scheduleForm.scheduleExpr"
+            maxlength="256"
+            :placeholder="scheduleExprPlaceholder"
+          />
         </el-form-item>
         <el-form-item :label="t('workflowDefinitionList.scheduleTimezone')">
-          <el-input v-model="scheduleForm.timezone" placeholder="UTC" />
+          <el-input v-model="scheduleForm.timezone" maxlength="64" placeholder="UTC" />
         </el-form-item>
         <el-form-item :label="t('workflowDefinitionList.scheduleTriggerMode')">
           <el-select v-model="scheduleForm.triggerMode" class="w-full">
-            <el-option v-for="mode in triggerModeOptions" :key="mode" :label="mode" :value="mode" />
+            <el-option
+              v-for="mode in triggerModeOptions"
+              :key="mode"
+              :label="t(`enum.triggerMode.${mode}`, mode)"
+              :value="mode"
+            />
           </el-select>
         </el-form-item>
         <el-form-item :label="t('workflowDefinitionList.scheduleCalendar')">
-          <el-input v-model="scheduleForm.calendarCode" clearable />
+          <el-input v-model="scheduleForm.calendarCode" maxlength="128" clearable />
         </el-form-item>
         <el-form-item :label="t('workflowDefinitionList.scheduleDependency')">
           <el-select
@@ -403,7 +438,11 @@
           </el-select>
         </el-form-item>
         <el-alert
-          :title="t('workflowDefinitionList.scheduleVersionHint', { version: scheduleForm.expectedVersion })"
+          :title="
+            t('workflowDefinitionList.scheduleVersionHint', {
+              version: scheduleForm.expectedVersion,
+            })
+          "
           type="info"
           :closable="false"
         />
@@ -415,14 +454,15 @@
           :loading="scheduleSaving"
           :disabled="!canMutateConfig || isRequiredScheduleExpressionMissing()"
           @click="saveSchedule"
-        >{{ t('common.save') }}</el-button>
+          >{{ t('common.save') }}</el-button
+        >
       </template>
     </el-dialog>
 
     <el-dialog
       v-model="validateVisible"
       :title="t('workflowDefinitionList.validateTitle')"
-      width="760px"
+      width="min(760px, calc(100% - 32px))"
     >
       <div v-if="validateResult" class="validate-result">
         <el-alert
@@ -453,7 +493,7 @@
                 :type="row.level === 'ERROR' ? 'danger' : 'warning'"
                 effect="plain"
               >
-                {{ row.level }}
+                {{ resolveEnumLabel('severity', row.level) }}
               </el-tag>
             </template>
           </el-table-column>
@@ -461,15 +501,20 @@
             prop="code"
             :label="t('workflowDefinitionList.validateColCode')"
             width="170"
-          />
-          <el-table-column
-            :label="t('workflowDefinitionList.validateColTarget')"
-            width="160"
-            show-overflow-tooltip
           >
             <template #default="{ row }">
-              <span v-if="row.nodeCode">node: {{ row.nodeCode }}</span>
-              <span v-else-if="row.edgeId">edge: {{ row.edgeId }}</span>
+              <CopyableText v-if="row.code" :text="String(row.code)" />
+              <span v-else>—</span>
+            </template>
+          </el-table-column>
+          <el-table-column :label="t('workflowDefinitionList.validateColTarget')" width="160">
+            <template #default="{ row }">
+              <CopyableText v-if="row.nodeCode" :text="String(row.nodeCode)">
+                {{ t('workflowDefinitionList.validateTargetNode') }}: {{ row.nodeCode }}
+              </CopyableText>
+              <CopyableText v-else-if="row.edgeId" :text="String(row.edgeId)">
+                {{ t('workflowDefinitionList.validateTargetEdge') }}: {{ row.edgeId }}
+              </CopyableText>
               <span v-else class="muted">—</span>
             </template>
           </el-table-column>
@@ -477,8 +522,12 @@
             prop="message"
             :label="t('workflowDefinitionList.validateColMessage')"
             min-width="260"
-            show-overflow-tooltip
-          />
+          >
+            <template #default="{ row }">
+              <CopyableText v-if="row.message" :text="String(row.message)" :copyable="false" />
+              <span v-else>—</span>
+            </template>
+          </el-table-column>
         </el-table>
       </div>
     </el-dialog>
@@ -486,9 +535,12 @@
 </template>
 
 <script setup lang="ts">
+  import { isScheduled, validateWorkflowScheduleLengths } from './workflowScheduleValidation'
+  import WorkflowTriggerDialog from './WorkflowTriggerDialog.vue'
   import { computed, reactive, ref, watch } from 'vue'
   import { useRouter } from 'vue-router'
   import { useDrawerAutoClose } from '@/composables/useDrawerAutoClose'
+  import { useResponsive } from '@/composables/useResponsive'
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
   import { Plus } from '@lucide/vue'
@@ -526,6 +578,7 @@
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import ProTable from '@/components/table/ProTable.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
+  import CopyableText from '@/components/common/CopyableText.vue'
   import JsonPreview from '@/components/common/JsonPreview.vue'
   import WorkflowMiniDag from '@/components/workflow/WorkflowMiniDag.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
@@ -541,6 +594,7 @@
   } from '@/types/console-api'
 
   const router = useRouter()
+  const { isMobile } = useResponsive()
   const tenant = useTenantStore()
   // VIEWER 角色 toggle/archive 都属于破坏性,行内按钮需要灰显 + tooltip,而不是点了才弹 403
   const { canMutateConfig, canAccess } = usePermission()
@@ -585,9 +639,11 @@
     calendarCode: '',
     dependsOnJobCode: '',
   })
-  const scheduleExprPlaceholder = computed(() => scheduleForm.scheduleType === 'CRON'
-    ? t('workflowDefinitionList.scheduleCronPlaceholder')
-    : t('workflowDefinitionList.scheduleRatePlaceholder'))
+  const scheduleExprPlaceholder = computed(() =>
+    scheduleForm.scheduleType === 'CRON'
+      ? t('workflowDefinitionList.scheduleCronPlaceholder')
+      : t('workflowDefinitionList.scheduleRatePlaceholder'),
+  )
   const triggerModeOptions = computed(() => {
     if (['CRON', 'FIXED_RATE'].includes(scheduleForm.scheduleType)) return ['SCHEDULED', 'MIXED']
     if (scheduleForm.scheduleType === 'EVENT') return ['EVENT', 'MIXED']
@@ -601,8 +657,10 @@
   }
 
   function isRequiredScheduleExpressionMissing(): boolean {
-    return ['CRON', 'FIXED_RATE'].includes(scheduleForm.scheduleType)
-      && !scheduleForm.scheduleExpr.trim()
+    return (
+      ['CRON', 'FIXED_RATE'].includes(scheduleForm.scheduleType) &&
+      !scheduleForm.scheduleExpr.trim()
+    )
   }
 
   const detailVisible = ref(false)
@@ -742,18 +800,22 @@
         onClick: () => openDag(row),
       },
       ...(!row.singleJobDefinitionId
-        ? [{
-        key: 'designer',
-        label: t('workflowDefinitionList.actionOpenInDesigner'),
-        onClick: () => openInDesigner(row),
-      } as RowAction]
+        ? [
+            {
+              key: 'designer',
+              label: t('workflowDefinitionList.actionOpenInDesigner'),
+              onClick: () => openInDesigner(row),
+            } as RowAction,
+          ]
         : []),
       ...(row.singleJobDefinitionId
-        ? [{
-            key: 'job-definition',
-            label: t('workflowDefinitionList.actionJobDefinition'),
-            onClick: () => router.push(`/jobs/definitions/${row.singleJobDefinitionId}`),
-          } as RowAction]
+        ? [
+            {
+              key: 'job-definition',
+              label: t('workflowDefinitionList.actionJobDefinition'),
+              onClick: () => router.push(`/jobs/definitions/${row.singleJobDefinitionId}`),
+            } as RowAction,
+          ]
         : []),
       {
         key: 'trigger',
@@ -813,27 +875,32 @@
         onClick: () => toggleRow(row),
       },
       ...(isScheduled(row)
-        ? [{
-            key: 'schedule-toggle',
-            label: row.scheduleEnabled === false
-              ? t('workflowDefinitionList.actionResumeSchedule')
-              : t('workflowDefinitionList.actionPauseSchedule'),
-            disabled: !canMutateConfig.value,
-            loading: actingIds.value.has(row.id),
-            onClick: () => toggleScheduleRow(row),
-          } as RowAction]
+        ? [
+            {
+              key: 'schedule-toggle',
+              label:
+                row.scheduleEnabled === false
+                  ? t('workflowDefinitionList.actionResumeSchedule')
+                  : t('workflowDefinitionList.actionPauseSchedule'),
+              disabled: !canMutateConfig.value,
+              loading: actingIds.value.has(row.id),
+              onClick: () => toggleScheduleRow(row),
+            } as RowAction,
+          ]
         : []),
       ...(!row.singleJobDefinitionId
-        ? [{
-        key: 'archive',
-        label: t('workflowDefinitionList.actionArchive'),
-        danger: true,
-        divided: true,
-        // 已禁用的不再让点 + VIEWER 无写权限
-        disabled: !row.enabled || !canMutateConfig.value,
-        loading: actingIds.value.has(row.id),
-        onClick: () => removeRow(row),
-      } as RowAction]
+        ? [
+            {
+              key: 'archive',
+              label: t('workflowDefinitionList.actionArchive'),
+              danger: true,
+              divided: true,
+              // 已禁用的不再让点 + VIEWER 无写权限
+              disabled: !row.enabled || !canMutateConfig.value,
+              loading: actingIds.value.has(row.id),
+              onClick: () => removeRow(row),
+            } as RowAction,
+          ]
         : []),
     ]
   }
@@ -884,6 +951,22 @@
   async function saveSchedule() {
     const target = scheduleTarget.value
     if (!target || scheduleSaving.value) return
+    const lengthError = validateWorkflowScheduleLengths(scheduleForm)
+    if (lengthError) {
+      const labelKeys = {
+        scheduleExpr: 'workflowDefinitionList.scheduleExpression',
+        timezone: 'workflowDefinitionList.scheduleTimezone',
+        calendarCode: 'workflowDefinitionList.scheduleCalendar',
+        dependsOnJobCode: 'workflowDefinitionList.scheduleDependency',
+      } as const
+      ElMessage.warning(
+        t('workflowDefinitionList.scheduleFieldTooLong', {
+          field: t(labelKeys[lengthError.field]),
+          max: lengthError.max,
+        }),
+      )
+      return
+    }
     scheduleSaving.value = true
     try {
       await workflowApi.updateSchedule(target.id, {
@@ -906,20 +989,19 @@
     }
   }
 
-  function isScheduled(row: ConsoleWorkflowDefinitionResponse): boolean {
-    return ['CRON', 'FIXED_RATE'].includes(row.scheduleType ?? '') &&
-      ['SCHEDULED', 'MIXED'].includes(row.triggerMode ?? '')
-  }
-
   async function toggleScheduleRow(row: ConsoleWorkflowDefinitionResponse) {
     if (!canMutateConfig.value || !isScheduled(row)) return
     actingIds.value = new Set([...actingIds.value, row.id])
     try {
       const enabled = row.scheduleEnabled === false
       await workflowApi.toggleSchedule(row.id, row.tenantId ?? tenant.tenantId, enabled)
-      ElMessage.success(t(enabled
-        ? 'workflowDefinitionList.scheduleResumed'
-        : 'workflowDefinitionList.schedulePaused'))
+      ElMessage.success(
+        t(
+          enabled
+            ? 'workflowDefinitionList.scheduleResumed'
+            : 'workflowDefinitionList.schedulePaused',
+        ),
+      )
       await load()
     } catch (err: unknown) {
       ElMessage.error(userErrorMessage(err))
@@ -1112,18 +1194,4 @@
   })
 </script>
 
-<style scoped>
-  .workflow-definition-table :deep(.el-table__cell .cell) {
-    min-width: 0;
-  }
-
-  .workflow-definition-table :deep(.el-table__fixed-right) {
-    box-shadow: -8px 0 16px rgb(15 23 42 / 6%);
-  }
-
-  @media (max-width: 720px) {
-    .workflow-definition-table :deep(.el-table__fixed-right) {
-      box-shadow: -4px 0 10px rgb(15 23 42 / 8%);
-    }
-  }
-</style>
+<style scoped src="./WorkflowDefinitionList.css"></style>

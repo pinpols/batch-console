@@ -61,7 +61,7 @@
                 :disabled="loading"
                 @search="onSearch"
                 @reset="onReset"
-                @refresh="() => runRefresh(reloadTab)"
+                @refresh="refreshTab"
               >
                 <el-form-item :label="t('filePipelineObservability.keywordLabel')">
                   <el-input
@@ -69,7 +69,6 @@
                     v-model="kwDraft"
                     clearable
                     :placeholder="t('filePipelineObservability.pipelinesKw')"
-                    @keyup.enter="onSearch"
                   />
                 </el-form-item>
               </ListPageQueryBar>
@@ -79,8 +78,11 @@
               prop="jobCode"
               :label="t('filePipelineObservability.colJob')"
               min-width="180"
-              show-overflow-tooltip
-            />
+            >
+              <template #default="{ row }"
+                ><CopyableText v-if="row.jobCode" :text="row.jobCode"
+              /></template>
+            </el-table-column>
             <el-table-column
               prop="pipelineType"
               :label="t('filePipelineObservability.colType')"
@@ -168,7 +170,7 @@
               :disabled="loading"
               @search="onSearch"
               @reset="onReset"
-              @refresh="() => runRefresh(reloadTab)"
+              @refresh="refreshTab"
             >
               <el-form-item :label="t('filePipelineObservability.keywordLabel')">
                 <el-input
@@ -176,7 +178,6 @@
                   v-model="kwDraft"
                   clearable
                   :placeholder="t('filePipelineObservability.stepsKw')"
-                  @keyup.enter="onSearch"
                 />
               </el-form-item>
               <el-form-item :label="t('filePipelineObservability.colToggleHint')">
@@ -196,13 +197,21 @@
           <el-table-column
             prop="stepCode"
             :label="t('filePipelineObservability.colStep')"
-            width="120"
-          />
+            min-width="160"
+          >
+            <template #default="{ row }"
+              ><CopyableText v-if="row.stepCode" :text="row.stepCode"
+            /></template>
+          </el-table-column>
           <el-table-column
             prop="stageCode"
             :label="t('filePipelineObservability.colStage')"
-            width="120"
-          />
+            min-width="160"
+          >
+            <template #default="{ row }"
+              ><CopyableText v-if="row.stageCode" :text="row.stageCode"
+            /></template>
+          </el-table-column>
           <el-table-column
             prop="runSeq"
             :label="t('filePipelineObservability.colSeq')"
@@ -259,9 +268,7 @@
             show-overflow-tooltip
           >
             <template #default="{ row }">
-              <span v-if="row.errorCode" class="mono">[{{ row.errorCode }}]</span>
-              <span v-if="row.errorMessage">{{ row.errorMessage }}</span>
-              <span v-if="!row.errorCode && !row.errorMessage" class="muted">—</span>
+              <ErrorDetailsText :code="row.errorCode" :message="row.errorMessage" />
             </template>
           </el-table-column>
           <el-table-column
@@ -274,9 +281,18 @@
       </el-tab-pane>
 
       <el-tab-pane :label="t('filePipelineObservability.tabDispatches')" name="dispatches">
+        <el-alert
+          v-if="dispatchLoadError && dispatchRows.length"
+          :title="t('filePipelineObservability.recordsLoadFailed')"
+          type="warning"
+          :closable="false"
+          show-icon
+        />
         <ProTable
           :data="dispatchRows"
           :loading="tableBlocking"
+          :error="dispatchLoadError"
+          :on-retry="loadDispatches"
           :total="total"
           v-model:page="page"
           v-model:page-size="pageSize"
@@ -289,7 +305,7 @@
               :disabled="loading"
               @search="onSearch"
               @reset="onReset"
-              @refresh="() => runRefresh(reloadTab)"
+              @refresh="refreshTab"
             >
               <el-form-item :label="t('filePipelineObservability.keywordLabel')">
                 <el-input
@@ -297,7 +313,6 @@
                   v-model="kwDraft"
                   clearable
                   :placeholder="t('filePipelineObservability.dispatchesKw')"
-                  @keyup.enter="onSearch"
                 />
               </el-form-item>
             </ListPageQueryBar>
@@ -325,15 +340,21 @@
           <el-table-column
             prop="channelCode"
             :label="t('filePipelineObservability.colChannel')"
-            width="120"
-            show-overflow-tooltip
-          />
+            min-width="160"
+          >
+            <template #default="{ row }"
+              ><CopyableText v-if="row.channelCode" :text="row.channelCode"
+            /></template>
+          </el-table-column>
           <el-table-column
             prop="dispatchTarget"
             :label="t('filePipelineObservability.colTarget')"
             min-width="160"
-            show-overflow-tooltip
-          />
+          >
+            <template #default="{ row }"
+              ><CopyableText v-if="row.dispatchTarget" :text="row.dispatchTarget" :copyable="false"
+            /></template>
+          </el-table-column>
           <el-table-column
             prop="dispatchAttempt"
             :label="t('filePipelineObservability.colAttempt')"
@@ -348,24 +369,29 @@
           <el-table-column
             prop="receiptCode"
             :label="t('filePipelineObservability.colReceiptCode')"
-            width="120"
-            show-overflow-tooltip
-          />
+            min-width="160"
+          >
+            <template #default="{ row }"
+              ><CopyableText v-if="row.receiptCode" :text="row.receiptCode"
+            /></template>
+          </el-table-column>
           <el-table-column
             prop="externalRequestId"
             :label="t('filePipelineObservability.colExternalReqId')"
             min-width="140"
-            show-overflow-tooltip
-          />
+          >
+            <template #default="{ row }">
+              <CopyableText v-if="row.externalRequestId" :text="String(row.externalRequestId)" />
+              <span v-else>—</span>
+            </template>
+          </el-table-column>
           <el-table-column
             :label="t('filePipelineObservability.colError')"
             min-width="200"
             show-overflow-tooltip
           >
             <template #default="{ row }">
-              <span v-if="row.errorCode" class="mono">[{{ row.errorCode }}]</span>
-              <span v-if="row.errorMessage">{{ row.errorMessage }}</span>
-              <span v-if="!row.errorCode && !row.errorMessage" class="muted">—</span>
+              <ErrorDetailsText :code="row.errorCode" :message="row.errorMessage" />
             </template>
           </el-table-column>
           <DatetimeColumn
@@ -382,9 +408,18 @@
       </el-tab-pane>
 
       <el-tab-pane :label="t('filePipelineObservability.tabErrors')" name="errors">
+        <el-alert
+          v-if="errorLoadError && errorRows.length"
+          :title="t('filePipelineObservability.recordsLoadFailed')"
+          type="warning"
+          :closable="false"
+          show-icon
+        />
         <ProTable
           :data="errorRows"
           :loading="tableBlocking"
+          :error="errorLoadError"
+          :on-retry="loadErrors"
           :total="total"
           v-model:page="page"
           v-model:page-size="pageSize"
@@ -397,7 +432,7 @@
               :disabled="loading"
               @search="onSearch"
               @reset="onReset"
-              @refresh="() => runRefresh(reloadTab)"
+              @refresh="refreshTab"
             >
               <el-form-item :label="t('filePipelineObservability.keywordLabel')">
                 <el-input
@@ -405,7 +440,6 @@
                   v-model="kwDraft"
                   clearable
                   :placeholder="t('filePipelineObservability.errorsKw')"
-                  @keyup.enter="onSearch"
                 />
               </el-form-item>
             </ListPageQueryBar>
@@ -425,8 +459,12 @@
           <el-table-column
             prop="errorCode"
             :label="t('filePipelineObservability.colErrorCode')"
-            width="120"
-          />
+            min-width="160"
+          >
+            <template #default="{ row }"
+              ><CopyableText v-if="row.errorCode" :text="row.errorCode"
+            /></template>
+          </el-table-column>
           <el-table-column
             prop="errorStage"
             :label="t('filePipelineObservability.colStage')"
@@ -436,8 +474,11 @@
             prop="errorMessage"
             :label="t('filePipelineObservability.colErrorMessage')"
             min-width="200"
-            show-overflow-tooltip
-          />
+          >
+            <template #default="{ row }"
+              ><CopyableText v-if="row.errorMessage" :text="row.errorMessage" :copyable="false"
+            /></template>
+          </el-table-column>
           <el-table-column :label="t('filePipelineObservability.colSkipped')" width="100">
             <template #default="{ row }">
               <el-tag v-if="row.skipped" size="small" type="warning" effect="plain">
@@ -481,6 +522,8 @@
   import ProTable from '@/components/table/ProTable.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
+  import CopyableText from '@/components/common/CopyableText.vue'
+  import ErrorDetailsText from '@/components/common/ErrorDetailsText.vue'
   import SelectedPipelinePanel from './components/SelectedPipelinePanel.vue'
   import type {
     ConsoleFileDispatchRecordResponse,
@@ -573,6 +616,8 @@
   let selectedStepsRequestId = 0
   const allDispatches = ref<ConsoleFileDispatchRecordResponse[]>([])
   const allErrors = ref<ConsoleFileErrorRecordResponse[]>([])
+  const dispatchLoadError = ref<unknown>(null)
+  const errorLoadError = ref<unknown>(null)
   const serverTotal = ref(0)
   const selectedPipeline = ref<ConsoleFilePipelineResponse | null>(null)
   const selectedStageCode = ref<string | null>(null)
@@ -780,6 +825,9 @@
       kwApplied.value = kwDraft.value.trim()
       page.value = 1
       await runActive()
+      throwIfActiveLoadFailed()
+    }).catch(() => {
+      // 错误已由当前页签展示。
     })
   }
 
@@ -789,6 +837,27 @@
       kwApplied.value = ''
       page.value = 1
       await runActive()
+      throwIfActiveLoadFailed()
+    }).catch(() => {
+      // 错误已由当前页签展示。
+    })
+  }
+
+  function throwIfActiveLoadFailed() {
+    const error =
+      activeTab.value === 'pipelines'
+        ? loadError.value
+        : activeTab.value === 'steps'
+          ? stepLoadError.value
+          : activeTab.value === 'dispatches'
+            ? dispatchLoadError.value
+            : errorLoadError.value
+    if (error) throw error
+  }
+
+  function refreshTab() {
+    return runRefresh(reloadTab).catch(() => {
+      // 错误已由当前页签展示。
     })
   }
 
@@ -866,8 +935,16 @@
     }
   }
 
+  let dispatchesRequestId = 0
   async function loadDispatches() {
+    const requestId = ++dispatchesRequestId
+    const requestedTenant = tenant.tenantId
+    const valid = () =>
+      requestId === dispatchesRequestId &&
+      requestedTenant === tenant.tenantId &&
+      activeTab.value === 'dispatches'
     loading.value = true
+    dispatchLoadError.value = null
     try {
       const result = await queryFileDispatchPage({
         tenantId: tenant.tenantId,
@@ -875,15 +952,26 @@
         pageSize: pageSize.value,
         keyword: kwApplied.value || undefined,
       })
+      if (!valid()) return
       allDispatches.value = result.items ?? []
       serverTotal.value = result.total ?? 0
+    } catch (error) {
+      if (valid()) dispatchLoadError.value = error
     } finally {
-      loading.value = false
+      if (valid()) loading.value = false
     }
   }
 
+  let errorsRequestId = 0
   async function loadErrors() {
+    const requestId = ++errorsRequestId
+    const requestedTenant = tenant.tenantId
+    const valid = () =>
+      requestId === errorsRequestId &&
+      requestedTenant === tenant.tenantId &&
+      activeTab.value === 'errors'
     loading.value = true
+    errorLoadError.value = null
     try {
       const result = await queryFileErrorPage({
         tenantId: tenant.tenantId,
@@ -891,10 +979,13 @@
         pageSize: pageSize.value,
         keyword: kwApplied.value || undefined,
       })
+      if (!valid()) return
       allErrors.value = result.items ?? []
       serverTotal.value = result.total ?? 0
+    } catch (error) {
+      if (valid()) errorLoadError.value = error
     } finally {
-      loading.value = false
+      if (valid()) loading.value = false
     }
   }
 
@@ -907,6 +998,7 @@
       runActive(),
       fileSummaryUnavailable.value ? loadCurrentFile(pipelineInstanceId) : Promise.resolve(),
     ])
+    throwIfActiveLoadFailed()
   }
 
   function onTabChange() {
@@ -952,6 +1044,8 @@
     stepsRequestId++
     pipelinesRequestId++
     selectedStepsRequestId++
+    dispatchesRequestId++
+    errorsRequestId++
     fileSummaryRequestId++
     fileSummaryUnavailable.value = false
     progress.reset()
@@ -963,6 +1057,8 @@
     selectedPipelineSteps.value = []
     selectedStepLoadError.value = null
     stepLoadError.value = null
+    dispatchLoadError.value = null
+    errorLoadError.value = null
     allDispatches.value = []
     allErrors.value = []
     currentFile.value = null
@@ -974,57 +1070,4 @@
   })
 </script>
 
-<style scoped>
-  .current-file-bar {
-    display: flex;
-    align-items: center;
-    gap: var(--space-sm);
-    margin-bottom: var(--space-md);
-    padding: var(--space-sm) var(--space-md);
-    background: var(--color-bg-info);
-    border: 1px solid var(--color-border-light);
-    border-radius: var(--radius-content);
-    font-size: var(--font-size-md);
-  }
-
-  .current-file-bar__label {
-    color: var(--color-text-secondary);
-  }
-
-  .current-file-bar__name {
-    color: var(--color-text-primary);
-    font-weight: 600;
-  }
-
-  .pipeline-workspace {
-    display: grid;
-    grid-template-columns: minmax(0, 1.8fr) minmax(19rem, 1fr);
-    align-items: start;
-    gap: var(--page-block-gap);
-    min-width: 0;
-  }
-
-  .pipeline-workspace__master,
-  .pipeline-workspace__hint {
-    min-width: 0;
-  }
-
-  .pipeline-workspace__hint {
-    display: grid;
-    min-height: 18rem;
-    place-items: center;
-    border: 1px dashed var(--color-border-light);
-    border-radius: var(--radius-content);
-    background: var(--color-bg-page);
-  }
-
-  .pipeline-workspace--empty {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  @media (max-width: 1320px) {
-    .pipeline-workspace {
-      grid-template-columns: minmax(0, 1fr);
-    }
-  }
-</style>
+<style scoped src="./FilePipelineObservability.css"></style>

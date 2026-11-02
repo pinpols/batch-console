@@ -1,0 +1,19 @@
+.governance-workspace {
+  display: flex;
+  margin-bottom: var(--space-md);
+}
+.governance-load-error {
+  margin-bottom: var(--space-md);
+}
+.governance-tabs :deep(.el-tabs__content) {
+  padding-top: 10px;
+  overflow: visible;
+}
+
+/* P2 单模式路由(/governance/queues|windows|calendars):隐藏 tab 头 */
+.governance-tabs.single-mode :deep(.el-tabs__header) {
+  display: none;
+}
+.governance-tabs.single-mode :deep(.el-tabs__content) {
+  padding-top: 0;
+}

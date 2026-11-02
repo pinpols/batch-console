@@ -28,10 +28,13 @@
         :key="card.key"
         class="ro-stat"
         :class="{ 'is-clickable': card.clickable, 'is-active': card.active }"
-        role="button"
-        :tabindex="card.clickable ? 0 : -1"
+        :role="card.clickable ? 'button' : undefined"
+        :tabindex="card.clickable ? 0 : undefined"
+        :aria-pressed="card.clickable ? card.active : undefined"
         @click="card.clickable && pickStatCard(card.key)"
         @keyup.enter="card.clickable && pickStatCard(card.key)"
+        @keydown.space="card.clickable && $event.preventDefault()"
+        @keyup.space="card.clickable && pickStatCard(card.key)"
       >
         <div class="ro-stat__head">
           <span class="ro-stat__dot" :style="{ background: card.dot }" />
@@ -60,7 +63,13 @@
               class="ro-row__code"
               :title="`${row.instanceNo} · ${row.bizDate} · ${fmtDatetime(row.startedAt)}`"
             >
-              {{ row.jobCode }}
+              <span class="ro-row__code-value">{{ row.jobCode }}</span>
+              <CopyableText
+                v-if="row.jobCode"
+                :text="String(row.jobCode)"
+                icon-only
+                :copyable="false"
+              />
             </div>
             <div>
               <span
@@ -81,10 +90,20 @@
               {{ fmtShortTime(row.startedAt) }}
             </div>
             <div class="ro-row__ops">
-              <span class="ro-row__detail" @click.stop="goJob(row)">{{ t('common.detail') }}</span>
+              <router-link
+                class="ro-row__detail"
+                :to="`/monitor/job-instances/${row.id}`"
+                @click.stop
+              >
+                {{ t('common.detail') }}
+              </router-link>
             </div>
           </div>
-          <div v-if="!jobLoading && !jobRows.length" class="ro-empty">—</div>
+          <div v-if="!jobLoading && jobError" class="ro-error" role="alert">
+            <span>{{ t('runsOverview.loadFailed') }}</span>
+            <el-button link type="primary" @click="loadJobs">{{ t('common.retry') }}</el-button>
+          </div>
+          <div v-else-if="!jobLoading && !jobRows.length" class="ro-empty">—</div>
         </div>
       </div>
 
@@ -107,6 +126,12 @@
             <div class="ro-row__name" :title="`#${row.id} · ${row.bizDate ?? ''}`">
               <span class="ro-row__id">#{{ row.id }}</span>
               <span v-if="row.currentNodeCode" class="ro-row__node">{{ row.currentNodeCode }}</span>
+              <CopyableText
+                v-if="row.currentNodeCode"
+                :text="String(row.currentNodeCode)"
+                icon-only
+                :copyable="false"
+              />
             </div>
             <div>
               <span
@@ -127,12 +152,22 @@
               {{ fmtShortTime(row.startedAt) }}
             </div>
             <div class="ro-row__ops">
-              <span class="ro-row__detail" @click.stop="goWorkflow(row)">
+              <router-link
+                class="ro-row__detail"
+                :to="`/monitor/workflow-runs/${row.id}`"
+                @click.stop
+              >
                 {{ t('common.detail') }}
-              </span>
+              </router-link>
             </div>
           </div>
-          <div v-if="!wfLoading && !wfRows.length" class="ro-empty">—</div>
+          <div v-if="!wfLoading && wfError" class="ro-error" role="alert">
+            <span>{{ t('runsOverview.loadFailed') }}</span>
+            <el-button link type="primary" @click="loadWorkflows">{{
+              t('common.retry')
+            }}</el-button>
+          </div>
+          <div v-else-if="!wfLoading && !wfRows.length" class="ro-empty">—</div>
         </div>
       </div>
     </div>
@@ -140,7 +175,8 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, reactive, ref } from 'vue'
+  import { computed, reactive, ref, watch } from 'vue'
+  import CopyableText from '@/components/common/CopyableText.vue'
   import { useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
   import { RefreshCw as Refresh } from '@lucide/vue'
@@ -151,6 +187,7 @@
   import { instanceApi } from '@/api/instance'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantReload } from '@/composables/useTenantReload'
+  import { useTenantRequestScope } from '@/composables/useTenantRequestScope'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import StatusSegment, { type StatusSegmentItem } from '@/components/table/StatusSegment.vue'
@@ -159,6 +196,9 @@
   const { t, te } = useI18n({ useScope: 'global' })
   const router = useRouter()
   const tenant = useTenantStore()
+  const jobScope = useTenantRequestScope()
+  const workflowScope = useTenantRequestScope()
+  const countsScope = useTenantRequestScope()
 
   const PAGE_SIZE = 15
 
@@ -166,6 +206,8 @@
   const wfRows = ref<ConsoleWorkflowRunResponse[]>([])
   const jobLoading = ref(false)
   const wfLoading = ref(false)
+  const jobError = ref(false)
+  const wfError = ref(false)
   const loading = computed(() => jobLoading.value || wfLoading.value)
 
   // 'all' | 'running' | 'failed' — 默认 all,oncall 切到 failed 一眼锁定挂的
@@ -221,20 +263,21 @@
   ]
 
   async function loadStatCounts() {
+    const request = countsScope.begin()
     const today = todayBusinessDate()
     await Promise.all(
       COUNT_DEFS.map(async (def) => {
         try {
           const pr = await instanceApi.list({
-            tenantId: tenant.tenantId,
+            tenantId: request.tenantId,
             instanceStatus: def.instanceStatus,
             ...(def.todayOnly ? { startDate: today, endDate: today } : {}),
             page: 1,
             pageSize: 1,
           })
-          statCounts[def.key] = pr.total ?? 0
+          if (countsScope.isCurrent(request)) statCounts[def.key] = pr.total ?? 0
         } catch {
-          statCounts[def.key] = null
+          if (countsScope.isCurrent(request)) statCounts[def.key] = null
         }
       }),
     )
@@ -291,40 +334,51 @@
   }
 
   async function loadJobs() {
+    const request = jobScope.begin()
     jobLoading.value = true
+    jobError.value = false
     try {
       const page = await instanceApi.list({
-        tenantId: tenant.tenantId,
+        tenantId: request.tenantId,
         instanceStatus: statusCode(),
         page: 1,
         pageSize: PAGE_SIZE,
       })
-      jobRows.value = page.records ?? []
+      if (jobScope.isCurrent(request)) jobRows.value = page.records ?? []
     } catch {
-      jobRows.value = []
+      if (jobScope.isCurrent(request)) {
+        jobRows.value = []
+        jobError.value = true
+      }
     } finally {
-      jobLoading.value = false
+      if (jobScope.isCurrent(request)) jobLoading.value = false
     }
   }
 
   async function loadWorkflows() {
+    const request = workflowScope.begin()
     wfLoading.value = true
+    wfError.value = false
     try {
       const page = await instanceApi.workflowRuns({
-        tenantId: tenant.tenantId,
+        tenantId: request.tenantId,
         runStatus: statusCode(),
         page: 1,
         pageSize: PAGE_SIZE,
       })
-      wfRows.value = page.records ?? []
+      if (workflowScope.isCurrent(request)) wfRows.value = page.records ?? []
     } catch {
-      wfRows.value = []
+      if (workflowScope.isCurrent(request)) {
+        wfRows.value = []
+        wfError.value = true
+      }
     } finally {
-      wfLoading.value = false
+      if (workflowScope.isCurrent(request)) wfLoading.value = false
     }
   }
 
   function loadAll() {
+    if (!tenant.tenantId) return
     void loadJobs()
     void loadWorkflows()
     void loadStatCounts()
@@ -337,6 +391,20 @@
   function goWorkflow(row: ConsoleWorkflowRunResponse) {
     router.push(`/monitor/workflow-runs/${row.id}`)
   }
+
+  watch(
+    () => tenant.tenantId,
+    () => {
+      jobRows.value = []
+      wfRows.value = []
+      jobLoading.value = false
+      wfLoading.value = false
+      jobError.value = false
+      wfError.value = false
+      for (const def of COUNT_DEFS) statCounts[def.key] = null
+    },
+    { flush: 'sync' },
+  )
 
   // useTenantReload immediate:true 已经在 setup 时调一次 loadAll;
   // 之前还重复 onMounted(loadAll),首屏会触发 2 次 GET → 删 onMounted。
@@ -460,6 +528,16 @@
     min-height: 48px;
   }
 
+  .ro-error {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-sm);
+    padding: var(--space-md);
+    color: var(--color-text-secondary);
+    font-size: 12px;
+  }
+
   .ro-row {
     display: grid;
     gap: 10px;
@@ -489,17 +567,25 @@
     font-family: var(--font-mono);
     font-size: 12px;
     color: var(--color-text-primary);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    display: flex;
+    align-items: center;
+    min-width: 0;
   }
 
   .ro-row__name {
+    display: flex;
+    align-items: center;
+    min-width: 0;
     font-size: 12px;
     color: var(--color-text-primary);
-    white-space: nowrap;
+  }
+
+  .ro-row__code-value,
+  .ro-row__node {
+    min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .ro-row__id {

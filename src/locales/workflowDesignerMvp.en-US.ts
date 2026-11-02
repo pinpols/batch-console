@@ -2,6 +2,7 @@ import workflowDesignerDependency from './workflowDesignerDependency.en-US.ts'
 import workflowDesignerJobDependencies from './workflowDesignerJobDependencies.en-US.ts'
 
 export default {
+  joinModeLabels: { ALL: 'All', ANY: 'Any', N_OF: 'At least N' },
   systemManagedSingleJobGraph:
     'The default single-job workflow graph is system-managed. Edit the Job Definition to change Job settings.',
   nodeGateway: 'GATEWAY',
@@ -18,6 +19,27 @@ export default {
   inspectorTitle: 'Properties',
   inspectorAriaLabel: 'Workflow element properties panel',
   readonlyTag: 'Read-only',
+  drafts: {
+    pending: '{count} unapplied inspector drafts',
+    current: 'Current canvas value',
+    proposed: 'Draft value',
+    missing: 'Element deleted',
+    useDraft: 'Apply draft to canvas',
+    discard: 'Discard this draft',
+    discardConfirm: 'Discard this unapplied draft? This cannot be undone.',
+    resolveBeforeSave: 'Resolve the inspector draft conflicts or invalid values before saving.',
+    resolveBeforeJson: 'Resolve inspector drafts before applying JSON.',
+    resolveThresholdBeforeMode:
+      'Apply or discard the join threshold draft before changing the join mode.',
+    fields: {
+      nodeName: 'Node name',
+      nodeSkipExpression: 'Skip expression',
+      edgeCondition: 'Condition',
+      nodeMaxRetries: 'Max retries',
+      nodeTimeoutSeconds: 'Timeout seconds',
+      gatewayThreshold: 'Join threshold',
+    },
+  },
   noSelectNotice: 'Select a node or edge to view its properties',
   multiSelectNotice: 'Multiple nodes selected; pick one to edit',
   untitledWorkflow: 'Untitled workflow',
@@ -34,6 +56,7 @@ export default {
   dependencyPickerAria: 'Dependency edge picker',
   jobDependencies: workflowDesignerJobDependencies,
   saveOk: 'Saved',
+  finishComposition: 'Finish text composition before saving',
   saveFailed: 'Save failed',
   saveNeedsId: 'workflowId is required to save',
   mobileDesignerGuard:
@@ -52,10 +75,10 @@ export default {
     nodeType: 'Node type',
     nodeCode: 'Node code',
     nodeName: 'Node name',
-    jobCode: 'Linked Job',
-    jobCodePlaceholder: 'Select or enter jobCode',
+    jobCode: 'Linked job',
+    jobCodePlaceholder: 'Select or enter a job code',
     windowCode: 'Batch window',
-    windowCodePlaceholder: 'Inherit the Job default or select a window',
+    windowCodePlaceholder: 'Inherit job default',
     maxRetries: 'Max retries',
     timeoutSeconds: 'Timeout (s)',
     skipExpression: 'Skip expression',
@@ -107,7 +130,9 @@ export default {
     cycleNode: 'Node participates in a cycle',
     joinModeRequired: 'Join mode must be ALL, ANY, or N_OF',
     joinThresholdRange: 'Required count must be an integer from 1 to {count}',
-    jobCodeRequired: 'jobCode is required',
+    jobCodeRequired: 'Select or enter a job code',
+    nodeNameTooLong: 'Node name must be at most 256 characters',
+    conditionExprTooLong: 'Edge expression must be at most 1024 characters',
     startInDegree: 'START node should have no incoming edges (currently {count})',
     endOutDegree: 'END node should have no outgoing edges (currently {count})',
     noOutEdge: 'This node has no outgoing edge and cannot reach downstream',

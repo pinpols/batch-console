@@ -40,9 +40,11 @@
                 />
               </el-select>
             </el-form-item>
-            <el-button type="primary" :loading="calendarLoading" @click="loadCalendar">
-              {{ t('common.search') }}
-            </el-button>
+            <el-form-item>
+              <el-button type="primary" :loading="calendarLoading" @click="loadCalendar">
+                {{ t('common.search') }}
+              </el-button>
+            </el-form-item>
           </el-form>
           <el-alert
             v-if="calendarError"
@@ -52,6 +54,7 @@
             show-icon
           />
           <CalendarDependencyWaitTable
+            v-if="!calendarError"
             :waits="calendarWaits"
             :loading="calendarLoading"
             :can-write-system="canWriteSystem"
@@ -76,9 +79,11 @@
                 />
               </el-select>
             </el-form-item>
-            <el-button type="primary" :loading="jobLoading" @click="loadJobs">
-              {{ t('common.search') }}
-            </el-button>
+            <el-form-item>
+              <el-button type="primary" :loading="jobLoading" @click="loadJobs">
+                {{ t('common.search') }}
+              </el-button>
+            </el-form-item>
           </el-form>
           <el-alert
             v-if="jobError"
@@ -87,7 +92,7 @@
             :closable="false"
             show-icon
           />
-          <JobDependencyWaitTable :waits="jobWaits" :loading="jobLoading" />
+          <JobDependencyWaitTable v-if="!jobError" :waits="jobWaits" :loading="jobLoading" />
           <p class="dependency-waits__hint">
             {{ t('dependencyWaits.noJobActionHint') }} {{ t('dependencyWaits.limitHint') }}
           </p>
@@ -145,13 +150,15 @@
                 :placeholder="t('dependencyWaits.toDate')"
               />
             </el-form-item>
-            <el-button
-              type="primary"
-              :loading="persistentLoading"
-              @click="loadPersistentWaits(true)"
-            >
-              {{ t('common.search') }}
-            </el-button>
+            <el-form-item>
+              <el-button
+                type="primary"
+                :loading="persistentLoading"
+                @click="loadPersistentWaits(true)"
+              >
+                {{ t('common.search') }}
+              </el-button>
+            </el-form-item>
           </el-form>
           <el-alert
             v-if="persistentError"
@@ -160,8 +167,13 @@
             :closable="false"
             show-icon
           />
-          <PersistentWaitTable :waits="persistentWaits" :loading="persistentLoading" />
+          <PersistentWaitTable
+            v-if="!persistentError"
+            :waits="persistentWaits"
+            :loading="persistentLoading"
+          />
           <el-pagination
+            v-if="!persistentError"
             v-model:current-page="persistentPageNo"
             v-model:page-size="persistentPageSize"
             class="dependency-waits__pagination"
@@ -513,6 +525,10 @@
 
   .dependency-waits__status {
     min-width: 150px;
+  }
+
+  .dependency-waits :deep(.el-table__empty-text) {
+    line-height: 1.5;
   }
 
   .dependency-waits__hint {

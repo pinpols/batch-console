@@ -16,9 +16,8 @@
       ref="formRef"
       :model="form"
       :rules="rules"
-      label-width="84px"
-      label-position="right"
-      class="mini-create-form form-preserve-label-position"
+      label-position="top"
+      class="mini-create-form"
       @submit.prevent="submit"
     >
       <el-form-item :label="t('jobConfigBasic.miniCalendarCode')" prop="calendarCode">
@@ -79,6 +78,7 @@
    */
   import { reactive, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
+  import { useTenantRequestScope } from '@/composables/useTenantRequestScope'
   import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
   import { governanceApi, type GovernanceCalendarSavePayload } from '@/api/governance'
   import { useDirtyForm } from '@/composables/useDirtyForm'
@@ -107,6 +107,7 @@
   ] as const
 
   const formRef = ref<FormInstance>()
+  const submitScope = useTenantRequestScope()
   const saving = ref(false)
   const form = reactive<GovernanceCalendarSavePayload>({
     tenantId: props.tenantId,
@@ -155,6 +156,16 @@
     ],
     timezone: [
       { required: true, message: t('jobConfigBasic.miniTimezoneRequired'), trigger: 'change' },
+      {
+        validator: (_rule, value: unknown, callback) => {
+          if (typeof value === 'string' && value.length > 64) {
+            callback(new Error(t('common.maxLength', { max: 64 })))
+          } else {
+            callback()
+          }
+        },
+        trigger: 'change',
+      },
     ],
   }
 
@@ -178,12 +189,21 @@
   }
 
   async function submit() {
+    const scope = submitScope.begin()
+    const targetTenant = props.tenantId
     const valid = await formRef.value?.validate().catch(() => false)
-    if (!valid) return
+    if (
+      !valid ||
+      !submitScope.isCurrent(scope) ||
+      !visible.value ||
+      props.tenantId !== targetTenant
+    )
+      return
     saving.value = true
     try {
-      const payload: GovernanceCalendarSavePayload = { ...form, tenantId: props.tenantId }
+      const payload: GovernanceCalendarSavePayload = { ...form, tenantId: targetTenant }
       await governanceApi.createCalendar(payload)
+      if (!submitScope.isCurrent(scope) || !visible.value) return
       ElMessage.success(t('jobConfigBasic.miniCalendarCreated', { code: form.calendarCode }))
       emit('created', form.calendarCode || '')
       dirty.markPristine()
@@ -191,6 +211,7 @@
       form.calendarCode = ''
       form.calendarName = ''
     } catch (err) {
+      if (!submitScope.isCurrent(scope) || !visible.value) return
       const message = userErrorMessage(err)
       ElMessage.error(t('jobConfigBasic.miniCalendarCreateFailed', { message }))
     } finally {
@@ -223,6 +244,11 @@
 
   .mini-create-form :deep(.el-form-item) {
     margin-bottom: 16px;
+  }
+
+  .mini-create-form :deep(.el-form-item__error) {
+    position: static;
+    width: 100%;
   }
 
   .mini-create-form :deep(.el-form-item:last-of-type) {

@@ -29,7 +29,6 @@
                 v-model="kwDraft"
                 clearable
                 :placeholder="t('triggerList.workflowCodePlaceholder')"
-                @keyup.enter="onSearch"
               />
             </el-form-item>
           </ListPageQueryBar>
@@ -61,12 +60,22 @@
         </el-table-column>
         <el-table-column :label="t('triggerList.colCron')" min-width="160" show-overflow-tooltip>
           <template #default="{ row }">
-            <code v-if="row.cronExpression" class="cell-code">{{ row.cronExpression }}</code>
+            <CopyableText
+              v-if="row.cronExpression"
+              :text="String(row.cronExpression)"
+              :copyable="false"
+            >
+              <code class="cell-code">{{ row.cronExpression }}</code>
+            </CopyableText>
             <span v-else class="cell-empty">—</span>
           </template>
         </el-table-column>
         <DatetimeColumn prop="nextFireTime" :label="t('triggerList.colNextFire')" width="160" />
-        <el-table-column :label="t('triggerList.colActions')" width="280" fixed="right">
+        <el-table-column
+          :label="t('triggerList.colActions')"
+          width="280"
+          :fixed="isMobile ? false : 'right'"
+        >
           <template #default="{ row }">
             <div class="table-actions">
               <el-button
@@ -132,9 +141,11 @@
   import { ElMessage } from 'element-plus'
   import { confirmDanger } from '@/composables/useDangerConfirm'
   import { useWriteAvailability } from '@/composables/useWriteAvailability'
+  import { useResponsive } from '@/composables/useResponsive'
 
   const { t, te } = useI18n({ useScope: 'global' })
   const { writesFrozen, ensureWriteAvailable } = useWriteAvailability()
+  const { isMobile } = useResponsive()
 
   function resolveTriggerType(value?: string | null): string {
     if (!value) return '—'

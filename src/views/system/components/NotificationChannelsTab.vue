@@ -34,7 +34,6 @@
               v-model="channelFilterDraft.keyword"
               clearable
               :placeholder="t('notificationChannelsTab.kwPlaceholder')"
-              @keyup.enter="applyChannelFilter"
             />
           </el-form-item>
           <el-form-item :label="t('notificationCommon.enabledLabel')">
@@ -45,17 +44,23 @@
           </el-form-item>
         </ListPageQueryBar>
       </template>
-      <el-table-column
-        prop="channelCode"
-        :label="t('notificationChannelsTab.colCode')"
-        width="160"
-      />
+      <el-table-column prop="channelCode" :label="t('notificationChannelsTab.colCode')" width="160">
+        <template #default="{ row }">
+          <CopyableText v-if="row.channelCode" :text="String(row.channelCode)" />
+          <span v-else class="cell-empty">—</span>
+        </template>
+      </el-table-column>
       <el-table-column
         prop="channelName"
         :label="t('notificationChannelsTab.colName')"
         min-width="160"
         show-overflow-tooltip
-      />
+      >
+        <template #default="{ row }">
+          <CopyableText v-if="row.channelName" :text="String(row.channelName)" />
+          <span v-else class="cell-empty">—</span>
+        </template>
+      </el-table-column>
       <el-table-column prop="channelType" :label="t('notificationChannelsTab.colType')" width="120">
         <template #default="{ row }">
           <StatusTag
@@ -97,12 +102,13 @@
       size="640px"
       :close-on-click-modal="false"
       :before-close="onChannelFormClose"
+      @opened="onChannelFormOpened"
     >
       <el-form
         ref="channelFormRef"
         :model="channelForm"
         :rules="channelFormRules"
-        label-width="88px"
+        label-position="top"
       >
         <el-form-item :label="t('notificationChannelsTab.fieldCode')" prop="channelCode">
           <el-input
@@ -159,6 +165,7 @@
 </template>
 
 <script setup lang="ts">
+  import CopyableText from '@/components/common/CopyableText.vue'
   import { ref, reactive, computed, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage, ElMessageBox } from 'element-plus'
@@ -265,7 +272,12 @@
   const channelDirty = useDirtyForm(() => channelForm, {
     enabled: () => channelFormVisible.value,
   })
-  useFormFocus(channelFormRef, () => channelFormVisible.value)
+  const { focusFirst: focusChannelForm } = useFormFocus(channelFormRef)
+
+  function onChannelFormOpened() {
+    channelFormRef.value?.clearValidate()
+    focusChannelForm()
+  }
 
   function openChannelCreate() {
     if (!tenant.tenantId) return
@@ -341,7 +353,8 @@
     const submittedTenantId = channelFormTenantId.value
     if (!submittedTenantId || submittedTenantId !== tenant.tenantId) return
     if (!(await validateChannelForm())) return
-    if (submittedTenantId !== channelFormTenantId.value || submittedTenantId !== tenant.tenantId) return
+    if (submittedTenantId !== channelFormTenantId.value || submittedTenantId !== tenant.tenantId)
+      return
     savingChannel.value = true
     try {
       const body = { ...channelForm }
@@ -430,21 +443,25 @@
     })
   }
 
-  watch(() => tenant.tenantId, (tenantId) => {
-    channelRequestFence.invalidate()
-    channels.value = []
-    channelPage.value = 1
-    if (channelFormTenantId.value !== tenantId) {
-      channelFormVisible.value = false
-      channelFormTenantId.value = null
-      channelEditingCode.value = null
-    }
-    if (tenantId) void loadChannels()
-    else {
-      loadingChannels.value = false
-      loadChannelsError.value = null
-    }
-  }, { immediate: true })
+  watch(
+    () => tenant.tenantId,
+    (tenantId) => {
+      channelRequestFence.invalidate()
+      channels.value = []
+      channelPage.value = 1
+      if (channelFormTenantId.value !== tenantId) {
+        channelFormVisible.value = false
+        channelFormTenantId.value = null
+        channelEditingCode.value = null
+      }
+      if (tenantId) void loadChannels()
+      else {
+        loadingChannels.value = false
+        loadChannelsError.value = null
+      }
+    },
+    { immediate: true },
+  )
 
   defineExpose({ openChannelCreate })
 </script>

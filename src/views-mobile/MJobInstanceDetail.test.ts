@@ -87,6 +87,32 @@ afterEach(() => {
 })
 
 describe('mobile Job notification target', () => {
+  it('详情加载失败时显示重试，不误报实例不存在', async () => {
+    vi.mocked(instanceApi.detail).mockRejectedValueOnce(new Error('network'))
+    const wrapper = render()
+    await flushPromises()
+    expect(wrapper.text()).toContain('mobile.common.loadFail')
+    expect(wrapper.text()).not.toContain('mobile.jobDetail.empty')
+    await wrapper.get('.m-detail-load-error button').trigger('click')
+    await flushPromises()
+    expect(wrapper.text()).toContain('JOB_ta')
+    expect(instanceApi.detail).toHaveBeenCalledTimes(2)
+  })
+
+  it('步骤加载失败时显示重试，不误报步骤为空', async () => {
+    vi.mocked(instanceApi.partitions).mockRejectedValueOnce(new Error('network'))
+    const wrapper = render()
+    await flushPromises()
+    expect(wrapper.text()).toContain('JOB_ta')
+    expect(wrapper.text()).toContain('mobile.common.loadFail')
+    expect(wrapper.text()).not.toContain('mobile.jobDetail.stepEmpty')
+    await wrapper.get('.m-step-load-error button').trigger('click')
+    await flushPromises()
+    expect(wrapper.text()).toContain('mobile.jobDetail.stepEmpty')
+    expect(instanceApi.detail).toHaveBeenCalledTimes(1)
+    expect(instanceApi.partitions).toHaveBeenCalledTimes(2)
+  })
+
   it.each(['FAILED', 'RUNNING'])('无系统写权限时隐藏 %s 的恢复操作', async (status) => {
     state.permission.allowed = false
     vi.mocked(instanceApi.detail).mockResolvedValue(job('ta', status))

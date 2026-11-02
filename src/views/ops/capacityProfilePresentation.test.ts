@@ -34,14 +34,14 @@ describe('capacityProfilePresentation', () => {
     expect(buckets[0].to).toBe(buckets[1].from)
   })
 
-  it('maps partial bucket responses to truthful zero-filled trend points', () => {
+  it('缺失的时间段显示为未知而不是零', () => {
     const buckets = buildCapacityBuckets(['2026-09-01T00:00:00Z', '2026-09-01T02:00:00Z'])
     const report = {
       totals: { instanceCount: 4, taskCount: 9 },
     } as CapacityProfileReport
     expect(buildCapacityTrend(buckets, [report, null])).toMatchObject([
       { instanceCount: 4, taskCount: 9 },
-      { instanceCount: 0, taskCount: 0 },
+      { instanceCount: null, taskCount: null },
     ])
   })
 

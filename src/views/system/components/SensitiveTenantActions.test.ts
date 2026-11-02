@@ -112,6 +112,23 @@ describe('sensitive actions retain their tenant target', () => {
       fn.mockReset().mockResolvedValue(undefined)
   })
 
+  it('rejects secret JSON beyond the backend UTF-16 length limit', async () => {
+    const wrapper = mount(ConfigSecretsTab, { global: { stubs } })
+    await flushPromises()
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'rotate')!
+      .trigger('click')
+    await flushPromises()
+    const validator = state.prompt.mock.calls[0][2].inputValidator as (
+      value: string,
+    ) => true | string
+    expect(validator('{}' + ' '.repeat(65533))).toBe(true)
+    expect(validator('{}' + ' '.repeat(65534))).toBe('form.maxLength')
+    expect(validator('"' + '😀'.repeat(32767) + '"')).toBe('form.maxLength')
+    wrapper.unmount()
+  })
+
   it.each([
     { action: 'rotate', api: state.rotate },
     { action: 'revoke', api: state.revoke },

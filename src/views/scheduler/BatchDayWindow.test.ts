@@ -7,6 +7,7 @@ import { createI18n } from 'vue-i18n'
 
 const {
   queryBatchDayWindow,
+  routeState,
   catchUpScheduledOccurrence,
   tenantStore,
   launchBatchDayCatchUp,
@@ -17,6 +18,7 @@ const {
   canManage,
 } = vi.hoisted(() => ({
   queryBatchDayWindow: vi.fn(),
+  routeState: { calendarCode: 'CALENDAR' },
   launchBatchDayCatchUp: vi.fn(),
   getBatchDayCatchUpRequestStatus: vi.fn(),
   reconcileBatchDayCatchUpRequest: vi.fn(),
@@ -36,7 +38,7 @@ vi.mock('@/api/batchDays', () => ({
   queryBatchDayWindow,
 }))
 vi.mock('vue-router', () => ({
-  useRoute: () => ({ params: { bizDate: '2026-10-15' }, query: { calendarCode: 'CALENDAR' } }),
+  useRoute: () => ({ params: { bizDate: '2026-10-15' }, query: routeState }),
   useRouter: () => ({ replace: vi.fn() }),
 }))
 vi.mock('@/stores/auth', () => ({ useAuthStore: () => ({ userInfo: { username: 'admin' } }) }))
@@ -157,6 +159,7 @@ const i18n = createI18n({
   messages: {
     'zh-CN': {
       common: { noData: '无数据', cancel: '取消' },
+      batchDayGovernance: { dayStatuses: { OPEN: '开放' } },
       batchDayWindow: {
         description: '窗口',
         refresh: '刷新',
@@ -216,6 +219,7 @@ describe('BatchDayWindow', () => {
     continueBatchDayCatchUpRequest.mockReset()
     abandonUnpreparedBatchDayCatchUp.mockReset()
     tenantStore.tenantId = 'tenant-a'
+    routeState.calendarCode = 'CALENDAR'
     queryBatchDayWindow.mockReset()
     catchUpScheduledOccurrence.mockReset()
   })
@@ -236,8 +240,18 @@ describe('BatchDayWindow', () => {
           occurrenceStatus: 'PLANNED',
           catchUpPolicy: 'AUTO',
           actualFires: [
-            { fireInstanceId: 'fire-1', refireCount: 0, actualFireTime: '2026-10-15T01:02:00Z', fireKind: 'SCHEDULED' },
-            { fireInstanceId: 'fire-2', refireCount: 0, actualFireTime: '2026-10-15T01:03:00Z', fireKind: 'READINESS_RETRY' },
+            {
+              fireInstanceId: 'fire-1',
+              refireCount: 0,
+              actualFireTime: '2026-10-15T01:02:00Z',
+              fireKind: 'SCHEDULED',
+            },
+            {
+              fireInstanceId: 'fire-2',
+              refireCount: 0,
+              actualFireTime: '2026-10-15T01:03:00Z',
+              fireKind: 'READINESS_RETRY',
+            },
           ],
         },
         {
@@ -288,6 +302,135 @@ describe('BatchDayWindow', () => {
     expect(milestones[3].text()).toContain('—')
     wrapper.unmount()
   })
+
+  it('以可读名称显示已知批次日状态并保留未知值', async () => {
+    queryBatchDayWindow.mockResolvedValue({
+      bizDate: '2026-10-15',
+      dayStatus: 'OPEN',
+      jobs: [],
+      scheduledOccurrences: [],
+    })
+    const wrapper = mountBatchDayWindow()
+    await flushPromises()
+    expect(wrapper.text()).toContain('开放')
+    wrapper.unmount()
+
+    queryBatchDayWindow.mockResolvedValue({
+      bizDate: '2026-10-15',
+      dayStatus: 'FUTURE_STATE',
+      jobs: [],
+      scheduledOccurrences: [],
+    })
+    const unknown = mountBatchDayWindow()
+    await flushPromises()
+    expect(unknown.text()).toContain('FUTURE_STATE')
+    unknown.unmount()
+  })
+
+  it('按视口宽度调整窗口状态摘要列数', async () => {
+    const originalWidth = window.innerWidth
+    queryBatchDayWindow.mockResolvedValue({
+      bizDate: '2026-10-15',
+      dayStatus: 'OPEN',
+      jobs: [],
+      scheduledOccurrences: [],
+    })
+    try {
+      window.innerWidth = 390
+      const narrow = mountBatchDayWindow()
+      await flushPromises()
+      expect(narrow.find('[column="1"]').exists()).toBe(true)
+      narrow.unmount()
+
+      window.innerWidth = 1280
+      const wide = mountBatchDayWindow()
+      await flushPromises()
+      expect(wide.find('[column="2"]').exists()).toBe(true)
+      wide.unmount()
+    } finally {
+      window.innerWidth = originalWidth
+    }
+  })
+
+  it.each([
+    ['calendar', 'c'.repeat(129), '', ''],
+    ['job', 'CALENDAR', 'j'.repeat(129), ''],
+    ['reason', 'CALENDAR', '', 'r'.repeat(513)],
+    ['emoji job', 'CALENDAR', '😀'.repeat(65), ''],
+    ['emoji reason', 'CALENDAR', '', '😀'.repeat(257)],
+  ])('补扫 %s 超限时保留输入且不存请求键', async (_name, calendar, jobs, reason) => {
+    canManage.value = true
+    routeState.calendarCode = calendar
+    queryBatchDayWindow.mockResolvedValue({ jobs: [], scheduledOccurrences: [] })
+    const wrapper = mountBatchDayWindow()
+    await flushPromises()
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === '补跑')!
+      .trigger('click')
+    const fields = wrapper.findAll('textarea')
+    await fields[0].setValue(jobs)
+    await fields[1].setValue(reason)
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === '提交')!
+      .trigger('click')
+    await flushPromises()
+    expect(launchBatchDayCatchUp).not.toHaveBeenCalled()
+    expect(localStorage.length).toBe(0)
+    expect(wrapper.findAll('textarea')).toHaveLength(2)
+    wrapper.unmount()
+  })
+
+  it.each([
+    [
+      'j'.repeat(128) + '， JOB_TWO',
+      'r'.repeat(512),
+      ['j'.repeat(128), 'JOB_TWO'],
+      'r'.repeat(512),
+    ],
+    ['', '', undefined, undefined],
+    ['，, ', '  ', [], '  '],
+    ['😀'.repeat(64), '😀'.repeat(256), ['😀'.repeat(64)], '😀'.repeat(256)],
+  ])(
+    '补扫按实际拆分口径接受边界和可选输入 %#',
+    async (jobs, reason, expectedJobs, expectedReason) => {
+      canManage.value = true
+      routeState.calendarCode = 'c'.repeat(128)
+      queryBatchDayWindow.mockResolvedValue({ jobs: [], scheduledOccurrences: [] })
+      launchBatchDayCatchUp.mockRejectedValue(new Error('response lost'))
+      getBatchDayCatchUpRequestStatus.mockResolvedValue({
+        found: false,
+        tenantId: 'tenant-a',
+        items: [],
+      })
+      const wrapper = mountBatchDayWindow()
+      await flushPromises()
+      await wrapper
+        .findAll('button')
+        .find((button) => button.text() === '补跑')!
+        .trigger('click')
+      const fields = wrapper.findAll('textarea')
+      await fields[0].setValue(jobs)
+      await fields[1].setValue(reason)
+      await wrapper
+        .findAll('button')
+        .find((button) => button.text() === '提交')!
+        .trigger('click')
+      await flushPromises()
+      expect(launchBatchDayCatchUp).toHaveBeenCalledWith(
+        '2026-10-15',
+        {
+          tenantId: 'tenant-a',
+          calendarCode: 'c'.repeat(128),
+          jobCodes: expectedJobs,
+          reason: expectedReason,
+        },
+        expect.any(String),
+      )
+      wrapper.unmount()
+    },
+  )
 
   it('retains the original catch-up key after a lost response and restores status on reload', async () => {
     canManage.value = true
@@ -906,6 +1049,7 @@ function mountBatchDayWindow() {
         ElDrawer: { template: '<div><slot /><slot name="footer" /></div>' },
         ElDialog: ElDialogStub,
         DatetimeText: { props: ['value'], template: "<span>{{ value ?? '—' }}</span>" },
+        CopyableText: { props: ['text'], template: '<span><slot>{{ text }}</slot></span>' },
         PageContainer: { template: '<main><slot /></main>' },
         PageHeader: { template: '<header><slot /><slot name="actions" /></header>' },
         SectionCard: { template: '<section><slot name="header" /><slot /></section>' },

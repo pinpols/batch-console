@@ -24,9 +24,12 @@
         min-width="180"
       >
         <template #default="{ row }">
-          <router-link class="cell-link" :to="`/monitor/job-instances/${row.id}`">
-            {{ row.instanceNo }}
-          </router-link>
+          <CopyableText v-if="row.instanceNo" :text="String(row.instanceNo)" :copy-on-click="false">
+            <router-link class="cell-link" :to="`/monitor/job-instances/${row.id}`">
+              {{ row.instanceNo }}
+            </router-link>
+          </CopyableText>
+          <span v-else class="cell-empty">—</span>
         </template>
       </el-table-column>
       <el-table-column
@@ -34,7 +37,12 @@
         :label="t('selfServicePanel.colJobCode')"
         min-width="160"
         show-overflow-tooltip
-      />
+      >
+        <template #default="{ row }">
+          <CopyableText v-if="row.jobCode" :text="String(row.jobCode)" />
+          <span v-else class="cell-empty">—</span>
+        </template>
+      </el-table-column>
       <el-table-column prop="bizDate" :label="t('selfServicePanel.colBizDate')" width="110" />
       <el-table-column :label="t('selfServicePanel.colFinishedAt')" width="170">
         <template #default="{ row }">{{ fmtDatetime(row.finishedAt) }}</template>
@@ -57,6 +65,7 @@
 </template>
 
 <script setup lang="ts">
+  import CopyableText from '@/components/common/CopyableText.vue'
   import { ref, watch } from 'vue'
   import { useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'

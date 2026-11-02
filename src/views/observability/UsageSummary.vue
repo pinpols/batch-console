@@ -29,7 +29,12 @@
           </el-select>
         </el-form-item>
         <el-form-item :label="t('usageSummary.page')">
-          <el-input v-model="pageCode" clearable :placeholder="t('usageSummary.pagePlaceholder')" />
+          <el-input
+            v-model="pageCode"
+            class="query-w-280"
+            clearable
+            :placeholder="t('usageSummary.pagePlaceholder')"
+          />
         </el-form-item>
         <el-form-item>
           <el-button
@@ -107,18 +112,16 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column
-          prop="pageCode"
-          :label="t('usageSummary.page')"
-          min-width="180"
-          show-overflow-tooltip
-        />
-        <el-table-column
-          prop="appVersion"
-          :label="t('usageSummary.version')"
-          width="125"
-          show-overflow-tooltip
-        />
+        <el-table-column prop="pageCode" :label="t('usageSummary.page')" min-width="180">
+          <template #default="{ row }"
+            ><CopyableText v-if="row.pageCode" :text="row.pageCode"
+          /></template>
+        </el-table-column>
+        <el-table-column prop="appVersion" :label="t('usageSummary.version')" width="125">
+          <template #default="{ row }"
+            ><CopyableText v-if="row.appVersion" :text="row.appVersion"
+          /></template>
+        </el-table-column>
         <el-table-column
           prop="eventCount"
           :label="t('usageSummary.events')"
@@ -162,6 +165,7 @@
   import { queryUsageSummary, type UsageSummaryRow } from '@/api/usage'
   import DateRangePresetPicker from '@/components/common/DateRangePresetPicker.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
+  import CopyableText from '@/components/common/CopyableText.vue'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import { useTenantReload } from '@/composables/useTenantReload'
@@ -290,6 +294,14 @@
   }
   .usage-filters :deep(.el-form-item) {
     margin-bottom: var(--space-sm);
+    max-width: 100%;
+  }
+  .usage-filters :deep(.el-form-item__content) {
+    min-width: 0;
+    max-width: 100%;
+  }
+  .usage-filters :deep(.query-w-280) {
+    max-width: 100%;
   }
   .usage-error {
     color: var(--color-danger);

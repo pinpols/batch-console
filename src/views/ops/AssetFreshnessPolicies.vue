@@ -25,6 +25,7 @@
         <el-form-item :label="t('assetFreshness.assetCode')">
           <el-input
             v-model="query.assetCode"
+            class="query-w-240"
             clearable
             :placeholder="t('assetFreshness.assetCodePlaceholder')"
           />
@@ -54,13 +55,23 @@
         class="console-table"
         :empty-text="t('common.noData')"
       >
-        <el-table-column prop="assetCode" :label="t('assetFreshness.assetCode')" min-width="180" />
+        <el-table-column prop="assetCode" :label="t('assetFreshness.assetCode')" min-width="180">
+          <template #default="{ row }">
+            <CopyableText v-if="row.assetCode" :text="row.assetCode" />
+            <span v-else>—</span>
+          </template>
+        </el-table-column>
         <el-table-column
           prop="expectedByLocalTime"
           :label="t('assetFreshness.expectedBy')"
           width="150"
         />
-        <el-table-column prop="timezone" :label="t('assetFreshness.timezone')" width="160" />
+        <el-table-column prop="timezone" :label="t('assetFreshness.timezone')" width="160">
+          <template #default="{ row }">
+            <CopyableText v-if="row.timezone" :text="row.timezone" />
+            <span v-else>—</span>
+          </template>
+        </el-table-column>
         <el-table-column :label="t('assetFreshness.staleAfter')" width="150" align="right">
           <template #default="{ row }">{{ formatSeconds(row.staleAfterSeconds) }}</template>
         </el-table-column>
@@ -71,7 +82,11 @@
         />
         <el-table-column prop="severity" :label="t('assetFreshness.severity')" width="120">
           <template #default="{ row }">
-            <el-tag :type="severityTag(row.severity)" effect="plain">{{ row.severity }}</el-tag>
+            <el-tag :type="severityTag(row.severity)" effect="plain">{{
+              te(`enum.severity.${row.severity}`)
+                ? t(`enum.severity.${row.severity}`)
+                : row.severity
+            }}</el-tag>
           </template>
         </el-table-column>
         <el-table-column prop="enabled" :label="t('assetFreshness.enabled')" width="110">
@@ -91,6 +106,7 @@
                 :icon="Edit"
                 text
                 type="primary"
+                :aria-label="t('assetFreshness.editPolicy', { code: row.assetCode })"
                 :disabled="writesFrozen"
                 @click="openEdit(row as AssetFreshnessPolicy)"
               />
@@ -114,7 +130,7 @@
       direction="rtl"
       size="520px"
     >
-      <el-form id="asset-freshness-form" label-width="150px" :model="form" @submit.prevent="save">
+      <el-form id="asset-freshness-form" label-position="top" :model="form" @submit.prevent="save">
         <el-form-item :label="t('assetFreshness.assetCode')" required>
           <el-input
             v-model="form.assetCode"
@@ -134,7 +150,7 @@
             :placeholder="t('assetFreshness.timezonePlaceholder')"
           />
         </el-form-item>
-        <el-form-item :label="t('assetFreshness.staleAfter')">
+        <el-form-item :label="t('assetFreshness.staleAfterSeconds')">
           <el-input-number v-model="form.staleAfterSeconds" :min="0" controls-position="right" />
         </el-form-item>
         <el-form-item :label="t('assetFreshness.lookbackDays')">
@@ -197,12 +213,13 @@
   import { useTenantReload } from '@/composables/useTenantReload'
   import { userErrorMessage } from '@/utils/userErrorMessage'
   import PageContainer from '@/components/common/PageContainer.vue'
+  import CopyableText from '@/components/common/CopyableText.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import TablePagerBar from '@/components/table/TablePagerBar.vue'
 
-  const { t } = useI18n({ useScope: 'global' })
+  const { t, te } = useI18n({ useScope: 'global' })
   const { writesFrozen, ensureWriteAvailable } = useWriteAvailability()
   const tenant = useTenantStore()
   const rows = ref<AssetFreshnessPolicy[]>([])
@@ -327,11 +344,20 @@
       ElMessage.warning(t('assetFreshness.required'))
       return
     }
+    const assetCode = form.assetCode.trim()
+    if (assetCode.length > 128) {
+      ElMessage.warning(`${t('assetFreshness.assetCode')}: ${t('form.maxLength', { max: 128 })}`)
+      return
+    }
+    if ((form.timezone?.length ?? 0) > 64) {
+      ElMessage.warning(`${t('assetFreshness.timezone')}: ${t('form.maxLength', { max: 64 })}`)
+      return
+    }
     saving.value = true
     try {
       const payload: AssetFreshnessPolicyUpsertRequest = {
         ...form,
-        assetCode: form.assetCode.trim(),
+        assetCode,
       }
       if (editingId.value)
         await updateAssetFreshnessPolicy(editingId.value, tenant.tenantId, payload)
@@ -365,5 +391,10 @@
 <style scoped>
   .mt {
     margin-top: var(--page-block-gap);
+  }
+
+  #asset-freshness-form :deep(.el-date-editor),
+  #asset-freshness-form :deep(.el-input-number) {
+    width: 100%;
   }
 </style>

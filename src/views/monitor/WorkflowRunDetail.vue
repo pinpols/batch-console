@@ -54,7 +54,7 @@
 
     <SectionCard v-if="run">
       <template #header>{{ t('monitor.runDetailMaster') }}</template>
-      <el-descriptions :column="2" border>
+      <el-descriptions :column="isMobile ? 1 : 2" border>
         <el-descriptions-item :label="t('monitor.runDetailRunId')">
           {{ run.id }}
         </el-descriptions-item>
@@ -62,7 +62,7 @@
           {{ run.workflowDefinitionId }}
         </el-descriptions-item>
         <el-descriptions-item :label="t('monitor.runDetailStatus')">
-          {{ run.runStatus }}
+          <StatusTag :value="run.runStatus" category="workflow" />
         </el-descriptions-item>
         <el-descriptions-item :label="t('monitor.runDetailCurrentNode')">
           <span data-testid="workflow-progress-focus">{{
@@ -119,7 +119,6 @@
               v-model="nodeFilterDraft.nodeCode"
               clearable
               :placeholder="t('monitor.nodeFilterCodePlaceholder')"
-              @keyup.enter="applyNodeFilter"
             />
           </el-form-item>
           <el-form-item :label="t('monitor.nodeFilterStatusLabel')">
@@ -165,7 +164,7 @@
                 </el-alert>
                 <template v-else-if="executionDetails[row.jobInstanceId]?.instance">
                   <div class="node-execution-detail__heading">
-                    <el-descriptions :column="3" border size="small">
+                    <el-descriptions :column="isMobile ? 1 : 3" border size="small">
                       <el-descriptions-item :label="t('monitor.nodeExecutionJob')">
                         {{ executionDetails[row.jobInstanceId].instance?.jobCode }}
                       </el-descriptions-item>
@@ -214,7 +213,16 @@
                         prop="partitionKey"
                         :label="t('monitor.nodeExecutionPartitionKey')"
                         min-width="160"
-                      />
+                      >
+                        <template #default="{ row: partition }">
+                          <CopyableText
+                            v-if="partition.partitionKey"
+                            :text="String(partition.partitionKey)"
+                            :copyable="false"
+                          />
+                          <span v-else>{{ partition.partitionKey }}</span>
+                        </template>
+                      </el-table-column>
                       <el-table-column :label="t('monitor.nodeExecutionStatus')" width="120">
                         <template #default="{ row: partition }">
                           <StatusTag
@@ -232,8 +240,16 @@
                         prop="errorMessage"
                         :label="t('monitor.nodeColError')"
                         min-width="180"
-                        show-overflow-tooltip
-                      />
+                      >
+                        <template #default="{ row: partition }">
+                          <CopyableText
+                            v-if="partition.errorMessage"
+                            :text="String(partition.errorMessage)"
+                            :copyable="false"
+                          />
+                          <span v-else>—</span>
+                        </template>
+                      </el-table-column>
                     </el-table>
                   </div>
                   <div class="node-execution-detail__section">
@@ -255,7 +271,12 @@
                         prop="stepCode"
                         :label="t('monitor.nodeExecutionStage')"
                         min-width="140"
-                      />
+                      >
+                        <template #default="{ row: step }">
+                          <CopyableText v-if="step.stepCode" :text="String(step.stepCode)" />
+                          <span v-else>—</span>
+                        </template>
+                      </el-table-column>
                       <el-table-column
                         prop="stepType"
                         :label="t('monitor.nodeColType')"
@@ -289,7 +310,12 @@
               />
             </template>
           </el-table-column>
-          <el-table-column prop="nodeCode" :label="t('monitor.nodeColCode')" width="140" />
+          <el-table-column prop="nodeCode" :label="t('monitor.nodeColCode')" width="140">
+            <template #default="{ row }">
+              <CopyableText v-if="row.nodeCode" :text="String(row.nodeCode)" />
+              <span v-else>—</span>
+            </template>
+          </el-table-column>
           <el-table-column prop="nodeType" :label="t('monitor.nodeColType')" width="100" />
           <el-table-column :label="t('monitor.nodeColJobInstance')" width="150">
             <template #default="{ row }">
@@ -312,22 +338,32 @@
           <el-table-column prop="retryCount" :label="t('monitor.nodeColRetry')" width="70" />
           <DatetimeColumn prop="startedAt" :label="t('monitor.nodeColStarted')" width="160" />
           <DatetimeColumn prop="finishedAt" :label="t('monitor.nodeColFinished')" width="160" />
-          <el-table-column :label="t('monitor.nodeColError')" min-width="200" show-overflow-tooltip>
+          <el-table-column :label="t('monitor.nodeColError')" min-width="200">
             <template #default="{ row }">
-              <span v-if="row.errorCode" class="mono">[{{ row.errorCode }}]</span>
-              <span v-if="row.errorMessage">{{ row.errorMessage }}</span>
-              <span v-if="workflowNodeSkipReasonText(row as ConsoleWorkflowNodeRunResponse, t)">
-                {{ workflowNodeSkipReasonText(row as ConsoleWorkflowNodeRunResponse, t) }}
-              </span>
-              <span
+              <CopyableText
                 v-if="
-                  !row.errorCode &&
-                  !row.errorMessage &&
-                  !workflowNodeSkipReasonText(row as ConsoleWorkflowNodeRunResponse, t)
+                  row.errorCode ||
+                  row.errorMessage ||
+                  workflowNodeSkipReasonText(row as ConsoleWorkflowNodeRunResponse, t)
                 "
-                class="muted"
-                >—</span
+                :text="
+                  [
+                    row.errorCode ? `[${row.errorCode}]` : '',
+                    row.errorMessage,
+                    workflowNodeSkipReasonText(row as ConsoleWorkflowNodeRunResponse, t),
+                  ]
+                    .filter(Boolean)
+                    .join(' ')
+                "
+                :copyable="false"
               >
+                <span v-if="row.errorCode" class="mono">[{{ row.errorCode }}]</span>
+                <span v-if="row.errorMessage">{{ row.errorMessage }}</span>
+                <span v-if="workflowNodeSkipReasonText(row as ConsoleWorkflowNodeRunResponse, t)">
+                  {{ workflowNodeSkipReasonText(row as ConsoleWorkflowNodeRunResponse, t) }}
+                </span>
+              </CopyableText>
+              <span v-else class="muted">—</span>
             </template>
           </el-table-column>
           <el-table-column
@@ -415,6 +451,7 @@
 
   const refresh = useRefreshAction()
   import { useI18n } from 'vue-i18n'
+  import { useResponsive } from '@/composables/useResponsive'
   import { ElMessage, ElMessageBox } from 'element-plus'
 
   const { t } = useI18n({ useScope: 'global' })
@@ -455,6 +492,7 @@
   import StatusTag from '@/components/common/StatusTag.vue'
   import DatetimeColumn from '@/components/common/DatetimeColumn.vue'
   import DatetimeText from '@/components/common/DatetimeText.vue'
+  import CopyableText from '@/components/common/CopyableText.vue'
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
   import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
@@ -474,6 +512,7 @@
   const router = useRouter()
 
   const tenant = useTenantStore()
+  const { isMobile } = useResponsive()
   const auth = useAuthStore()
   const mainScope = useTenantRequestScope()
   const nodeScope = useTenantRequestScope()

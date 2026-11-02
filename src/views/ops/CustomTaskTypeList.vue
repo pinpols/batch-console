@@ -40,23 +40,31 @@
           min-width="200"
         >
           <template #default="{ row }">
-            <el-link type="primary" @click="openDetail(row as CustomTaskType)">{{ row.taskTypeCode }}</el-link>
+            <span class="long-link-cell">
+              <el-link
+                class="long-link"
+                type="primary"
+                @click="openDetail(row as CustomTaskType)"
+                >{{ row.taskTypeCode }}</el-link
+              >
+              <CopyableText v-if="row.taskTypeCode" :text="row.taskTypeCode" icon-only />
+            </span>
           </template>
         </el-table-column>
         <el-table-column
           prop="displayName"
           :label="t('customTaskTypeList.colDisplayName')"
           min-width="160"
-          show-overflow-tooltip
         >
           <template #default="{ row }">
-            <span v-if="row.displayName">{{ row.displayName }}</span>
+            <CopyableText v-if="row.displayName" :text="row.displayName" />
             <span v-else class="muted">—</span>
           </template>
         </el-table-column>
         <el-table-column :label="t('customTaskTypeList.colVersion')" width="140">
           <template #default="{ row }">
-            <el-tag size="small" effect="plain">{{ row.descriptorVersion ?? '—' }}</el-tag>
+            <CopyableText v-if="row.descriptorVersion" :text="row.descriptorVersion" />
+            <span v-else class="muted">—</span>
           </template>
         </el-table-column>
         <el-table-column prop="source" :label="t('customTaskTypeList.colSource')" width="120">
@@ -65,14 +73,14 @@
             <span v-else class="muted">—</span>
           </template>
         </el-table-column>
-        <el-table-column prop="declaredByWorkerCode" min-width="160" show-overflow-tooltip>
+        <el-table-column prop="declaredByWorkerCode" min-width="160">
           <template #header>
             <HelpLabel :tip="t('customTaskTypeList.colWorkerTip')">
               {{ t('customTaskTypeList.colWorker') }}
             </HelpLabel>
           </template>
           <template #default="{ row }">
-            <span v-if="row.declaredByWorkerCode">{{ row.declaredByWorkerCode }}</span>
+            <CopyableText v-if="row.declaredByWorkerCode" :text="row.declaredByWorkerCode" />
             <span v-else class="muted">—</span>
           </template>
         </el-table-column>
@@ -171,6 +179,7 @@
   import { RefreshCw as Refresh } from '@lucide/vue'
   import { ElMessage } from 'element-plus'
   import PageContainer from '@/components/common/PageContainer.vue'
+  import CopyableText from '@/components/common/CopyableText.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
   import HelpLabel from '@/components/common/HelpLabel.vue'
@@ -221,6 +230,22 @@
 </script>
 
 <style scoped>
+  .long-link-cell {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+  }
+
+  .long-link {
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .long-link :deep(.el-link__inner) {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
   .ctt__header {
     display: flex;
     align-items: center;

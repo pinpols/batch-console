@@ -179,14 +179,21 @@
           :empty-text="t('common.noData')"
           class="console-table"
         >
-          <el-table-column :label="t('schedulerSnapshot.colPolicy')" min-width="280">
+          <el-table-column
+            :label="t('schedulerSnapshot.colPolicy')"
+            :min-width="isMobile ? 200 : 280"
+          >
             <template #default="{ row }">
               <div class="cell-stack">
                 <div class="cell-main">
-                  <el-tag size="small" effect="plain" type="primary">{{ row.policyCode }}</el-tag>
-                  <el-tag size="small" effect="plain" :type="tagTypeForKey(row.fairShareGroup)">
-                    {{ row.fairShareGroup }}
-                  </el-tag>
+                  <CopyableText :text="String(row.policyCode ?? '')" :copyable="false">
+                    <el-tag size="small" effect="plain" type="primary">{{ row.policyCode }}</el-tag>
+                  </CopyableText>
+                  <CopyableText :text="String(row.fairShareGroup ?? '')" :copyable="false">
+                    <el-tag size="small" effect="plain" :type="tagTypeForKey(row.fairShareGroup)">
+                      {{ row.fairShareGroup }}
+                    </el-tag>
+                  </CopyableText>
                 </div>
                 <div class="cell-sub">
                   {{ t('schedulerSnapshot.quotaResetPolicyLabel') }}:
@@ -257,7 +264,11 @@
             :label="t('schedulerSnapshot.colQuotaWindow')"
             width="170"
           />
-          <el-table-column :label="t('schedulerSnapshot.colActions')" width="140" fixed="right">
+          <el-table-column
+            :label="t('schedulerSnapshot.colActions')"
+            width="140"
+            :fixed="isMobile ? false : 'right'"
+          >
             <template #default="{ row }">
               <CopyableText :text="String(row.policyCode ?? '')" class="snapshot-copy-action">
                 <el-button type="primary" plain size="small" :icon="DocumentCopy">
@@ -310,14 +321,21 @@
           :empty-text="t('common.noData')"
           class="console-table"
         >
-          <el-table-column :label="t('schedulerSnapshot.colWorker')" min-width="280">
+          <el-table-column
+            :label="t('schedulerSnapshot.colWorker')"
+            :min-width="isMobile ? 200 : 280"
+          >
             <template #default="{ row }">
               <div class="cell-stack">
                 <div class="cell-main">
-                  <el-tag size="small" effect="plain" type="info">{{ row.workerCode }}</el-tag>
-                  <el-tag size="small" effect="plain" :type="tagTypeForKey(row.workerGroup)">
-                    {{ row.workerGroup }}
-                  </el-tag>
+                  <CopyableText :text="String(row.workerCode ?? '')" :copyable="false">
+                    <el-tag size="small" effect="plain" type="info">{{ row.workerCode }}</el-tag>
+                  </CopyableText>
+                  <CopyableText :text="String(row.workerGroup ?? '')" :copyable="false">
+                    <el-tag size="small" effect="plain" :type="tagTypeForKey(row.workerGroup)">
+                      {{ row.workerGroup }}
+                    </el-tag>
+                  </CopyableText>
                   <StatusTag :value="row.status" category="worker" />
                 </div>
                 <div class="cell-sub">
@@ -331,7 +349,11 @@
               <span>{{ row.currentLoad ?? '—' }}</span>
             </template>
           </el-table-column>
-          <el-table-column :label="t('schedulerSnapshot.colActions')" width="140" fixed="right">
+          <el-table-column
+            :label="t('schedulerSnapshot.colActions')"
+            width="140"
+            :fixed="isMobile ? false : 'right'"
+          >
             <template #default="{ row }">
               <CopyableText :text="String(row.workerCode ?? '')" class="snapshot-copy-action">
                 <el-button type="primary" plain size="small" :icon="DocumentCopy">
@@ -366,15 +388,27 @@
           :empty-text="t('common.noData')"
           class="console-table"
         >
-          <DatetimeColumn prop="snapshotAt" :label="t('schedulerSnapshot.colTime')" width="170" />
-          <el-table-column :label="t('schedulerSnapshot.colPolicyGroup')" min-width="220">
+          <DatetimeColumn
+            v-if="!isMobile"
+            prop="snapshotAt"
+            :label="t('schedulerSnapshot.colTime')"
+            width="170"
+          />
+          <el-table-column
+            :label="t('schedulerSnapshot.colPolicyGroup')"
+            :min-width="isMobile ? 200 : 220"
+          >
             <template #default="{ row }">
               <div class="cell-stack">
                 <div class="cell-main">
-                  <el-tag size="small" effect="plain" type="primary">{{ row.policyCode }}</el-tag>
-                  <el-tag size="small" effect="plain" :type="tagTypeForKey(row.fairShareGroup)">
-                    {{ row.fairShareGroup }}
-                  </el-tag>
+                  <CopyableText :text="String(row.policyCode ?? '')" :copyable="false">
+                    <el-tag size="small" effect="plain" type="primary">{{ row.policyCode }}</el-tag>
+                  </CopyableText>
+                  <CopyableText :text="String(row.fairShareGroup ?? '')" :copyable="false">
+                    <el-tag size="small" effect="plain" :type="tagTypeForKey(row.fairShareGroup)">
+                      {{ row.fairShareGroup }}
+                    </el-tag>
+                  </CopyableText>
                 </div>
                 <div class="cell-sub">
                   {{ t('schedulerSnapshot.quotaResetPolicyLabel') }}:
@@ -385,6 +419,12 @@
               </div>
             </template>
           </el-table-column>
+          <DatetimeColumn
+            v-if="isMobile"
+            prop="snapshotAt"
+            :label="t('schedulerSnapshot.colTime')"
+            width="170"
+          />
           <el-table-column
             prop="activeJobs"
             :label="t('schedulerSnapshot.colActiveJobs')"
@@ -474,6 +514,7 @@
   import { useTenantReload } from '@/composables/useTenantReload'
   import { useTenantRequestScope } from '@/composables/useTenantRequestScope'
   import { usePermission } from '@/composables/usePermission'
+  import { useResponsive } from '@/composables/useResponsive'
   import { useWriteAvailability } from '@/composables/useWriteAvailability'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
@@ -496,6 +537,7 @@
   type KpiVariant = 'primary' | 'success' | 'warning' | 'info'
 
   const tenant = useTenantStore()
+  const { isMobile } = useResponsive()
   const snapshotScope = useTenantRequestScope()
   const { canManageSystem, hasPermission } = usePermission()
   const { writesFrozen } = useWriteAvailability()
@@ -878,6 +920,8 @@
     align-items: center;
     gap: var(--space-sm);
     flex-wrap: wrap;
+    min-width: 0;
+    max-width: 100%;
   }
 
   .cell-sub {

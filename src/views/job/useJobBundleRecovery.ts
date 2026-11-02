@@ -2,8 +2,11 @@ import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { currentAuthSession, isSharedAuthRevisionCurrent } from '@/api/authSession'
-import { getConfigBatchOperation, type ConfigBatchRecoveryResponse } from '@/api/configBatchRecovery'
-import { STORAGE_KEYS } from '@/constants/storageKeys'
+import {
+  getConfigBatchOperation,
+  type ConfigBatchRecoveryResponse,
+} from '@/api/configBatchRecovery'
+import { readActiveTenantId } from '@/utils/tenantContext'
 import { useTenantRequestScope } from '@/composables/useTenantRequestScope'
 import { usePermission } from '@/composables/usePermission'
 import { useTenantStore } from '@/stores/tenant'
@@ -27,19 +30,25 @@ export function useJobBundleRecovery() {
   const recoveryCommands = ref<ConfigBatchRecovery[]>([])
   const recoveryStorageBlocked = ref(false)
   const recoveryLoadingKey = ref('')
-  const recoveryCurrent = ref<{ key: string; result?: ConfigBatchRecoveryResponse; error?: string }>()
+  const recoveryCurrent = ref<{
+    key: string
+    result?: ConfigBatchRecoveryResponse
+    error?: string
+  }>()
   const recoveryScope = useTenantRequestScope()
   let recoveryRevision = 0
 
   function recoveryKindLabel(command: ConfigBatchRecovery) {
-    return t(command.operationKind === 'JOB_BUNDLE_CREATE'
-      ? 'configBatchRecovery.kindJobBundleCreate'
-      : 'configBatchRecovery.kindJobBundleImport')
+    return t(
+      command.operationKind === 'JOB_BUNDLE_CREATE'
+        ? 'configBatchRecovery.kindJobBundleCreate'
+        : 'configBatchRecovery.kindJobBundleImport',
+    )
   }
 
   function headerTenant(): string | null {
     try {
-      return localStorage.getItem(STORAGE_KEYS.tenantId) ?? ''
+      return readActiveTenantId()
     } catch {
       return null
     }
@@ -61,19 +70,28 @@ export function useJobBundleRecovery() {
       return
     }
     const state = listConfigBatchRecoveries(recoveryActor.value, header)
-    recoveryCommands.value = state.commands.filter((item) => item.operationKind.startsWith('JOB_BUNDLE_'))
+    recoveryCommands.value = state.commands.filter((item) =>
+      item.operationKind.startsWith('JOB_BUNDLE_'),
+    )
     recoveryStorageBlocked.value = state.blocked
   }
 
-  watch([recoveryActor, () => tenant.tenantId, canManageSystem], () => {
-    recoveryRevision += 1
-    recoveryCurrent.value = undefined
-  }, { flush: 'sync' })
+  watch(
+    [recoveryActor, () => tenant.tenantId, canManageSystem],
+    () => {
+      recoveryRevision += 1
+      recoveryCurrent.value = undefined
+    },
+    { flush: 'sync' },
+  )
   watch([recoveryActor, () => tenant.tenantId, canManageSystem], refreshRecoveryCommands, {
     immediate: true,
   })
 
-  function prepareRecovery(operationKind: 'JOB_BUNDLE_CREATE' | 'JOB_BUNDLE_IMPORT', auditTenantId: string) {
+  function prepareRecovery(
+    operationKind: 'JOB_BUNDLE_CREATE' | 'JOB_BUNDLE_IMPORT',
+    auditTenantId: string,
+  ) {
     const header = headerTenant()
     if (header === null || header !== tenant.tenantId) {
       ElMessage.error(t('configBatchRecovery.storageUnavailable'))
@@ -100,14 +118,24 @@ export function useJobBundleRecovery() {
 
   async function checkRecovery(command: ConfigBatchRecovery) {
     const header = headerTenant()
-    if (!canManageSystem.value || recoveryLoadingKey.value || header === null ||
-        header !== tenant.tenantId || !canReadConfigBatchRecovery(command, recoveryActor.value, header) ||
-        !isSharedAuthRevisionCurrent()) return
+    if (
+      !canManageSystem.value ||
+      recoveryLoadingKey.value ||
+      header === null ||
+      header !== tenant.tenantId ||
+      !canReadConfigBatchRecovery(command, recoveryActor.value, header) ||
+      !isSharedAuthRevisionCurrent()
+    )
+      return
     const scope = recoveryScope.begin()
     const revision = recoveryRevision
     const authSession = currentAuthSession()
-    const isCurrent = () => recoveryScope.isCurrent(scope) && revision === recoveryRevision &&
-      canManageSystem.value && headerTenant() === header && currentAuthSession() === authSession &&
+    const isCurrent = () =>
+      recoveryScope.isCurrent(scope) &&
+      revision === recoveryRevision &&
+      canManageSystem.value &&
+      headerTenant() === header &&
+      currentAuthSession() === authSession &&
       isSharedAuthRevisionCurrent()
     recoveryLoadingKey.value = command.key
     try {
@@ -117,7 +145,10 @@ export function useJobBundleRecovery() {
     } catch (error) {
       if (!isCurrent()) return
       const status = (error as { response?: { status?: number } })?.response?.status
-      recoveryCurrent.value = { key: command.key, error: status === 404 ? 'configBatchRecovery.notFound' : 'configBatchRecovery.queryFailed' }
+      recoveryCurrent.value = {
+        key: command.key,
+        error: status === 404 ? 'configBatchRecovery.notFound' : 'configBatchRecovery.queryFailed',
+      }
     } finally {
       if (recoveryLoadingKey.value === command.key) recoveryLoadingKey.value = ''
     }
@@ -125,15 +156,23 @@ export function useJobBundleRecovery() {
 
   function canStopRecovery(command: ConfigBatchRecovery) {
     const current = recoveryCurrent.value
-    return current?.key === command.key &&
+    return (
+      current?.key === command.key &&
       (current.error === 'configBatchRecovery.notFound' || current.result?.status === 'UNKNOWN')
+    )
   }
 
   async function stopTrackingRecovery(command: ConfigBatchRecovery) {
     const header = headerTenant()
-    if (!canManageSystem.value || header === null || header !== tenant.tenantId ||
-        !canReadConfigBatchRecovery(command, recoveryActor.value, header) ||
-        !canStopRecovery(command) || !isSharedAuthRevisionCurrent()) return
+    if (
+      !canManageSystem.value ||
+      header === null ||
+      header !== tenant.tenantId ||
+      !canReadConfigBatchRecovery(command, recoveryActor.value, header) ||
+      !canStopRecovery(command) ||
+      !isSharedAuthRevisionCurrent()
+    )
+      return
     const scope = recoveryScope.begin()
     const revision = recoveryRevision
     const authSession = currentAuthSession()
@@ -151,11 +190,18 @@ export function useJobBundleRecovery() {
       return
     }
     const currentHeader = headerTenant()
-    if (!recoveryScope.isCurrent(scope) || revision !== recoveryRevision || !canManageSystem.value ||
-        currentHeader === null || currentHeader !== tenant.tenantId ||
-        !canReadConfigBatchRecovery(command, recoveryActor.value, currentHeader) ||
-        !canStopRecovery(command) || currentAuthSession() !== authSession ||
-        !isSharedAuthRevisionCurrent()) return
+    if (
+      !recoveryScope.isCurrent(scope) ||
+      revision !== recoveryRevision ||
+      !canManageSystem.value ||
+      currentHeader === null ||
+      currentHeader !== tenant.tenantId ||
+      !canReadConfigBatchRecovery(command, recoveryActor.value, currentHeader) ||
+      !canStopRecovery(command) ||
+      currentAuthSession() !== authSession ||
+      !isSharedAuthRevisionCurrent()
+    )
+      return
     if (!clearConfigBatchRecovery(command)) {
       ElMessage.error(t('configBatchRecovery.storageUnavailable'))
       return
@@ -165,10 +211,16 @@ export function useJobBundleRecovery() {
 
   function acknowledgeRecovery(command: ConfigBatchRecovery) {
     const header = headerTenant()
-    if (!canManageSystem.value || header === null || header !== tenant.tenantId ||
-        !canReadConfigBatchRecovery(command, recoveryActor.value, header) ||
-        recoveryCurrent.value?.key !== command.key || recoveryCurrent.value.result?.status !== 'COMPLETE' ||
-        !isSharedAuthRevisionCurrent()) return
+    if (
+      !canManageSystem.value ||
+      header === null ||
+      header !== tenant.tenantId ||
+      !canReadConfigBatchRecovery(command, recoveryActor.value, header) ||
+      recoveryCurrent.value?.key !== command.key ||
+      recoveryCurrent.value.result?.status !== 'COMPLETE' ||
+      !isSharedAuthRevisionCurrent()
+    )
+      return
     if (!clearConfigBatchRecovery(command)) {
       ElMessage.error(t('configBatchRecovery.storageUnavailable'))
       return

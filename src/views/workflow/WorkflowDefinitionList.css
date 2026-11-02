@@ -1,0 +1,13 @@
+.workflow-definition-table :deep(.el-table__cell .cell) {
+  min-width: 0;
+}
+
+.workflow-definition-table :deep(.el-table__fixed-right) {
+  box-shadow: -8px 0 16px rgb(15 23 42 / 6%);
+}
+
+@media (max-width: 720px) {
+  .workflow-definition-table :deep(.el-table__fixed-right) {
+    box-shadow: -4px 0 10px rgb(15 23 42 / 8%);
+  }
+}

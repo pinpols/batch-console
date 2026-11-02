@@ -1,0 +1,50 @@
+.file-config-tabs :deep(.el-tabs__content) {
+  overflow: visible;
+}
+
+/* P2 单模式路由(/files/templates 或 /files/channels):隐藏 tab 头,
+     用户从侧栏菜单进入相应路由后直接看到内容,无需多看一层 tab */
+.file-config-tabs.single-mode :deep(.el-tabs__header) {
+  display: none;
+}
+
+.panel-head {
+  margin-bottom: var(--space-sm);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+}
+
+.panel-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--font-size-md);
+  font-weight: 700;
+  color: var(--color-text-primary);
+  line-height: var(--line-height-tight);
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: var(--radius-content);
+}
+
+.dot--primary {
+  background: var(--color-primary);
+}
+
+.dot--success {
+  background: var(--color-success);
+}
+
+.query {
+  margin-bottom: var(--page-block-gap);
+}
+
+.query__search {
+  width: min(360px, 100%);
+}

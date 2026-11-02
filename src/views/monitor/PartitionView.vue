@@ -57,18 +57,30 @@
           width="80"
           align="right"
         />
-        <el-table-column
-          prop="partitionKey"
-          :label="t('monitor.partColKey')"
-          min-width="160"
-          show-overflow-tooltip
-        />
+        <el-table-column prop="partitionKey" :label="t('monitor.partColKey')" min-width="160">
+          <template #default="{ row }">
+            <CopyableText
+              v-if="row.partitionKey"
+              :text="String(row.partitionKey)"
+              :copyable="false"
+            />
+            <span v-else>—</span>
+          </template>
+        </el-table-column>
         <el-table-column
           prop="businessKey"
           :label="t('monitor.partColBusinessKey')"
           min-width="140"
-          show-overflow-tooltip
-        />
+        >
+          <template #default="{ row }">
+            <CopyableText
+              v-if="row.businessKey"
+              :text="String(row.businessKey)"
+              :copyable="false"
+            />
+            <span v-else>—</span>
+          </template>
+        </el-table-column>
         <el-table-column
           prop="jobInstanceId"
           :label="t('monitor.partColInstanceId')"
@@ -80,41 +92,55 @@
             <StatusTag :value="String(row.partitionStatus ?? '')" category="partition" />
           </template>
         </el-table-column>
-        <el-table-column
-          prop="workerGroup"
-          :label="t('monitor.partColWorkerGroup')"
-          width="140"
-          show-overflow-tooltip
-        />
-        <el-table-column
-          prop="workerCode"
-          :label="t('monitor.partColWorker')"
-          width="140"
-          show-overflow-tooltip
-        >
+        <el-table-column prop="workerGroup" :label="t('monitor.partColWorkerGroup')" width="140">
           <template #default="{ row }">
-            <router-link
+            <CopyableText
+              v-if="row.workerGroup"
+              :text="String(row.workerGroup)"
+              :copyable="false"
+            />
+            <span v-else>—</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="workerCode" :label="t('monitor.partColWorker')" width="140">
+          <template #default="{ row }">
+            <CopyableText
               v-if="row.workerCode"
-              class="cell-link"
-              :to="`/workers/management?workerCode=${row.workerCode}`"
+              :text="String(row.workerCode)"
+              :copy-on-click="false"
             >
-              {{ row.workerCode }}
-            </router-link>
+              <router-link
+                class="cell-link"
+                :to="`/workers/management?workerCode=${row.workerCode}`"
+              >
+                {{ row.workerCode }}
+              </router-link>
+            </CopyableText>
             <span v-else class="cell-empty">—</span>
           </template>
         </el-table-column>
         <el-table-column prop="retryCount" :label="t('monitor.partColRetry')" width="70" />
-        <el-table-column :label="t('monitor.partColError')" min-width="200" show-overflow-tooltip>
+        <el-table-column :label="t('monitor.partColError')" min-width="200">
           <template #default="{ row }">
-            <span v-if="row.errorCode" class="mono">[{{ row.errorCode }}]</span>
-            <span v-if="row.errorMessage">{{ row.errorMessage }}</span>
-            <span v-if="!row.errorCode && !row.errorMessage" class="cell-empty">—</span>
+            <CopyableText
+              v-if="row.errorCode || row.errorMessage"
+              :text="`${row.errorCode ? `[${row.errorCode}]` : ''}${row.errorMessage || ''}`"
+              :copyable="false"
+            >
+              <span v-if="row.errorCode" class="mono">[{{ row.errorCode }}]</span>
+              <span v-if="row.errorMessage">{{ row.errorMessage }}</span>
+            </CopyableText>
+            <span v-else class="cell-empty">—</span>
           </template>
         </el-table-column>
         <DatetimeColumn prop="leaseExpireAt" :label="t('monitor.partColLeaseExpire')" width="160" />
         <DatetimeColumn prop="startedAt" :label="t('monitor.partColStarted')" width="160" />
         <DatetimeColumn prop="finishedAt" :label="t('monitor.partColFinished')" width="160" />
-        <el-table-column :label="t('monitor.partColActions')" width="170" fixed="right">
+        <el-table-column
+          :label="t('monitor.partColActions')"
+          width="170"
+          :fixed="isMobile ? false : 'right'"
+        >
           <template #default="{ row }">
             <div class="table-actions">
               <RowActions
@@ -169,15 +195,18 @@
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import TablePagerBar from '@/components/table/TablePagerBar.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
+  import CopyableText from '@/components/common/CopyableText.vue'
   import RowActions, { type RowAction } from '@/components/common/RowActions.vue'
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
   import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
+  import { useResponsive } from '@/composables/useResponsive'
 
   const route = useRoute()
   const tenant = useTenantStore()
   const auth = useAuthStore()
   const { canWriteSystem } = usePermission()
+  const { isMobile } = useResponsive()
   const listScope = useTenantRequestScope()
   const actionScope = useTenantRequestScope()
   const loading = ref(false)

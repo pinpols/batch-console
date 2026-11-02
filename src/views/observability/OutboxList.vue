@@ -143,7 +143,12 @@
           :label="t('observability.outboxColKey')"
           min-width="160"
           show-overflow-tooltip
-        />
+        >
+          <template #default="{ row }">
+            <CopyableText v-if="row.eventKey" :text="String(row.eventKey)" :copyable="false" />
+            <span v-else>{{ row.eventKey }}</span>
+          </template>
+        </el-table-column>
         <el-table-column prop="retryStatus" :label="t('observability.outboxColStatus')" width="120">
           <template #default="{ row }">
             <StatusTag :value="String(row.retryStatus ?? '')" category="outboxPublishStatus" />
@@ -215,7 +220,12 @@
           :label="t('observability.outboxColKey')"
           min-width="160"
           show-overflow-tooltip
-        />
+        >
+          <template #default="{ row }">
+            <CopyableText v-if="row.eventKey" :text="String(row.eventKey)" :copyable="false" />
+            <span v-else>{{ row.eventKey }}</span>
+          </template>
+        </el-table-column>
         <el-table-column
           prop="deliveryStatus"
           :label="t('observability.outboxColStatus')"
@@ -230,7 +240,16 @@
           :label="t('observability.outboxColTopic')"
           min-width="140"
           show-overflow-tooltip
-        />
+        >
+          <template #default="{ row }">
+            <CopyableText
+              v-if="row.targetTopic"
+              :text="String(row.targetTopic)"
+              :copyable="false"
+            />
+            <span v-else>{{ row.targetTopic }}</span>
+          </template>
+        </el-table-column>
         <el-table-column
           prop="deliveryAttempt"
           :label="t('observability.outboxColAttempt')"
@@ -242,7 +261,16 @@
           :label="t('observability.outboxColError')"
           min-width="180"
           show-overflow-tooltip
-        />
+        >
+          <template #default="{ row }">
+            <CopyableText
+              v-if="row.errorMessage"
+              :text="String(row.errorMessage)"
+              :copyable="false"
+            />
+            <span v-else>{{ row.errorMessage }}</span>
+          </template>
+        </el-table-column>
         <DatetimeColumn prop="updatedAt" :label="t('observability.outboxColUpdated')" width="160" />
         <el-table-column :label="t('observability.outboxColActions')" width="120" fixed="right">
           <template #default="{ row }">
@@ -295,6 +323,7 @@
   import { toPageResult } from '@/api/adapters'
   import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
   import PageContainer from '@/components/common/PageContainer.vue'
+  import CopyableText from '@/components/common/CopyableText.vue'
   import MetaSelect from '@/components/common/MetaSelect.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import ProTable from '@/components/table/ProTable.vue'

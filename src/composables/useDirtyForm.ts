@@ -7,6 +7,7 @@ import {
   type Ref,
   type WatchSource,
 } from 'vue'
+import { useTenantChangeGuard } from './useTenantChangeGuard'
 
 /**
  * 脏数据保护:
@@ -127,6 +128,16 @@ export function useDirtyForm<T>(
       return true
     }
   }
+
+  useTenantChangeGuard(
+    () => {
+      if (!isActive()) return false
+      // watch 默认异步执行；用户输入后立即切租户时须同步读取最新值。
+      recompute()
+      return isDirty.value
+    },
+    () => (isActive() ? [readCurrent(), baseline.value] : null),
+  )
 
   function onBeforeUnload(e: BeforeUnloadEvent) {
     if (!isActive()) return

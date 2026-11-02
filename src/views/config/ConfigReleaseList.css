@@ -67,6 +67,7 @@
 /* 发布卡片 */
 .cr-card {
   flex: 1 1 0%;
+  min-width: 0;
   margin-bottom: 14px;
   background: var(--color-bg-card);
   border: 1px solid var(--color-border);
@@ -84,10 +85,13 @@
 .cr-card__head {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 10px;
 }
 
 .cr-card__key {
+  min-width: 0;
+  overflow-wrap: anywhere;
   font-size: 13px;
   font-weight: 600;
   font-family: var(--font-mono, monospace);
@@ -105,6 +109,7 @@
 }
 
 .cr-card__name {
+  overflow-wrap: anywhere;
   margin-top: 9px;
   font-size: 14px;
   color: var(--color-text-primary);
@@ -179,10 +184,13 @@
 .cr-panel__head {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 10px;
 }
 
 .cr-panel__key {
+  min-width: 0;
+  overflow-wrap: anywhere;
   font-size: 14px;
   font-weight: 600;
   font-family: var(--font-mono, monospace);
@@ -190,6 +198,7 @@
 }
 
 .cr-panel__name {
+  overflow-wrap: anywhere;
   margin-top: 8px;
   font-size: 14px;
   color: var(--color-text-primary);
@@ -302,6 +311,23 @@
 
 .diff-form {
   margin-bottom: var(--card-inner-padding);
+}
+
+@media (max-width: 600px) {
+  .diff-form :deep(.el-form-item) {
+    display: flex;
+    margin-right: 0;
+  }
+
+  .diff-form :deep(.el-form-item__content) {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .diff-form :deep(.el-select) {
+    --el-select-width: 100%;
+    width: 100%;
+  }
 }
 
 .diff-result {

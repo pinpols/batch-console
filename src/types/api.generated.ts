@@ -8548,6 +8548,7 @@ export interface components {
     }
     WorkflowDefinitionSaveNodeItem: {
       nodeCode: string
+      /** @description Maximum 256 Unicode code points, matching PostgreSQL character length. */
       nodeName: string
       nodeType: string
       relatedJobCode?: string
@@ -8575,6 +8576,7 @@ export interface components {
       fromNodeCode: string
       toNodeCode: string
       edgeType?: string
+      /** @description Maximum 1024 Unicode code points, matching PostgreSQL character length. */
       conditionExpr?: string
       enabled?: boolean
     }
@@ -12407,6 +12409,7 @@ export interface components {
     }
     WorkflowNodeSpec: {
       nodeCode?: string
+      /** @description Maximum 256 Unicode code points for an applied item; skipped existing items are not validated. */
       nodeName?: string
       nodeType?: string
       relatedJobCode?: string
@@ -12428,6 +12431,7 @@ export interface components {
       fromNodeCode?: string
       toNodeCode?: string
       edgeType?: string
+      /** @description Maximum 1024 Unicode code points for an applied item; skipped existing items are not validated. */
       conditionExpr?: string
       enabled?: boolean | null
     }
@@ -19556,6 +19560,8 @@ export interface operations {
         pageSize?: components['parameters']['PageSizeQuery']
         /** @description Filter by job code (partial match) */
         jobCode?: components['parameters']['JobCodeFilter']
+        /** @description Filter by exact job code; takes precedence over the partial jobCode filter. */
+        exactJobCode?: string
         /** @description Filter by instance status (exact match) */
         instanceStatus?: components['parameters']['InstanceStatusFilter']
         /** @description Filter start date (ISO date, inclusive) */

@@ -1,6 +1,5 @@
 <template>
   <el-form
-    ref="formRef"
     inline
     class="query-form"
     :class="[
@@ -32,6 +31,16 @@
         {{ t('proTable.filtersHidden') }}
       </span>
       <el-button
+        v-if="showSearch && !(collapsible && collapsed)"
+        type="primary"
+        native-type="submit"
+        :icon="Search"
+        :loading="filterBusy"
+        :disabled="disabled"
+      >
+        {{ t('common.search') }}
+      </el-button>
+      <el-button
         v-if="showReset"
         native-type="button"
         :icon="RefreshLeft"
@@ -51,22 +60,12 @@
       >
         {{ t('common.refresh') }}
       </el-button>
-      <el-button
-        v-if="showSearch && !(collapsible && collapsed)"
-        type="primary"
-        native-type="submit"
-        :icon="Search"
-        :loading="filterBusy"
-        :disabled="disabled"
-      >
-        {{ t('common.search') }}
-      </el-button>
     </el-form-item>
   </el-form>
 </template>
 
 <script setup lang="ts">
-  import { computed, onMounted, onUpdated, ref, useAttrs } from 'vue'
+  import { computed, ref, useAttrs } from 'vue'
   import { useRoute } from 'vue-router'
   import { useI18n } from 'vue-i18n'
   import { RefreshCw as Refresh, RotateCcw as RefreshLeft, Search, ChevronUp } from '@lucide/vue'
@@ -89,8 +88,7 @@
       /** 是否提供「收起/展开筛选」开关(笔记本首屏省竖向空间),默认开 */
       collapsible?: boolean
       /**
-       * label 位置:'auto'(默认)= 字段 ≤3 时 label 放字段左侧同行(紧凑,用户反馈),
-       * 字段多时 label 上置网格;也可显式 'top' / 'left' 锁定。
+       * label 默认上置；需要紧凑布局时显式使用 'left'。'auto' 兼容为上置。
        */
       labelPosition?: 'auto' | 'top' | 'left'
     }>(),
@@ -135,25 +133,7 @@
 
   const attrs = useAttrs()
 
-  // 'auto' 模式:数 DOM 里的字段格(不含操作格)决定 label 左置还是上置。
-  // 收起态字段仅 display:none 仍在 DOM,计数不受影响;字段动态 v-if 时 onUpdated 重数。
-  const formRef = ref<{ $el?: HTMLElement } | null>(null)
-  const fieldCount = ref(99)
-  function recountFields() {
-    const el = formRef.value?.$el
-    if (!el) return
-    fieldCount.value = el.querySelectorAll('.el-form-item:not(.query-actions)').length
-  }
-  onMounted(recountFields)
-  onUpdated(recountFields)
-
-  const labelLeft = computed(() =>
-    props.labelPosition === 'left'
-      ? true
-      : props.labelPosition === 'top'
-        ? false
-        : fieldCount.value <= 3,
-  )
+  const labelLeft = computed(() => props.labelPosition === 'left')
 
   const refreshLoading = computed(() =>
     props.refreshBusy === undefined ? props.filterBusy : props.refreshBusy,
@@ -216,23 +196,21 @@
     }
   }
 
-  /* 日期范围要放下两个日期,给更宽的弹性基准(flex 折行下自然更宽)。 */
+  /* 日期范围以及预设、时区组成的组合控件按整组宽度换行。 */
   .query-form :deep(.el-form-item.query-span-2),
   .query-form :deep(.el-form-item:has(.el-date-editor--daterange)),
-  .query-form :deep(.el-form-item:has(.el-date-editor--datetimerange)) {
-    flex: 1 1 280px;
-    max-width: 380px;
+  .query-form :deep(.el-form-item:has(.el-date-editor--datetimerange)),
+  .query-form :deep(.el-form-item:has(.el-date-editor--monthrange)) {
+    --query-field-width: 360px;
   }
 
-  .query-form :deep(.el-form-item.query-span-3) {
-    flex: 1 1 380px;
-    max-width: 520px;
+  .query-form :deep(.el-form-item.query-span-3),
+  .query-form :deep(.el-form-item:has(.dr-preset)) {
+    --query-field-width: 440px;
   }
 
-  /* 控件填满 form-item 余下空间,不让 EP 默认 220px 卡死 */
-  .query-form :deep(.el-date-editor--daterange),
-  .query-form :deep(.el-date-editor--datetimerange) {
-    width: 100% !important;
+  .query-form :deep(.el-form-item:has(.dr-preset .el-date-editor--datetimerange)) {
+    --query-field-width: 560px;
   }
 
   /* placeholder 比 input value 略小,容纳更长提示文字(如 requestId / jobCode / traceId) */
@@ -252,24 +230,102 @@
   }
 
   .query-form :deep(.dr-preset__select) {
-    flex: 0 0 92px;
+    flex: 0 0 130px;
+  }
+
+  .query-form :deep(.dr-preset__viewport) {
+    flex: 1 1 260px;
+    min-width: min(100%, 260px);
+  }
+
+  .query-form :deep(.dr-preset__viewport:has(.el-date-editor--datetimerange)) {
+    flex-basis: 380px;
+    min-width: min(100%, 380px);
   }
 
   .query-form :deep(.dr-preset .el-date-editor) {
-    flex: 1;
-    min-width: 0;
+    flex: 1 0 100%;
   }
 
-  /* 字段块 = label 上置 + 控件全宽。flex 弹性项:不长满整行(留右侧空位给操作按钮
-     内嵌),窄了自动折行,提升信息密度。 */
+  @media (max-width: 720px) {
+    .query-form :deep(.dr-preset__select),
+    .query-form :deep(.dr-preset__viewport) {
+      flex: 1 1 100%;
+    }
+  }
+
+  /* 目标宽度决定字段的折行，而不是按字段数量压缩到统一上限。 */
   .query-form :deep(.el-form-item) {
     display: flex;
     flex-direction: column;
     align-items: stretch;
     margin: 0;
-    flex: 1 1 152px;
-    min-width: 128px;
-    max-width: 200px;
+    flex: 0 1 var(--query-field-width, 220px);
+    min-width: min(100%, var(--query-field-width, 220px));
+    max-width: 100%;
+  }
+
+  .query-form :deep(.el-form-item.query-size-short) {
+    --query-field-width: 136px;
+  }
+  .query-form :deep(.el-form-item.query-size-medium) {
+    --query-field-width: 240px;
+  }
+  .query-form :deep(.el-form-item.query-size-long) {
+    --query-field-width: 360px;
+  }
+  .query-form :deep(.el-form-item.query-size-range) {
+    --query-field-width: 440px;
+  }
+
+  /* 显式语义尺寸优先；旧 query-w-* 作为兼容档位。 */
+  .query-form :deep(.el-form-item:has(> :where(.el-form-item__content) > :where(.query-w-120))) {
+    --query-field-width: 120px;
+  }
+  .query-form :deep(.el-form-item:has(> :where(.el-form-item__content) > :where(.query-w-140))) {
+    --query-field-width: 140px;
+  }
+  .query-form :deep(.el-form-item:has(> :where(.el-form-item__content) > :where(.query-w-160))) {
+    --query-field-width: 160px;
+  }
+  .query-form :deep(.el-form-item:has(> :where(.el-form-item__content) > :where(.query-w-168))) {
+    --query-field-width: 168px;
+  }
+  .query-form :deep(.el-form-item:has(> :where(.el-form-item__content) > :where(.query-w-180))) {
+    --query-field-width: 180px;
+  }
+  .query-form :deep(.el-form-item:has(> :where(.el-form-item__content) > :where(.query-w-190))) {
+    --query-field-width: 190px;
+  }
+  .query-form :deep(.el-form-item:has(> :where(.el-form-item__content) > :where(.query-w-200))) {
+    --query-field-width: 200px;
+  }
+  .query-form :deep(.el-form-item:has(> :where(.el-form-item__content) > :where(.query-w-220))) {
+    --query-field-width: 220px;
+  }
+  .query-form :deep(.el-form-item:has(> :where(.el-form-item__content) > :where(.query-w-240))) {
+    --query-field-width: 240px;
+  }
+  .query-form :deep(.el-form-item:has(> :where(.el-form-item__content) > :where(.query-w-260))) {
+    --query-field-width: 260px;
+  }
+  .query-form :deep(.el-form-item:has(> :where(.el-form-item__content) > :where(.query-w-280))) {
+    --query-field-width: 280px;
+  }
+  .query-form :deep(.el-form-item:has(> :where(.el-form-item__content) > :where(.query-w-300))) {
+    --query-field-width: 300px;
+  }
+  .query-form :deep(.el-form-item:has(> :where(.el-form-item__content) > :where(.query-w-320))) {
+    --query-field-width: 320px;
+  }
+  .query-form :deep(.el-form-item:has(> :where(.el-form-item__content) > :where(.query-w-340))) {
+    --query-field-width: 340px;
+  }
+  .query-form :deep(.el-form-item:has(> :where(.el-form-item__content) > :where(.query-w-360))) {
+    --query-field-width: 360px;
+  }
+  .query-form :deep(.el-form-item:has(> :where(.el-form-item__content) > :where(.query-w-full))) {
+    --query-field-width: 100%;
   }
 
   .query-form :deep(.el-form-item__label) {
@@ -291,13 +347,9 @@
     flex: 1;
     width: 100%;
     min-width: 0;
-    /* 复位 query-w-* 设的固定 --el-input-width,让筛选栏内控件统一填满栅格单元 */
-    --el-input-width: 100%;
   }
 
-  /* 统一:筛选栏内所有输入 / 下拉 / 时间选择 / 数字 / 级联控件一律填满栅格单元,
-     用 !important 覆盖 query-w-140/160/... 固定宽度 → 单页内(及全站)长短一致、对齐成网格。
-     直接子选择器保护 DateRangePresetPicker(.dr-preset)等复合控件的内部布局不被穿透。 */
+  /* 控件填满字段，复合控件内部宽度由其自身维护。 */
   .query-form :deep(.el-form-item__content > .el-input),
   .query-form :deep(.el-form-item__content > .el-select),
   .query-form :deep(.el-form-item__content > .el-date-editor),
@@ -308,13 +360,12 @@
     max-width: none !important;
   }
 
-  /* ── label 左置紧凑模式(字段 ≤3 自动启用):label 与控件同行,整条筛选栏收成单行 ── */
+  /* 显式左置模式保留字段宽度，并在空间不足时允许收缩换行。 */
   .query-form--label-left :deep(.el-form-item:not(.query-actions)) {
     flex-direction: row;
     align-items: center;
-    flex: 0 0 auto;
+    flex: 0 1 auto;
     min-width: 0;
-    max-width: none;
   }
 
   .query-form--label-left :deep(.el-form-item:not(.query-actions) .el-form-item__label) {
@@ -322,18 +373,9 @@
     margin-right: 8px;
   }
 
-  /* 行内模式下控件不再吃满栅格,给固定宽度(query-w-* 固定宽类恢复生效) */
-  .query-form--label-left :deep(.el-form-item__content > .el-input),
-  .query-form--label-left :deep(.el-form-item__content > .el-select),
-  .query-form--label-left :deep(.el-form-item__content > .el-date-editor),
-  .query-form--label-left :deep(.el-form-item__content > .el-cascader),
-  .query-form--label-left :deep(.el-form-item__content > .el-input-number),
-  .query-form--label-left :deep(.el-form-item__content > .el-autocomplete) {
-    width: var(--el-input-width, 200px) !important;
-  }
-
-  .query-form--label-left :deep(.el-form-item__content) {
-    --el-input-width: 168px;
+  .query-form--label-left :deep(.el-form-item:not(.query-actions) .el-form-item__content) {
+    flex: 0 1 auto;
+    width: min(100%, var(--query-field-width, 220px));
   }
 
   /* 操作按钮组:尺寸自适应内容 + margin-left:auto 塞进当前行右侧空位;有空同行、
@@ -342,7 +384,7 @@
   .query-actions {
     flex: 0 0 auto !important;
     min-width: 0 !important;
-    max-width: none !important;
+    max-width: 100% !important;
     margin: 0 0 0 auto !important;
     align-self: end;
   }
@@ -355,6 +397,10 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
+  }
+
+  .query-actions :deep(.el-button + .el-button) {
+    margin-left: 0;
   }
 </style>

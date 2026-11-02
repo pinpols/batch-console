@@ -290,7 +290,7 @@
 
 .guide-drawer__filters {
   display: grid;
-  grid-template-columns: minmax(240px, 1fr) minmax(220px, 300px) auto;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
   gap: 10px;
   align-items: center;
 }
@@ -308,20 +308,22 @@
   width: 100%;
 }
 
+.sheet-name-cell {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.sheet-name-cell .sheet-risk-tag {
+  flex-shrink: 0;
+}
+
 .guide-column-name {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 6px;
   min-width: 0;
-}
-
-.guide-column-name code {
-  padding: 2px 5px;
-  border-radius: 4px;
-  background: var(--el-fill-color-light);
-  color: var(--color-text-primary);
-  word-break: break-all;
 }
 
 .guide-row-detail {
@@ -409,25 +411,6 @@
   width: 100%;
 }
 
-.excel-wizard__token-label {
-  margin-top: 6px;
-  font-size: 12px;
-  color: var(--color-text-secondary);
-}
-
-.excel-wizard__token-code {
-  margin: 6px 0 0;
-  padding: 8px 10px;
-  font-size: 12px;
-  line-height: 1.5;
-  word-break: break-all;
-  white-space: pre-wrap;
-  border-radius: var(--radius-input);
-  background: var(--el-fill-color-blank);
-  border: 1px solid var(--color-border-light);
-  color: var(--color-text-primary);
-}
-
 .excel-wizard__mute-hint {
   margin: 0 0 10px;
   font-size: 13px;
@@ -464,6 +447,20 @@
 .excel-wizard__table-block {
   margin-top: 12px;
   width: 100%;
+}
+
+.error-rows-block {
+  container-type: inline-size;
+}
+
+/* 展开编辑区跟随表格可视宽度，窄屏无需横向滚动即可编辑。 */
+.error-row-editor {
+  position: sticky;
+  left: 0;
+  width: 100cqi;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding-right: 24px;
 }
 
 .excel-wizard__table-caption {

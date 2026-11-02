@@ -61,6 +61,20 @@ function running(wrapper: ReturnType<typeof setup>) {
 }
 
 describe('mobile operations summary context', () => {
+  it('shows a retryable error instead of an empty summary after a failed request', async () => {
+    mocks.getSummary
+      .mockRejectedValueOnce(new Error('unavailable'))
+      .mockResolvedValueOnce({ runningJobs: 22 })
+    const wrapper = setup()
+    await flushPromises()
+    expect(wrapper.find('[role="alert"]').text()).toContain('mobile.common.loadFail')
+    expect(wrapper.text()).not.toContain('mobile.common.empty')
+    await wrapper.find('[role="alert"] button').trigger('click')
+    await flushPromises()
+    expect(wrapper.find('[role="alert"]').exists()).toBe(false)
+    expect(running(wrapper)).toBe('22')
+  })
+
   it.each([
     [
       'ADMIN',

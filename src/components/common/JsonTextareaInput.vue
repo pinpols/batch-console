@@ -5,8 +5,8 @@
       'json-textarea-input--dragover': dragover,
       'json-textarea-input--loaded': hasNonBlankValue(modelValue),
     }"
-    @dragover.prevent="dragover = true"
-    @dragenter.prevent="dragover = true"
+    @dragover.prevent="!effectiveDisabled && (dragover = true)"
+    @dragenter.prevent="!effectiveDisabled && (dragover = true)"
     @dragleave.prevent="dragover = false"
     @drop.prevent="onDropFile"
     @paste="onPasteFile"
@@ -17,13 +17,18 @@
       :rows="rows"
       :placeholder="effectivePlaceholder"
       :spellcheck="false"
-      :disabled="disabled"
+      :disabled="effectiveDisabled"
       class="json-textarea-input__textarea"
-      @update:model-value="(v: string) => emit('update:modelValue', v)"
+      @update:model-value="onTextInput"
     />
     <div class="json-textarea-input__bar">
       <div class="json-textarea-input__left">
-        <el-button :icon="UploadFilled" size="small" :disabled="disabled" @click="onFilePick">
+        <el-button
+          :icon="UploadFilled"
+          size="small"
+          :disabled="effectiveDisabled"
+          @click="onFilePick"
+        >
           {{ t('jsonTextareaInput.chooseFile') }}
         </el-button>
         <span v-if="fileName" class="json-textarea-input__file">
@@ -51,7 +56,7 @@
           link
           type="info"
           size="small"
-          :disabled="disabled"
+          :disabled="effectiveDisabled"
           @click="onClear"
         >
           {{ t('common.clear') }}
@@ -65,6 +70,7 @@
       ref="fileInputEl"
       type="file"
       accept="application/json,.json"
+      :disabled="effectiveDisabled"
       hidden
       @change="onFileChange"
     />
@@ -84,15 +90,18 @@
    *   - 文件类型限制 .json(扩展名 + MIME 双判)
    *   - paste 事件:有文件走文件路径,纯文本不拦截让 el-input 原生 paste 接管
    */
-  import { computed, onMounted, ref } from 'vue'
+  import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+  import { getActivePinia } from 'pinia'
   import { useI18n } from 'vue-i18n'
-  import { ElMessage } from 'element-plus'
+  import { ElMessage, useFormDisabled } from 'element-plus'
   import {
     Upload as UploadFilled,
     FileText as Document,
     TriangleAlert as Warning,
     Check,
   } from '@lucide/vue'
+  import { useTenantStore } from '@/stores/tenant'
+  import { useTenantChangeGuard } from '@/composables/useTenantChangeGuard'
 
   const { t } = useI18n({ useScope: 'global' })
 
@@ -113,7 +122,7 @@
       modelValue: '',
       rows: 8,
       placeholder: '',
-      disabled: false,
+      disabled: undefined,
       initializeDefault: true,
       maxBytes: 5 * 1024 * 1024,
       expect: 'any',
@@ -126,6 +135,42 @@
   }>()
 
   const dragover = ref(false)
+  const effectiveDisabled = useFormDisabled()
+  const fileReadGeneration = ref(0)
+  const fileReading = ref(false)
+  const pinia = getActivePinia()
+  const tenant = pinia ? useTenantStore(pinia) : null
+  function invalidateFileRead() {
+    fileReadGeneration.value += 1
+    fileReading.value = false
+  }
+  if (tenant) {
+    useTenantChangeGuard(
+      () => fileReading.value,
+      () => [fileReading.value, fileReadGeneration.value],
+    )
+    watch(
+      () => tenant.revision,
+      () => {
+        invalidateFileRead()
+        fileName.value = ''
+        fileSize.value = 0
+      },
+      { flush: 'sync' },
+    )
+  }
+  watch(
+    effectiveDisabled,
+    (disabled) => {
+      if (disabled) {
+        invalidateFileRead()
+        dragover.value = false
+      }
+    },
+    { flush: 'sync' },
+  )
+  watch(() => props.modelValue, invalidateFileRead, { flush: 'sync' })
+  onBeforeUnmount(invalidateFileRead)
   const fileInputEl = ref<HTMLInputElement>()
   const fileName = ref('')
   const fileSize = ref(0)
@@ -139,7 +184,7 @@
   }
 
   function ensureDefault() {
-    if (props.disabled || !props.initializeDefault) return
+    if (effectiveDisabled.value || !props.initializeDefault) return
     const currentValue = props.modelValue
     if (!currentValue) {
       emit('update:modelValue', defaultSeed.value)
@@ -183,15 +228,26 @@
           : t('jsonTextareaInput.summaryValue', { type: typeof parsed })
       return { kind: 'ok', summary }
     } catch (err) {
-      return { kind: 'error', message: (err as Error).message.replace(/^JSON\.parse: /, '') }
+      const detail = (err as Error).message.replace(/^JSON\.parse: /, '')
+      return { kind: 'error', message: t('jsonTextareaInput.parseError', { detail }) }
     }
   })
 
   function onFilePick() {
+    if (effectiveDisabled.value) return
     fileInputEl.value?.click()
   }
 
+  function onTextInput(value: string) {
+    if (effectiveDisabled.value) return
+    invalidateFileRead()
+    emit('update:modelValue', value)
+  }
+
   async function loadFile(file: File) {
+    if (effectiveDisabled.value) return
+    invalidateFileRead()
+    const generation = fileReadGeneration.value
     const isJsonFile = /\.json$/i.test(file.name) || file.type === 'application/json'
     if (!isJsonFile) {
       const displayName = file.name || file.type || t('jsonTextareaInput.unknownFile')
@@ -211,23 +267,28 @@
       )
       return
     }
+    fileReading.value = true
     try {
       const text = await file.text()
+      if (effectiveDisabled.value || generation !== fileReadGeneration.value) return
       emit('update:modelValue', text)
       emit('file-loaded', file)
       fileName.value = file.name
       fileSize.value = file.size
       ElMessage.success(t('jsonTextareaInput.loaded', { name: file.name }))
     } catch (err) {
+      if (effectiveDisabled.value || generation !== fileReadGeneration.value) return
       ElMessage.error(t('jsonTextareaInput.readFailed', { message: (err as Error).message }))
+    } finally {
+      if (generation === fileReadGeneration.value) fileReading.value = false
     }
   }
 
   async function onFileChange(ev: Event) {
     const input = ev.target as HTMLInputElement
     const file = input.files?.[0]
-    if (file) await loadFile(file)
     input.value = ''
+    if (file) await loadFile(file)
   }
 
   async function onDropFile(ev: DragEvent) {
@@ -246,6 +307,8 @@
   }
 
   function onClear() {
+    if (effectiveDisabled.value) return
+    invalidateFileRead()
     emit('update:modelValue', props.initializeDefault ? defaultSeed.value : '')
     fileName.value = ''
     fileSize.value = 0
@@ -350,6 +413,9 @@
     display: inline-flex;
     align-items: center;
     gap: 4px;
+    min-width: 0;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
     color: var(--color-danger);
   }
   .json-textarea-input__parse-ok {

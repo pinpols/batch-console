@@ -48,6 +48,7 @@
         :loading="loadingSessions"
         :history-unavailable="historyUnavailable"
         :writes-frozen="writesFrozen"
+        :scope-label="replayScopeLabel"
         :scope-tag-type="scopeTagType"
         :status-tag-type="statusTagType"
         :progress-pct="progressPct"
@@ -66,10 +67,16 @@
         <el-table-column :label="t('batchDayReplay.operationRange')" min-width="210">
           <template #default="{ row }">{{ row.fromDate }} – {{ row.throughDate }}</template>
         </el-table-column>
-        <el-table-column :label="t('batchDayReplay.colScope')" prop="scope" width="140" />
+        <el-table-column :label="t('batchDayReplay.colScope')" width="140">
+          <template #default="{ row }">{{ replayScopeLabel(row.scope) }}</template>
+        </el-table-column>
         <el-table-column :label="t('batchDayReplay.colStatus')" width="160">
           <template #default="{ row }">
-            <el-tag :type="statusTagType(row.status)">{{ row.status }}</el-tag>
+            <el-tag :type="statusTagType(row.status)">{{
+              te(`batchDayReplay.statusLabels.${row.status}`)
+                ? t(`batchDayReplay.statusLabels.${row.status}`)
+                : row.status
+            }}</el-tag>
           </template>
         </el-table-column>
         <el-table-column :label="t('batchDayReplay.colProgress')" width="210">
@@ -78,7 +85,12 @@
             <span class="cell-mute">{{ row.succeededCount }} / {{ row.totalCount }}</span>
           </template>
         </el-table-column>
-        <el-table-column :label="t('batchDayReplay.colRequestedBy')" prop="requestedBy" />
+        <el-table-column :label="t('batchDayReplay.colRequestedBy')" prop="requestedBy">
+          <template #default="{ row }">
+            <CopyableText v-if="row.requestedBy" :text="row.requestedBy" />
+            <span v-else>—</span>
+          </template>
+        </el-table-column>
         <el-table-column :label="t('batchDayReplay.colCreatedAt')" prop="createdAt" width="180" />
         <el-table-column :label="t('batchDayReplay.colActions')" width="110" fixed="right">
           <template #default="{ row }">
@@ -90,7 +102,12 @@
       </el-table>
     </SectionCard>
 
-    <el-drawer v-model="rangeDrawerOpen" :title="t('batchDayReplay.rangeSubmitTitle')" direction="rtl" size="560px">
+    <el-drawer
+      v-model="rangeDrawerOpen"
+      :title="t('batchDayReplay.rangeSubmitTitle')"
+      direction="rtl"
+      size="560px"
+    >
       <p class="replay-flow-hint">{{ t('batchDayReplay.submitFlowHint') }}</p>
       <el-form label-width="120px">
         <el-form-item :label="t('batchDayReplay.fieldMode')" required>
@@ -102,10 +119,18 @@
             ]"
           />
         </el-form-item>
-        <el-form-item v-if="rangeForm.executionMode === 'DRY_RUN'" :label="t('batchDayReplay.fieldCandidateSource')" required>
+        <el-form-item
+          v-if="rangeForm.executionMode === 'DRY_RUN'"
+          :label="t('batchDayReplay.fieldCandidateSource')"
+          required
+        >
           <el-radio-group v-model="rangeForm.candidateSource">
-            <el-radio-button value="EXISTING_INSTANCES">{{ t('batchDayReplay.sourceExisting') }}</el-radio-button>
-            <el-radio-button value="SCHEDULE_PLAN">{{ t('batchDayReplay.sourcePlan') }}</el-radio-button>
+            <el-radio-button value="EXISTING_INSTANCES">{{
+              t('batchDayReplay.sourceExisting')
+            }}</el-radio-button>
+            <el-radio-button value="SCHEDULE_PLAN">{{
+              t('batchDayReplay.sourcePlan')
+            }}</el-radio-button>
           </el-radio-group>
         </el-form-item>
         <el-form-item :label="t('batchDayReplay.fieldCalendar')" required>
@@ -120,18 +145,24 @@
           />
         </el-form-item>
         <el-form-item :label="t('batchDayReplay.fieldScope')" required>
-          <el-radio-group v-model="rangeForm.scope">
+          <el-radio-group v-model="rangeForm.scope" class="replay-scope-group">
             <el-radio value="ALL">{{ t('batchDayReplay.scopeAll') }}</el-radio>
             <el-radio v-if="rangeForm.candidateSource !== 'SCHEDULE_PLAN'" value="ALL_FAILED">
               {{ t('batchDayReplay.scopeAllFailed') }}
             </el-radio>
-          <el-radio value="SUBSET_JOB_CODES">{{ t('batchDayReplay.scopeSubsetJobCodes') }}</el-radio>
-          <el-radio v-if="rangeForm.executionMode !== 'DRY_RUN'" value="OUTPUTS_ONLY">
-            {{ t('batchDayReplay.scopeOutputsOnly') }}
-          </el-radio>
+            <el-radio value="SUBSET_JOB_CODES">{{
+              t('batchDayReplay.scopeSubsetJobCodes')
+            }}</el-radio>
+            <el-radio v-if="rangeForm.executionMode !== 'DRY_RUN'" value="OUTPUTS_ONLY">
+              {{ t('batchDayReplay.scopeOutputsOnly') }}
+            </el-radio>
           </el-radio-group>
         </el-form-item>
-        <el-form-item v-if="rangeForm.scope === 'SUBSET_JOB_CODES'" :label="t('batchDayReplay.fieldJobCodes')" required>
+        <el-form-item
+          v-if="rangeForm.scope === 'SUBSET_JOB_CODES'"
+          :label="t('batchDayReplay.fieldJobCodes')"
+          required
+        >
           <el-select
             v-model="selectedRangeJobCodes"
             class="query-w-full"
@@ -144,7 +175,11 @@
             <el-option v-for="code in jobCodeOptions" :key="code" :label="code" :value="code" />
           </el-select>
         </el-form-item>
-        <el-form-item v-if="rangeForm.scope === 'OUTPUTS_ONLY'" :label="t('batchDayReplay.fieldVersionIds')" required>
+        <el-form-item
+          v-if="rangeForm.scope === 'OUTPUTS_ONLY'"
+          :label="t('batchDayReplay.fieldVersionIds')"
+          required
+        >
           <el-input
             v-model="rangeVersionIdsText"
             type="textarea"
@@ -152,21 +187,43 @@
             :placeholder="t('batchDayReplay.rangeVersionIdsHint')"
           />
         </el-form-item>
-        <el-form-item :label="t('batchDayReplay.fieldResultPolicy')">
+        <el-form-item
+          v-if="rangeForm.executionMode !== 'DRY_RUN'"
+          :label="t('batchDayReplay.fieldResultPolicy')"
+        >
           <el-select v-model="rangeForm.resultPolicy" class="query-w-full">
-            <el-option label="CREATE_NEW_VERSION" value="CREATE_NEW_VERSION" />
-            <el-option label="KEEP_BOTH" value="KEEP_BOTH" />
-            <el-option label="MANUAL_CONFIRM_EFFECTIVE" value="MANUAL_CONFIRM_EFFECTIVE" />
+            <el-option
+              :label="t('batchDayReplay.resultPolicyCreateNewVersion')"
+              value="CREATE_NEW_VERSION"
+            />
+            <el-option :label="t('batchDayReplay.resultPolicyKeepBoth')" value="KEEP_BOTH" />
+            <el-option
+              :label="t('batchDayReplay.resultPolicyManualConfirmEffective')"
+              value="MANUAL_CONFIRM_EFFECTIVE"
+            />
           </el-select>
         </el-form-item>
         <el-form-item :label="t('batchDayReplay.fieldConfigPolicy')">
           <el-select v-model="rangeForm.configVersionPolicy" class="query-w-full">
-            <el-option :label="t('batchDayReplay.configPolicyUseOriginal')" value="USE_ORIGINAL_CONFIG" />
-            <el-option :label="t('batchDayReplay.configPolicyUseLatest')" value="USE_LATEST_CONFIG" />
-            <el-option :label="t('batchDayReplay.configPolicyUseSpecified')" value="USE_SPECIFIED_VERSION" />
+            <el-option
+              :label="t('batchDayReplay.configPolicyUseOriginal')"
+              value="USE_ORIGINAL_CONFIG"
+            />
+            <el-option
+              :label="t('batchDayReplay.configPolicyUseLatest')"
+              value="USE_LATEST_CONFIG"
+            />
+            <el-option
+              :label="t('batchDayReplay.configPolicyUseSpecified')"
+              value="USE_SPECIFIED_VERSION"
+            />
           </el-select>
         </el-form-item>
-        <el-form-item v-if="rangeForm.configVersionPolicy === 'USE_SPECIFIED_VERSION'" :label="t('batchDayReplay.fieldConfigVersion')" required>
+        <el-form-item
+          v-if="rangeForm.configVersionPolicy === 'USE_SPECIFIED_VERSION'"
+          :label="t('batchDayReplay.fieldConfigVersion')"
+          required
+        >
           <el-input-number v-model="rangeForm.configVersion" :min="1" />
         </el-form-item>
         <el-form-item :label="t('batchDayReplay.fieldReason')" required>
@@ -177,15 +234,30 @@
         </el-form-item>
       </el-form>
       <el-alert v-if="rangePreview" type="info" :closable="false" class="preview-panel">
-        <template #title>{{ t('batchDayReplay.rangePreviewSummary', { days: rangePreview.days.length, candidates: rangePreview.totalCandidateCount }) }}</template>
+        <template #title>{{
+          t('batchDayReplay.rangePreviewSummary', {
+            days: rangePreview.days.length,
+            candidates: rangePreview.totalCandidateCount,
+          })
+        }}</template>
         <el-table :data="rangePreview.days" size="small" max-height="300">
           <el-table-column prop="bizDate" :label="t('batchDayReplay.colBizDate')" width="120" />
-          <el-table-column prop="disposition" :label="t('batchDayReplay.colStatus')" width="170" />
-          <el-table-column prop="candidateCount" :label="t('batchDayReplay.colProgress')" />
+          <el-table-column :label="t('batchDayReplay.colStatus')" width="170">
+            <template #default="{ row }">
+              {{
+                te(`batchDayReplay.rangeDisposition.${row.disposition}`)
+                  ? t(`batchDayReplay.rangeDisposition.${row.disposition}`)
+                  : row.disposition
+              }}
+            </template>
+          </el-table-column>
+          <el-table-column prop="candidateCount" :label="t('batchDayReplay.rangeCandidates')" />
         </el-table>
       </el-alert>
       <template #footer>
-        <el-button :loading="rangePreviewing" :disabled="rangeSubmitting" @click="previewRange">{{ t('batchDayReplay.previewBtn') }}</el-button>
+        <el-button :loading="rangePreviewing" :disabled="rangeSubmitting" @click="previewRange">{{
+          t('batchDayReplay.previewBtn')
+        }}</el-button>
         <el-button
           type="primary"
           :disabled="!isCurrentRangePreview || !rangePreview?.totalCandidateCount"
@@ -197,24 +269,54 @@
       </template>
     </el-drawer>
 
-    <el-drawer v-model="operationDrawerOpen" :title="t('batchDayReplay.operationDetailTitle')" direction="rtl" size="520px">
+    <el-drawer
+      v-model="operationDrawerOpen"
+      :title="t('batchDayReplay.operationDetailTitle')"
+      direction="rtl"
+      size="520px"
+    >
       <ReplayStatusSummary v-if="currentOperation" :record="currentOperation" />
       <el-descriptions v-if="currentOperation" :column="1" border>
-        <el-descriptions-item :label="t('batchDayReplay.colId')">{{ currentOperation.id }}</el-descriptions-item>
-        <el-descriptions-item :label="t('batchDayReplay.operationRange')">{{ currentOperation.fromDate }} – {{ currentOperation.throughDate }}</el-descriptions-item>
-        <el-descriptions-item :label="t('batchDayReplay.colStatus')">{{ currentOperation.status }}</el-descriptions-item>
-        <el-descriptions-item :label="t('batchDayReplay.colProgress')">{{ currentOperation.succeededCount }} / {{ currentOperation.totalCount }} ({{ currentOperation.failedCount }} {{ t('batchDayReplay.colFailed') }})</el-descriptions-item>
-        <el-descriptions-item :label="t('batchDayReplay.colRequestedBy')">{{ currentOperation.requestedBy }}</el-descriptions-item>
-        <el-descriptions-item :label="t('batchDayReplay.fieldApprovedBy')">{{ currentOperation.approvedBy || '—' }}</el-descriptions-item>
+        <el-descriptions-item :label="t('batchDayReplay.colId')">{{
+          currentOperation.id
+        }}</el-descriptions-item>
+        <el-descriptions-item :label="t('batchDayReplay.operationRange')"
+          >{{ currentOperation.fromDate }} –
+          {{ currentOperation.throughDate }}</el-descriptions-item
+        >
+        <el-descriptions-item :label="t('batchDayReplay.colStatus')">{{
+          te(`batchDayReplay.statusLabels.${currentOperation.status}`)
+            ? t(`batchDayReplay.statusLabels.${currentOperation.status}`)
+            : currentOperation.status
+        }}</el-descriptions-item>
+        <el-descriptions-item :label="t('batchDayReplay.colProgress')"
+          >{{ currentOperation.succeededCount }} / {{ currentOperation.totalCount }} ({{
+            currentOperation.failedCount
+          }}
+          {{ t('batchDayReplay.colFailed') }})</el-descriptions-item
+        >
+        <el-descriptions-item :label="t('batchDayReplay.colRequestedBy')">{{
+          currentOperation.requestedBy
+        }}</el-descriptions-item>
+        <el-descriptions-item :label="t('batchDayReplay.fieldApprovedBy')">{{
+          currentOperation.approvedBy || '—'
+        }}</el-descriptions-item>
       </el-descriptions>
       <h4>{{ t('batchDayReplay.operationDays') }}</h4>
-      <el-table :data="operationSessions" v-loading="loadingOperationSessions" row-key="id" size="small">
+      <el-table
+        :data="operationSessions"
+        v-loading="loadingOperationSessions"
+        row-key="id"
+        size="small"
+      >
         <el-table-column :label="t('batchDayReplay.colDate')" prop="bizDate" width="120" />
         <el-table-column :label="t('batchDayReplay.colStatus')" prop="status" width="150" />
         <el-table-column :label="t('batchDayReplay.colProgress')" min-width="160">
           <template #default="{ row }">
             {{ row.succeededCount ?? '—' }} / {{ row.totalCount ?? '—' }}
-            <span class="cell-mute">({{ row.failedCount ?? '—' }} {{ t('batchDayReplay.colFailed') }})</span>
+            <span class="cell-mute"
+              >({{ row.failedCount ?? '—' }} {{ t('batchDayReplay.colFailed') }})</span
+            >
           </template>
         </el-table-column>
         <el-table-column :label="t('common.actions')" width="100" fixed="right">
@@ -227,10 +329,20 @@
       </el-table>
       <template #footer>
         <el-button @click="refreshOperation">{{ t('common.refresh') }}</el-button>
-        <el-button v-if="canApproveOperation" type="success" :loading="operationActing" @click="approveOperation">
+        <el-button
+          v-if="canApproveOperation"
+          type="success"
+          :loading="operationActing"
+          @click="approveOperation"
+        >
           {{ t('batchDayReplay.approveBtn') }}
         </el-button>
-        <el-button v-if="canCancelOperation" type="danger" :loading="operationActing" @click="cancelOperation">
+        <el-button
+          v-if="canCancelOperation"
+          type="danger"
+          :loading="operationActing"
+          @click="cancelOperation"
+        >
           {{ t('batchDayReplay.cancelBtn') }}
         </el-button>
       </template>
@@ -244,7 +356,9 @@
       size="640px"
       :before-close="onSubmitClose"
     >
-      <p v-if="!submissionOutcomeUnknown" class="replay-flow-hint">{{ t('batchDayReplay.submitFlowHint') }}</p>
+      <p v-if="!submissionOutcomeUnknown" class="replay-flow-hint">
+        {{ t('batchDayReplay.submitFlowHint') }}
+      </p>
       <el-alert
         v-if="submissionOutcomeUnknown"
         type="warning"
@@ -489,7 +603,12 @@
           border
           :empty-text="t('common.noData')"
         >
-          <el-table-column prop="jobCode" :label="t('batchDayReplay.colJobCode')" min-width="160" />
+          <el-table-column prop="jobCode" :label="t('batchDayReplay.colJobCode')" min-width="160">
+            <template #default="{ row }">
+              <CopyableText v-if="row.jobCode" :text="row.jobCode" />
+              <span v-else>—</span>
+            </template>
+          </el-table-column>
           <el-table-column prop="action" :label="t('batchDayReplay.previewColAction')" width="180">
             <template #default="{ row }">{{ replayActionLabel(row.action) }}</template>
           </el-table-column>
@@ -497,8 +616,11 @@
             prop="businessKey"
             :label="t('batchDayReplay.previewColBusinessKey')"
             min-width="220"
-            show-overflow-tooltip
-          />
+          >
+            <template #default="{ row }"
+              ><span class="wrap-cell">{{ row.businessKey || '—' }}</span></template
+            >
+          </el-table-column>
           <el-table-column
             prop="sourceInstanceId"
             :label="t('batchDayReplay.previewColSourceInstance')"
@@ -568,11 +690,13 @@
         <el-descriptions :column="2" border size="small">
           <el-descriptions-item :label="t('batchDayReplay.colStatus')">
             <el-tag :type="statusTagType(currentSession.status)">{{
-              currentSession.status
+              te(`batchDayReplay.statusLabels.${currentSession.status}`)
+                ? t(`batchDayReplay.statusLabels.${currentSession.status}`)
+                : currentSession.status
             }}</el-tag>
           </el-descriptions-item>
           <el-descriptions-item :label="t('batchDayReplay.colScope')">
-            {{ currentSession.scope }}
+            {{ replayScopeLabel(currentSession.scope) }}
           </el-descriptions-item>
           <el-descriptions-item :label="t('batchDayReplay.colBizDate')">
             {{ currentSession.bizDate }}
@@ -595,7 +719,12 @@
         </el-descriptions>
 
         <el-progress
-          v-if="currentSession.totalCount != null && currentSession.totalCount > 0 && currentSession.succeededCount != null && currentSession.failedCount != null"
+          v-if="
+            currentSession.totalCount != null &&
+            currentSession.totalCount > 0 &&
+            currentSession.succeededCount != null &&
+            currentSession.failedCount != null
+          "
           :percentage="progressPct(currentSession)"
           :status="progressStatus(currentSession)"
           class="detail-progress"
@@ -628,7 +757,12 @@
           size="small"
         >
           <el-table-column :label="t('batchDayReplay.colId')" prop="id" width="80" />
-          <el-table-column :label="t('batchDayReplay.colJobCode')" prop="jobCode" />
+          <el-table-column :label="t('batchDayReplay.colJobCode')" prop="jobCode">
+            <template #default="{ row }">
+              <CopyableText v-if="row.jobCode" :text="row.jobCode" />
+              <span v-else>—</span>
+            </template>
+          </el-table-column>
           <el-table-column :label="t('batchDayReplay.colStatus')" width="120">
             <template #default="{ row }">
               <el-tag size="small" :type="entryStatusTagType(row.status)">
@@ -642,11 +776,11 @@
               </el-tag>
             </template>
           </el-table-column>
-          <el-table-column
-            :label="t('batchDayReplay.colFailureReason')"
-            prop="failureReason"
-            show-overflow-tooltip
-          />
+          <el-table-column :label="t('batchDayReplay.colFailureReason')" prop="failureReason">
+            <template #default="{ row }"
+              ><span class="wrap-cell">{{ row.failureReason || '—' }}</span></template
+            >
+          </el-table-column>
           <el-table-column :label="t('common.actions')" width="150" fixed="right">
             <template #default="{ row }">
               <el-button
@@ -690,16 +824,23 @@
 
 <script setup lang="ts">
   import { RefreshCw as Refresh, Plus } from '@lucide/vue'
+  import { useI18n } from 'vue-i18n'
   import PageContainer from '@/components/common/PageContainer.vue'
+  import CopyableText from '@/components/common/CopyableText.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
   import StatusSegment from '@/components/table/StatusSegment.vue'
   import ResultVersionGovernancePanel from './components/ResultVersionGovernancePanel.vue'
   import BatchDayReplaySessionsTable from './components/BatchDayReplaySessionsTable.vue'
   import ReplayStatusSummary from './components/ReplayStatusSummary.vue'
-  import type { BatchDayReplaySession, BatchDayReplayEntry, ReplayOperation } from '@/api/batchDayReplay'
+  import type {
+    BatchDayReplaySession,
+    BatchDayReplayEntry,
+    ReplayOperation,
+  } from '@/api/batchDayReplay'
   import { useBatchDayReplay } from './composables/useBatchDayReplay'
 
+  const { te } = useI18n({ useScope: 'global' })
   const {
     t,
     writesFrozen,
@@ -784,6 +925,10 @@
 </script>
 
 <style scoped>
+  .wrap-cell {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
   .replay-flow-hint {
     margin: 0 0 var(--space-md);
     color: var(--color-text-secondary);
@@ -803,16 +948,14 @@
   }
 
   .replay-scope-group {
-    display: flex;
-    flex-wrap: nowrap;
-    gap: 8px;
-    max-width: 100%;
-    overflow-x: auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr));
+    column-gap: 8px;
+    width: 100%;
     padding: 2px 0;
   }
 
   .replay-scope-group :deep(.el-radio) {
-    flex: 0 0 auto;
     margin-right: 0;
     white-space: nowrap;
   }

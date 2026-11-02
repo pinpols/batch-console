@@ -1,6 +1,6 @@
 import { apiClient, get, post, del } from '@/api/client'
 import { fetchAllPageItems } from '@/api/adapters'
-import { readStoredTenantId } from '@/api/interceptors'
+import { readActiveTenantId } from '@/utils/tenantContext'
 import type { PageResponse, PageResult } from '@/types'
 import type {
   ConsoleAuditLogResponse,
@@ -79,7 +79,7 @@ export const fileApi = {
    * 文件列表页领域汇总卡:今日到达 / 待处理 / 已处理 / 失败。
    * 通过稳定的 /queries/files 分页总数按口径组成汇总，避免依赖额外的聚合接口。
    */
-  summary: async (tenantId = readStoredTenantId()): Promise<ConsoleFileSummaryResponse> => {
+  summary: async (tenantId = readActiveTenantId()): Promise<ConsoleFileSummaryResponse> => {
     const count = async (params: Record<string, string | number | boolean | undefined>) => {
       const pr = await get<PageResponse<ConsoleFileRecordResponse>>('/api/console/queries/files', {
         tenantId,
@@ -98,10 +98,10 @@ export const fileApi = {
     return { arrivedToday, pending, processed, failed }
   },
 
-  detail: (fileId: number, tenantId = readStoredTenantId()) =>
+  detail: (fileId: number, tenantId = readActiveTenantId()) =>
     get<ConsoleFileRecordDetailResponse>(`/api/console/queries/files/${fileId}`, { tenantId }),
 
-  audit: async (fileId: number, tenantId = readStoredTenantId()) => {
+  audit: async (fileId: number, tenantId = readActiveTenantId()) => {
     // 传入 fileId 让后端过滤（不支持时忽略，客户端仍做 filter 兜底）
     const rows = await fetchAllPageItems<ConsoleAuditLogResponse>('/api/console/queries/audits', {
       tenantId,

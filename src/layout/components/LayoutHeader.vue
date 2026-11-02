@@ -44,6 +44,7 @@
           <span class="tenant-chip__label">{{ t('nav.tenantLabel') }}</span>
           <TenantSelect
             :model-value="tenantIdInput"
+            :disabled="tenant.tenantSwitchPending"
             size="small"
             select-class="tenant-chip__select"
             popper-class="tenant-select-popper--header"

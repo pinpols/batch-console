@@ -68,12 +68,12 @@
       </div>
 
       <EmptyState
-        v-else-if="!loading && summary.length === 0"
+        v-if="!summaryError && !loading && summary.length === 0"
         :description="t('workerFingerprintBoard.summaryEmpty')"
         :image-size="60"
       />
 
-      <div v-else class="wfb__cards">
+      <div v-else-if="!summaryError && summary.length > 0" class="wfb__cards">
         <div
           v-for="item in summary"
           :key="`${item.buildId}__${item.sdkVersion}`"
@@ -133,23 +133,31 @@
           prop="workerCode"
           :label="t('workerFingerprintBoard.colWorkerCode')"
           min-width="200"
-          show-overflow-tooltip
-        />
+        >
+          <template #default="{ row }">
+            <CopyableText v-if="row.workerCode" :text="row.workerCode" />
+            <span v-else>—</span>
+          </template>
+        </el-table-column>
         <el-table-column :label="t('workerFingerprintBoard.colStatus')" width="120">
           <template #default="{ row }">
             <el-tag size="small" :type="statusTagType(row.status)" effect="plain">
-              {{ row.status }}
+              {{
+                te(`enum.workerStatus.${row.status}`)
+                  ? t(`enum.workerStatus.${row.status}`)
+                  : row.status
+              }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="buildId" min-width="160" show-overflow-tooltip>
+        <el-table-column prop="buildId" min-width="160">
           <template #header>
             <HelpLabel :tip="t('workerFingerprintBoard.colBuildIdTip')">
               {{ t('workerFingerprintBoard.colBuildId') }}
             </HelpLabel>
           </template>
           <template #default="{ row }">
-            <span v-if="row.buildId">{{ row.buildId }}</span>
+            <CopyableText v-if="row.buildId" :text="row.buildId" />
             <span v-else class="muted">—</span>
           </template>
         </el-table-column>
@@ -159,13 +167,13 @@
           width="140"
         >
           <template #default="{ row }">
-            <span v-if="row.sdkVersion">{{ row.sdkVersion }}</span>
+            <CopyableText v-if="row.sdkVersion" :text="row.sdkVersion" />
             <span v-else class="muted">—</span>
           </template>
         </el-table-column>
         <el-table-column prop="processId" :label="t('workerFingerprintBoard.colPid')" width="120">
           <template #default="{ row }">
-            <span v-if="row.processId">{{ row.processId }}</span>
+            <CopyableText v-if="row.processId" :text="row.processId" />
             <span v-else class="muted">—</span>
           </template>
         </el-table-column>
@@ -183,6 +191,7 @@
   import { RefreshCw as Refresh } from '@lucide/vue'
   import { ElMessage } from 'element-plus'
   import PageContainer from '@/components/common/PageContainer.vue'
+  import CopyableText from '@/components/common/CopyableText.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
   import HelpLabel from '@/components/common/HelpLabel.vue'
@@ -201,7 +210,7 @@
   } from '@/api/workerFingerprint'
   import { summarizeWorkerFingerprints } from './workerFingerprintPresentation'
 
-  const { t } = useI18n({ useScope: 'global' })
+  const { t, te } = useI18n({ useScope: 'global' })
   const tenant = useTenantStore()
 
   const rows = ref<WorkerFingerprint[]>([])
@@ -327,6 +336,16 @@
     display: flex;
     flex-wrap: wrap;
     gap: var(--space-xs, 6px);
+  }
+
+  .wfb__card-head :deep(.el-tag) {
+    max-width: 100%;
+    height: auto;
+    white-space: normal;
+  }
+
+  .wfb__card-head :deep(.el-tag__content) {
+    overflow-wrap: anywhere;
   }
 
   .wfb__card-count {

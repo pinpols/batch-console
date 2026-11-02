@@ -65,8 +65,7 @@ function sendErrorKeyFor(error: unknown): SendErrorKey {
     status === 503 || code === 'SERVICE_UNAVAILABLE' || result.code === 'SERVICE_UNAVAILABLE'
   if (isServiceUnavailable) return 'aiChat.sendUnavailable'
   if (result.code === 'STREAM_FAILED') return 'aiChat.sendUnavailable'
-  const isTimeout =
-    result.code === 'ECONNABORTED' || result.code === 'ETIMEDOUT' || status === 504
+  const isTimeout = result.code === 'ECONNABORTED' || result.code === 'ETIMEDOUT' || status === 504
   if (isTimeout) return 'aiChat.sendTimeout'
   return 'aiChat.sendError'
 }
@@ -134,6 +133,8 @@ export function useAiChatSession() {
   const images = ref<AiImageDraft[]>([])
   const imageCapabilities = ref<AiCapabilities | null>(null)
   const pendingTurnId = ref('')
+  const draftRevision = ref(0)
+  const contextRevision = ref(0)
   const drafts = new Map<
     string,
     {
@@ -142,6 +143,7 @@ export function useAiChatSession() {
       images: AiImageDraft[]
     }
   >()
+  const imageTenants = new Map<string, string>()
   let generation = 0
   let activeController: AbortController | null = null
   let activeRequestId = ''
@@ -149,6 +151,8 @@ export function useAiChatSession() {
   let stopped = false
   let pendingDelta = ''
   let deltaFrame = 0
+  let capabilitySequence = 0
+  let reconcileSequence = 0
 
   function flushDelta(message: AiChatMessage) {
     if (deltaFrame) cancelAnimationFrame(deltaFrame)
@@ -163,6 +167,36 @@ export function useAiChatSession() {
       attachment: attachment.value,
       images: images.value,
     })
+    draftRevision.value += 1
+  }
+
+  /** 切换租户会清除当前及其他会话的本地草稿。 */
+  function hasUnsavedDraft() {
+    if (
+      prompt.value.trim() ||
+      attachment.value ||
+      images.value.length ||
+      sending.value ||
+      pendingTurnId.value
+    )
+      return true
+    return [...drafts].some(
+      ([id, draft]) =>
+        id !== sessionId.value &&
+        Boolean(draft.prompt.trim() || draft.attachment || draft.images.length),
+    )
+  }
+
+  function tenantGuardState() {
+    return {
+      prompt: prompt.value,
+      attachment: attachment.value,
+      images: images.value,
+      sending: sending.value,
+      pendingTurnId: pendingTurnId.value,
+      sessionId: sessionId.value,
+      draftRevision: draftRevision.value,
+    }
   }
 
   function tracked(image: AiImageDraft) {
@@ -174,14 +208,29 @@ export function useAiChatSession() {
 
   async function loadImageCapabilities() {
     const tenantId = tenant.tenantId
+    const tenantRevision = tenant.revision
+    const requestGeneration = generation
+    const sequence = ++capabilitySequence
     const result = await getAiCapabilities().catch(() => null)
-    if (tenant.tenantId === tenantId) imageCapabilities.value = result
+    if (
+      tenant.tenantId === tenantId &&
+      tenant.revision === tenantRevision &&
+      generation === requestGeneration &&
+      sequence === capabilitySequence
+    )
+      imageCapabilities.value = result
   }
 
   async function addImages(files: File[]) {
     const limits = imageCapabilities.value
     if (!limits?.imageInput || !files.length) return
     const tenantId = tenant.tenantId
+    const tenantRevision = tenant.revision
+    const uploadGeneration = generation
+    const isCurrentUpload = () =>
+      tenant.tenantId === tenantId &&
+      tenant.revision === tenantRevision &&
+      generation === uploadGeneration
     for (const file of files) {
       let imageIsInvalid = !['image/png', 'image/jpeg', 'image/webp'].includes(file.type)
       if (!imageIsInvalid) imageIsInvalid = file.size > limits.maxImageBytes
@@ -202,10 +251,11 @@ export function useAiChatSession() {
         previewUrl: URL.createObjectURL(file),
         status: 'uploading',
       }
+      imageTenants.set(item.clientAttachmentId, tenantId)
       images.value.push(item)
       try {
         const uploaded = await uploadAiAttachment(file, item.clientAttachmentId)
-        if (tenant.tenantId !== tenantId) return
+        if (!isCurrentUpload()) return
         if (!tracked(item)) {
           void deleteAiAttachment(uploaded.id).catch(() => undefined)
           return
@@ -215,10 +265,11 @@ export function useAiChatSession() {
         item.width = uploaded.width ?? undefined
         item.height = uploaded.height ?? undefined
         item.status = uploaded.status === 'DRAFT' ? 'ready' : 'failed'
+        draftRevision.value += 1
       } catch (error) {
-        if (tenant.tenantId !== tenantId) return
+        if (!isCurrentUpload()) return
         const found = await getAiAttachmentByClientId(item.clientAttachmentId).catch(() => null)
-        if (tenant.tenantId !== tenantId) return
+        if (!isCurrentUpload()) return
         if (found?.status === 'DRAFT') {
           if (!tracked(item)) {
             void deleteAiAttachment(found.id).catch(() => undefined)
@@ -229,8 +280,10 @@ export function useAiChatSession() {
           item.width = found.width ?? undefined
           item.height = found.height ?? undefined
           item.status = 'ready'
+          draftRevision.value += 1
         } else {
           item.status = 'failed'
+          draftRevision.value += 1
           sendError.value = true
           sendErrorKey.value = imageUploadErrorKeyFor(error)
         }
@@ -244,14 +297,21 @@ export function useAiChatSession() {
       draft.images = draft.images.filter((image) => image !== item)
     }
     URL.revokeObjectURL(item.previewUrl)
-    if (item.id && item.status === 'ready') {
+    if (
+      item.id &&
+      item.status === 'ready' &&
+      imageTenants.get(item.clientAttachmentId) === tenant.tenantId
+    ) {
       void deleteAiAttachment(item.id).catch(() => undefined)
     }
+    imageTenants.delete(item.clientAttachmentId)
   }
 
   function reset(clearDrafts = false) {
     if (!clearDrafts) rememberDraft()
     generation += 1
+    draftRevision.value += 1
+    contextRevision.value += 1
     stop()
     if (deltaFrame) cancelAnimationFrame(deltaFrame)
     deltaFrame = 0
@@ -263,10 +323,15 @@ export function useAiChatSession() {
       const abandoned = new Set(allAbandonedImages)
       for (const image of abandoned) {
         URL.revokeObjectURL(image.previewUrl)
-        if (image.id && image.status === 'ready') {
+        if (
+          image.id &&
+          image.status === 'ready' &&
+          imageTenants.get(image.clientAttachmentId) === tenant.tenantId
+        ) {
           void deleteAiAttachment(image.id).catch(() => undefined)
         }
       }
+      imageTenants.clear()
       drafts.clear()
       imageCapabilities.value = null
     }
@@ -314,6 +379,7 @@ export function useAiChatSession() {
     rememberDraft()
     stop()
     generation += 1
+    contextRevision.value += 1
     if (deltaFrame) cancelAnimationFrame(deltaFrame)
     deltaFrame = 0
     pendingDelta = ''
@@ -359,8 +425,19 @@ export function useAiChatSession() {
     }
     const requestGeneration = generation
     const tenantId = tenant.tenantId
+    const tenantRevision = tenant.revision
+    const isCurrentRequest = () =>
+      requestGeneration === generation &&
+      tenant.tenantId === tenantId &&
+      tenant.revision === tenantRevision
     const sentAttachment = attachment.value
     const sentImages = images.value
+    const releaseSentImages = () => {
+      for (const image of sentImages) {
+        URL.revokeObjectURL(image.previewUrl)
+        imageTenants.delete(image.clientAttachmentId)
+      }
+    }
     const clientTurnId = sentImages.length ? crypto.randomUUID() : ''
     const userMessage: AiChatMessage = {
       id: `${Date.now()}-u`,
@@ -383,6 +460,9 @@ export function useAiChatSession() {
       status: 'IN_PROGRESS',
     }
     messages.value.push(userMessage, pendingMessage)
+    contextRevision.value += 1
+    drafts.delete(sessionId.value)
+    draftRevision.value += 1
     const assistantMessage = messages.value[messages.value.length - 1]
     sending.value = true
     prompt.value = ''
@@ -411,11 +491,11 @@ export function useAiChatSession() {
         },
         {
           onStarted(requestId) {
-            if (requestGeneration !== generation || tenant.tenantId !== tenantId) return
+            if (!isCurrentRequest()) return
             activeRequestId = requestId
           },
           onDelta(delta) {
-            if (requestGeneration !== generation || tenant.tenantId !== tenantId) return
+            if (!isCurrentRequest()) return
             pendingDelta += delta
             if (!deltaFrame) {
               deltaFrame = requestAnimationFrame(() => flushDelta(assistantMessage))
@@ -424,7 +504,7 @@ export function useAiChatSession() {
         },
         activeController.signal,
       )
-      if (requestGeneration !== generation || tenant.tenantId !== tenantId) return false
+      if (!isCurrentRequest()) return false
       flushDelta(assistantMessage)
       if (res.sessionId) sessionId.value = res.sessionId
       assistantMessage.id = res.requestId
@@ -441,14 +521,14 @@ export function useAiChatSession() {
         prompt.value = draft
         attachment.value = sentAttachment
       }
-      sentImages.forEach((image) => URL.revokeObjectURL(image.previewUrl))
+      releaseSentImages()
       return true
     } catch (error) {
-      if (requestGeneration !== generation || tenant.tenantId !== tenantId) return false
+      if (!isCurrentRequest()) return false
       flushDelta(assistantMessage)
       if (clientTurnId) {
         const persisted = await getAiTurnByClientId(clientTurnId).catch(() => null)
-        if (requestGeneration !== generation || tenant.tenantId !== tenantId) return false
+        if (!isCurrentRequest()) return false
         if (persisted) {
           sessionId.value = persisted.sessionId
           assistantMessage.content = persisted.turn.response ?? ''
@@ -456,7 +536,7 @@ export function useAiChatSession() {
           const restoredPromptDecision = persistedDecision(persisted.turn.promptDecision ?? null)
           assistantMessage.decision = restoredPromptDecision
           assistantMessage.modelName = persisted.turn.modelName ?? undefined
-          sentImages.forEach((image) => URL.revokeObjectURL(image.previewUrl))
+          releaseSentImages()
           if (persisted.turn.status === 'IN_PROGRESS') {
             pendingTurnId.value = clientTurnId
             sendError.value = true
@@ -467,7 +547,7 @@ export function useAiChatSession() {
         pendingTurnId.value = clientTurnId
         sendError.value = true
         sendErrorKey.value = 'aiChat.imageStatusUnknown'
-        sentImages.forEach((image) => URL.revokeObjectURL(image.previewUrl))
+        releaseSentImages()
         return false
       }
       if (stopped) {
@@ -509,10 +589,26 @@ export function useAiChatSession() {
 
   async function reconcileTurn() {
     if (!pendingTurnId.value) return
-    const persisted = await getAiTurnByClientId(pendingTurnId.value).catch(() => null)
-    if (!persisted) return
-    sessionId.value = persisted.sessionId
+    const pendingId = pendingTurnId.value
+    const tenantId = tenant.tenantId
+    const tenantRevision = tenant.revision
+    const requestGeneration = generation
+    const session = sessionId.value
+    const sequence = ++reconcileSequence
     const assistant = messages.value.at(-1)
+    const persisted = await getAiTurnByClientId(pendingId).catch(() => null)
+    if (
+      !persisted ||
+      tenant.tenantId !== tenantId ||
+      tenant.revision !== tenantRevision ||
+      generation !== requestGeneration ||
+      sequence !== reconcileSequence ||
+      pendingTurnId.value !== pendingId ||
+      sessionId.value !== session ||
+      messages.value.at(-1) !== assistant
+    )
+      return
+    sessionId.value = persisted.sessionId
     if (!assistant || assistant.role !== 'assistant') return
     assistant.content = persisted.turn.response ?? ''
     assistant.status = persisted.turn.status
@@ -535,6 +631,10 @@ export function useAiChatSession() {
     images,
     imageCapabilities,
     pendingTurnId,
+    draftRevision,
+    contextRevision,
+    hasUnsavedDraft,
+    tenantGuardState,
     loadImageCapabilities,
     addImages,
     removeImage,

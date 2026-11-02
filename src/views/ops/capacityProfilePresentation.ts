@@ -14,8 +14,8 @@ export interface CapacityBucket {
 
 export interface CapacityTrendPoint {
   label: string
-  instanceCount: number
-  taskCount: number
+  instanceCount: number | null
+  taskCount: number | null
 }
 
 function toIso(value: number): string {
@@ -84,8 +84,8 @@ export function buildCapacityTrend(
     const label = bucketLabel(fromTimestamp, toTimestamp, zone)
     return {
       label,
-      instanceCount: Number(reports[index]?.totals?.instanceCount ?? 0),
-      taskCount: Number(reports[index]?.totals?.taskCount ?? 0),
+      instanceCount: reports[index] ? Number(reports[index].totals?.instanceCount ?? 0) : null,
+      taskCount: reports[index] ? Number(reports[index].totals?.taskCount ?? 0) : null,
     }
   })
 }

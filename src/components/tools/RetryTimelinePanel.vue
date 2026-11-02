@@ -10,9 +10,9 @@
       </el-form-item>
       <el-form-item :label="t('operationsToolkit.retry.policy')">
         <el-select v-model="form.policy">
-          <el-option label="NONE" value="NONE" />
-          <el-option label="FIXED" value="FIXED" />
-          <el-option label="EXPONENTIAL" value="EXPONENTIAL" />
+          <el-option :label="t('enum.retryPolicy.NONE')" value="NONE" />
+          <el-option :label="t('enum.retryPolicy.FIXED')" value="FIXED" />
+          <el-option :label="t('enum.retryPolicy.EXPONENTIAL')" value="EXPONENTIAL" />
         </el-select>
       </el-form-item>
       <el-form-item :label="t('operationsToolkit.retry.maxRetries')">

@@ -42,12 +42,25 @@
             :placeholder="t('quotaPanel.keywordPlaceholder')"
             clearable
             class="quota-query__search"
-            @keyup.enter="onQuotaSearch"
           />
         </el-form-item>
       </ListPageQueryBar>
 
-      <EmptyState v-if="!loading && filtered.length === 0" :description="t('quotaPanel.empty')" />
+      <el-alert
+        v-if="loadError"
+        type="error"
+        show-icon
+        :closable="false"
+        :title="t('quotaPanel.loadError')"
+      >
+        <template #default>
+          <el-button link type="primary" @click="reload">{{ t('common.retry') }}</el-button>
+        </template>
+      </el-alert>
+      <EmptyState
+        v-else-if="!loading && filtered.length === 0"
+        :description="t('quotaPanel.empty')"
+      />
 
       <div v-else class="grid">
         <el-card
@@ -60,7 +73,7 @@
           <div class="quota-card__head">
             <div class="quota-card__heading">
               <div class="quota-card__heading-row">
-                <span class="quota-card__code">{{ p.policyCode }}</span>
+                <CopyableText class="quota-card__code" :text="p.policyCode" />
                 <el-tag
                   :type="p.enabled ? 'success' : 'info'"
                   size="small"
@@ -145,7 +158,7 @@
       size="640px"
       destroy-on-close
     >
-      <el-form ref="formRef" :model="form" :rules="rules" label-width="190px">
+      <el-form ref="formRef" :model="form" :rules="rules" label-position="top">
         <el-form-item :label="t('quotaPanel.fieldPolicyCode')" prop="policyCode">
           <el-input v-model="form.policyCode" :disabled="editingId != null" maxlength="128" />
         </el-form-item>
@@ -205,6 +218,7 @@
   import { useTenantReload } from '@/composables/useTenantReload'
   import { useAsyncAction } from '@/composables/useAsyncAction'
   import PageContainer from '@/components/common/PageContainer.vue'
+  import CopyableText from '@/components/common/CopyableText.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
@@ -219,6 +233,7 @@
   const { canMutateConfig } = usePermission()
   const INT32_MAX = 2147483647
   const loading = ref(false)
+  const loadError = ref(false)
   const togglingId = ref<number | null>(null)
   const policies = ref<GovernanceQuotaPolicyRow[]>([])
   const kwDraft = ref('')
@@ -283,7 +298,7 @@
   }
 
   function onQuotaRefresh() {
-    return runRefresh(load)
+    return runRefresh(load).catch(() => {})
   }
 
   const filtered = computed(() => {
@@ -303,13 +318,20 @@
 
   async function load() {
     loading.value = true
+    loadError.value = false
     try {
       policies.value = await governanceApi.listQuotaPolicies(tenant.tenantId)
-    } catch {
+    } catch (error) {
       policies.value = []
+      loadError.value = true
+      throw error
     } finally {
       loading.value = false
     }
+  }
+
+  function reload() {
+    return load().catch(() => {})
   }
 
   function resetForm(row?: GovernanceQuotaPolicyRow) {
@@ -344,7 +366,7 @@
       }
       ElMessage.success(t('quotaPanel.saveSuccess', { code: form.policyCode }))
       dialogVisible.value = false
-      await load()
+      await reload()
     },
     { cooldownMs: 300 },
   )
@@ -390,7 +412,7 @@
     }
   }
 
-  useTenantReload(load)
+  useTenantReload(reload)
 </script>
 
 <style scoped>
@@ -537,6 +559,7 @@
     color: var(--color-text-primary);
     font-weight: 600;
     font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
   }
 
   .quota-card__actions {

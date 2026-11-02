@@ -8,26 +8,34 @@
     >
       <el-option v-for="p in presets" :key="p.key" :label="p.label" :value="p.key" />
     </el-select>
-    <InstantRangePicker
-      v-if="type === 'datetimerange'"
-      :model-value="modelValue"
-      :range-separator="t('dateRangePicker.rangeSeparator')"
-      :start-placeholder="t('dateRangePicker.startTime')"
-      :end-placeholder="t('dateRangePicker.endTime')"
-      class="dr-preset__picker"
-      @update:model-value="emit('update:modelValue', $event)"
-    />
-    <el-date-picker
-      v-else
-      :model-value="modelValue ?? null"
-      type="daterange"
-      value-format="YYYY-MM-DD"
-      :range-separator="t('dateRangePicker.rangeSeparator')"
-      :start-placeholder="t('dateRangePicker.startDate')"
-      :end-placeholder="t('dateRangePicker.endDate')"
-      class="dr-preset__picker"
-      @update:model-value="onPickerChange"
-    />
+    <div
+      ref="rangeViewport"
+      class="dr-preset__viewport"
+      :tabindex="rangeOverflows ? 0 : undefined"
+      :role="rangeOverflows ? 'region' : undefined"
+      :aria-label="rangeOverflows ? t('dateRangePicker.scrollRange') : undefined"
+    >
+      <InstantRangePicker
+        v-if="type === 'datetimerange'"
+        :model-value="modelValue"
+        :range-separator="t('dateRangePicker.rangeSeparator')"
+        :start-placeholder="t('dateRangePicker.startTime')"
+        :end-placeholder="t('dateRangePicker.endTime')"
+        class="dr-preset__picker"
+        @update:model-value="emit('update:modelValue', $event)"
+      />
+      <el-date-picker
+        v-else
+        :model-value="modelValue ?? null"
+        type="daterange"
+        value-format="YYYY-MM-DD"
+        :range-separator="t('dateRangePicker.rangeSeparator')"
+        :start-placeholder="t('dateRangePicker.startDate')"
+        :end-placeholder="t('dateRangePicker.endDate')"
+        class="dr-preset__picker"
+        @update:model-value="onPickerChange"
+      />
+    </div>
     <el-tooltip :content="timezoneHint" placement="top">
       <span class="dr-preset__timezone-hint" tabindex="0" role="note" :aria-label="timezoneHint">
         <el-icon aria-hidden="true"><Info /></el-icon>
@@ -37,7 +45,7 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, watch } from 'vue'
+  import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { Info } from '@lucide/vue'
   import { displayTimezone } from '@/constants/timezone'
@@ -45,6 +53,45 @@
   import InstantRangePicker from './InstantRangePicker.vue'
 
   const { t } = useI18n({ useScope: 'global' })
+  const rangeViewport = ref<HTMLElement | null>(null)
+  const rangeOverflows = ref(false)
+  let rangeResizeObserver: ResizeObserver | undefined
+  let rangeResizeFrame: number | undefined
+
+  function updateRangeOverflow() {
+    const viewport = rangeViewport.value
+    rangeOverflows.value = !!viewport && viewport.scrollWidth > viewport.clientWidth + 1
+  }
+
+  function queueRangeOverflowUpdate() {
+    if (rangeResizeFrame !== undefined) return
+    rangeResizeFrame = requestAnimationFrame(() => {
+      rangeResizeFrame = undefined
+      updateRangeOverflow()
+    })
+  }
+
+  function observeRangeSize() {
+    rangeResizeObserver?.disconnect()
+    const viewport = rangeViewport.value
+    if (!viewport) return
+    if (typeof ResizeObserver !== 'undefined') {
+      rangeResizeObserver = new ResizeObserver(queueRangeOverflowUpdate)
+      rangeResizeObserver.observe(viewport)
+      if (viewport.firstElementChild) rangeResizeObserver.observe(viewport.firstElementChild)
+    }
+    updateRangeOverflow()
+  }
+
+  onMounted(() => {
+    observeRangeSize()
+    window.addEventListener('resize', queueRangeOverflowUpdate)
+  })
+  onBeforeUnmount(() => {
+    rangeResizeObserver?.disconnect()
+    if (rangeResizeFrame !== undefined) cancelAnimationFrame(rangeResizeFrame)
+    window.removeEventListener('resize', queueRangeOverflowUpdate)
+  })
 
   /**
    * 日期范围输出 LocalDate 字符串；时间范围输出 UTC Instant 字符串。
@@ -73,6 +120,10 @@
       type: 'datetimerange',
       includeAll: true,
     },
+  )
+  watch(
+    () => props.type,
+    () => void nextTick(observeRangeSize),
   )
 
   const emit = defineEmits<{
@@ -176,6 +227,18 @@
     width: 130px;
   }
 
+  .dr-preset__viewport {
+    display: flex;
+    min-width: 0;
+    max-width: 100%;
+    overflow-x: auto;
+  }
+
+  .dr-preset__viewport:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+
   .dr-preset__timezone-hint {
     display: inline-flex;
     align-items: center;
@@ -200,9 +263,39 @@
     }
 
     .dr-preset__select,
+    .dr-preset__viewport,
     .dr-preset__picker {
       width: 100% !important;
       min-width: 0;
+    }
+
+    .dr-preset :deep(.dr-preset__picker.el-date-editor) {
+      display: grid;
+      grid-template-columns: 16px minmax(140px, 1fr) 16px;
+      min-width: 196px;
+      height: auto;
+      padding-block: 4px;
+    }
+
+    .dr-preset :deep(.dr-preset__picker .el-range-input) {
+      width: 100%;
+    }
+
+    .dr-preset :deep(.dr-preset__picker .el-range-input:first-of-type) {
+      grid-area: 1 / 2;
+    }
+
+    .dr-preset :deep(.dr-preset__picker .el-range-input:last-of-type) {
+      grid-area: 2 / 2;
+    }
+
+    .dr-preset :deep(.dr-preset__picker .el-range-separator) {
+      grid-area: 2 / 1;
+      width: auto;
+    }
+
+    .dr-preset :deep(.dr-preset__picker .el-range__close-icon) {
+      grid-area: 1 / 3;
     }
   }
 </style>

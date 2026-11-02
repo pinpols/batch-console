@@ -84,6 +84,36 @@ describe('治理抽屉范围隔离', () => {
     role.admin = true
     api.window.mockResolvedValue({ dayStatus: 'OPEN', frozen: false })
   })
+  it('使用本地化状态展示批次日，并保留未知状态原值', async () => {
+    api.preview.mockResolvedValue(preview('2026-11-02'))
+    const wrapper = render()
+    await flushPromises()
+    expect(wrapper.text()).toContain('状态：开放')
+    api.window.mockResolvedValue({ dayStatus: 'FUTURE_STATE', frozen: false })
+    tenant.tenantId = 'tenant-b'
+    await flushPromises()
+    expect(wrapper.text()).toContain('状态：FUTURE_STATE')
+    wrapper.unmount()
+  })
+  it('窄屏使用单列摘要，宽屏保持双列', async () => {
+    const originalWidth = window.innerWidth
+    api.preview.mockResolvedValue(preview('2026-11-02'))
+    try {
+      window.innerWidth = 390
+      const narrow = render()
+      await flushPromises()
+      expect(narrow.find('[column="1"]').exists()).toBe(true)
+      narrow.unmount()
+
+      window.innerWidth = 1280
+      const wide = render()
+      await flushPromises()
+      expect(wide.find('[column="2"]').exists()).toBe(true)
+      wide.unmount()
+    } finally {
+      window.innerWidth = originalWidth
+    }
+  })
   it('切租户后迟到的旧响应不得覆盖新快照，清空租户立即清空旧数据', async () => {
     let resolveOld!: (value: unknown) => void
     api.preview.mockImplementationOnce(

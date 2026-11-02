@@ -57,10 +57,8 @@ const tenantPackageImportWizard = {
   guideColExample: 'Example',
   guideColFillExample: 'Copyable example',
   guideColAppliesTo: 'Applies to',
-  applyDescStart: 'Will apply the preview for the current',
-  applyDescMid: 'to tenant config as a',
-  applyDescBold: 'single transaction',
-  applyDescEnd: '. Verify in Preview first.',
+  applyDesc:
+    'Write the previewed configuration to the target tenant in one transaction. Review the preview before applying.',
   templateDownloadedToast: 'Package template downloaded',
   exportedToast: 'Current package exported',
   applyConfirmText: 'Apply the package preview as a single transaction? This cannot be undone.',
@@ -70,10 +68,10 @@ const tenantPackageImportWizard = {
     'Write {n} valid rows to tenant config in a single transaction (by sheet: {breakdown}). This cannot be undone.',
   appliedToast: 'Merged import applied',
   sheetStatsCaption: 'Per-sheet validation',
-  onlyInvalidSheets: 'Only error sheets',
+  onlyInvalidSheets: 'Only sheets with errors',
   previewReadyTitle: 'Preview passed, {n} valid rows ready',
   previewReadyBody:
-    'No blocking errors found. Before continuing, still review per-sheet row counts and impact scope.',
+    'No blocking errors found. Review each sheet’s row counts and impact before continuing.',
   colSheet: 'Sheet',
   colSheetTotal: 'Rows',
   colSheetValid: 'Valid',
@@ -82,14 +80,14 @@ const tenantPackageImportWizard = {
   sheetRiskDownstream: 'Upstream affected',
   depsAlertTitle: 'Downstream sheets may be affected',
   depsAlertBody:
-    'The failing sheets are referenced upstream. Even if these downstream sheets have no errors here, the apply step may still fail:',
+    'These sheets depend on upstream sheets with errors. Applying may fail even if these sheets have no errors:',
   applyBlockedTitle: '{n} invalid rows — apply blocked',
   applyBlockedBody:
     'Download the annotated workbook in the preview step, fix the {n} issues, then re-upload.',
-  btnReuploadFixed: 'Re-upload after fix',
-  errorRowsCaption: 'Error rows (inline editable)',
+  btnReuploadFixed: 'Re-upload after correction',
+  errorRowsCaption: 'Error rows (editable)',
   errorRowsHint:
-    'Expand a row to edit its cells and save; it will be re-validated. For issues you cannot fix inline (e.g. cross-row dedup), use "Re-upload after fix".',
+    'Expand a row to edit and save its cells. The system will validate them again. Correct issues that cannot be edited here, such as cross-row duplicates, and re-upload the workbook.',
   cellPlaceholder: 'Value for this column',
   btnSaveRow: 'Save & re-validate',
   btnResetRow: 'Reset row',
@@ -104,7 +102,7 @@ const tenantPackageImportWizard = {
     'The preview expired or configuration changed, but refresh failed. Fetch the preview again before applying.',
   applySucceededTitle: 'Apply succeeded',
   applyNoChanges:
-    'No inserts / updates this time — source is empty or identical to current config (idempotent).',
+    'No rows were added or updated. The source is empty or matches the current configuration.',
   btnRetryApply: 'Retry',
   btnResetWizard: 'Start over',
   colEntity: 'Entity',

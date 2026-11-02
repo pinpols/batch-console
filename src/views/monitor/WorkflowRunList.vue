@@ -72,6 +72,7 @@
               <TraceIdInput
                 class="query-w-240"
                 v-model="traceId"
+                :go-to="false"
                 :placeholder="t('monitor.runListTraceIdPlaceholder')"
               />
             </el-form-item>
@@ -100,28 +101,34 @@
             </router-link>
           </template>
         </el-table-column>
-        <el-table-column prop="workflowDefinitionId" :label="t('monitor.runColDefId')" width="90" />
+        <el-table-column
+          prop="workflowDefinitionId"
+          :label="t('monitor.runColDefId')"
+          width="120"
+        />
         <el-table-column prop="runStatus" :label="t('monitor.runColStatus')" width="120">
           <template #default="{ row }">
             <StatusTag :value="String(row.runStatus ?? '')" category="workflow" />
           </template>
         </el-table-column>
-        <el-table-column
-          prop="currentNodeCode"
-          :label="t('monitor.runColCurrentNode')"
-          width="140"
-          show-overflow-tooltip
-        />
+        <el-table-column prop="currentNodeCode" :label="t('monitor.runColCurrentNode')" width="140">
+          <template #default="{ row }">
+            <CopyableText v-if="row.currentNodeCode" :text="String(row.currentNodeCode)" />
+            <span v-else>—</span>
+          </template>
+        </el-table-column>
         <el-table-column prop="bizDate" :label="t('monitor.runColBizDate')" width="110" />
         <el-table-column prop="traceId" :label="t('monitor.runColTrace')" min-width="120">
           <template #default="{ row }">
-            <router-link
-              v-if="row.traceId"
-              class="cell-link"
-              :to="`/observability/trace?traceId=${row.traceId}`"
-            >
-              {{ row.traceId }}
-            </router-link>
+            <span v-if="row.traceId" class="trace-cell">
+              <router-link
+                class="cell-link trace-cell__link"
+                :to="`/observability/trace?traceId=${row.traceId}`"
+              >
+                {{ row.traceId }}
+              </router-link>
+              <CopyableText :text="String(row.traceId)" icon-only />
+            </span>
             <span v-else>—</span>
           </template>
         </el-table-column>
@@ -375,3 +382,18 @@
   }
   watch([workflowCode, runStatus, traceId, page, pageSize], syncFiltersToUrl)
 </script>
+
+<style scoped>
+  .trace-cell {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+  }
+
+  .trace-cell__link {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+</style>

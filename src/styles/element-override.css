@@ -158,6 +158,13 @@ html.dark {
   background: transparent;
   color: var(--color-text-primary);
   font-size: 13px;
+  /* 长标识与路径在详情中保留完整内容，窄屏可在任意字符处换行。 */
+  overflow-wrap: anywhere;
+}
+
+/* 编辑表单中的短格式值：容器变窄时可收缩，不改变字段的合法长度。 */
+.el-input.form-control--short {
+  width: min(100%, 9rem);
 }
 
 .el-descriptions.is-bordered .el-descriptions__cell {
@@ -996,6 +1003,12 @@ html.dark .el-drawer {
   margin-bottom: 16px;
 }
 
+/* 错误提示参与排版，避免与下一字段贴近或在窄屏换行时重叠。 */
+.el-drawer__body .el-form:not(.el-form--inline):not(.form-preserve-label-position) .el-form-item__error {
+  position: static;
+  width: 100%;
+}
+
 .el-drawer__body .el-form-item:last-child {
   margin-bottom: 0;
 }
@@ -1097,6 +1110,18 @@ html.dark .el-drawer {
   -webkit-box-orient: vertical;
   overflow: hidden;
   word-break: break-word;
+}
+
+.el-select-dropdown .el-select-dropdown__item .self-service-instance-option,
+.el-select-dropdown .el-select-dropdown__item .self-service-instance-option .status-tag,
+.el-select-dropdown .el-select-dropdown__item .self-service-instance-option .el-tag__content {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.el-select-dropdown .el-select-dropdown__item .self-service-instance-option .status-tag__dot {
+  display: inline-block;
 }
 
 .el-select-dropdown .el-select-dropdown__item.is-selected {

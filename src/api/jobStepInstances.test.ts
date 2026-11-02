@@ -24,4 +24,13 @@ describe('queryJobStepInstancePage', () => {
 
     expect(mockedGet).toHaveBeenCalledWith('/api/console/queries/job-step-instances', query)
   })
+
+  it('preserves the decimal instance ID in query parameters without number conversion', async () => {
+    mockedGet.mockResolvedValue({ items: [], total: 0 })
+    await queryJobStepInstancePage({ tenantId: 'ta', jobInstanceId: '9007199254740993' })
+    expect(mockedGet).toHaveBeenCalledWith('/api/console/queries/job-step-instances', {
+      tenantId: 'ta',
+      jobInstanceId: '9007199254740993',
+    })
+  })
 })

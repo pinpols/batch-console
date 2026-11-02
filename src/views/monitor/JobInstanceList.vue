@@ -40,6 +40,7 @@
       <TraceIdInput
         class="jr-trace"
         v-model="query.traceId"
+        :go-to="false"
         :placeholder="t('jobInstanceList.traceIdPlaceholder')"
         @keyup.enter="searchInstances"
       />
@@ -82,6 +83,11 @@
       </template>
     </OpsFilterToolbar>
 
+    <div v-if="query.exactJobCode" class="jr-multistatus">
+      <el-tag type="info" closable @close="clearExactJobCode">{{
+        t('jobInstanceList.exactJobCodeHint', { code: query.exactJobCode })
+      }}</el-tag>
+    </div>
     <!-- 多状态深链回显(OpsSummary 失败任务卡 FAILED,PARTIAL_FAILED) -->
     <div v-if="query.instanceStatuses" class="jr-multistatus">
       <el-tag type="danger" closable disable-transitions @close="clearMultiStatus">
@@ -166,9 +172,12 @@
             min-width="160"
           >
             <template #default="{ row }">
-              <router-link class="cell-link" :to="`/jobs/definitions?jobCode=${row.jobCode}`">
-                {{ row.jobCode }}
-              </router-link>
+              <CopyableText v-if="row.jobCode" :text="String(row.jobCode)" :copy-on-click="false">
+                <router-link class="cell-link" :to="`/jobs/definitions?jobCode=${row.jobCode}`">
+                  {{ row.jobCode }}
+                </router-link>
+              </CopyableText>
+              <span v-else>—</span>
             </template>
           </el-table-column>
           <el-table-column
@@ -222,17 +231,18 @@
             v-if="isColVisible('traceId')"
             prop="traceId"
             :label="t('jobInstanceList.colTrace')"
-            width="90"
+            width="110"
           >
             <template #default="{ row }">
-              <router-link
-                v-if="row.traceId"
-                class="jr-trace-link"
-                :to="`/observability/trace?traceId=${row.traceId}`"
-                :title="row.traceId"
-              >
-                {{ row.traceId.slice(0, 6) }}
-              </router-link>
+              <CopyableText v-if="row.traceId" :text="String(row.traceId)" :copy-on-click="false">
+                <router-link
+                  class="jr-trace-link"
+                  :to="`/observability/trace?traceId=${row.traceId}`"
+                  :title="row.traceId"
+                >
+                  {{ row.traceId.slice(0, 6) }}
+                </router-link>
+              </CopyableText>
               <span v-else class="muted">&#8212;</span>
             </template>
           </el-table-column>
@@ -281,9 +291,17 @@
             width="160"
           >
             <template #default="{ row }">
-              <div class="cell-stack">
-                <span v-if="row.queueCode" class="cell-main">{{ row.queueCode }}</span>
-                <span v-if="row.workerGroup" class="cell-sub">{{ row.workerGroup }}</span>
+              <div class="job-instance-queue-group">
+                <CopyableText
+                  v-if="row.queueCode"
+                  :text="String(row.queueCode)"
+                  :copyable="false"
+                />
+                <CopyableText
+                  v-if="row.workerGroup"
+                  :text="String(row.workerGroup)"
+                  :copyable="false"
+                />
                 <span v-if="!row.queueCode && !row.workerGroup" class="muted">&#8212;</span>
               </div>
             </template>
@@ -317,7 +335,7 @@
     <el-dialog
       v-model="bulkResultVisible"
       :title="t('jobInstanceList.bulkResultTitle')"
-      width="760px"
+      width="min(760px, calc(100% - 32px))"
     >
       <el-alert
         :title="
@@ -336,7 +354,12 @@
           :label="t('jobInstanceList.colInstanceNo')"
           min-width="150"
         />
-        <el-table-column prop="jobCode" :label="t('jobInstanceList.colJobCode')" min-width="150" />
+        <el-table-column prop="jobCode" :label="t('jobInstanceList.colJobCode')" min-width="150">
+          <template #default="{ row }">
+            <CopyableText v-if="row.jobCode" :text="String(row.jobCode)" />
+            <span v-else>—</span>
+          </template>
+        </el-table-column>
         <el-table-column prop="bizDate" :label="t('jobInstanceList.colBizDate')" width="120" />
         <el-table-column :label="t('jobInstanceList.bulkResultStatus')" width="100">
           <template #default="{ row }">
@@ -353,8 +376,12 @@
           prop="message"
           :label="t('jobInstanceList.bulkResultReason')"
           min-width="220"
-          show-overflow-tooltip
-        />
+        >
+          <template #default="{ row }">
+            <CopyableText v-if="row.message" :text="String(row.message)" :copyable="false" />
+            <span v-else>—</span>
+          </template>
+        </el-table-column>
       </el-table>
       <template #footer>
         <el-button @click="bulkResultVisible = false">{{ t('common.close') }}</el-button>
@@ -415,6 +442,7 @@
   import { useAuthStore } from '@/stores/auth'
   import ProTable from '@/components/table/ProTable.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
+  import CopyableText from '@/components/common/CopyableText.vue'
   import DateRangePresetPicker from '@/components/common/DateRangePresetPicker.vue'
   import OpsFilterToolbar from '@/components/table/OpsFilterToolbar.vue'
   import StatusSegment, { type StatusSegmentItem } from '@/components/table/StatusSegment.vue'
@@ -586,6 +614,7 @@
   const query = reactive({
     tenantId: tenant.tenantId,
     jobCode: '',
+    exactJobCode: '',
     instanceStatus: '',
     /** CSV 多状态(优先于 instanceStatus 单值);OpsSummary 失败任务卡片用 */
     instanceStatuses: '',
@@ -604,6 +633,7 @@
     userId: () => auth.userInfo?.userId,
     getCurrent: () => ({
       jobCode: query.jobCode,
+      exactJobCode: query.exactJobCode,
       instanceStatus: query.instanceStatus,
       instanceStatuses: query.instanceStatuses,
       startDate: query.startDate,
@@ -613,6 +643,7 @@
     }),
     apply: (f) => {
       query.jobCode = String(f.jobCode ?? '')
+      query.exactJobCode = f.exactJobCode === query.jobCode ? query.jobCode : ''
       query.instanceStatus = String(f.instanceStatus ?? '')
       query.instanceStatuses = String(f.instanceStatuses ?? '')
       query.startDate = String(f.startDate ?? '')
@@ -620,6 +651,7 @@
       query.traceId = String(f.traceId ?? '')
       query.slaBreached = !!f.slaBreached
       query.page = 1
+      syncFiltersToUrl()
       void loadData()
     },
   })
@@ -656,6 +688,7 @@
     const sig = JSON.stringify([
       tenant.tenantId,
       query.jobCode,
+      query.exactJobCode,
       query.startDate,
       query.endDate,
       query.traceId,
@@ -671,7 +704,8 @@
         try {
           const pr = await instanceApi.list({
             tenantId: filters.tenantId,
-            jobCode: filters.jobCode,
+            jobCode: filters.exactJobCode ? undefined : filters.jobCode,
+            exactJobCode: filters.exactJobCode,
             instanceStatus: tab.key,
             startDate: filters.startDate,
             endDate: filters.endDate,
@@ -766,6 +800,7 @@
       const t = recentRange()
       query.tenantId = tenant.tenantId
       query.jobCode = ''
+      query.exactJobCode = ''
       query.instanceStatus = ''
       query.instanceStatuses = ''
       query.startDate = t[0]
@@ -794,11 +829,20 @@
     })
   }
 
+  function clearExactJobCode() {
+    query.exactJobCode = ''
+    void searchInstances()
+  }
+
   const loadError = ref<unknown>(null)
   async function loadData() {
     const scope = listScope.begin()
     if (!scope.tenantId) return
-    const filters = { ...query, tenantId: scope.tenantId }
+    const filters = {
+      ...query,
+      tenantId: scope.tenantId,
+      jobCode: query.exactJobCode ? '' : query.jobCode,
+    }
     loading.value = true
     loadError.value = null
     try {
@@ -818,7 +862,8 @@
 
   function syncFiltersToUrl() {
     const params: Record<string, string> = {}
-    if (query.jobCode) params.jobCode = query.jobCode
+    if (query.exactJobCode) params.exactJobCode = query.exactJobCode
+    else if (query.jobCode) params.jobCode = query.jobCode
     if (query.instanceStatus) params.status = query.instanceStatus
     // deeplink 的多状态过滤也写回 URL(刷新/分享不丢失),与单值 status 互斥
     if (query.instanceStatuses) {
@@ -827,6 +872,7 @@
     }
     if (query.startDate) params.startDate = query.startDate
     if (query.endDate) params.endDate = query.endDate
+    if (!query.startDate && !query.endDate) params.range = 'all'
     if (query.traceId) params.traceId = query.traceId
     if (query.slaBreached) params.slaBreached = '1'
     void router.replace({ query: params })
@@ -931,7 +977,10 @@
     if (q.status) query.instanceStatus = String(q.status)
     // statuses CSV(优先于 status 单值,例如 OpsSummary "失败任务"卡片传 "FAILED,PARTIAL_FAILED")
     if (q.statuses) query.instanceStatuses = String(q.statuses)
-    if (q.jobCode) query.jobCode = String(q.jobCode)
+    if (q.exactJobCode) {
+      query.jobCode = String(q.exactJobCode)
+      query.exactJobCode = query.jobCode
+    } else if (q.jobCode) query.jobCode = String(q.jobCode)
     if (q.startDate) query.startDate = String(q.startDate)
     if (q.endDate) query.endDate = String(q.endDate)
     if (q.traceId) query.traceId = String(q.traceId)
@@ -946,6 +995,14 @@
       dateRange.value = [query.startDate, query.endDate]
     }
   }
+
+  watch(
+    () => query.jobCode,
+    (jobCode) => {
+      if (query.exactJobCode && jobCode !== query.exactJobCode) query.exactJobCode = ''
+    },
+    { flush: 'sync' },
+  )
 
   watch(
     () => tenant.tenantId,
@@ -1033,11 +1090,11 @@
   }
 
   .jr-jobcode {
-    width: min(168px, 15vw);
+    width: min(240px, 100%);
   }
 
   .jr-trace {
-    width: min(180px, 16vw);
+    width: min(320px, 100%);
   }
 
   .jr-sla {
@@ -1092,6 +1149,13 @@
 </style>
 
 <style scoped>
+  .job-instance-queue-group {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    min-width: 0;
+  }
+
   /* 设计操作列:蓝色文字链(详情/步骤),非描边按钮 */
   .jr-acts {
     display: flex;

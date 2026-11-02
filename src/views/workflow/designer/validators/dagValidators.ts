@@ -60,8 +60,14 @@ export function validateDag(snapshot: DesignerSnapshot): ValidationError[] {
     outAdj.set(n.id, [])
     inDegree.set(n.id, 0)
     outDegree.set(n.id, 0)
+    if (typeof n.nodeName === 'string' && Array.from(n.nodeName).length > 256) {
+      errors.push({ nodeId: n.id, field: 'nodeName', messageKey: NS + 'nodeNameTooLong' })
+    }
   }
   for (const e of edges) {
+    if (typeof e.label === 'string' && Array.from(e.label).length > 1024) {
+      errors.push({ edgeId: e.id, field: 'conditionExpr', messageKey: NS + 'conditionExprTooLong' })
+    }
     const srcExists = idToNode.has(e.source)
     const tgtExists = idToNode.has(e.target)
     // R12 边引用异常:source/target 指向不存在的节点 → 报错(不再静默过滤)

@@ -47,10 +47,16 @@
           prop="tenantId"
           :label="t('tenantPlacementList.colTenant')"
           min-width="180"
-        />
+        >
+          <template #default="{ row }">
+            <CopyableText v-if="row.tenantId" :text="String(row.tenantId)" />
+            <span v-else>—</span>
+          </template>
+        </el-table-column>
         <el-table-column :label="t('tenantPlacementList.colPlacement')" min-width="160">
           <template #default="{ row }">
-            <el-tag size="small" effect="plain">{{ row.placementKey }}</el-tag>
+            <CopyableText v-if="row.placementKey" :text="row.placementKey" />
+            <span v-else>—</span>
           </template>
         </el-table-column>
         <el-table-column :label="t('common.updatedAt')" width="170">
@@ -61,7 +67,10 @@
           :label="t('tenantPlacementList.colUpdatedBy')"
           width="140"
         >
-          <template #default="{ row }">{{ row.updatedBy ?? '—' }}</template>
+          <template #default="{ row }">
+            <CopyableText v-if="row.updatedBy" :text="String(row.updatedBy)" />
+            <span v-else>—</span>
+          </template>
         </el-table-column>
         <el-table-column v-if="canManage" :label="t('common.actions')" width="160" fixed="right">
           <template #default="{ row }">
@@ -98,11 +107,15 @@
           >
             <el-option v-for="key in placementKeyOptions" :key="key" :label="key" :value="key" />
           </el-select>
-        </el-form-item>
-        <el-form-item v-if="placementKeyInvalid">
-          <el-text type="danger" size="small">{{
-            t('tenantPlacementList.keyPatternError')
-          }}</el-text>
+          <el-text
+            v-if="placementKeyInvalid"
+            class="tpl__error"
+            type="danger"
+            size="small"
+            role="alert"
+          >
+            {{ t('tenantPlacementList.keyPatternError') }}
+          </el-text>
         </el-form-item>
       </el-form>
       <template #footer>
@@ -133,6 +146,7 @@
   import EmptyState from '@/components/common/EmptyState.vue'
   import RowActions, { type RowAction } from '@/components/common/RowActions.vue'
   import HelpLabel from '@/components/common/HelpLabel.vue'
+  import CopyableText from '@/components/common/CopyableText.vue'
   import { fmtDatetime } from '@/utils/datetime'
   import { useAuthStore } from '@/stores/auth'
   import { useWriteAvailability } from '@/composables/useWriteAvailability'
@@ -210,6 +224,10 @@
 
   async function save() {
     if (!ensureWriteAvailable()) return
+    if (!form.tenantId.trim() || !form.placementKey.trim()) {
+      ElMessage.warning(t('form.checkRequired'))
+      return
+    }
     if (placementKeyInvalid.value) return
     saving.value = true
     try {
@@ -279,5 +297,11 @@
 
   .tpl__select {
     width: 100%;
+  }
+
+  .tpl__error {
+    width: 100%;
+    margin-top: var(--space-xs);
+    line-height: 1.5;
   }
 </style>

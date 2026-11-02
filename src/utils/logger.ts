@@ -1,4 +1,5 @@
 import { STORAGE_KEYS } from '@/constants/storageKeys'
+import { readActiveTenantId } from '@/utils/tenantContext'
 
 /**
  * 前端操作日志 —— 唯一的埋点入口(telemetry.ts 已废弃并删除)。
@@ -46,7 +47,6 @@ const APP_NAME = 'batch-console'
 // D7 Stage B: 不再读 'token'，改读 session flag。真正鉴权靠 HttpOnly cookie 自动随
 // fetch keepalive 发送（fetch 默认 same-origin 带 cookie；keepalive 也保留这一行为）。
 const SESSION_FLAG_KEY = STORAGE_KEYS.session
-const TENANT_STORAGE_KEY = STORAGE_KEYS.tenantId
 
 /** 已知 benign 错误 —— 不进 buffer,不上报,不刷 UI */
 const IGNORED_ERROR_PATTERNS: readonly RegExp[] = [
@@ -110,7 +110,7 @@ function currentPage(): string {
 
 function currentTenantId(): string | null {
   try {
-    return localStorage.getItem(TENANT_STORAGE_KEY) || null
+    return readActiveTenantId() || null
   } catch {
     return null
   }
@@ -348,9 +348,10 @@ function flushUploadOnUnload(): void {
   const chunk = pending.slice(0, UPLOAD_BATCH_SIZE)
   try {
     // D7 Stage B: cookie 自动带；不再注入 Authorization header
+    const tenantId = currentTenantId()
     const headers = {
       'Content-Type': 'application/json',
-      ...(currentTenantId() ? { 'X-Tenant-Id': currentTenantId()! } : {}),
+      ...(tenantId ? { 'X-Tenant-Id': tenantId } : {}),
     }
     const payload = buildPayload(chunk)
     const body = JSON.stringify(payload)

@@ -33,7 +33,7 @@
           >
             <el-form-item :label="t('auditList.traceLabel')">
               <el-input
-                class="query-w-200"
+                class="query-w-320"
                 v-model="filters.traceId"
                 clearable
                 :placeholder="t('auditList.tracePlaceholder')"
@@ -103,18 +103,16 @@
         <el-table-column prop="operatorType" :label="t('auditList.colOperatorType')" width="110" />
         <el-table-column prop="operatorId" :label="t('auditList.colOperatorId')" width="120" />
         <el-table-column prop="fileId" :label="t('auditList.colFileId')" width="100" />
-        <el-table-column
-          prop="traceId"
-          :label="t('auditList.colTrace')"
-          min-width="130"
-          show-overflow-tooltip
-        />
-        <el-table-column
-          prop="evidenceRef"
-          :label="t('auditList.colEvidence')"
-          width="140"
-          show-overflow-tooltip
-        />
+        <el-table-column prop="traceId" :label="t('auditList.colTrace')" min-width="180">
+          <template #default="{ row }">
+            <CopyableText v-if="row.traceId" :text="row.traceId" />
+          </template>
+        </el-table-column>
+        <el-table-column prop="evidenceRef" :label="t('auditList.colEvidence')" width="140">
+          <template #default="{ row }">
+            <CopyableText v-if="row.evidenceRef" :text="row.evidenceRef" :copyable="false" />
+          </template>
+        </el-table-column>
         <el-table-column prop="detailSummary" :label="t('auditList.colSummary')" min-width="220">
           <template #default="{ row }">
             <JsonPreviewPopover :data="decodeSummary(row.detailSummary)" />
@@ -161,6 +159,7 @@
   import { useTenantReload } from '@/composables/useTenantReload'
   import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
   import PageContainer from '@/components/common/PageContainer.vue'
+  import CopyableText from '@/components/common/CopyableText.vue'
   import MetaSelect from '@/components/common/MetaSelect.vue'
   import DateRangePresetPicker from '@/components/common/DateRangePresetPicker.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
@@ -213,7 +212,7 @@
         traceId: filters.traceId.trim() || undefined,
         operationType: filters.operationType.trim() || undefined,
         operatorId: filters.operatorId.trim() || undefined,
-        fileId: filters.fileId.trim() ? Number(filters.fileId) : undefined,
+        fileId: filters.fileId.trim() || undefined,
         operationResult: filters.operationResult.trim() || undefined,
         startTime: filters.startTime || undefined,
         endTime: filters.endTime || undefined,

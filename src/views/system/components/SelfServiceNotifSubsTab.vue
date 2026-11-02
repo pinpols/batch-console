@@ -32,13 +32,23 @@
         :label="t('notificationRulesTab.colName')"
         min-width="160"
         show-overflow-tooltip
-      />
+      >
+        <template #default="{ row }">
+          <CopyableText v-if="row.ruleName" :text="String(row.ruleName)" />
+          <span v-else class="cell-empty">—</span>
+        </template>
+      </el-table-column>
       <el-table-column
         prop="eventTypes"
         :label="t('selfServicePanel.colEventType')"
         min-width="160"
         show-overflow-tooltip
-      />
+      >
+        <template #default="{ row }">
+          <CopyableText v-if="row.eventTypes" :text="String(row.eventTypes)" />
+          <span v-else class="cell-empty">—</span>
+        </template>
+      </el-table-column>
       <el-table-column prop="severityFilter" :label="t('selfServicePanel.colSeverity')" width="100">
         <template #default="{ row }">
           <el-tag size="small" effect="plain" :type="severityType(row.severityFilter)">
@@ -68,6 +78,7 @@
 </template>
 
 <script setup lang="ts">
+  import CopyableText from '@/components/common/CopyableText.vue'
   import { ref, watch } from 'vue'
   import { useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'

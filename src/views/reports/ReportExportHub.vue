@@ -19,6 +19,7 @@
         type="button"
         class="rp-tab"
         :class="{ 'is-active': activeTab === 'trend' }"
+        :aria-pressed="activeTab === 'trend'"
         @click="activeTab = 'trend'"
       >
         {{ t('reportExportHub.tabTrend') }}
@@ -27,6 +28,7 @@
         type="button"
         class="rp-tab"
         :class="{ 'is-active': activeTab === 'exports' }"
+        :aria-pressed="activeTab === 'exports'"
         @click="activeTab = 'exports'"
       >
         {{ t('reportExportHub.tabExports') }}
@@ -70,6 +72,8 @@
                 v-for="d in trendDays"
                 :key="d.day"
                 class="rp-bar"
+                role="img"
+                :aria-label="`${d.day} · ${t('reportExportHub.legendSuccess')} ${d.success} / ${t('reportExportHub.legendFailed')} ${d.failed}`"
                 :title="`${d.day} · ${t('reportExportHub.legendSuccess')} ${d.success} / ${t('reportExportHub.legendFailed')} ${d.failed}`"
               >
                 <div class="rp-bar__plot">
@@ -111,6 +115,7 @@
           <el-input
             v-model="keyword"
             :placeholder="t('reportExportHub.searchPlaceholder')"
+            :aria-label="t('reportExportHub.searchPlaceholder')"
             clearable
             class="search"
           />
@@ -134,6 +139,7 @@
               plain
               size="small"
               :icon="Download"
+              :aria-label="`${t('reportExportHub.btnDownload')} ${r.label}`"
               :loading="loadingKey === r.key"
               :disabled="loadingKey !== ''"
               @click="downloadOne(r)"

@@ -54,7 +54,7 @@
     const result = store.addDependency({
       source: sourceId.value,
       target: targetId.value,
-      label: conditionExpr.value.trim() || undefined,
+      label: edgeType.value === 'CONDITION' ? conditionExpr.value.trim() : undefined,
       attrs: { edgeType: edgeType.value, enabled: true },
     })
     if (!result.ok) {
@@ -75,7 +75,7 @@
   <el-dialog
     :model-value="modelValue"
     :title="t('workflowDesignerMvp.dependency.createTitle')"
-    width="480px"
+    width="min(480px, calc(100% - 32px))"
     append-to-body
     @close="close"
   >
@@ -143,7 +143,13 @@
   .dependency-create__endpoints {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
     gap: 12px;
+    margin-bottom: var(--space-md);
+  }
+
+  .dependency-create__endpoints :deep(.el-form-item) {
+    margin-bottom: 0;
   }
 
   .dependency-create__endpoints :deep(.el-select) {

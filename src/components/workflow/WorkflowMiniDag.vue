@@ -253,6 +253,9 @@
     flex-wrap: wrap;
     gap: var(--space-xs);
   }
+  .mini-dag__tools :deep(.el-button + .el-button) {
+    margin-left: 0;
+  }
   .mini-dag--interactive .mini-dag__graph {
     justify-content: flex-start;
   }
@@ -320,6 +323,9 @@
   .mini-dag__graph :deep(path.flowchart-link) {
     fill: none;
     stroke: var(--color-text-secondary);
+  }
+  .mini-dag__graph :deep(path.flowchart-link.edge-pattern-dotted) {
+    stroke-dasharray: 2px;
   }
   .mini-dag__graph :deep(marker path) {
     fill: var(--color-text-secondary);
