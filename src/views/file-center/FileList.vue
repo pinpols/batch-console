@@ -47,7 +47,7 @@
           >
             <el-form-item :label="t('fileList.fileName')">
               <el-input
-                class="query-w-220"
+                class="query-w-280"
                 v-model="filters.fileName"
                 clearable
                 :placeholder="t('fileList.fileNamePlaceholder')"
@@ -66,8 +66,9 @@
             </el-form-item>
             <el-form-item :label="t('fileList.trace')">
               <TraceIdInput
-                class="query-w-240"
+                class="query-w-320"
                 v-model="filters.traceId"
+                :go-to="false"
                 :placeholder="t('fileList.tracePlaceholder')"
               />
             </el-form-item>
@@ -120,17 +121,19 @@
             prop="fileName"
             :label="t('fileList.fileName')"
             min-width="320"
-            show-overflow-tooltip
           >
             <template #default="{ row }">
-              <span
-                class="cell-link file-name-link"
-                role="link"
-                tabindex="0"
-                @click="openDetail(row as ConsoleFileRecordResponse)"
-                @keydown.enter="openDetail(row as ConsoleFileRecordResponse)"
-              >
-                {{ row.fileName }}
+              <span class="file-list-value">
+                <span
+                  class="cell-link file-name-link"
+                  role="link"
+                  tabindex="0"
+                  @click="openDetail(row as ConsoleFileRecordResponse)"
+                  @keydown.enter="openDetail(row as ConsoleFileRecordResponse)"
+                >
+                  {{ row.fileName }}
+                </span>
+                <CopyableText v-if="row.fileName" :text="row.fileName" icon-only />
               </span>
             </template>
           </el-table-column>
@@ -139,10 +142,9 @@
             prop="bizType"
             :label="t('fileList.bizType')"
             width="140"
-            show-overflow-tooltip
           >
             <template #default="{ row }">
-              <span class="cell-mono">{{ row.bizType }}</span>
+              <CopyableText v-if="row.bizType" :text="row.bizType" />
             </template>
           </el-table-column>
           <el-table-column
@@ -172,16 +174,14 @@
             prop="traceId"
             :label="t('fileList.trace')"
             width="200"
-            show-overflow-tooltip
           >
             <template #default="{ row }">
-              <router-link
-                v-if="row.traceId"
-                class="cell-link"
-                :to="`/observability/trace?traceId=${row.traceId}`"
-              >
-                {{ row.traceId }}
-              </router-link>
+              <span v-if="row.traceId" class="file-list-value">
+                <router-link class="cell-link" :to="`/observability/trace?traceId=${row.traceId}`">
+                  {{ row.traceId }}
+                </router-link>
+                <CopyableText :text="row.traceId" icon-only />
+              </span>
               <span v-else class="cell-empty">—</span>
             </template>
           </el-table-column>
@@ -209,30 +209,40 @@
       :title="t('fileList.detailTitle')"
       size="800px"
     >
-      <el-descriptions v-if="detail" :column="2" border size="small">
+      <el-descriptions v-if="detail" :column="isMobile ? 1 : 2" border size="small">
         <el-descriptions-item label="ID">{{ detail.id }}</el-descriptions-item>
-        <el-descriptions-item label="tenant_id">{{ detail.tenant_id ?? '—' }}</el-descriptions-item>
-        <el-descriptions-item label="file_name">{{ detail.file_name ?? '—' }}</el-descriptions-item>
-        <el-descriptions-item label="mime_type">{{ detail.mime_type ?? '—' }}</el-descriptions-item>
-        <el-descriptions-item label="storage_type">{{
+        <el-descriptions-item :label="t('fileList.detailTenant')">{{
+          detail.tenant_id ?? '—'
+        }}</el-descriptions-item>
+        <el-descriptions-item :label="t('fileList.detailName')">{{
+          detail.file_name ?? '—'
+        }}</el-descriptions-item>
+        <el-descriptions-item :label="t('fileList.detailMime')">{{
+          detail.mime_type ?? '—'
+        }}</el-descriptions-item>
+        <el-descriptions-item :label="t('fileList.detailStorageType')">{{
           detail.storage_type ?? '—'
         }}</el-descriptions-item>
-        <el-descriptions-item label="storage_bucket">{{
+        <el-descriptions-item :label="t('fileList.detailBucket')">{{
           detail.storage_bucket ?? '—'
         }}</el-descriptions-item>
-        <el-descriptions-item label="storage_path" :span="2">
+        <el-descriptions-item :label="t('fileList.detailPath')" :span="isMobile ? 1 : 2">
           <span class="cell-mono">{{ detail.storage_path ?? '—' }}</span>
         </el-descriptions-item>
-        <el-descriptions-item label="metadata_json" :span="2">
+        <el-descriptions-item :label="t('fileList.detailMetadata')" :span="isMobile ? 1 : 2">
           <JsonPreview :data="detail.metadata_json ?? null" />
         </el-descriptions-item>
-        <el-descriptions-item :label="t('fileList.detailRawResponse')" :span="2">
+        <el-descriptions-item :label="t('fileList.detailRawResponse')" :span="isMobile ? 1 : 2">
           <JsonPreview :data="detail" />
         </el-descriptions-item>
       </el-descriptions>
     </el-drawer>
 
-    <el-dialog v-model="auditVisible" :title="t('fileList.auditTitle')" width="800px">
+    <el-dialog
+      v-model="auditVisible"
+      :title="t('fileList.auditTitle')"
+      width="min(800px, calc(100vw - 32px))"
+    >
       <el-table
         v-loading="loading"
         :data="pagedAuditRows.records"
@@ -255,30 +265,28 @@
           width="120"
         />
         <el-table-column prop="operatorType" :label="t('fileList.auditOperatorType')" width="110" />
-        <el-table-column prop="operatorId" :label="t('fileList.auditOperatorId')" width="120" />
-        <el-table-column
-          prop="traceId"
-          :label="t('fileList.trace')"
-          min-width="150"
-          show-overflow-tooltip
-        >
+        <el-table-column prop="operatorId" :label="t('fileList.auditOperatorId')" width="120">
           <template #default="{ row }">
-            <router-link
-              v-if="row.traceId"
-              class="cell-link"
-              :to="`/observability/trace?traceId=${row.traceId}`"
-            >
-              {{ row.traceId }}
-            </router-link>
+            <CopyableText v-if="row.operatorId" :text="String(row.operatorId)" :copyable="false" />
+            <span v-else>{{ row.operatorId }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="traceId" :label="t('fileList.trace')" min-width="150">
+          <template #default="{ row }">
+            <span v-if="row.traceId" class="file-list-value">
+              <router-link class="cell-link" :to="`/observability/trace?traceId=${row.traceId}`">
+                {{ row.traceId }}
+              </router-link>
+              <CopyableText :text="row.traceId" icon-only />
+            </span>
             <span v-else class="cell-empty">—</span>
           </template>
         </el-table-column>
-        <el-table-column
-          prop="evidenceRef"
-          :label="t('fileList.auditEvidence')"
-          width="140"
-          show-overflow-tooltip
-        />
+        <el-table-column prop="evidenceRef" :label="t('fileList.auditEvidence')" width="140">
+          <template #default="{ row }">
+            <CopyableText v-if="row.evidenceRef" :text="row.evidenceRef" :copyable="false" />
+          </template>
+        </el-table-column>
         <el-table-column
           prop="detailSummary"
           :label="t('fileList.auditDetailSummary')"
@@ -301,7 +309,7 @@
     <el-dialog
       v-model="uploadDialogVisible"
       :title="t('fileList.uploadTitle')"
-      width="620px"
+      width="min(620px, calc(100vw - 32px))"
       :close-on-click-modal="!uploading"
       :close-on-press-escape="!uploading"
       :show-close="!uploading"
@@ -487,9 +495,11 @@
   import { useRoute } from 'vue-router'
   import { useTenantReload } from '@/composables/useTenantReload'
   import { usePermission } from '@/composables/usePermission'
+  import { useResponsive } from '@/composables/useResponsive'
 
   const route = useRoute()
   import PageContainer from '@/components/common/PageContainer.vue'
+  import CopyableText from '@/components/common/CopyableText.vue'
   import TraceIdInput from '@/components/common/TraceIdInput.vue'
   import MetaSelect from '@/components/common/MetaSelect.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
@@ -500,6 +510,7 @@
   import TablePagerBar from '@/components/table/TablePagerBar.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
   import FileSummaryCards from './components/FileSummaryCards.vue'
+  import { validateUploadSession } from './manualUploadSession'
   import JsonPreview from '@/components/common/JsonPreview.vue'
   import JsonPreviewPopover from '@/components/common/JsonPreviewPopover.vue'
   import DateRangePresetPicker from '@/components/common/DateRangePresetPicker.vue'
@@ -522,6 +533,7 @@
   } from '@/types/console-api'
 
   const tenant = useTenantStore()
+  const { isMobile } = useResponsive()
   const { canMutateConfig } = usePermission()
   const uploadDialogVisible = ref(false)
   const uploadChannelsLoading = ref(false)
@@ -686,31 +698,6 @@
   function onUploadFileRemove() {
     uploadFileList.value = []
     selectedUploadFile.value = null
-  }
-
-  function validateUploadSession(
-    session: import('@/types/console-api').ConsoleFilePresignUploadResponse,
-    tenantId: string,
-  ) {
-    if (
-      session.uploadMode !== 'APP_MANAGED' ||
-      session.uploadMethod !== 'PUT' ||
-      session.contentField !== 'file' ||
-      !Number.isSafeInteger(session.fileId) ||
-      session.fileId <= 0
-    ) {
-      return false
-    }
-    try {
-      const uploadUrl = new URL(session.uploadUrl, 'https://console.invalid')
-      return (
-        uploadUrl.origin === 'https://console.invalid' &&
-        uploadUrl.pathname === `/api/console/files/${session.fileId}/content` &&
-        uploadUrl.searchParams.get('tenantId') === tenantId
-      )
-    } catch {
-      return false
-    }
   }
 
   async function submitManualUpload() {
@@ -1157,11 +1144,27 @@
 </script>
 
 <style scoped>
+  .file-list-value {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    max-width: 100%;
+    gap: 4px;
+  }
+
+  .file-list-value > .cell-link {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
   .file-upload-form {
     margin-top: 16px;
   }
 
-  .file-upload-form :deep(.el-select) {
+  .file-upload-form :deep(.el-select),
+  .file-upload-form :deep(.el-date-editor) {
     width: 100%;
   }
 

@@ -4,7 +4,7 @@
       ref="compFormRef"
       :model="compForm"
       :rules="compFormRules"
-      label-width="88px"
+      label-position="top"
       class="form-section"
       @submit.prevent="submitCompensation"
     >
@@ -55,7 +55,11 @@
           filterable
           remote
           reserve-keyword
-          :placeholder="t('selfServiceCommon.targetInstanceDisabledHint')"
+          :placeholder="
+            compForm.jobCode && compForm.bizDate
+              ? t('selfServiceCommon.targetInstanceSelect')
+              : t('selfServiceCommon.targetInstanceDisabledHint')
+          "
           :disabled="!compForm.jobCode || !compForm.bizDate"
           :remote-method="queryInstances"
           :loading="instanceLoading"
@@ -68,8 +72,10 @@
             :label="opt.instanceNo"
             :value="opt.instanceNo"
           >
-            <span>{{ opt.instanceNo }}</span>
-            <el-tag size="small" effect="plain" class="u-ml-8">{{ opt.status }}</el-tag>
+            <span class="self-service-instance-option">
+              <span>{{ opt.instanceNo }}</span>
+              <StatusTag :value="opt.status" category="instance" />
+            </span>
           </el-option>
         </el-select>
         <div class="field-hint">{{ t('selfServiceCompensationTab.targetInstanceHint') }}</div>
@@ -113,6 +119,7 @@
   import { useJobCodeSearch } from '@/composables/useJobCodeSearch'
   import { useInstanceNoSearch } from '@/composables/useInstanceNoSearch'
   import { useFormValidate, rules } from '@/composables/useFormValidate'
+  import StatusTag from '@/components/common/StatusTag.vue'
 
   const tenant = useTenantStore()
   const compLoading = ref(false)

@@ -62,25 +62,34 @@
             :empty-text="t('common.noData')"
             class="console-table"
           >
-            <el-table-column
-              prop="queueCode"
-              :label="t('queueConfig.colQueueCode')"
-              width="220"
-              show-overflow-tooltip
-            />
+            <el-table-column prop="queueCode" :label="t('queueConfig.colQueueCode')" width="220">
+              <template #default="{ row }"><CopyableText :text="row.queueCode" /></template>
+            </el-table-column>
             <el-table-column
               prop="queueName"
               :label="t('queueConfig.colQueueName')"
               min-width="240"
-              show-overflow-tooltip
-            />
-            <el-table-column prop="queueType" :label="t('queueConfig.colQueueType')" width="120" />
+            >
+              <template #default="{ row }">
+                <CopyableText v-if="row.queueName" :text="row.queueName" />
+                <span v-else>—</span>
+              </template>
+            </el-table-column>
+            <el-table-column prop="queueType" :label="t('queueConfig.colQueueType')" width="120">
+              <template #default="{ row }">
+                {{ row.queueType ? t(`enum.queueType.${row.queueType}`, row.queueType) : '—' }}
+              </template>
+            </el-table-column>
             <el-table-column
               prop="fairShareGroup"
               :label="t('queueConfig.colFairShareGroup')"
               width="180"
-              show-overflow-tooltip
-            />
+            >
+              <template #default="{ row }">
+                <CopyableText v-if="row.fairShareGroup" :text="row.fairShareGroup" />
+                <span v-else>—</span>
+              </template>
+            </el-table-column>
             <el-table-column
               prop="concurrentCap"
               :label="t('queueConfig.colConcurrentCap')"
@@ -151,30 +160,45 @@
             :empty-text="t('common.noData')"
             class="console-table"
           >
-            <el-table-column
-              prop="windowCode"
-              :label="t('queueConfig.colWindowCode')"
-              width="220"
-              show-overflow-tooltip
-            />
+            <el-table-column prop="windowCode" :label="t('queueConfig.colWindowCode')" width="220">
+              <template #default="{ row }"><CopyableText :text="row.windowCode" /></template>
+            </el-table-column>
             <el-table-column
               prop="windowName"
               :label="t('queueConfig.colWindowName')"
               min-width="240"
-              show-overflow-tooltip
-            />
+            >
+              <template #default="{ row }">
+                <CopyableText v-if="row.windowName" :text="row.windowName" />
+                <span v-else>—</span>
+              </template>
+            </el-table-column>
             <el-table-column prop="startTime" :label="t('queueConfig.colStartTime')" width="110" />
             <el-table-column prop="endTime" :label="t('queueConfig.colEndTime')" width="110" />
             <el-table-column
-              prop="crossDayPolicy"
-              :label="t('queueConfig.colCrossDayPolicy')"
+              prop="endStrategy"
+              :label="t('queueConfig.fieldEndStrategy')"
               width="150"
-            />
+            >
+              <template #default="{ row }">
+                {{
+                  row.endStrategy ? t(`enum.endStrategy.${row.endStrategy}`, row.endStrategy) : '—'
+                }}
+              </template>
+            </el-table-column>
             <el-table-column
               prop="outOfWindowAction"
               :label="t('queueConfig.colOutOfWindow')"
               width="160"
-            />
+            >
+              <template #default="{ row }">
+                {{
+                  row.outOfWindowAction
+                    ? t(`enum.outOfWindowAction.${row.outOfWindowAction}`, row.outOfWindowAction)
+                    : '—'
+                }}
+              </template>
+            </el-table-column>
             <DatetimeColumn prop="updatedAt" :label="t('queueConfig.colUpdatedAt')" width="180" />
             <el-table-column :label="t('queueConfig.colEnabled')" width="110">
               <template #default="{ row }">
@@ -243,15 +267,25 @@
               prop="calendarCode"
               :label="t('queueConfig.colCalendarCode')"
               width="220"
-              show-overflow-tooltip
-            />
+            >
+              <template #default="{ row }"><CopyableText :text="row.calendarCode" /></template>
+            </el-table-column>
             <el-table-column
               prop="calendarName"
               :label="t('queueConfig.colCalendarName')"
               min-width="240"
-              show-overflow-tooltip
-            />
-            <el-table-column prop="timezone" :label="t('queueConfig.colTimezone')" width="160" />
+            >
+              <template #default="{ row }">
+                <CopyableText v-if="row.calendarName" :text="row.calendarName" />
+                <span v-else>—</span>
+              </template>
+            </el-table-column>
+            <el-table-column prop="timezone" :label="t('queueConfig.colTimezone')" width="160">
+              <template #default="{ row }">
+                <CopyableText v-if="row.timezone" :text="row.timezone" />
+                <span v-else>—</span>
+              </template>
+            </el-table-column>
             <DatetimeColumn prop="updatedAt" :label="t('queueConfig.colUpdatedAt')" width="180" />
             <el-table-column :label="t('queueConfig.colHolidays')" min-width="128">
               <template #default="{ row }">
@@ -356,12 +390,21 @@
           prop="holidayName"
           :label="t('queueConfig.holidayColName')"
           min-width="160"
-        />
+        >
+          <template #default="{ row }">
+            <CopyableText v-if="row.holidayName" :text="row.holidayName" />
+            <span v-else>—</span>
+          </template>
+        </el-table-column>
         <el-table-column
           prop="holidayType"
           :label="t('queueConfig.holidayColType')"
           min-width="120"
-        />
+        >
+          <template #default="{ row }">
+            {{ row.holidayType ? t(`enum.dayType.${row.holidayType}`, row.holidayType) : '—' }}
+          </template>
+        </el-table-column>
         <el-table-column
           v-if="canMutateConfig"
           :label="t('fileTemplateList.colActions')"
@@ -401,7 +444,14 @@
       />
     </el-drawer>
 
-    <GovernanceQueueEditor v-model="queueDialogVisible" :queue-form="queueForm" :queue-editing-id="queueEditingId" :saving="saving" @save="saveQueue" />
+    <GovernanceQueueEditor
+      v-model="queueDialogVisible"
+      :queue-form="queueForm"
+      :queue-editing-id="queueEditingId"
+      :errors="queueValidationErrors"
+      :saving="saving"
+      @save="saveQueue"
+    />
 
     <el-drawer
       :append-to-body="true"
@@ -430,10 +480,16 @@
           ><el-input v-model="windowForm.timezone" maxlength="64"
         /></el-form-item>
         <el-form-item :label="t('queueConfig.fieldStartTime')" required
-          ><el-time-picker v-model="windowForm.startTime" value-format="HH:mm:ss"
+          ><el-time-picker
+            v-model="windowForm.startTime"
+            class="query-w-full"
+            value-format="HH:mm:ss"
         /></el-form-item>
         <el-form-item :label="t('queueConfig.fieldEndTime')" required
-          ><el-time-picker v-model="windowForm.endTime" value-format="HH:mm:ss"
+          ><el-time-picker
+            v-model="windowForm.endTime"
+            class="query-w-full"
+            value-format="HH:mm:ss"
         /></el-form-item>
         <el-form-item :label="t('queueConfig.fieldEndStrategy')"
           ><MetaSelect
@@ -453,7 +509,12 @@
           ><el-switch v-model="windowForm.allowCrossDay"
         /></el-form-item>
         <el-form-item :label="t('queueConfig.windowPreviewTitle')">
-          <WindowSchedulePreview :start-time="windowForm.startTime" :end-time="windowForm.endTime" :timezone="windowForm.timezone" :allow-cross-day="windowForm.allowCrossDay" />
+          <WindowSchedulePreview
+            :start-time="windowForm.startTime"
+            :end-time="windowForm.endTime"
+            :timezone="windowForm.timezone"
+            :allow-cross-day="windowForm.allowCrossDay"
+          />
         </el-form-item>
         <el-form-item :label="t('queueConfig.fieldEnabled')"
           ><el-switch v-model="windowForm.enabled"
@@ -474,7 +535,13 @@
       </template>
     </el-drawer>
 
-    <GovernanceCalendarEditor v-model="calendarDialogVisible" :calendar-form="calendarForm" :calendar-editing-id="calendarEditingId" :saving="saving" @save="saveCalendar" />
+    <GovernanceCalendarEditor
+      v-model="calendarDialogVisible"
+      :calendar-form="calendarForm"
+      :calendar-editing-id="calendarEditingId"
+      :saving="saving"
+      @save="saveCalendar"
+    />
 
     <el-drawer
       :append-to-body="true"
@@ -490,7 +557,11 @@
     >
       <el-form :model="holidayForm" label-width="120px">
         <el-form-item :label="t('queueConfig.fieldBizDate')" required
-          ><el-date-picker v-model="holidayForm.bizDate" type="date" value-format="YYYY-MM-DD"
+          ><el-date-picker
+            v-model="holidayForm.bizDate"
+            class="query-w-full"
+            type="date"
+            value-format="YYYY-MM-DD"
         /></el-form-item>
         <el-form-item :label="t('queueConfig.fieldDayType')" required
           ><MetaSelect v-model="holidayForm.dayType" enum-key="dayType" class="query-w-full"
@@ -547,6 +618,7 @@
   import { useTenantReload } from '@/composables/useTenantReload'
   import { useTenantRequestScope } from '@/composables/useTenantRequestScope'
   import PageContainer from '@/components/common/PageContainer.vue'
+  import CopyableText from '@/components/common/CopyableText.vue'
   import MetaSelect from '@/components/common/MetaSelect.vue'
   import GovernanceQueueEditor from './GovernanceQueueEditor.vue'
   import GovernanceCalendarEditor from './GovernanceCalendarEditor.vue'
@@ -561,6 +633,7 @@
   import HolidayMonthView from './HolidayMonthView.vue'
   import WindowSchedulePreview from './WindowSchedulePreview.vue'
   import { userErrorMessage } from '@/utils/userErrorMessage'
+  import { clampPage, optionalText } from './queueConfigSupport'
 
   const tenant = useTenantStore()
   const listRemote = ref(false)
@@ -658,6 +731,17 @@
     enabled: true,
     description: '',
   })
+  const showQueueValidation = ref(false)
+  const queueValidationErrors = computed(() => ({
+    queueCode:
+      showQueueValidation.value && queueEditingId.value == null && !queueForm.queueCode.trim()
+        ? t('queueConfig.requiredField', { label: t('queueConfig.fieldQueueCode') })
+        : '',
+    queueType:
+      showQueueValidation.value && !queueForm.queueType.trim()
+        ? t('queueConfig.requiredField', { label: t('queueConfig.fieldQueueType') })
+        : '',
+  }))
 
   const windowForm = reactive({
     windowCode: '',
@@ -671,7 +755,6 @@
     enabled: true,
     description: '',
   })
-
 
   const calendarForm = reactive({
     calendarCode: '',
@@ -689,11 +772,6 @@
     holidayName: '',
     description: '',
   })
-
-  function optionalText(value: string) {
-    const text = value.trim()
-    return text ? text : undefined
-  }
 
   function requireText(value: string, label: string) {
     const text = value.trim()
@@ -767,13 +845,6 @@
   const pagedHolidays = computed(() =>
     toPageResult(holidays.value, holidayPage.value, holidayPageSize.value),
   )
-
-  function clampPage(pageRef: { value: number }, total: number, size: number) {
-    const roundedPageCount = Math.ceil(total / size)
-    const pageCount = roundedPageCount || 1
-    const max = Math.max(1, pageCount)
-    if (pageRef.value > max) pageRef.value = max
-  }
 
   watch([filteredQueues, pageSize], () =>
     clampPage(pageQueues, filteredQueues.value.length, pageSize.value),
@@ -904,6 +975,7 @@
   function openQueueCreate() {
     if (!canMutateConfig.value) return
     queueEditingId.value = null
+    showQueueValidation.value = false
     Object.assign(queueForm, {
       queueCode: '',
       queueName: '',
@@ -924,6 +996,7 @@
   function openQueueEdit(row: GovernanceQueueRow) {
     if (!canMutateConfig.value) return
     queueEditingId.value = row.id
+    showQueueValidation.value = false
     Object.assign(queueForm, {
       queueCode: row.queueCode,
       queueName: row.queueName,
@@ -945,10 +1018,10 @@
     return {
       tenantId: tenant.tenantId,
       ...(queueEditingId.value == null
-        ? { queueCode: requireText(queueForm.queueCode, 'queueCode') }
+        ? { queueCode: requireText(queueForm.queueCode, t('queueConfig.fieldQueueCode')) }
         : {}),
       queueName: optionalText(queueForm.queueName),
-      queueType: requireText(queueForm.queueType, 'queueType'),
+      queueType: requireText(queueForm.queueType, t('queueConfig.fieldQueueType')),
       maxRunningJobs: queueForm.maxRunningJobs,
       maxRunningPartitions: queueForm.maxRunningPartitions,
       maxQps: queueForm.maxQps,
@@ -963,6 +1036,7 @@
 
   async function saveQueue() {
     if (!canMutateConfig.value) return
+    showQueueValidation.value = true
     saving.value = true
     try {
       const payload = buildQueuePayload()
@@ -1018,12 +1092,12 @@
     return {
       tenantId: tenant.tenantId,
       ...(windowEditingId.value == null
-        ? { windowCode: requireText(windowForm.windowCode, 'windowCode') }
+        ? { windowCode: requireText(windowForm.windowCode, t('queueConfig.fieldWindowCode')) }
         : {}),
       windowName: optionalText(windowForm.windowName),
-      timezone: requireText(windowForm.timezone, 'timezone'),
-      startTime: requireText(windowForm.startTime, 'startTime'),
-      endTime: requireText(windowForm.endTime, 'endTime'),
+      timezone: requireText(windowForm.timezone, t('queueConfig.fieldTimezone')),
+      startTime: requireText(windowForm.startTime, t('queueConfig.fieldStartTime')),
+      endTime: requireText(windowForm.endTime, t('queueConfig.fieldEndTime')),
       endStrategy: optionalText(windowForm.endStrategy),
       outOfWindowAction: optionalText(windowForm.outOfWindowAction),
       allowCrossDay: windowForm.allowCrossDay,
@@ -1082,9 +1156,9 @@
   function buildCalendarPayload(): GovernanceCalendarSavePayload {
     return {
       tenantId: tenant.tenantId,
-      calendarCode: requireText(calendarForm.calendarCode, 'calendarCode'),
-      calendarName: requireText(calendarForm.calendarName, 'calendarName'),
-      timezone: requireText(calendarForm.timezone, 'timezone'),
+      calendarCode: requireText(calendarForm.calendarCode, t('queueConfig.fieldCalendarCode')),
+      calendarName: requireText(calendarForm.calendarName, t('queueConfig.fieldCalendarName')),
+      timezone: requireText(calendarForm.timezone, t('queueConfig.fieldTimezone')),
       holidayRollRule: optionalText(calendarForm.holidayRollRule),
       catchUpPolicy: optionalText(calendarForm.catchUpPolicy),
       catchUpMaxDays: calendarForm.catchUpMaxDays,
@@ -1149,8 +1223,8 @@
   function buildHolidayPayload(): GovernanceCalendarHolidaySavePayload {
     return {
       tenantId: tenant.tenantId,
-      bizDate: requireText(holidayForm.bizDate, 'bizDate'),
-      dayType: requireText(holidayForm.dayType, 'dayType'),
+      bizDate: requireText(holidayForm.bizDate, t('queueConfig.fieldBizDate')),
+      dayType: requireText(holidayForm.dayType, t('queueConfig.fieldDayType')),
       holidayName: optionalText(holidayForm.holidayName),
       description: optionalText(holidayForm.description),
     }
@@ -1276,24 +1350,4 @@
   useTenantReload(load)
 </script>
 
-<style scoped>
-  .governance-workspace {
-    display: flex;
-    margin-bottom: var(--space-md);
-  }
-  .governance-load-error {
-    margin-bottom: var(--space-md);
-  }
-  .governance-tabs :deep(.el-tabs__content) {
-    padding-top: 10px;
-    overflow: visible;
-  }
-
-  /* P2 单模式路由(/governance/queues|windows|calendars):隐藏 tab 头 */
-  .governance-tabs.single-mode :deep(.el-tabs__header) {
-    display: none;
-  }
-  .governance-tabs.single-mode :deep(.el-tabs__content) {
-    padding-top: 0;
-  }
-</style>
+<style scoped src="./QueueConfig.css"></style>

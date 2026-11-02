@@ -40,7 +40,6 @@
                 v-model="kwDraft"
                 clearable
                 :placeholder="t('systemParameterList.keywordPlaceholder')"
-                @keyup.enter="onSearch"
               />
             </el-form-item>
           </ListPageQueryBar>
@@ -63,12 +62,16 @@
           show-overflow-tooltip
         >
           <template #default="{ row }">
-            {{ row.value || '—' }}
+            <CopyableText v-if="row.value" :text="String(row.value)" :copyable="false" />
+            <span v-else class="cell-empty">—</span>
           </template>
         </el-table-column>
         <el-table-column :label="t('systemParameterList.colActions')" width="160" fixed="right">
           <template #default="{ row }">
-            <RowActions :actions="parameterRowActions(row as { key: string; value: string })" :inline-limit="1" />
+            <RowActions
+              :actions="parameterRowActions(row as { key: string; value: string })"
+              :inline-limit="1"
+            />
           </template>
         </el-table-column>
       </ProTable>
@@ -85,7 +88,13 @@
       direction="rtl"
       size="480px"
     >
-      <el-form ref="paramFormRef" :model="form" :rules="formRules" label-width="88px">
+      <el-form
+        ref="paramFormRef"
+        :model="form"
+        :rules="formRules"
+        label-position="top"
+        class="parameter-form"
+      >
         <el-form-item :label="t('systemParameterList.fieldKey')" prop="key">
           <el-input
             v-model="form.key"
@@ -121,7 +130,7 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, reactive, computed } from 'vue'
+  import { ref, reactive, computed, nextTick } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
 
@@ -160,7 +169,7 @@
   const allRows = ref<{ key: string; value: string }[]>([])
   const form = reactive({ key: '', value: '' })
 
-  const { formRef: paramFormRef, validate: validateParamForm } = useFormValidate()
+  const { formRef: paramFormRef, validate: validateParamForm, clearValidate } = useFormValidate()
   const formRules: FormRules = {
     key: [
       rules.required(t('systemParameterList.keyRequired')),
@@ -229,6 +238,7 @@
     form.key = ''
     form.value = ''
     dialogVisible.value = true
+    void nextTick(clearValidate)
   }
 
   function openEdit(row: { key: string; value: string }) {
@@ -236,6 +246,7 @@
     form.key = row.key
     form.value = row.value
     dialogVisible.value = true
+    void nextTick(clearValidate)
   }
 
   function parameterRowActions(row: { key: string; value: string }): RowAction[] {
@@ -292,4 +303,9 @@
   useTenantReload(load)
 </script>
 
-<style scoped></style>
+<style scoped>
+  .parameter-form :deep(.el-form-item__error) {
+    position: static;
+    width: 100%;
+  }
+</style>

@@ -20,7 +20,19 @@ vi.mock('@/composables/queries/useConsoleMeta', () => ({
   }),
 }))
 vi.mock('@/stores/tenant', () => ({ useTenantStore: () => state.tenant }))
-vi.mock('vue-i18n', () => ({ useI18n: () => ({ t: (key: string) => key }) }))
+vi.mock('vue-i18n', () => ({
+  useI18n: () => ({
+    t: (key: string, fallback?: string) =>
+      (
+        ({
+          'enum.severity.WARN': 'Warning',
+          'notificationRoutePreview.eventNames.JOB_FAILED': 'Job failed',
+        }) as Record<string, string>
+      )[key] ??
+      fallback ??
+      key,
+  }),
+}))
 
 const slot = { template: '<div><slot /></div>' }
 const stubs = {
@@ -101,6 +113,8 @@ describe('notification route preview', () => {
     const wrapper = mount(NotificationRoutePreview, { global: { stubs } })
     await flushPromises()
     expect(wrapper.text()).not.toContain('unsupported')
+    expect(wrapper.find('option[value="JOB_FAILED"]').text()).toBe('Job failed')
+    expect(wrapper.find('option[value="WORKFLOW_FAILED"]').text()).toBe('workflow')
     await wrapper.find('select').setValue('JOB_FAILED')
     await wrapper.find('form').trigger('submit')
     expect(state.preview).not.toHaveBeenCalled()
@@ -116,6 +130,7 @@ describe('notification route preview', () => {
       'ERROR',
       'CRITICAL',
     ])
+    expect(severity.find('option[value="WARN"]').text()).toBe('Warning')
     await wrapper.find('form').trigger('submit')
     expect(state.preview).not.toHaveBeenCalled()
     await severity.setValue('CRITICAL')

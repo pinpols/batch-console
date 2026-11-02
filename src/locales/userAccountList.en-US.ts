@@ -9,7 +9,7 @@ export default {
   emptyDescription: 'No accounts on this page match the status or keyword filters.',
   headerCreate: 'New account',
   keywordLabel: 'Keyword',
-  keywordPlaceholder: 'username / displayName',
+  keywordPlaceholder: 'Search username or display name',
   colId: 'ID',
   colTenantId: 'Tenant ID',
   colUsername: 'Username',

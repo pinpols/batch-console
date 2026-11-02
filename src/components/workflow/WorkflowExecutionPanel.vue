@@ -8,7 +8,7 @@
       </div>
     </template>
     <el-alert
-      v-if="error"
+      v-if="error && progress"
       :title="t('workflowProgress.unavailable')"
       type="warning"
       :closable="false"
@@ -16,6 +16,9 @@
     />
     <DataState
       :loading="loading"
+      :error="progress ? undefined : error"
+      :error-text="t('workflowProgress.loadFailed')"
+      :on-retry="refresh"
       :has-data="Boolean(progress)"
       :empty-text="t('workflowProgress.empty')"
     >
@@ -69,11 +72,15 @@
           </div>
           <el-table :data="tableNodes" row-key="nodeCode" size="small">
             <el-table-column :label="t('workflowProgress.node')" min-width="160">
-              <template #default="{ row }"
-                >{{ row.nodeName || row.nodeCode }}<br /><span class="execution-progress__hint">{{
-                  row.nodeCode
-                }}</span></template
-              >
+              <template #default="{ row }">
+                <span class="wrap-cell">{{ row.nodeName || row.nodeCode }}</span
+                ><br />
+                <CopyableText
+                  v-if="row.nodeCode"
+                  class="execution-progress__hint"
+                  :text="row.nodeCode"
+                />
+              </template>
             </el-table-column>
             <el-table-column :label="t('workflowProgress.statusLabel')" min-width="100">
               <template #default="{ row }">
@@ -89,7 +96,9 @@
               </template>
             </el-table-column>
             <el-table-column :label="t('workflowProgress.steps')" min-width="160">
-              <template #default="{ row }">{{ row.activeSteps.join(', ') || '—' }}</template>
+              <template #default="{ row }"
+                ><span class="wrap-cell">{{ row.activeSteps.join(', ') || '—' }}</span></template
+              >
             </el-table-column>
             <el-table-column :label="t('workflowProgress.partitions')" min-width="140">
               <template #default="{ row }">{{ partitionText(row as Node) }}</template>
@@ -100,9 +109,11 @@
               }}</template>
             </el-table-column>
             <el-table-column :label="t('workflowProgress.blocker')" min-width="140">
-              <template #default="{ row }">{{
-                row.errorCode || row.skipReasonCode || '—'
-              }}</template>
+              <template #default="{ row }"
+                ><span class="wrap-cell">{{
+                  row.errorCode || row.skipReasonCode || '—'
+                }}</span></template
+              >
             </el-table-column>
             <el-table-column :label="t('workflowProgress.job')" min-width="120">
               <template #default="{ row }"
@@ -126,6 +137,7 @@
   import { useI18n } from 'vue-i18n'
   import { useTenantStore } from '@/stores/tenant'
   import SectionCard from '@/components/common/SectionCard.vue'
+  import CopyableText from '@/components/common/CopyableText.vue'
   import LiveStatusBadge from '@/components/common/LiveStatusBadge.vue'
   import DataState from '@/components/common/DataState.vue'
   import WorkflowMiniDag from './WorkflowMiniDag.vue'
@@ -225,6 +237,10 @@
 </script>
 
 <style scoped>
+  .wrap-cell {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
   .execution-progress__actions,
   .execution-progress__selection,
   .execution-progress__summary {
@@ -235,6 +251,10 @@
   }
   .execution-progress__summary {
     margin-block: var(--space-md);
+  }
+  .execution-progress__selection span {
+    min-width: 0;
+    overflow-wrap: anywhere;
   }
   .execution-progress__hint {
     color: var(--color-text-secondary);

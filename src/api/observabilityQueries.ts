@@ -23,7 +23,9 @@ import type {
 } from '@/types/console-api'
 
 type AuditQuery = NonNullable<operations['queryAuditLogs']['parameters']['query']>
-export type AuditQueryFilters = Omit<AuditQuery, 'tenantId' | 'pageNo' | 'pageSize'>
+export type AuditQueryFilters = Omit<AuditQuery, 'tenantId' | 'pageNo' | 'pageSize' | 'fileId'> & {
+  fileId?: string | number
+}
 
 export interface ExecutionLogFilters {
   traceId?: string
@@ -89,7 +91,7 @@ export function queryAuditsPage(
     ...(filters?.traceId ? { traceId: filters.traceId } : {}),
     ...(filters?.operationType ? { operationType: filters.operationType } : {}),
     ...(filters?.operatorId ? { operatorId: filters.operatorId } : {}),
-    ...(filters?.fileId ? { fileId: filters.fileId } : {}),
+    ...(filters?.fileId != null && filters.fileId !== '' ? { fileId: filters.fileId } : {}),
     ...(filters?.operationResult ? { operationResult: filters.operationResult } : {}),
     ...(filters?.startTime ? { startTime: filters.startTime } : {}),
     ...(filters?.endTime ? { endTime: filters.endTime } : {}),
@@ -189,7 +191,10 @@ export function replayDeadLetter(
   tenantId: string,
   deadLetterId: number,
   reason?: string,
-  resolution?: Pick<DeadLetterReplayRequest, 'externalActionVerifiedNotExecuted' | 'externalOutcomeEvidenceReference'>,
+  resolution?: Pick<
+    DeadLetterReplayRequest,
+    'externalActionVerifiedNotExecuted' | 'externalOutcomeEvidenceReference'
+  >,
   operatorId?: string,
 ) {
   const body: DeadLetterReplayRequest = { tenantId, deadLetterId }

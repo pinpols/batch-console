@@ -33,7 +33,7 @@ vi.mock('@/composables/useFormValidate', async () => {
 vi.mock('@/composables/useDirtyForm', () => ({
   useDirtyForm: () => ({ confirmDiscard: vi.fn(async () => true), markPristine: vi.fn() }),
 }))
-vi.mock('@/composables/useFormFocus', () => ({ useFormFocus: vi.fn() }))
+vi.mock('@/composables/useFormFocus', () => ({ useFormFocus: () => ({ focusFirst: vi.fn() }) }))
 vi.mock('@/composables/useDangerConfirm', () => ({ confirmDanger: state.confirmDanger }))
 vi.mock('@/composables/useListFilterFeedback', () => ({
   useListFilterFeedback: () => ({
@@ -117,12 +117,35 @@ describe('notification rule tenant scope', () => {
     state.ruleRow = null
   })
 
+  it('limits event types to the backend request length', async () => {
+    const wrapper = mount(NotificationRulesTab, { global: { stubs } })
+    await flushPromises()
+    ;(wrapper.vm as unknown as { openRuleCreate: () => void }).openRuleCreate()
+    await flushPromises()
+    expect(
+      wrapper
+        .get('input[placeholder="notificationRulesTab.eventTypesPlaceholder"]')
+        .attributes('maxlength'),
+    ).toBe('512')
+    wrapper.unmount()
+  })
+
   it('summarizes the configured event types and channel without claiming delivery', async () => {
-    state.ruleRow = { id: 7, tenantId: 'tenant-a', ruleName: 'alerts', eventTypes: 'JOB_FAILED', channelCode: 'ops', enabled: true }
+    state.ruleRow = {
+      id: 7,
+      tenantId: 'tenant-a',
+      ruleName: 'alerts',
+      eventTypes: 'JOB_FAILED',
+      channelCode: 'ops',
+      enabled: true,
+    }
     state.listChannels.mockResolvedValue([{ id: 1, channelCode: 'ops', channelName: 'Operations' }])
     const wrapper = mount(NotificationRulesTab, { global: { stubs } })
     await flushPromises()
-    await wrapper.findAll('button').find((button) => button.text() === 'edit')!.trigger('click')
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'edit')!
+      .trigger('click')
     expect(wrapper.text()).toContain('notificationRulesTab.routeSummaryHint')
     expect(wrapper.text()).toContain('JOB_FAILED')
     expect(wrapper.text()).toContain('ops / Operations')

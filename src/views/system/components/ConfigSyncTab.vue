@@ -138,6 +138,7 @@
               <JsonTextareaInput
                 v-model="importPayload"
                 :rows="8"
+                :initialize-default="false"
                 expect="object"
                 :placeholder="t('configSyncTab.payloadPlaceholder')"
               >
@@ -214,6 +215,7 @@
   import { useTenantRequestScope } from '@/composables/useTenantRequestScope'
   import { usePermission } from '@/composables/usePermission'
   import { useTenantReload } from '@/composables/useTenantReload'
+  import { useTenantChangeGuard } from '@/composables/useTenantChangeGuard'
   import { confirmDanger } from '@/composables/useDangerConfirm'
   import type { ConfigSyncExportResponse } from '@/types/console-api'
   import JsonPreview from '@/components/common/JsonPreview.vue'
@@ -238,6 +240,7 @@
   const recoveryBlocked = ref(false)
   const checkingOutcome = ref(false)
   let inputRevision = 0
+  let committedRevision: number | null = null
   const { canManageSystem, canWriteSystem } = usePermission()
 
   // BE NotBlank,默认 'default' 兼容单环境场景
@@ -274,6 +277,27 @@
   const exportResult = ref<ConfigSyncExportResponse | null>(null)
   const previewResult = ref<unknown>(null)
   const importPayload = ref('')
+  useTenantChangeGuard(
+    () =>
+      Boolean(
+        exporting.value ||
+        previewing.value ||
+        importing.value ||
+        selectedExportTypes.value.length ||
+        (inputRevision !== committedRevision &&
+          (importPayload.value.trim() || targetTenantIds.value.length)),
+      ),
+    () => [
+      sourceEnv.value,
+      targetEnv.value,
+      targetTenantIds.value,
+      selectedExportTypes.value,
+      importPayload.value,
+      exporting.value,
+      previewing.value,
+      importing.value,
+    ],
+  )
 
   // 差异预览结果优先于导出结果(用户最近的动作)
   const displayResult = computed(() => previewResult.value ?? exportResult.value?.bundle ?? null)
@@ -369,19 +393,28 @@
     window.setTimeout(() => URL.revokeObjectURL(objectUrl), 0)
   }
 
+  function parseImportBundle(): Record<string, unknown> | null {
+    try {
+      const bundle: unknown = JSON.parse(importPayload.value)
+      if (!bundle || typeof bundle !== 'object' || Array.isArray(bundle)) {
+        ElMessage.error(t('jsonTextareaInput.expectObject'))
+        return null
+      }
+      return bundle as Record<string, unknown>
+    } catch {
+      ElMessage.error(t('configSyncTab.errInvalidJson'))
+      return null
+    }
+  }
+
   async function doPreview() {
     if (!canManageSystem.value || !tenant.tenantId || previewing.value) return
     if (!importPayload.value.trim()) {
       ElMessage.warning(t('configSyncTab.toastNeedPayload'))
       return
     }
-    let bundle: unknown
-    try {
-      bundle = JSON.parse(importPayload.value)
-    } catch {
-      ElMessage.error(t('configSyncTab.errInvalidJson'))
-      return
-    }
+    const bundle = parseImportBundle()
+    if (!bundle) return
     const scope = previewScope.begin()
     previewing.value = true
     try {
@@ -427,13 +460,8 @@
       ElMessage.warning(t('configSyncTab.toastNeedPayload'))
       return
     }
-    let bundle: unknown
-    try {
-      bundle = JSON.parse(importPayload.value)
-    } catch {
-      ElMessage.error(t('configSyncTab.errInvalidJson'))
-      return
-    }
+    const bundle = parseImportBundle()
+    if (!bundle) return
     const scope = importScope.begin()
     const revision = inputRevision
     const commandScope = recoveryScope.value
@@ -495,6 +523,7 @@
         return
       }
       ElMessage.success(t('configSyncTab.toastImportDone'))
+      committedRevision = inputRevision
     } catch (error) {
       // 只有首次请求在业务执行前被明确拒绝才解除记录；重试的拒绝不能证明原请求未执行。
       const status = (error as { response?: { status?: number } }).response?.status
@@ -772,7 +801,7 @@
   /* 配置类型 checkbox 网格 */
   .sync__types {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 170px), 1fr));
     gap: 8px;
     width: 100%;
   }
@@ -832,12 +861,14 @@
 
   /* JSON textarea:等宽字体 + 浅底 */
   .sync__payload {
+    display: flex;
     flex: 1 1 auto;
+    flex-direction: column;
     min-height: 0;
   }
 
   .sync__payload :deep(.el-form-item__content) {
-    height: 100%;
+    flex: 1 1 auto;
     min-height: 0;
   }
 

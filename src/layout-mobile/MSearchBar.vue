@@ -6,6 +6,7 @@
       v-model="localValue"
       type="search"
       :placeholder="placeholder || t('common.search')"
+      :aria-label="placeholder || t('common.search')"
       class="m-searchbar__input"
       autocomplete="off"
       autocapitalize="off"
@@ -29,7 +30,7 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, watch } from 'vue'
+  import { onBeforeUnmount, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { CircleX as CircleCloseFilled, Search } from '@lucide/vue'
   import { logClick } from '@/utils/logger'
@@ -59,15 +60,25 @@
   watch(
     () => props.modelValue,
     (v) => {
-      if (v !== localValue.value) localValue.value = v
+      if (v !== localValue.value) {
+        cancelPendingSearch()
+        localValue.value = v
+      }
     },
   )
 
   let timer: ReturnType<typeof setTimeout> | null = null
+  function cancelPendingSearch() {
+    if (timer) clearTimeout(timer)
+    timer = null
+  }
+  onBeforeUnmount(cancelPendingSearch)
+
   function onInput() {
     emit('update:modelValue', localValue.value)
-    if (timer) clearTimeout(timer)
+    cancelPendingSearch()
     const fire = () => {
+      timer = null
       emit('search', localValue.value)
       // 提交搜索打点 — debounce 之后才记一次,避免每字符上报
       // 只记 length,不记原文(避免日志里出现敏感关键字)
@@ -83,6 +94,7 @@
   }
 
   function onClear() {
+    cancelPendingSearch()
     localValue.value = ''
     emit('update:modelValue', '')
     emit('search', '')

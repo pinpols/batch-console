@@ -102,7 +102,7 @@
       />
       <MetricCard
         :label="t('monitor.detailMetricStatus')"
-        :value="row.instanceStatus"
+        :value="instanceStatusLabel(row.instanceStatus)"
         :tone="statusTone(row.instanceStatus)"
         :description="t('jobInstanceDetail.metricStatusDescription')"
       />
@@ -137,7 +137,12 @@
       <el-tab-pane name="overview" :label="t('monitor.detailTabOverview')">
         <SectionCard v-if="row.parentInstanceId || row.relatedFileId || row.failureClass">
           <template #header>{{ t('monitor.detailRelatedSection') }}</template>
-          <el-descriptions class="detail-descriptions" :column="2" border size="small">
+          <el-descriptions
+            class="detail-descriptions"
+            :column="isMobile ? 1 : 2"
+            border
+            size="small"
+          >
             <el-descriptions-item
               v-if="row.parentInstanceId"
               :label="t('monitor.detailParentInstance')"
@@ -159,7 +164,12 @@
 
         <SectionCard>
           <template #header>{{ t('monitor.detailTimeSection') }}</template>
-          <el-descriptions class="detail-descriptions" :column="2" border size="small">
+          <el-descriptions
+            class="detail-descriptions"
+            :column="isMobile ? 1 : 2"
+            border
+            size="small"
+          >
             <el-descriptions-item :label="t('monitor.detailStarted')">{{
               fmtDatetime(row.startedAt)
             }}</el-descriptions-item>
@@ -290,7 +300,12 @@
               table-layout="fixed"
               class="console-table detail-table detail-table--steps"
             >
-              <el-table-column prop="stepCode" :label="t('monitor.stepColStep')" min-width="180" />
+              <el-table-column prop="stepCode" :label="t('monitor.stepColStep')" min-width="180">
+                <template #default="{ row: step }">
+                  <CopyableText v-if="step.stepCode" :text="String(step.stepCode)" />
+                  <span v-else>—</span>
+                </template>
+              </el-table-column>
               <el-table-column :label="t('monitor.stepColStatus')" width="120">
                 <template #default="{ row: s }">
                   <StatusTag :value="String(s.stepStatus ?? '')" category="partition" />
@@ -324,7 +339,16 @@
                 prop="errorMessage"
                 :label="t('monitor.stepColError')"
                 show-overflow-tooltip
-              />
+              >
+                <template #default="{ row }">
+                  <CopyableText
+                    v-if="row.errorMessage"
+                    :text="String(row.errorMessage)"
+                    :copyable="false"
+                  />
+                  <span v-else>{{ row.errorMessage }}</span>
+                </template>
+              </el-table-column>
             </el-table>
           </div>
         </SectionCard>
@@ -442,11 +466,12 @@
   import { useI18n } from 'vue-i18n'
   import { fmtDatetime, fmtDuration } from '@/utils/datetime'
 
-  const { t } = useI18n({ useScope: 'global' })
+  const { t, te } = useI18n({ useScope: 'global' })
   import { useRoute, useRouter } from 'vue-router'
   import { ElMessage } from 'element-plus'
   import { GitBranch, List, RefreshCw as Refresh } from '@lucide/vue'
   import { useRefreshAction } from '@/composables/useRefreshAction'
+  import { useResponsive } from '@/composables/useResponsive'
 
   const refresh = useRefreshAction()
   import { confirmDanger } from '@/composables/useDangerConfirm'
@@ -477,6 +502,9 @@
   import MetricCard from '@/components/common/MetricCard.vue'
   import JsonPreview from '@/components/common/JsonPreview.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
+  import { resolveStatusMeta } from '@/components/common/statusTagResolve'
+  import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
+  import CopyableText from '@/components/common/CopyableText.vue'
   import HeartbeatProgressPanel from '@/components/heartbeat/HeartbeatProgressPanel.vue'
   import type {
     ConsoleJobInstanceResponse,
@@ -487,12 +515,14 @@
   const router = useRouter()
   const tenant = useTenantStore()
   const auth = useAuthStore()
+  const { isMobile } = useResponsive()
   const mainScope = useTenantRequestScope()
   const stepsScope = useTenantRequestScope()
   const recentScope = useTenantRequestScope()
   const actionScope = useTenantRequestScope()
   const diagnosisScope = useTenantRequestScope()
   const { canManageSystem, canWriteSystem } = usePermission()
+  const { data: metaEnums } = useConsoleMetaEnumsQuery()
   const lifecycleAction = computed(() =>
     runLifecycleAction(row.value?.instanceStatus, canWriteSystem.value),
   )
@@ -545,6 +575,13 @@
     if (!text) return '—'
     if (text.length <= head + tail + 3) return text
     return `${text.slice(0, head)}...${text.slice(-tail)}`
+  }
+
+  function instanceStatusLabel(status: string): string {
+    return resolveStatusMeta(status, 'instance', metaEnums.value, '', {
+      exists: te,
+      translate: t,
+    }).label
   }
 
   function statusTone(
@@ -636,7 +673,7 @@
     try {
       const page = await instanceApi.list({
         tenantId: scope.tenantId,
-        jobCode,
+        exactJobCode: jobCode,
         page: 1,
         pageSize: 10,
       })

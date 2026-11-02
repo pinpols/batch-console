@@ -13,6 +13,7 @@
       <el-input
         v-model="biz"
         class="cnb-biz"
+        :aria-label="t('codeNameBuilder.bizLabel')"
         :placeholder="t('codeNameBuilder.bizPlaceholder')"
         maxlength="30"
         show-word-limit
@@ -22,6 +23,7 @@
       <el-input
         v-model="version"
         class="cnb-version"
+        :aria-label="t('codeNameBuilder.versionLabel')"
         :placeholder="t('codeNameBuilder.versionPlaceholder')"
         maxlength="6"
       />
@@ -33,9 +35,7 @@
     </div>
     <div v-if="similar.length > 0" class="cnb-similar">
       {{ t('codeNameBuilder.bizHint') }}
-      <span>{{
-        t('codeNameBuilder.existingPrefix', { list: similarCodeSummary })
-      }}</span>
+      <span>{{ t('codeNameBuilder.existingPrefix', { list: similarCodeSummary }) }}</span>
     </div>
     <div v-else class="cnb-hint">{{ t('codeNameBuilder.bizHint') }}</div>
   </div>
@@ -159,6 +159,27 @@
     color: var(--color-text-tertiary);
     font-weight: 600;
     user-select: none;
+  }
+
+  @media (max-width: 600px) {
+    .cnb-row {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--space-sm);
+    }
+
+    .cnb-domain,
+    .cnb-version {
+      width: 100%;
+    }
+
+    .cnb-version {
+      grid-column: 1 / -1;
+    }
+
+    .cnb-sep {
+      display: none;
+    }
   }
   .cnb-preview {
     margin-top: 6px;

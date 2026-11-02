@@ -69,6 +69,7 @@
             :placeholder="t('maintenanceSettings.etaPlaceholder')"
             :clearable="true"
           />
+          <div class="maintenance-settings__hint">{{ t('maintenanceSettings.etaHint') }}</div>
         </el-form-item>
 
         <el-form-item :label="t('maintenanceSettings.startsAtLabel')">
@@ -197,9 +198,7 @@
   }
 
   function affectedServices() {
-    const trimmedServices = form.affectedServicesText
-      .split(/[\n,;]+/)
-      .map((value) => value.trim())
+    const trimmedServices = form.affectedServicesText.split(/[\n,;]+/).map((value) => value.trim())
     const uniqueServices = [...new Set(trimmedServices)]
     return uniqueServices.filter(Boolean)
   }
@@ -219,8 +218,7 @@
       state.value &&
       (form.enabled !== state.value.enabled ||
         (form.enabled && state.value.readOnly !== form.readOnly) ||
-        form.startsAt !==
-          (state.value.startsAt ? toIsoTimestamp(state.value.startsAt) : ''))
+        form.startsAt !== (state.value.startsAt ? toIsoTimestamp(state.value.startsAt) : ''))
     if (changesMode) {
       try {
         await confirmDanger({
@@ -297,6 +295,10 @@
   .maintenance-settings__form {
     max-width: 760px;
     margin-top: var(--space-md);
+  }
+
+  .maintenance-settings__form :deep(.el-date-editor) {
+    width: 100%;
   }
 
   .maintenance-settings__hint {

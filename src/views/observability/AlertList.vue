@@ -53,6 +53,7 @@
       <TraceIdInput
         class="al-trace"
         v-model="filters.traceId"
+        :go-to="false"
         :placeholder="t('alertList.tracePlaceholder')"
         @keyup.enter="search"
       />
@@ -81,6 +82,13 @@
       </template>
     </OpsFilterToolbar>
 
+    <el-alert
+      v-if="loadError"
+      :title="t('alertList.loadFailed')"
+      type="error"
+      :closable="false"
+      show-icon
+    />
     <div v-loading="tableBlocking" class="al-list">
       <article
         v-for="row in rows"
@@ -176,7 +184,7 @@
       </article>
 
       <EmptyState
-        v-if="!tableBlocking && rows.length === 0"
+        v-if="!tableBlocking && !loadError && rows.length === 0"
         :variant="hasAlertFilters ? 'filter-empty' : 'empty'"
         :title="hasAlertFilters ? t('empty.filterTitle') : t('alertList.emptyGroup')"
         :description="alertEmptyDescription"
@@ -736,7 +744,7 @@
   }
 
   .al-trace {
-    width: min(180px, 16vw);
+    width: min(320px, 100%);
   }
 
   .al-saved :deep(.el-button) {
@@ -912,6 +920,21 @@
     .al-trace {
       width: 100%;
       max-width: none;
+    }
+
+    .al-card {
+      display: grid;
+      grid-template-columns: 34px minmax(0, 1fr);
+      gap: 10px 14px;
+    }
+
+    .al-card__meta,
+    .al-card__ops {
+      flex-wrap: wrap;
+    }
+
+    .al-card__ops {
+      grid-column: 2;
     }
   }
 </style>

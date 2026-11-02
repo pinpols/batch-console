@@ -40,8 +40,18 @@
         stripe
         max-height="420"
       >
-        <el-table-column prop="tenantId" :label="t('userBatch.tenant')" min-width="130" />
-        <el-table-column prop="username" :label="t('userBatch.username')" min-width="150" />
+        <el-table-column prop="tenantId" :label="t('userBatch.tenant')" min-width="130">
+          <template #default="{ row }">
+            <CopyableText v-if="row.tenantId" :text="String(row.tenantId)" :copyable="false" />
+            <span v-else>{{ row.tenantId }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="username" :label="t('userBatch.username')" min-width="150">
+          <template #default="{ row }">
+            <CopyableText v-if="row.username" :text="String(row.username)" :copyable="false" />
+            <span v-else>{{ row.username }}</span>
+          </template>
+        </el-table-column>
         <el-table-column :label="t('userBatch.password')" min-width="260">
           <template #default="{ row }">
             <div class="batch-password">
@@ -118,23 +128,46 @@
           :label="t('userBatch.tenant')"
           min-width="130"
           show-overflow-tooltip
-        />
+        >
+          <template #default="{ row }">
+            <CopyableText v-if="row.tenantId" :text="String(row.tenantId)" :copyable="false" />
+            <span v-else class="cell-empty">—</span>
+          </template>
+        </el-table-column>
         <el-table-column
           prop="username"
           :label="t('userBatch.username')"
           min-width="150"
           show-overflow-tooltip
-        />
+        >
+          <template #default="{ row }">
+            <CopyableText v-if="row.username" :text="String(row.username)" :copyable="false" />
+            <span v-else class="cell-empty">—</span>
+          </template>
+        </el-table-column>
         <el-table-column
           prop="displayName"
           :label="t('userBatch.displayName')"
           min-width="130"
           show-overflow-tooltip
-        />
+        >
+          <template #default="{ row }">
+            <CopyableText
+              v-if="row.displayName"
+              :text="String(row.displayName)"
+              :copyable="false"
+            />
+            <span v-else class="cell-empty">—</span>
+          </template>
+        </el-table-column>
         <el-table-column :label="t('userBatch.role')" min-width="150">
           <template #default="{ row }">{{ roleLabel(row.role) }}</template>
         </el-table-column>
-        <el-table-column :label="t('userBatch.issue')" min-width="170">
+        <el-table-column
+          :label="t('userBatch.issue')"
+          min-width="170"
+          class-name="batch-issue-column"
+        >
           <template #default="{ row }">
             <span class="batch-issue">{{ issueFor(row.rowNo) }}</span>
           </template>
@@ -151,7 +184,9 @@
         <div v-for="row in preview.rows" :key="row.rowNo" class="batch-mobile-row">
           <div class="batch-mobile-heading">
             <strong>{{ row.username || t('userBatch.username') }}</strong>
-            <span class="batch-mobile-secondary">{{ t('userBatch.row') }} {{ row.rowNo }}</span>
+            <span class="batch-mobile-secondary batch-mobile-row-number"
+              >{{ t('userBatch.row') }} {{ row.rowNo }}</span
+            >
           </div>
           <span class="batch-mobile-secondary">{{ row.tenantId }} · {{ roleLabel(row.role) }}</span>
           <div class="batch-mobile-heading">
@@ -219,6 +254,7 @@
 </template>
 
 <script setup lang="ts">
+  import CopyableText from '@/components/common/CopyableText.vue'
   import { computed, ref } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage, ElMessageBox } from 'element-plus'
@@ -478,6 +514,10 @@
   .batch-issue {
     color: var(--color-danger);
   }
+  :deep(.batch-issue-column .cell) {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
   .batch-password code {
     overflow-wrap: anywhere;
   }
@@ -524,7 +564,16 @@
       justify-content: space-between;
       gap: 12px;
     }
+    .batch-mobile-heading strong {
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+    .batch-mobile-row-number {
+      flex-shrink: 0;
+      white-space: nowrap;
+    }
     .batch-mobile-secondary {
+      overflow-wrap: anywhere;
       color: var(--color-text-secondary);
       font-size: 12px;
     }

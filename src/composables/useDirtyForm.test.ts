@@ -1,6 +1,8 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { effectScope, reactive, nextTick } from 'vue'
+import { createPinia, setActivePinia } from 'pinia'
+import { useTenantStore } from '@/stores/tenant'
 
 const elMessageBoxConfirmMock = vi.fn()
 vi.mock('element-plus', () => ({
@@ -22,9 +24,60 @@ import { useDirtyForm } from './useDirtyForm'
 
 beforeEach(() => {
   elMessageBoxConfirmMock.mockReset()
+  setActivePinia(createPinia())
 })
 
 describe('useDirtyForm', () => {
+  it.each(['dirty', 'clean'])('确认期间 %s 草稿变化后即使恢复原值也不切换', async (which) => {
+    const tenant = useTenantStore()
+    tenant.setTenantId('tenant-a')
+    const scope = effectScope()
+    const dirty = reactive({ name: 'a' })
+    const clean = reactive({ name: 'a' })
+    scope.run(() => {
+      useDirtyForm(() => dirty)
+      useDirtyForm(() => clean)
+    })
+    dirty.name = 'edited'
+    let finish!: (value: boolean) => void
+    const pending = tenant.requestTenantSwitch(
+      'tenant-b',
+      () =>
+        new Promise((resolve) => {
+          finish = resolve
+        }),
+    )
+    const target = which === 'dirty' ? dirty : clean
+    const previous = target.name
+    target.name = 'changed-during-confirmation'
+    target.name = previous
+    finish(true)
+    expect(await pending).toBe(false)
+    expect(tenant.tenantId).toBe('tenant-a')
+    const confirmAgain = vi.fn(async () => true)
+    expect(await tenant.requestTenantSwitch('tenant-b', confirmAgain)).toBe(true)
+    expect(confirmAgain).toHaveBeenCalledOnce()
+    scope.stop()
+  })
+  it('刚输入立即切租户也检查最新草稿，失活和销毁后不拦截', async () => {
+    const tenant = useTenantStore()
+    tenant.setTenantId('tenant-a')
+    const scope = effectScope()
+    const form = reactive({ name: 'a' })
+    let enabled = true
+    scope.run(() => useDirtyForm(() => form, { enabled: () => enabled }))
+    form.name = 'b'
+    const confirm = vi.fn(async () => false)
+    expect(await tenant.requestTenantSwitch('tenant-b', confirm)).toBe(false)
+    expect(tenant.tenantId).toBe('tenant-a')
+    expect(confirm).toHaveBeenCalledTimes(1)
+    enabled = false
+    expect(await tenant.requestTenantSwitch('tenant-b', confirm)).toBe(true)
+    enabled = true
+    scope.stop()
+    expect(await tenant.requestTenantSwitch('tenant-c', confirm)).toBe(true)
+    expect(confirm).toHaveBeenCalledTimes(1)
+  })
   it('初始基线对齐 → isDirty=false', () => {
     const scope = effectScope()
     scope.run(() => {

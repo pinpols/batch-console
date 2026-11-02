@@ -4,7 +4,11 @@
       <el-tag size="small" effect="plain">{{ code }}</el-tag>
       <span>{{ t('jobDefinitionList.systemPipelineReadonly') }}</span>
     </div>
-    <div class="system-pipeline-stages" aria-label="System Pipeline stages">
+    <div
+      class="system-pipeline-stages"
+      role="group"
+      :aria-label="t('jobDefinitionList.systemPipelineStagesLabel')"
+    >
       <template v-for="(stage, index) in stages" :key="stage">
         <el-tag size="small" effect="plain">{{ stage }}</el-tag>
         <span v-if="index < stages.length - 1" class="system-pipeline-arrow">→</span>

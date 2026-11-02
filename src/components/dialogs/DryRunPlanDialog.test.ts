@@ -3,10 +3,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, h, inject, provide, toRef, type Ref } from 'vue'
 import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils'
 import { createI18n } from 'vue-i18n'
+import { createPinia, setActivePinia } from 'pinia'
+import { useTenantStore } from '@/stores/tenant'
 import { ElMessage } from 'element-plus'
 import zh from '@/locales/zh-CN'
 import en from '@/locales/en-US'
 import { dryRunApi } from '@/api/dryRun'
+import CopyableText from '@/components/common/CopyableText.vue'
 import DryRunPlanDialog from './DryRunPlanDialog.vue'
 
 vi.mock('@/api/dryRun', () => ({ dryRunApi: { plan: vi.fn() } }))
@@ -67,6 +70,8 @@ const stubs = {
 
 describe('DryRunPlanDialog SQL plan availability', () => {
   beforeEach(() => {
+    setActivePinia(createPinia())
+    useTenantStore().setTenantId('tenant-a')
     vi.clearAllMocks()
     vi.mocked(dryRunApi.plan).mockReset()
     vi.mocked(dryRunApi.plan).mockResolvedValue({
@@ -82,6 +87,52 @@ describe('DryRunPlanDialog SQL plan availability', () => {
         { severity: 'WARN', scope: 'execution', code: 'OTHER', message: 'backend other message' },
       ],
     })
+  })
+
+  it('长诊断编码提供完整值查看入口', async () => {
+    const code = `EXEC_${'SQL_VALIDATION_'.repeat(4)}FAILED`
+    vi.mocked(dryRunApi.plan).mockResolvedValue({
+      level: 'CONFIG_VALIDATE',
+      success: false,
+      findings: [{ severity: 'ERROR', scope: 'job', code, message: 'failure' }],
+    })
+    const i18n = createI18n({ legacy: false, locale: 'zh-CN', messages: { 'zh-CN': zh } })
+    const wrapper = mount(DryRunPlanDialog, {
+      props: { modelValue: true, tenantId: 'tenant-a', jobCode: 'JOB' },
+      global: { plugins: [i18n], stubs },
+    })
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === '运行演练')!
+      .trigger('click')
+    await flushPromises()
+    const value = wrapper.getComponent(CopyableText)
+    expect(value.props('text')).toBe(code)
+    expect(value.get('.copyable-text__inspect').attributes('aria-label')).toBe('查看完整内容')
+  })
+
+  it('切换租户后旧演练结果不显示成功提示', async () => {
+    let finish!: (value: { level: 'CONFIG_VALIDATE'; success: true; findings: [] }) => void
+    vi.mocked(dryRunApi.plan).mockReturnValue(
+      new Promise((resolve) => {
+        finish = resolve
+      }),
+    )
+    const i18n = createI18n({ legacy: false, locale: 'zh-CN', messages: { 'zh-CN': zh } })
+    const wrapper = mount(DryRunPlanDialog, {
+      props: { modelValue: true, tenantId: 'tenant-a', jobCode: 'JOB' },
+      global: { plugins: [i18n], stubs },
+    })
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === '运行演练')!
+      .trigger('click')
+    useTenantStore().setTenantId('tenant-b')
+    useTenantStore().setTenantId('tenant-a')
+    finish({ level: 'CONFIG_VALIDATE', success: true, findings: [] })
+    await flushPromises()
+    expect(ElMessage.success).not.toHaveBeenCalled()
+    expect(wrapper.text()).not.toContain('演练全部通过')
   })
 
   it('reports warnings without claiming all checks passed', async () => {

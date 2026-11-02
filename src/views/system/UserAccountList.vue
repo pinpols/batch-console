@@ -92,19 +92,38 @@
             prop="tenantId"
             :label="t('userAccountList.colTenantId')"
             min-width="160"
-          />
+          >
+            <template #default="{ row }">
+              <CopyableText v-if="row.tenantId" :text="String(row.tenantId)" />
+              <span v-else class="cell-empty">—</span>
+            </template>
+          </el-table-column>
           <el-table-column
             prop="username"
             :label="t('userAccountList.colUsername')"
             min-width="160"
             show-overflow-tooltip
-          />
+          >
+            <template #default="{ row }">
+              <CopyableText v-if="row.username" :text="String(row.username)" :copyable="false" />
+              <span v-else class="cell-empty">—</span>
+            </template>
+          </el-table-column>
           <el-table-column
             prop="displayName"
             :label="t('userAccountList.colDisplayName')"
             min-width="160"
             show-overflow-tooltip
-          />
+          >
+            <template #default="{ row }">
+              <CopyableText
+                v-if="row.displayName"
+                :text="String(row.displayName)"
+                :copyable="false"
+              />
+              <span v-else class="cell-empty">—</span>
+            </template>
+          </el-table-column>
           <el-table-column :label="t('userAccountList.colRoles')">
             <template #default="{ row }">
               <div class="role-tags">
@@ -114,14 +133,28 @@
                   size="small"
                   effect="plain"
                 >
-                  {{ role }}
+                  {{ roleLabel(role) }}
                 </el-tag>
               </div>
             </template>
           </el-table-column>
           <el-table-column :label="t('userAccountList.colStatus')" width="100">
             <template #default="{ row }">
-              <StatusTag :value="String(row.enabled)" category="yn" />
+              <el-tag
+                v-if="row.enabled === true || row.enabled === false"
+                :type="row.enabled ? 'success' : 'info'"
+                size="small"
+                effect="light"
+              >
+                {{
+                  t(
+                    row.enabled
+                      ? 'userAccountList.metricEnabled'
+                      : 'userAccountList.metricDisabled',
+                  )
+                }}
+              </el-tag>
+              <span v-else class="cell-empty">—</span>
             </template>
           </el-table-column>
           <DatetimeColumn prop="createdAt" :label="t('userAccountList.colCreatedAt')" width="160" />
@@ -156,8 +189,14 @@
       direction="rtl"
       size="640px"
       :before-close="onCreateClose"
+      @opened="onCreateOpened"
     >
-      <el-form ref="createFormRef" :model="createForm" :rules="createFormRules" label-width="88px">
+      <el-form
+        ref="createFormRef"
+        :model="createForm"
+        :rules="createFormRules"
+        label-position="top"
+      >
         <el-form-item :label="t('userAccountList.fieldTenant')" prop="tenantId">
           <TenantSelect
             v-model="createForm.tenantId"
@@ -229,7 +268,7 @@
       :close-on-click-modal="false"
       :before-close="onEditClose"
     >
-      <el-form label-width="88px">
+      <el-form label-position="top">
         <el-form-item :label="t('userAccountList.fieldTenant')">
           <TenantSelect
             v-model="form.tenantId"
@@ -286,9 +325,9 @@
           ? t('userAccountList.resetTitle', { name: resetTarget.username })
           : t('userAccountList.resetTitleDefault')
       "
-      width="480px"
+      width="min(480px, calc(100% - 32px))"
     >
-      <el-form ref="resetFormRef" :model="resetForm" :rules="resetFormRules" label-width="88px">
+      <el-form ref="resetFormRef" :model="resetForm" :rules="resetFormRules" label-position="top">
         <el-form-item :label="t('userAccountList.fieldNewPassword')" prop="newPassword">
           <StrongPasswordInput
             v-model="resetForm.newPassword"
@@ -312,6 +351,7 @@
 </template>
 
 <script setup lang="ts">
+  import CopyableText from '@/components/common/CopyableText.vue'
   import { computed, onMounted, reactive, ref } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage, ElMessageBox } from 'element-plus'
@@ -354,7 +394,6 @@
   import LiveMonitorBar from '@/components/table/LiveMonitorBar.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
   import TenantSelect from '@/components/common/TenantSelect.vue'
-  import StatusTag from '@/components/common/StatusTag.vue'
   import { useTenantStore } from '@/stores/tenant'
   import { useAuthStore } from '@/stores/auth'
   import { filterRoleOptionsFor } from '@/utils/roleOptions'
@@ -374,6 +413,10 @@
    * BE Service 层有兜底:TENANT_ADMIN 提交 ADMIN/AUDITOR 一律 403。
    */
   const ROLE_OPTIONS = computed(() => filterRoleOptionsFor(isPlatformAdmin.value))
+  const allRoleOptions = computed(() => filterRoleOptionsFor(true))
+  function roleLabel(role: string): string {
+    return allRoleOptions.value.find((option) => option.value === role)?.label ?? role
+  }
   function csvToRoles(csv: string): string[] {
     const roleEntries = (csv || '').split(',')
     const normalizedRoles = roleEntries.map((role) => role.trim())
@@ -538,7 +581,12 @@
 
   // 脏数据保护
   const createDirty = useDirtyForm(() => createForm, { enabled: () => createVisible.value })
-  useFormFocus(createFormRef, () => createVisible.value)
+  const { focusFirst: focusCreateForm } = useFormFocus(createFormRef)
+
+  function onCreateOpened() {
+    clearCreateValidate()
+    focusCreateForm()
+  }
 
   function openCreate() {
     if (!ensureWriteAvailable()) return

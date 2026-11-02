@@ -142,6 +142,7 @@
                 <el-input
                   v-model="prompt"
                   type="textarea"
+                  :aria-label="t('aiChat.promptLabel')"
                   :rows="6"
                   :disabled="historyTurnsLoading"
                   :placeholder="t('aiChat.inputPlaceholder')"
@@ -153,7 +154,11 @@
                 <el-button v-if="chat.pendingTurnId.value" text @click="chat.reconcileTurn()">
                   {{ t('aiChat.checkTurnStatus') }}
                 </el-button>
-                <AiTextAttachmentPicker v-model="chat.attachment.value" :disabled="sending" />
+                <AiTextAttachmentPicker
+                  v-model="chat.attachment.value"
+                  :disabled="sending"
+                  :context-revision="chat.contextRevision.value"
+                />
                 <AiImageAttachmentPicker ref="imagePicker" :chat="chat" :disabled="sending" />
                 <div class="composer__actions">
                   <el-button :disabled="sending || !messages.length" @click="resetSession()">
@@ -208,13 +213,12 @@
                 @reset="onAuditReset"
                 @refresh="() => runAuditRefresh(loadAudits)"
               >
-                <el-form-item label="Trace">
+                <el-form-item :label="t('aiChat.traceLabel')">
                   <el-input
-                    class="query-w-200"
+                    class="query-w-320"
                     v-model="auditTraceDraft"
                     clearable
                     :placeholder="t('aiChat.tracePlaceholder')"
-                    @keyup.enter="onAuditSearch"
                   />
                 </el-form-item>
                 <el-form-item :label="t('aiChat.operatorLabel')">
@@ -223,7 +227,6 @@
                     v-model="auditOperatorDraft"
                     clearable
                     :placeholder="t('aiChat.operatorPlaceholder')"
-                    @keyup.enter="onAuditSearch"
                   />
                 </el-form-item>
                 <el-form-item :label="t('aiChat.categoryLabel')">
@@ -242,7 +245,16 @@
               </ListPageQueryBar>
             </template>
             <DatetimeColumn prop="createdAt" :label="t('aiChat.colTime')" width="160" />
-            <el-table-column prop="operatorId" :label="t('aiChat.colOperator')" width="120" />
+            <el-table-column prop="operatorId" :label="t('aiChat.colOperator')" width="120">
+              <template #default="{ row }">
+                <CopyableText
+                  v-if="row.operatorId"
+                  :text="String(row.operatorId)"
+                  :copyable="false"
+                />
+                <span v-else>{{ row.operatorId }}</span>
+              </template>
+            </el-table-column>
             <el-table-column
               prop="promptCategory"
               :label="t('aiChat.colCategory')"
@@ -253,10 +265,19 @@
                 <StatusTag :value="String(row.promptDecision ?? '')" category="approval" />
               </template>
             </el-table-column>
-            <el-table-column prop="modelName" :label="t('aiChat.colModel')" min-width="150" />
+            <el-table-column prop="modelName" :label="t('aiChat.colModel')" min-width="150">
+              <template #default="{ row }">
+                <CopyableText v-if="row.modelName" :text="String(row.modelName)" />
+                <span v-else class="cell-empty">—</span>
+              </template>
+            </el-table-column>
             <el-table-column :label="t('common.detail')" width="120" fixed="right">
               <template #default="{ row }">
-                <el-button size="small" :icon="Eye" @click="openAuditDetail(row as AiAuditLogResponse)">
+                <el-button
+                  size="small"
+                  :icon="Eye"
+                  @click="openAuditDetail(row as AiAuditLogResponse)"
+                >
                   {{ t('common.detail') }}
                 </el-button>
               </template>
@@ -319,6 +340,7 @@
   import { useI18n } from 'vue-i18n'
   import { useRoute, useRouter } from 'vue-router'
   import { ElMessageBox } from 'element-plus'
+  import { currentAuthSession, isSharedAuthRevisionCurrent } from '@/api/authSession'
   import { Eye, Plus, Square, Trash2 } from '@lucide/vue'
 
   const { t } = useI18n({ useScope: 'global' })
@@ -329,6 +351,7 @@
     listAiTurns,
   } from '@/api/ai'
   import { useAiChatSession } from '@/composables/useAiChatSession'
+  import { useTenantChangeGuard } from '@/composables/useTenantChangeGuard'
   import { useAiAutoScroll } from '@/composables/useAiAutoScroll'
   import { aiMessageBody } from '@/utils/aiMessagePresentation'
   import { formatAiUsd } from '@/utils/formatAiUsd'
@@ -365,6 +388,7 @@
   const router = useRouter()
   const activeTab = ref<'chat' | 'audits'>('chat')
   const chat = useAiChatSession()
+  useTenantChangeGuard(chat.hasUnsavedDraft, chat.tenantGuardState)
   const { prompt, sending, sendError, sendErrorKey, sessionId, messages } = chat
   const imagePicker = ref<InstanceType<typeof AiImageAttachmentPicker> | null>(null)
   function handleImagePaste(event: Event) {
@@ -536,21 +560,25 @@
   async function loadConversations() {
     const sequence = ++historyRequestSequence
     const tenantId = tenant.tenantId
+    const tenantRevision = tenant.revision
+    const isCurrent = () =>
+      sequence === historyRequestSequence &&
+      tenant.tenantId === tenantId &&
+      tenant.revision === tenantRevision
     historyLoading.value = true
     historyMoreLoading.value = false
     historyPageError.value = false
     try {
       const result = await pageAiConversations({ limit: 20 })
-      if (sequence !== historyRequestSequence || tenant.tenantId !== tenantId) return
+      if (!isCurrent()) return
       conversations.value = result.items
       historyNextCursor.value = result.nextCursor
       historyHasMore.value = result.hasMore && Boolean(result.nextCursor)
       historyAvailable.value = true
       const cost = await getAiCostSummary().catch(() => null)
-      if (sequence === historyRequestSequence && tenant.tenantId === tenantId)
-        costSummary.value = cost
+      if (isCurrent()) costSummary.value = cost
     } catch {
-      if (sequence !== historyRequestSequence || tenant.tenantId !== tenantId) return
+      if (!isCurrent()) return
       conversations.value = []
       historyNextCursor.value = null
       historyHasMore.value = false
@@ -570,11 +598,16 @@
     }
     const sequence = historyRequestSequence
     const tenantId = tenant.tenantId
+    const tenantRevision = tenant.revision
+    const isCurrent = () =>
+      sequence === historyRequestSequence &&
+      tenant.tenantId === tenantId &&
+      tenant.revision === tenantRevision
     historyMoreLoading.value = true
     historyPageError.value = false
     try {
       const result = await pageAiConversations({ cursor, limit: 20 })
-      if (sequence !== historyRequestSequence || tenant.tenantId !== tenantId) return
+      if (!isCurrent()) return
       const loadedIds = new Set(conversations.value.map((item) => item.id))
       conversations.value = [
         ...conversations.value,
@@ -584,8 +617,7 @@
       historyHasMore.value =
         result.hasMore && Boolean(result.nextCursor) && result.nextCursor !== cursor
     } catch {
-      if (sequence === historyRequestSequence && tenant.tenantId === tenantId)
-        historyPageError.value = true
+      if (isCurrent()) historyPageError.value = true
     } finally {
       if (sequence === historyRequestSequence) historyMoreLoading.value = false
     }
@@ -595,19 +627,24 @@
     if (sending.value) return
     const sequence = ++turnRequestSequence
     const tenantId = tenant.tenantId
+    const tenantRevision = tenant.revision
+    const isCurrent = () =>
+      sequence === turnRequestSequence &&
+      tenant.tenantId === tenantId &&
+      tenant.revision === tenantRevision
     historyTurnsLoading.value = true
     openingConversationId.value = id
     historyError.value = false
     historyErrorKey.value = 'aiChat.historyLoadError'
     try {
       const turns = await listAiTurns(id, { limit: 50 })
-      if (sequence !== turnRequestSequence || tenant.tenantId !== tenantId) return
+      if (!isCurrent()) return
       chat.restore(id, turns, t('aiChat.emptyAnswer'))
       followChat()
       oldestTurnNo.value = turns.length ? Math.min(...turns.map((turn) => turn.turnNo)) : null
       hasOlderTurns.value = turns.length === 50
     } catch (error) {
-      if (sequence === turnRequestSequence && tenant.tenantId === tenantId) {
+      if (isCurrent()) {
         if (isMissingConversation(error)) markConversationUnavailable(id)
         else historyError.value = true
       }
@@ -623,10 +660,12 @@
     if (!sessionId.value || oldestTurnNo.value == null) return
     const sequence = ++turnRequestSequence
     const tenantId = tenant.tenantId
+    const tenantRevision = tenant.revision
     const selectedSessionId = sessionId.value
     const isCurrentTurn = () =>
       sequence === turnRequestSequence &&
       tenant.tenantId === tenantId &&
+      tenant.revision === tenantRevision &&
       sessionId.value === selectedSessionId
     historyTurnsLoading.value = true
     try {
@@ -649,6 +688,14 @@
   }
 
   async function removeConversation(id: string) {
+    const tenantId = tenant.tenantId
+    const tenantRevision = tenant.revision
+    const session = currentAuthSession()
+    const isCurrent = () =>
+      tenant.tenantId === tenantId &&
+      tenant.revision === tenantRevision &&
+      currentAuthSession() === session &&
+      isSharedAuthRevisionCurrent()
     try {
       await ElMessageBox.confirm(t('aiChat.deleteConfirm'), t('aiChat.deleteConversation'), {
         type: 'warning',
@@ -656,12 +703,14 @@
     } catch {
       return
     }
+    if (!isCurrent()) return
     if (openingConversationId.value === id) {
       turnRequestSequence += 1
       historyTurnsLoading.value = false
       openingConversationId.value = null
     }
     await deleteAiConversation(id)
+    if (!isCurrent()) return
     if (sessionId.value === id) resetSession()
     await loadConversations()
   }
@@ -677,6 +726,11 @@
   async function loadAudits() {
     const sequence = ++auditRequestSequence
     const tenantId = tenant.tenantId
+    const tenantRevision = tenant.revision
+    const isCurrent = () =>
+      sequence === auditRequestSequence &&
+      tenant.tenantId === tenantId &&
+      tenant.revision === tenantRevision
     await runLoadAudits(async () => {
       const resp = await queryAiAuditsPage(
         tenant.tenantId,
@@ -688,13 +742,13 @@
           promptCategory: auditCategoryApplied.value.trim() || undefined,
         },
       )
-      if (sequence !== auditRequestSequence || tenant.tenantId !== tenantId) return
+      if (!isCurrent()) return
       auditRows.value = resp.items ?? []
       auditTotal.value = resp.total ?? 0
       auditNextCursor.value = resp.nextCursor ?? null
       auditHasMore.value = Boolean(resp.hasMore)
     }).catch(() => {
-      if (sequence !== auditRequestSequence || tenant.tenantId !== tenantId) return
+      if (!isCurrent()) return
       auditRows.value = []
       auditTotal.value = 0
       auditNextCursor.value = null

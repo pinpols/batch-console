@@ -4,7 +4,7 @@
       ref="rerunFormRef"
       :model="rerunForm"
       :rules="rerunFormRules"
-      label-width="88px"
+      label-position="top"
       class="form-section"
       @submit.prevent="submitRerun"
     >
@@ -58,8 +58,10 @@
             :label="opt.instanceNo"
             :value="opt.instanceNo"
           >
-            <span>{{ opt.instanceNo }}</span>
-            <el-tag size="small" effect="plain" class="u-ml-8">{{ opt.status }}</el-tag>
+            <span class="self-service-instance-option">
+              <span>{{ opt.instanceNo }}</span>
+              <StatusTag :value="opt.status" category="instance" />
+            </span>
           </el-option>
         </el-select>
         <div class="field-hint">{{ t('selfServiceCommon.targetInstanceHint') }}</div>
@@ -103,6 +105,7 @@
   import { useJobCodeSearch } from '@/composables/useJobCodeSearch'
   import { useInstanceNoSearch } from '@/composables/useInstanceNoSearch'
   import { useFormValidate, rules } from '@/composables/useFormValidate'
+  import StatusTag from '@/components/common/StatusTag.vue'
 
   const tenant = useTenantStore()
   const rerunLoading = ref(false)

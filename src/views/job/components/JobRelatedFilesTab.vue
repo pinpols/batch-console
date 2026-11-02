@@ -17,19 +17,24 @@
     <el-table v-loading="loading" :data="rows" size="small" empty-text=" " class="related-table">
       <el-table-column prop="fileName" :label="t('jobRelatedFiles.colFileName')" min-width="240">
         <template #default="{ row }">
-          <router-link :to="`/files/list?fileId=${row.id}`" class="cell-link">
-            {{ row.fileName }}
-          </router-link>
+          <span class="long-link-cell">
+            <router-link :to="`/files/list?fileId=${row.id}`" class="cell-link">
+              {{ row.fileName }}
+            </router-link>
+            <CopyableText v-if="row.fileName" :text="row.fileName" icon-only />
+          </span>
         </template>
       </el-table-column>
       <el-table-column prop="fileStatus" :label="t('jobRelatedFiles.colStatus')" width="120">
         <template #default="{ row }">
-          <el-tag size="small" :type="statusTagType(row.fileStatus)">
-            {{ row.fileStatus || '—' }}
-          </el-tag>
+          <StatusTag :value="row.fileStatus || ''" category="file" />
         </template>
       </el-table-column>
-      <el-table-column prop="bizType" :label="t('jobRelatedFiles.colBizType')" width="120" />
+      <el-table-column prop="bizType" :label="t('jobRelatedFiles.colBizType')" width="120">
+        <template #default="{ row }"
+          ><CopyableText v-if="row.bizType" :text="row.bizType" /><span v-else>—</span></template
+        >
+      </el-table-column>
       <el-table-column prop="bizDate" :label="t('jobRelatedFiles.colBizDate')" width="120" />
       <DatetimeColumn prop="createdAt" :label="t('jobRelatedFiles.colCreatedAt')" width="180" />
     </el-table>
@@ -72,6 +77,8 @@
   import { RefreshCw as Refresh } from '@lucide/vue'
   import { fileApi } from '@/api/file'
   import DatetimeColumn from '@/components/common/DatetimeColumn.vue'
+  import CopyableText from '@/components/common/CopyableText.vue'
+  import StatusTag from '@/components/common/StatusTag.vue'
   import type { ConsoleFileRecordResponse } from '@/types/console-api'
 
   const props = defineProps<{
@@ -135,21 +142,21 @@
     },
     { immediate: true },
   )
-
-  function statusTagType(
-    s: string | undefined,
-  ): 'success' | 'warning' | 'danger' | 'info' | 'primary' {
-    if (!s) return 'info'
-    const up = s.toUpperCase()
-    if (['COMPLETED', 'SUCCEEDED', 'DELIVERED', 'STORED'].includes(up)) return 'success'
-    if (['FAILED', 'ERROR', 'GIVE_UP'].includes(up)) return 'danger'
-    if (['RUNNING', 'PROCESSING', 'DISPATCHING'].includes(up)) return 'primary'
-    if (['PENDING', 'WAITING'].includes(up)) return 'warning'
-    return 'info'
-  }
 </script>
 
 <style scoped>
+  .long-link-cell {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+  }
+
+  .long-link-cell > :first-child {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
   .job-related-files {
     display: flex;
     flex-direction: column;

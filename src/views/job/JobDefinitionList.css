@@ -6,6 +6,11 @@
   flex-wrap: wrap;
 }
 
+:global(.job-trigger-prompt .el-textarea__inner) {
+  /* 覆盖组件内联最小高度，使预填参数完整可见。 */
+  min-height: 120px !important;
+}
+
 .detail-runs-header {
   display: flex;
   justify-content: space-between;
@@ -80,6 +85,29 @@
 }
 .queue-field .el-select {
   flex: 1;
+}
+
+.long-link-cell {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.bundle-import-mode {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 16px;
+}
+
+.bundle-import-mode :deep(.el-radio) {
+  margin-right: 0;
+}
+
+.long-link-cell > :first-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .definition-link {

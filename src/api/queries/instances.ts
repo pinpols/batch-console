@@ -6,6 +6,8 @@ export interface InstanceQueryParams {
   tenantId: string
   /** 模糊匹配 */
   jobCode?: string
+  /** 精确匹配，优先于模糊编码筛选。 */
+  exactJobCode?: string
   /** exact match,instanceStatuses 非空时被忽略 */
   instanceStatus?: string
   /** CSV 多状态(如 "FAILED,PARTIAL_FAILED"),优先于 instanceStatus 单值 */
@@ -38,7 +40,10 @@ export async function queryJobInstances(
     tenantId: query.tenantId,
     pageNo: query.page,
     pageSize: query.pageSize,
-    ...(query.jobCode ? { jobCode: query.jobCode } : {}),
+    ...(query.exactJobCode || query.jobCode
+      ? { jobCode: query.exactJobCode || query.jobCode }
+      : {}),
+    ...(query.exactJobCode ? { exactJobCode: query.exactJobCode } : {}),
     ...(query.instanceStatuses
       ? { instanceStatuses: query.instanceStatuses }
       : query.instanceStatus

@@ -265,4 +265,22 @@ describe('useDesignerStore', () => {
     s.redo()
     expect(s.dirty).toBe(true)
   })
+  it('应用 JSON 保留已保存基线，变更、未变及改回基线均正确标记，同时清除历史', () => {
+    const s = useDesignerStore()
+    s.reset({
+      nodes: [{ id: 's', nodeCode: 's', nodeName: 'saved', nodeType: 'START', x: 0, y: 0 }],
+      edges: [],
+    })
+    const baseline = s.snapshot
+    s.replaceGraphFromJson(baseline)
+    expect(s.dirty).toBe(false)
+    s.updateNode('s', { nodeName: 'intermediate' })
+    expect(s.canUndo).toBe(true)
+    s.replaceGraphFromJson({ ...baseline, nodes: [{ ...baseline.nodes[0], nodeName: 'changed' }] })
+    expect(s.dirty).toBe(true)
+    expect(s.canUndo).toBe(false)
+    expect(s.canRedo).toBe(false)
+    s.replaceGraphFromJson(baseline)
+    expect(s.dirty).toBe(false)
+  })
 })

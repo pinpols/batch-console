@@ -67,5 +67,7 @@ describe('opsManagement', () => {
     expect(PLACEMENT_KEY_PATTERN.test('shard-a1')).toBe(true)
     expect(PLACEMENT_KEY_PATTERN.test('Shard_A')).toBe(false)
     expect(PLACEMENT_KEY_PATTERN.test('shard a')).toBe(false)
+    expect(PLACEMENT_KEY_PATTERN.test('a'.repeat(64))).toBe(true)
+    expect(PLACEMENT_KEY_PATTERN.test('a'.repeat(65))).toBe(false)
   })
 })

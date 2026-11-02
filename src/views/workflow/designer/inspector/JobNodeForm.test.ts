@@ -54,6 +54,8 @@ vi.mock('element-plus', () => ({
       '<input type="number" :value="modelValue" :min="min" :max="max" :disabled="disabled" @input="$emit(\'change\', Number($event.target.value)); $emit(\'update:modelValue\', Number($event.target.value))" />',
   },
   ElTag: { name: 'ElTag', template: '<span><slot /></span>' },
+  ElRadioGroup: { name: 'ElRadioGroup', template: '<div><slot /></div>' },
+  ElRadioButton: { name: 'ElRadioButton', template: '<div><slot /></div>' },
   ElSkeleton: { name: 'ElSkeleton', template: '<div class="skeleton" />' },
   ElAlert: { name: 'ElAlert', props: ['title'], template: '<div>{{ title }}</div>' },
   ElPagination: { name: 'ElPagination', template: '<div class="pagination" />' },
@@ -96,6 +98,10 @@ vi.mock('@/composables/queries/useConsoleMeta', async () => {
 })
 
 import JobNodeForm from './JobNodeForm.vue'
+import StartNodeForm from './StartNodeForm.vue'
+import EndNodeForm from './EndNodeForm.vue'
+import GatewayNodeForm from './GatewayNodeForm.vue'
+import NodeInspector from './NodeInspector.vue'
 import { useDesignerStore } from '../store/useDesignerStore'
 import type { DesignerNode } from '../types'
 
@@ -105,7 +111,7 @@ const i18n = createI18n({
   fallbackLocale: 'en-US',
   messages: {
     'zh-CN': {
-      workflowDesignerSpike: { nodeJob: 'JOB' },
+      workflowDesignerSpike: { nodeJob: 'JOB', nodeStart: 'START', nodeEnd: 'END' },
       workflowDesignerMvp: {
         readonlyTag: '只读',
         jobDependencies: {
@@ -137,7 +143,7 @@ const i18n = createI18n({
           skipExpression: '跳过条件',
           skipExpressionPlaceholder: '',
         },
-        validation: { jobCodeRequired: '请配置 jobCode' },
+        validation: { jobCodeRequired: '请配置 jobCode', nodeNameTooLong: '节点名称过长' },
       },
       enum: { edgeType: { SUCCESS: '成功' } },
       common: { enabled: '已启用', disabled: '已禁用' },
@@ -161,6 +167,7 @@ function mkNode(attrs: Record<string, unknown> = {}): DesignerNode {
 function factory(node: DesignerNode, readonly = false) {
   setActivePinia(createPinia())
   const store = useDesignerStore()
+  store.setLock({ isMine: true, lockedBy: 'test', expiresAt: '2099-01-01' })
   // 注入节点到 store 以便 updateNode 找得到
   store.nodes.push(node)
   store.setMeta({ tenantId: 't1' })
@@ -177,6 +184,46 @@ describe('JobNodeForm', () => {
   beforeEach(() => {
     vi.resetAllMocks()
     setActivePinia(createPinia())
+  })
+
+  it('同步尚未失焦的名称和跳过表达式，单次撤销恢复并保留选择', async () => {
+    const { wrapper, store } = factory(mkNode({ jobCode: 'job-a', skipExpression: 'old' }))
+    store.setSelection(['job-1'])
+    const inputs = wrapper.findAll('input')
+    const name = inputs.find((input) => (input.element as HTMLInputElement).value === 'My Job')!
+    const expression = inputs.find((input) => (input.element as HTMLInputElement).value === 'old')!
+    await name.setValue('updated name')
+    await expression.setValue('new expression')
+    const editor = wrapper.vm as unknown as { hasDraft: () => boolean; flushDraft: () => void }
+    expect(editor.hasDraft()).toBe(true)
+    editor.flushDraft()
+    expect(store.nodes[0]).toMatchObject({
+      nodeName: 'updated name',
+      attrs: { skipExpression: 'new expression' },
+    })
+    expect([...store.selectedIds]).toEqual(['job-1'])
+    expect(editor.hasDraft()).toBe(false)
+    editor.flushDraft()
+    store.undo()
+    expect(store.nodes[0]).toMatchObject({ nodeName: 'My Job', attrs: { skipExpression: 'old' } })
+    expect([...store.selectedIds]).toEqual(['job-1'])
+  })
+
+  it('JOB 锁丢失后仍报告草稿但不写入，只读恢复后可提交', async () => {
+    const { wrapper, store } = factory(mkNode({ jobCode: 'job-a' }))
+    const input = wrapper
+      .findAll('input')
+      .find((field) => (field.element as HTMLInputElement).value === 'My Job')!
+    await input.setValue('pending draft')
+    await wrapper.setProps({ readonly: true })
+    const editor = wrapper.vm as unknown as { hasDraft: () => boolean; flushDraft: () => void }
+    expect(editor.hasDraft()).toBe(true)
+    editor.flushDraft()
+    expect(store.nodes[0]!.nodeName).toBe('My Job')
+    expect(store.canUndo).toBe(false)
+    await wrapper.setProps({ readonly: false })
+    editor.flushDraft()
+    expect(store.nodes[0]!.nodeName).toBe('pending draft')
   })
 
   it('渲染节点 code / name 并展示 jobCode 下拉选项', () => {
@@ -197,6 +244,15 @@ describe('JobNodeForm', () => {
     await select.trigger('change')
     expect(store.nodes[0].attrs?.jobCode).toBe('job-b')
     expect(store.dirty).toBe(true)
+  })
+
+  it('锁状态先于只读属性更新时，已排队的选项变更不写入画布', async () => {
+    const { wrapper, store } = factory(mkNode({ jobCode: 'job-a' }))
+    store.setLock({ isMine: false, lockedBy: 'other', expiresAt: '2099-01-01' })
+    await wrapper.find('select').setValue('job-b')
+    expect(store.nodes[0]!.attrs?.jobCode).toBe('job-a')
+    expect(store.dirty).toBe(false)
+    wrapper.unmount()
   })
 
   it('修改窗口 → 将执行窗口写入 Job 节点属性', async () => {
@@ -275,5 +331,247 @@ describe('JobNodeForm', () => {
 
     expect(wrapper.text()).toContain('先选择关联作业，即可查看作业定义中的前置与后置依赖。')
     expect(wrapper.text()).not.toContain('当前绑定的作业定义未找到')
+  })
+})
+
+describe('节点名称长度提示', () => {
+  it.each([
+    ['START', StartNodeForm],
+    ['END', EndNodeForm],
+    ['JOB', JobNodeForm],
+    ['GATEWAY', GatewayNodeForm],
+  ] as const)('%s 节点按 Unicode 字符提示，不截断并仍在失焦时写入', async (nodeType, component) => {
+    setActivePinia(createPinia())
+    const store = useDesignerStore()
+    store.setLock({ isMine: true, lockedBy: 'test', expiresAt: '2099-01-01' })
+    const node = { ...mkNode(), nodeType }
+    store.nodes.push(node)
+    const wrapper = mount(component, {
+      props: { node, readonly: false },
+      global: { plugins: [i18n] },
+    })
+    const item = wrapper
+      .findAll('.el-form-item')
+      .find((field) => field.attributes('data-label') === '节点名称')!
+    const input = item.get('input')
+    await input.setValue('😀'.repeat(256))
+    expect(item.attributes('data-error') || '').toBe('')
+    await input.setValue('😀'.repeat(257))
+    expect(item.attributes('data-error')).toBe('节点名称过长')
+    expect((input.element as HTMLInputElement).value).toBe('😀'.repeat(257))
+    expect(store.nodes[0]!.nodeName).toBe('My Job')
+    await input.trigger('blur')
+    expect(store.nodes[0]!.nodeName).toBe('😀'.repeat(257))
+    store.undo()
+    expect(store.nodes[0]!.nodeName).toBe('My Job')
+    wrapper.unmount()
+  })
+
+  it.each([
+    ['START', StartNodeForm],
+    ['END', EndNodeForm],
+    ['GATEWAY', GatewayNodeForm],
+  ] as const)('%s 节点无失焦提交名称且重复提交不产生撤销项', async (nodeType, component) => {
+    setActivePinia(createPinia())
+    const store = useDesignerStore()
+    store.setLock({ isMine: true, lockedBy: 'test', expiresAt: '2099-01-01' })
+    const node = { ...mkNode(), nodeType }
+    store.nodes.push(node)
+    const wrapper = mount(component, {
+      props: { node, readonly: false },
+      global: { plugins: [i18n] },
+    })
+    const input = wrapper
+      .findAll('input')
+      .find((field) => (field.element as HTMLInputElement).value === 'My Job')!
+    await input.setValue('saved draft')
+    const editor = wrapper.vm as unknown as { hasDraft: () => boolean; flushDraft: () => void }
+    expect(editor.hasDraft()).toBe(true)
+    editor.flushDraft()
+    expect(store.nodes[0]!.nodeName).toBe('saved draft')
+    expect(editor.hasDraft()).toBe(false)
+    editor.flushDraft()
+    store.undo()
+    expect(store.nodes[0]!.nodeName).toBe('My Job')
+    expect(store.canUndo).toBe(false)
+    wrapper.unmount()
+  })
+
+  it.each([
+    ['START', StartNodeForm],
+    ['END', EndNodeForm],
+    ['GATEWAY', GatewayNodeForm],
+  ] as const)('%s 节点锁丢失后保留草稿而不写入', async (nodeType, component) => {
+    setActivePinia(createPinia())
+    const store = useDesignerStore()
+    const node = { ...mkNode(), nodeType }
+    store.nodes.push(node)
+    const wrapper = mount(component, {
+      props: { node, readonly: false },
+      global: { plugins: [i18n] },
+    })
+    const input = wrapper
+      .findAll('input')
+      .find((field) => (field.element as HTMLInputElement).value === 'My Job')!
+    await input.setValue('pending draft')
+    await wrapper.setProps({ readonly: true })
+    const editor = wrapper.vm as unknown as { hasDraft: () => boolean; flushDraft: () => void }
+    expect(editor.hasDraft()).toBe(true)
+    editor.flushDraft()
+    expect(store.nodes[0]!.nodeName).toBe('My Job')
+    expect(store.canUndo).toBe(false)
+    wrapper.unmount()
+  })
+})
+
+describe('NodeInspector 草稿委托', () => {
+  it('输入法组合中的草稿在失锁和切换选中项后保留，恢复锁后可提交和撤销', async () => {
+    setActivePinia(createPinia())
+    const store = useDesignerStore()
+    store.nodes.push(mkNode({ jobCode: 'job-a' }), {
+      ...mkNode(),
+      id: 'job-2',
+      nodeCode: 'job-2',
+      nodeName: '第二个',
+    })
+    store.setLock({ isMine: true, lockedBy: 'test', expiresAt: '2099-01-01' })
+    store.setSelection(['job-1'])
+    const wrapper = mount(NodeInspector, {
+      global: { plugins: [i18n], stubs: { DependencyCreateDialog: true } },
+    })
+    const name = wrapper
+      .findAll('input')
+      .find((field) => (field.element as HTMLInputElement).value === 'My Job')!
+    const el = name.element as HTMLInputElement
+    el.value = '组合中的文字'
+    el.dispatchEvent(new InputEvent('input', { bubbles: true, isComposing: true }))
+    store.setLock({ isMine: false, lockedBy: 'other', expiresAt: '2099-01-01' })
+    store.setSelection(['job-2'])
+    await wrapper.vm.$nextTick()
+    store.setSelection(['job-1'])
+    await wrapper.vm.$nextTick()
+    expect(
+      wrapper
+        .findAll('input')
+        .some((field) => (field.element as HTMLInputElement).value === '组合中的文字'),
+    ).toBe(true)
+    expect(store.nodes[0]!.nodeName).toBe('My Job')
+    store.setLock({ isMine: true, lockedBy: 'test', expiresAt: '2099-01-01' })
+    await wrapper.vm.$nextTick()
+    const inspector = wrapper.vm as unknown as { flushDraft: () => void }
+    inspector.flushDraft()
+    expect(store.nodes[0]!.nodeName).toBe('组合中的文字')
+    store.undo()
+    expect(store.nodes[0]!.nodeName).toBe('My Job')
+    wrapper.unmount()
+  })
+
+  it('作用域重置后旧输入事件不能写入同 ID 的新节点', async () => {
+    setActivePinia(createPinia())
+    const store = useDesignerStore()
+    store.reset({ nodes: [mkNode({ jobCode: 'job-a' })], edges: [] })
+    store.setMeta({ tenantId: 'old', id: 1 })
+    store.setLock({ isMine: true, lockedBy: 'test', expiresAt: '2099-01-01' })
+    store.setSelection(['job-1'])
+    const wrapper = mount(NodeInspector, {
+      global: { plugins: [i18n], stubs: { DependencyCreateDialog: true } },
+    })
+    const oldInput = wrapper
+      .findAll('input')
+      .find((field) => (field.element as HTMLInputElement).value === 'My Job')!
+      .element as HTMLInputElement
+    store.reset({ nodes: [{ ...mkNode(), nodeName: '新租户节点' }], edges: [] })
+    store.setMeta({ tenantId: 'new', id: 2 })
+    store.setSelection(['job-1'])
+    oldInput.value = '迟到旧输入'
+    oldInput.dispatchEvent(new InputEvent('input', { bubbles: true, isComposing: true }))
+    await wrapper.vm.$nextTick()
+    expect(store.inspectorDrafts).toHaveLength(0)
+    expect(store.nodes[0]!.nodeName).toBe('新租户节点')
+    wrapper.unmount()
+  })
+
+  it('数字输入尚未触发 change 时失锁，重选后仍保留并可恢复应用', async () => {
+    setActivePinia(createPinia())
+    const store = useDesignerStore()
+    store.nodes.push(mkNode({ jobCode: 'job-a', maxRetries: 1 }), {
+      ...mkNode(),
+      id: 'job-2',
+      nodeCode: 'job-2',
+    })
+    store.setLock({ isMine: true, lockedBy: 'test', expiresAt: '2099-01-01' })
+    store.setSelection(['job-1'])
+    const wrapper = mount(NodeInspector, {
+      global: { plugins: [i18n], stubs: { DependencyCreateDialog: true } },
+    })
+    const number = wrapper.find('input[type="number"]').element as HTMLInputElement
+    number.addEventListener('input', (event) => event.stopImmediatePropagation(), {
+      capture: true,
+      once: true,
+    })
+    number.value = '3'
+    number.dispatchEvent(new InputEvent('input', { bubbles: true }))
+    expect(store.getInspectorDraft('nodeMaxRetries', 'job-1')?.value).toBe('3')
+    store.setLock({ isMine: false, lockedBy: 'other', expiresAt: '2099-01-01' })
+    store.setSelection(['job-2'])
+    await wrapper.vm.$nextTick()
+    store.setSelection(['job-1'])
+    await wrapper.vm.$nextTick()
+    expect((wrapper.find('input[type="number"]').element as HTMLInputElement).value).toBe('3')
+    expect(store.nodes[0]!.attrs?.maxRetries).toBe(1)
+    store.setLock({ isMine: true, lockedBy: 'test', expiresAt: '2099-01-01' })
+    await wrapper.vm.$nextTick()
+    ;(wrapper.vm as unknown as { flushDraft: () => void }).flushDraft()
+    expect(store.nodes[0]!.attrs?.maxRetries).toBe(3)
+    wrapper.unmount()
+  })
+
+  it('将选中表单的草稿同步到 store，并保留当前选择', async () => {
+    setActivePinia(createPinia())
+    const store = useDesignerStore()
+    store.nodes.push(mkNode({ jobCode: 'job-a' }))
+    store.setLock({ isMine: true, lockedBy: 'test', expiresAt: '2099-01-01' })
+    store.setSelection(['job-1'])
+    const wrapper = mount(NodeInspector, {
+      attachTo: document.body,
+      global: { plugins: [i18n], stubs: { DependencyCreateDialog: true } },
+    })
+    const name = wrapper
+      .findAll('input')
+      .find((field) => (field.element as HTMLInputElement).value === 'My Job')!
+    await name.setValue('selected draft')
+    const inspector = wrapper.vm as unknown as { hasDraft: () => boolean; flushDraft: () => void }
+    expect(inspector.hasDraft()).toBe(true)
+    name.element.focus()
+    inspector.flushDraft()
+    await wrapper.vm.$nextTick()
+    expect(store.nodes[0]!.nodeName).toBe('selected draft')
+    expect(document.activeElement).toBe(name.element)
+    expect([...store.selectedIds]).toEqual(['job-1'])
+    wrapper.unmount()
+  })
+
+  it('锁丢失后依然报告未失焦草稿，禁止写入只读图', async () => {
+    setActivePinia(createPinia())
+    const store = useDesignerStore()
+    store.nodes.push(mkNode({ jobCode: 'job-a' }))
+    store.setLock({ isMine: true, lockedBy: 'test', expiresAt: '2099-01-01' })
+    store.setSelection(['job-1'])
+    const wrapper = mount(NodeInspector, {
+      global: { plugins: [i18n], stubs: { DependencyCreateDialog: true } },
+    })
+    const input = wrapper
+      .findAll('input')
+      .find((field) => (field.element as HTMLInputElement).value === 'My Job')!
+    await input.setValue('pending draft')
+    store.setLock({ isMine: false, lockedBy: 'other', expiresAt: '2099-01-01' })
+    await wrapper.vm.$nextTick()
+    const inspector = wrapper.vm as unknown as { hasDraft: () => boolean; flushDraft: () => void }
+    expect(store.dirty).toBe(false)
+    expect(inspector.hasDraft()).toBe(true)
+    inspector.flushDraft()
+    expect(store.nodes[0]!.nodeName).toBe('My Job')
+    expect((input.element as HTMLInputElement).value).toBe('pending draft')
+    wrapper.unmount()
   })
 })

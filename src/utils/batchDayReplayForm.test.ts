@@ -26,6 +26,22 @@ function replayForm(
 }
 
 describe('buildBatchDayReplayRequest', () => {
+  it.each([
+    [{ calendarCode: '' }, 'missingRequired'],
+    [{ calendarCode: 'a'.repeat(129) }, 'calendarCodeTooLong'],
+    [{ reason: 'r'.repeat(513) }, 'reasonTooLong'],
+  ] as const)('拦截无效日历编码和原因', (fields, error) => {
+    expect(buildBatchDayReplayRequest(replayForm(fields), 'tenant-a', '', '')).toEqual({ error })
+  })
+
+  it('保留上限内的原始日历编码和原因', () => {
+    const form = replayForm({ calendarCode: 'c'.repeat(128), reason: 'r'.repeat(512) })
+    expect(buildBatchDayReplayRequest(form, 'tenant-a', '', '').request).toMatchObject({
+      calendarCode: form.calendarCode,
+      reason: form.reason,
+    })
+  })
+
   it('forces dry-run result isolation and keeps schedule-plan source', () => {
     const result = buildBatchDayReplayRequest(
       replayForm({
@@ -123,8 +139,12 @@ describe('isReplayRangePreviewCurrent', () => {
     const previewKey = batchDayReplayRangeRequestKey(request)
 
     expect(isReplayRangePreviewCurrent(request, previewKey)).toBe(true)
-    expect(isReplayRangePreviewCurrent({ ...request, tenantId: 'tenant-b' }, previewKey)).toBe(false)
-    expect(isReplayRangePreviewCurrent({ ...request, throughDate: '2026-09-13' }, previewKey)).toBe(false)
+    expect(isReplayRangePreviewCurrent({ ...request, tenantId: 'tenant-b' }, previewKey)).toBe(
+      false,
+    )
+    expect(isReplayRangePreviewCurrent({ ...request, throughDate: '2026-09-13' }, previewKey)).toBe(
+      false,
+    )
     expect(isReplayRangePreviewCurrent({ ...request, reason: 'corrected' }, previewKey)).toBe(false)
     expect(isReplayRangePreviewCurrent(request, null)).toBe(false)
   })

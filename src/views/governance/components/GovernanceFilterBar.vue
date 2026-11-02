@@ -14,7 +14,6 @@
         :placeholder="keywordPlaceholder"
         class="governance-query__search"
         @update:model-value="(v: string) => emit('update:keyword', v)"
-        @keyup.enter="emit('search')"
       />
     </el-form-item>
     <el-form-item :label="t('governanceFilter.enabledLabel')">

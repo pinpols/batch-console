@@ -34,7 +34,7 @@
               :options="resourceTypeOptions"
             />
           </el-form-item>
-          <el-form-item :label="t('tagSearchTab.tagKeyLabel')">
+          <el-form-item :label="t('tagSearchTab.tagKeyLabel')" class="query-size-long">
             <!-- tagKey 改用 autocomplete:已注册 tagKey 作为下拉建议,省掉原"已注册 Key"独立面板。
                  BE 一开始就预拉了 tagKeys 列表,这里直接消费,0 额外请求。 -->
             <!-- el-autocomplete 的 #default 槽在 popper teleport 渲染,
@@ -50,13 +50,12 @@
               @keyup.enter="doSearch"
             />
           </el-form-item>
-          <el-form-item :label="t('tagSearchTab.tagValueLabel')">
+          <el-form-item :label="t('tagSearchTab.tagValueLabel')" class="query-size-medium">
             <el-input
               v-model="searchForm.tagValue"
               clearable
               :placeholder="t('tagSearchTab.tagValuePlaceholder')"
               class="tag-search__value"
-              @keyup.enter="doSearch"
             />
           </el-form-item>
         </ListPageQueryBar>
@@ -92,24 +91,40 @@
         :label="t('tagSearchTab.colResourceCode')"
         min-width="200"
         show-overflow-tooltip
-      />
+      >
+        <template #default="{ row }">
+          <CopyableText v-if="row.resourceCode" :text="String(row.resourceCode)" />
+          <span v-else class="cell-empty">—</span>
+        </template>
+      </el-table-column>
       <el-table-column
         prop="tagKey"
         :label="t('tagSearchTab.colTagKey')"
         min-width="160"
         show-overflow-tooltip
-      />
+      >
+        <template #default="{ row }">
+          <CopyableText v-if="row.tagKey" :text="String(row.tagKey)" />
+          <span v-else class="cell-empty">—</span>
+        </template>
+      </el-table-column>
       <el-table-column
         prop="tagValue"
         :label="t('tagSearchTab.colTagValue')"
         min-width="200"
         show-overflow-tooltip
-      />
+      >
+        <template #default="{ row }">
+          <CopyableText v-if="row.tagValue" :text="String(row.tagValue)" :copyable="false" />
+          <span v-else class="cell-empty">—</span>
+        </template>
+      </el-table-column>
     </ProTable>
   </div>
 </template>
 
 <script setup lang="ts">
+  import CopyableText from '@/components/common/CopyableText.vue'
   import { ref, reactive, computed, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'

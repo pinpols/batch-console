@@ -4,7 +4,7 @@
       <div class="m-page__header">
         <div>
           <div class="m-page__title">{{ t('mobile.workers.title') }}</div>
-          <div class="m-page__subtitle">
+          <div v-if="!loading && (!loadError || rows.length)" class="m-page__subtitle">
             <span class="m-stat">
               <i class="m-stat__dot m-stat__dot--success" />
               {{ t('mobile.workers.filterOnline') }} {{ onlineCount }}
@@ -61,16 +61,26 @@
       </div>
 
       <MSkeleton v-if="loading && filtered.length === 0" :count="3" />
-      <div v-else-if="filtered.length === 0" class="m-empty">
+      <div v-else-if="!loadError && filtered.length === 0" class="m-empty">
         {{ t('mobile.workers.empty') }}
+      </div>
+
+      <div v-if="loadError" class="m-load-error" role="alert">
+        <span>{{ rows.length ? t('mobile.workers.stale') : t('mobile.common.loadFail') }}</span>
+        <button class="m-btn" type="button" @click="load">{{ t('common.retry') }}</button>
       </div>
 
       <div v-for="row in filtered" :key="row.workerCode" class="m-card">
         <div class="m-card__row">
           <div class="m-card__title">
-            <span class="m-copy-text" @click.stop="copy(row.workerCode, 'workerCode')">{{
-              row.workerCode
-            }}</span>
+            <button
+              type="button"
+              class="m-copy-text"
+              :aria-label="`${t('common.copy')} ${t('mobile.workers.title')} ${row.workerCode}`"
+              @click.stop="copy(row.workerCode, 'workerCode')"
+            >
+              {{ row.workerCode }}
+            </button>
           </div>
           <span :class="['m-chip', statusChipClass(row.status)]">
             {{ resolveEnumLabel('workerStatus', row.status) }}
@@ -94,39 +104,39 @@
             {{ row.capabilityTags }}
           </div>
         </div>
-        <div class="m-card__actions">
+        <div class="m-card__actions m-workers-actions">
           <button
-            v-if="row.status === 'ONLINE'"
+            v-if="canWorkerAction(row.status, 'drain')"
             class="m-btn"
             data-track="workers.drain"
-            :disabled="busyCode === row.workerCode"
+            :disabled="!canMutateConfig || loadError || loading || busyCode === row.workerCode"
             @click="doDrain(row)"
           >
             {{ t('mobile.workers.drainAction') }}
           </button>
           <button
-            v-if="row.status === 'ONLINE'"
+            v-if="canWorkerAction(row.status, 'warmup')"
             class="m-btn"
             data-track="workers.warmup"
-            :disabled="busyCode === row.workerCode"
+            :disabled="!canMutateConfig || loadError || loading || busyCode === row.workerCode"
             @click="doWarmup(row)"
           >
             {{ t('mobile.workers.warmup') }}
           </button>
           <button
-            v-if="row.status === 'OFFLINE' || row.status === 'DRAINING'"
+            v-if="canWorkerAction(row.status, 'takeover')"
             class="m-btn"
             data-track="workers.takeover"
-            :disabled="busyCode === row.workerCode"
+            :disabled="!canMutateConfig || loadError || loading || busyCode === row.workerCode"
             @click="doTakeover(row)"
           >
             {{ t('mobile.workers.takeover') }}
           </button>
           <button
-            v-if="row.status !== 'OFFLINE'"
+            v-if="canWorkerAction(row.status, 'offline')"
             class="m-btn m-btn--plain-danger"
             data-track="workers.forceOffline"
-            :disabled="busyCode === row.workerCode"
+            :disabled="!canMutateConfig || loadError || loading || busyCode === row.workerCode"
             @click="doForceOffline(row)"
           >
             {{ t('mobile.workers.forceOffline') }}
@@ -138,14 +148,18 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, nextTick, ref } from 'vue'
+  import { computed, nextTick, ref, watch } from 'vue'
   import { useTenantReload } from '@/composables/useTenantReload'
+  import { useTenantRequestScope } from '@/composables/useTenantRequestScope'
+  import { usePermission } from '@/composables/usePermission'
+  import { useWriteAvailability } from '@/composables/useWriteAvailability'
   import { useRoute } from 'vue-router'
   import { useI18n } from 'vue-i18n'
   import { Search } from '@lucide/vue'
   import { ElMessage } from 'element-plus'
   import { confirmActionSheet } from '@/layout-mobile/MActionSheet'
   import { useTenantStore } from '@/stores/tenant'
+  import { useAuthStore } from '@/stores/auth'
   import { useAutoRefresh } from '@/composables/useAutoRefresh'
   import { REFRESH_INTERVAL_COLD_MS } from '@/layout-mobile/composables/refreshIntervals'
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
@@ -162,10 +176,16 @@
     warmupWorker,
   } from '@/api/workers'
   import type { ConsoleWorkerRegistryResponse } from '@/types/console-api'
+  import { canWorkerAction, type WorkerAction } from '@/views/worker/workerActions'
 
   const route = useRoute()
   const { t, te } = useI18n({ useScope: 'global' })
   const tenant = useTenantStore()
+  const auth = useAuthStore()
+  const { canMutateConfig } = usePermission()
+  const { ensureWriteAvailable } = useWriteAvailability()
+  const listScope = useTenantRequestScope()
+  const actionScope = useTenantRequestScope()
   const { copy } = useCopy()
   type WorkerFilter = 'all' | 'online' | 'draining' | 'offline'
   const allowedFilters: WorkerFilter[] = ['all', 'online', 'draining', 'offline']
@@ -181,9 +201,20 @@
   }
 
   const loading = ref(false)
+  const loadError = ref(false)
   const rows = ref<ConsoleWorkerRegistryResponse[]>([])
   const busyCode = ref<string | null>(null)
   const filter = ref<WorkerFilter>(initialFilter)
+  watch(
+    () => tenant.tenantId,
+    (tenantId) => {
+      rows.value = []
+      loadError.value = false
+      busyCode.value = null
+      if (!tenantId) loading.value = false
+    },
+    { flush: 'sync' },
+  )
 
   const filterOptions = computed(() => [
     { value: 'all', label: t('mobile.workers.filterAll') },
@@ -258,29 +289,52 @@
   }
 
   async function load() {
-    if (!tenant.tenantId) {
+    const scope = listScope.begin()
+    if (!scope.tenantId) {
       rows.value = []
       loading.value = false
       return
     }
     loading.value = true
+    loadError.value = false
     try {
-      rows.value = await queryWorkers(tenant.tenantId)
+      const result = await queryWorkers(scope.tenantId)
+      if (listScope.isCurrent(scope)) rows.value = result
     } catch {
-      rows.value = []
-      ElMessage.error(t('mobile.common.loadFail'))
+      if (listScope.isCurrent(scope)) loadError.value = true
     } finally {
-      loading.value = false
+      if (listScope.isCurrent(scope)) loading.value = false
     }
+  }
+
+  function captureAction(row: ConsoleWorkerRegistryResponse, action: WorkerAction) {
+    const scope = actionScope.begin()
+    const operator = auth.userInfo?.username ?? auth.userInfo?.userId
+    const isCurrentContext = () =>
+      actionScope.isCurrent(scope) &&
+      canMutateConfig.value &&
+      operator === (auth.userInfo?.username ?? auth.userInfo?.userId)
+    const isCurrent = () =>
+      isCurrentContext() &&
+      !loading.value &&
+      !loadError.value &&
+      rows.value.some(
+        (worker) => worker.workerCode === row.workerCode && canWorkerAction(worker.status, action),
+      )
+    return { scope, isCurrent, isCurrentContext }
   }
 
   async function runConfirmed(
     row: ConsoleWorkerRegistryResponse,
+    action: WorkerAction,
     titleKey: string,
     textKey: string,
-    fn: () => Promise<unknown>,
+    fn: (tenantId: string) => Promise<unknown>,
     toastKey: string,
   ) {
+    if (!ensureWriteAvailable() || !canMutateConfig.value || busyCode.value) return
+    const context = captureAction(row, action)
+    if (!context.isCurrent()) return
     try {
       await confirmActionSheet(t(textKey, { code: row.workerCode }), t(titleKey), {
         type: 'warning',
@@ -290,22 +344,25 @@
     } catch {
       return
     }
+    if (!context.isCurrent()) return
     busyCode.value = row.workerCode
     try {
-      await fn()
+      await fn(context.scope.tenantId)
+      if (!context.isCurrentContext()) return
       ElMessage.success(t(toastKey))
       await load()
     } finally {
-      busyCode.value = null
+      if (actionScope.isCurrent(context.scope)) busyCode.value = null
     }
   }
 
   function doDrain(row: ConsoleWorkerRegistryResponse) {
     return runConfirmed(
       row,
+      'drain',
       'mobile.workers.drainConfirmTitle',
       'mobile.workers.drainConfirmText',
-      () => drainWorker(row.workerCode, { tenantId: tenant.tenantId, reason: 'mobile drain' }),
+      (tenantId) => drainWorker(row.workerCode, { tenantId, reason: 'mobile drain' }),
       'mobile.workers.drainDoneToast',
     )
   }
@@ -313,42 +370,68 @@
   function doForceOffline(row: ConsoleWorkerRegistryResponse) {
     return runConfirmed(
       row,
+      'offline',
       'mobile.workers.forceOfflineTitle',
       'mobile.workers.forceOfflineText',
-      () =>
+      (tenantId) =>
         forceWorkerOffline(row.workerCode, {
-          tenantId: tenant.tenantId,
+          tenantId,
           reason: 'mobile force offline',
         }),
       'mobile.workers.forceOfflineDoneToast',
     )
   }
 
-  // 接管 = 构造性,直接执行(强制下线和 Drain 才确认 — 真破坏性)
-  async function doTakeover(row: ConsoleWorkerRegistryResponse) {
-    busyCode.value = row.workerCode
-    try {
-      await takeoverWorker(row.workerCode, {
-        tenantId: tenant.tenantId,
-        reason: 'mobile takeover',
-      })
-      ElMessage.success(t('mobile.workers.takeoverDoneToast'))
-      await load()
-    } finally {
-      busyCode.value = null
-    }
+  function doTakeover(row: ConsoleWorkerRegistryResponse) {
+    return runConfirmed(
+      row,
+      'takeover',
+      'mobile.workers.takeoverTitle',
+      'mobile.workers.takeoverText',
+      (tenantId) => takeoverWorker(row.workerCode, { tenantId, reason: 'mobile takeover' }),
+      'mobile.workers.takeoverDoneToast',
+    )
   }
 
   async function doWarmup(row: ConsoleWorkerRegistryResponse) {
+    if (!ensureWriteAvailable() || !canMutateConfig.value || busyCode.value) return
+    const context = captureAction(row, 'warmup')
+    if (!context.isCurrent()) return
     busyCode.value = row.workerCode
     try {
-      await warmupWorker(row.workerCode, tenant.tenantId)
+      await warmupWorker(row.workerCode, context.scope.tenantId)
+      if (!context.isCurrentContext()) return
       ElMessage.success(t('mobile.workers.warmupDoneToast'))
       await load()
     } finally {
-      busyCode.value = null
+      if (actionScope.isCurrent(context.scope)) busyCode.value = null
     }
   }
   useTenantReload(load)
   useAutoRefresh(load, REFRESH_INTERVAL_COLD_MS)
 </script>
+
+<style scoped>
+  .m-load-error {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 12px;
+    color: var(--ios-label-secondary);
+  }
+
+  .m-load-error .m-btn {
+    flex: none;
+  }
+
+  .m-workers-actions {
+    flex-wrap: wrap;
+  }
+
+  .m-workers-actions .m-btn {
+    flex: 1 1 9rem;
+    white-space: nowrap;
+  }
+</style>

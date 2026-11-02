@@ -21,6 +21,7 @@
         v-model="keyword"
         :placeholder="t('mobile.alerts.searchPlaceholder')"
       />
+      <p v-if="searchOpen" class="m-alert-search-scope">{{ t('mobile.alerts.searchScope') }}</p>
 
       <!-- 共享 .m-tabs / .m-tab / .m-tab__badge — 跟 MWorkers 一套样式 -->
       <div class="m-tabs" role="tablist">
@@ -42,7 +43,9 @@
       </div>
 
       <MSkeleton v-if="loading && filtered.length === 0" :count="3" />
-      <div v-else-if="filtered.length === 0" class="m-empty">{{ t('mobile.alerts.empty') }}</div>
+      <div v-else-if="!loadError && filtered.length === 0" class="m-empty">
+        {{ t('mobile.alerts.empty') }}
+      </div>
 
       <div v-for="row in filtered" :key="row.id" class="m-card">
         <div class="m-card__row">
@@ -68,10 +71,15 @@
             {{ fmt(row.lastSeenAt) }}
           </div>
           <div v-if="row.traceId">
-            <span class="m-card__meta-key">traceId</span>
-            <span class="m-copy-text" @click.stop="copy(row.traceId, 'traceId')">{{
-              row.traceId
-            }}</span>
+            <span class="m-card__meta-key">{{ t('common.trace') }}</span>
+            <button
+              type="button"
+              class="m-copy-text"
+              :aria-label="`${t('common.copy')} ${t('common.trace')} ${row.traceId}`"
+              @click.stop="copy(row.traceId, 'traceId')"
+            >
+              {{ row.traceId }}
+            </button>
           </div>
         </div>
         <div v-if="row.traceId" class="m-card__actions">
@@ -104,7 +112,13 @@
           </button>
         </div>
       </div>
-      <div v-if="filtered.length > 0" class="m-load-more">
+      <div v-if="loadError" class="m-alert-error" role="alert">
+        <span>{{ t('mobile.common.loadFail') }}</span>
+        <button class="m-btn" type="button" :disabled="loading" @click="load(retryReset)">
+          {{ t('common.retry') }}
+        </button>
+      </div>
+      <div v-if="rows.length > 0 && !loadError" class="m-load-more">
         <button v-if="hasMore" class="m-btn" :disabled="loading" @click="loadMore">
           {{ loading ? t('mobile.common.loadingMore') : t('mobile.common.loadMore') }}
         </button>
@@ -140,6 +154,8 @@
   const { copy } = useCopy()
   const { writesFrozen, ensureWriteAvailable } = useWriteAvailability()
   const loading = ref(false)
+  const loadError = ref(false)
+  const retryReset = ref(true)
   const rows = ref<ConsoleAlertEventResponse[]>([])
   const page = ref(1)
   const pageSize = 30
@@ -275,21 +291,32 @@
 
   async function load(reset = true) {
     loading.value = true
+    loadError.value = false
     try {
       if (reset) page.value = 1
+      const requestedPage = reset ? page.value : page.value + 1
       const status = selectedStatus()
       const result = await queryAlertsPage(
         tenant.tenantId,
-        page.value,
+        requestedPage,
         pageSize,
         status ? { status } : undefined,
       )
+      page.value = requestedPage
       const next = result.items ?? []
       rows.value = reset ? next : [...rows.value, ...next]
       total.value = result.total ?? rows.value.length
       hasMore.value = rows.value.length < total.value
-      if (reset) await refreshCounts()
+      if (reset) {
+        try {
+          await refreshCounts()
+        } catch {
+          ElMessage.error(t('mobile.common.loadFail'))
+        }
+      }
     } catch {
+      retryReset.value = reset
+      loadError.value = true
       ElMessage.error(t('mobile.common.loadFail'))
     } finally {
       loading.value = false
@@ -298,7 +325,6 @@
 
   async function loadMore() {
     if (loading.value || !hasMore.value) return
-    page.value += 1
     await load(false)
   }
 
@@ -350,3 +376,20 @@
   // oncall 关键页:20s 轮询,切后台时暂停
   useAutoRefresh(load, REFRESH_INTERVAL_WARM_MS)
 </script>
+
+<style scoped>
+  .m-alert-error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding-block: 24px;
+  }
+
+  .m-alert-search-scope {
+    margin: 6px 4px 10px;
+    color: var(--ios-label-secondary);
+    font-size: 12px;
+    line-height: 1.4;
+  }
+</style>

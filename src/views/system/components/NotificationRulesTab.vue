@@ -34,7 +34,6 @@
               v-model="ruleFilterDraft.keyword"
               clearable
               :placeholder="t('notificationRulesTab.kwPlaceholder')"
-              @keyup.enter="applyRuleFilter"
             />
           </el-form-item>
           <el-form-item :label="t('notificationCommon.enabledLabel')">
@@ -51,18 +50,33 @@
         :label="t('notificationRulesTab.colName')"
         min-width="160"
         show-overflow-tooltip
-      />
+      >
+        <template #default="{ row }">
+          <CopyableText v-if="row.ruleName" :text="String(row.ruleName)" />
+          <span v-else class="cell-empty">—</span>
+        </template>
+      </el-table-column>
       <el-table-column
         prop="eventTypes"
         :label="t('notificationRulesTab.colEventTypes')"
         min-width="200"
         show-overflow-tooltip
-      />
+      >
+        <template #default="{ row }">
+          <CopyableText v-if="row.eventTypes" :text="String(row.eventTypes)" />
+          <span v-else class="cell-empty">—</span>
+        </template>
+      </el-table-column>
       <el-table-column
         prop="channelCode"
         :label="t('notificationRulesTab.colChannelId')"
         width="120"
-      />
+      >
+        <template #default="{ row }">
+          <CopyableText v-if="row.channelCode" :text="String(row.channelCode)" />
+          <span v-else class="cell-empty">—</span>
+        </template>
+      </el-table-column>
       <el-table-column prop="enabled" :label="t('notificationCommon.colEnabled')" width="80">
         <template #default="{ row }">
           <StatusTag :value="String(row.enabled)" category="yn" />
@@ -89,8 +103,9 @@
       size="640px"
       :close-on-click-modal="false"
       :before-close="onRuleFormClose"
+      @opened="onRuleFormOpened"
     >
-      <el-form ref="ruleFormRef" :model="ruleForm" :rules="ruleFormRules" label-width="88px">
+      <el-form ref="ruleFormRef" :model="ruleForm" :rules="ruleFormRules" label-position="top">
         <el-form-item :label="t('notificationRulesTab.fieldName')" prop="ruleName">
           <el-input
             v-model="ruleForm.ruleName"
@@ -102,6 +117,7 @@
           <el-input
             v-model="ruleForm.eventTypes"
             :placeholder="t('notificationRulesTab.eventTypesPlaceholder')"
+            maxlength="512"
           />
         </el-form-item>
         <el-form-item :label="t('notificationRulesTab.fieldChannelId')" prop="channelCode">
@@ -127,7 +143,16 @@
           <p>{{ t('notificationRulesTab.routeSummaryHint') }}</p>
           <p>{{ t('notificationRulesTab.fieldEventTypes') }}: {{ ruleForm.eventTypes || '—' }}</p>
           <p>{{ t('notificationRulesTab.fieldChannelId') }}: {{ selectedChannelLabel }}</p>
-          <p>{{ t('notificationCommon.enabledLabel') }}: {{ t(ruleForm.enabled ? 'notificationRulesTab.routeEnabled' : 'notificationRulesTab.routeDisabled') }}</p>
+          <p>
+            {{ t('notificationCommon.enabledLabel') }}:
+            {{
+              t(
+                ruleForm.enabled
+                  ? 'notificationRulesTab.routeEnabled'
+                  : 'notificationRulesTab.routeDisabled',
+              )
+            }}
+          </p>
         </div>
       </el-form>
       <template #footer>
@@ -143,6 +168,7 @@
 </template>
 
 <script setup lang="ts">
+  import CopyableText from '@/components/common/CopyableText.vue'
   import { ref, reactive, computed, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage, ElMessageBox } from 'element-plus'
@@ -227,7 +253,7 @@
   const { formRef: ruleFormRef, validate: validateRuleForm } = useFormValidate()
   const ruleFormRules: FormRules = {
     ruleName: [r.required(t('notificationRulesTab.ruleName')), r.maxLength(128)],
-    eventTypes: [r.required(t('notificationRulesTab.ruleEventTypes'))],
+    eventTypes: [r.required(t('notificationRulesTab.ruleEventTypes')), r.maxLength(512)],
     channelCode: [r.required(t('notificationRulesTab.ruleChannelId'), 'change')],
   }
 
@@ -252,7 +278,12 @@
 
   // 脏数据保护
   const ruleDirty = useDirtyForm(() => ruleForm, { enabled: () => ruleFormVisible.value })
-  useFormFocus(ruleFormRef, () => ruleFormVisible.value)
+  const { focusFirst: focusRuleForm } = useFormFocus(ruleFormRef)
+
+  function onRuleFormOpened() {
+    ruleFormRef.value?.clearValidate()
+    focusRuleForm()
+  }
 
   async function openRuleCreate() {
     if (!tenant.tenantId) return
@@ -424,5 +455,7 @@
     border-radius: var(--el-border-radius-base);
     background: var(--el-fill-color-lighter);
   }
-  .rule-preview p { margin: var(--space-sm) 0 0; }
+  .rule-preview p {
+    margin: var(--space-sm) 0 0;
+  }
 </style>

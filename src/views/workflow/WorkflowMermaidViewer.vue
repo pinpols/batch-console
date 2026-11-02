@@ -175,11 +175,23 @@
         </div>
         <!-- 紧凑 chip Legend:取代原独立 Legend SectionCard -->
         <div class="dag-legend">
-          <span class="legend-chip legend-chip--running">RUNNING</span>
-          <span class="legend-chip legend-chip--success">SUCCESS</span>
-          <span class="legend-chip legend-chip--failed">FAILED</span>
-          <span class="legend-chip legend-chip--waiting">WAITING / READY</span>
-          <span class="legend-chip legend-chip--cancelled">CANCELLED / SKIPPED</span>
+          <span class="legend-chip legend-chip--running">{{
+            t('workflowProgress.states.RUNNING')
+          }}</span>
+          <span class="legend-chip legend-chip--success">{{
+            t('workflowProgress.states.SUCCESS')
+          }}</span>
+          <span class="legend-chip legend-chip--failed">{{
+            t('workflowProgress.states.FAILED')
+          }}</span>
+          <span class="legend-chip legend-chip--waiting"
+            >{{ t('workflowProgress.states.WAITING') }} /
+            {{ t('workflowProgress.states.READY') }}</span
+          >
+          <span class="legend-chip legend-chip--cancelled"
+            >{{ t('workflowProgress.states.CANCELLED') }} /
+            {{ t('workflowProgress.states.SKIPPED') }}</span
+          >
           <span class="legend-chip legend-chip--pending">
             {{ t('workflowMermaidViewer.legendPending') }}
           </span>
@@ -618,15 +630,18 @@
   }
 
   /**
-   * mermaid 渲染后扫 SVG 里所有 g.node,根据 id="flowchart-<sanitized>-<seq>" 反查原始
+   * mermaid 渲染后扫 SVG 里所有 g.node,根据渲染 ID 和节点 ID 反查原始
    * nodeCode 并挂点击事件:有 runId 跳运行详情;无 runId 仅展示节点元数据。
    */
   function attachNodeClicks() {
     if (!graphRef.value) return
+    const renderId = graphRef.value.querySelector('svg')?.id
+    if (!renderId) return
     const nodes = graphRef.value.querySelectorAll<SVGGElement>('g.node')
-    const idPattern = /^flowchart-(.+)-\d+$/
+    const prefix = `${renderId}-flowchart-`
     nodes.forEach((node) => {
-      const m = idPattern.exec(node.id)
+      if (!node.id.startsWith(prefix)) return
+      const m = /^(.+)-\d+$/.exec(node.id.slice(prefix.length))
       if (!m) return
       const original = nodeCodeBySanitizedId.value.get(m[1])
       if (!original) return
@@ -814,6 +829,27 @@
     if (!svgEl) return
     // 克隆 + serialize,避免 pan-zoom 注入的 transform 干扰
     const clone = svgEl.cloneNode(true) as SVGSVGElement
+    // 节点样式由可信组件 CSS 提供，导出时转为 SVG 属性以保留颜色和文字。
+    const selector = 'rect, polygon, path, text, tspan, line, polyline, circle, ellipse'
+    const renderedElements = svgEl.querySelectorAll<SVGElement>(selector)
+    const exportedElements = clone.querySelectorAll<SVGElement>(selector)
+    const properties = [
+      'fill',
+      'stroke',
+      'stroke-width',
+      'stroke-dasharray',
+      'font-family',
+      'font-size',
+      'font-weight',
+      'text-anchor',
+    ]
+    renderedElements.forEach((element, index) => {
+      const styles = getComputedStyle(element)
+      for (const property of properties) {
+        const value = styles.getPropertyValue(property)
+        if (value) exportedElements[index]?.setAttribute(property, value)
+      }
+    })
     // 重置 viewport transform,导出干净的 SVG
     const viewport = clone.querySelector('.svg-pan-zoom_viewport')
     if (viewport) viewport.removeAttribute('transform')
@@ -1036,6 +1072,42 @@
     width: 100%;
     height: 100%;
     max-width: none;
+  }
+  /* 安全净化会移除 Mermaid 内嵌样式，使用项目可信样式渲染图形。 */
+  .workflow-mermaid-graph :deep(.node rect),
+  .workflow-mermaid-graph :deep(.node polygon),
+  .workflow-mermaid-graph :deep(.node path) {
+    fill: var(--el-fill-color-light);
+    stroke: var(--el-border-color);
+  }
+  .workflow-mermaid-graph :deep(.node text),
+  .workflow-mermaid-graph :deep(.edgeLabel text) {
+    fill: var(--color-text-primary);
+  }
+  .workflow-mermaid-graph :deep(.node text) {
+    text-anchor: middle;
+  }
+  .workflow-mermaid-graph :deep(path.flowchart-link) {
+    fill: none;
+    stroke: var(--color-text-secondary);
+  }
+  .workflow-mermaid-graph :deep(path.flowchart-link.edge-pattern-dotted) {
+    stroke-dasharray: 2px;
+  }
+  .workflow-mermaid-graph :deep(marker path) {
+    fill: var(--color-text-secondary);
+    stroke: var(--color-text-secondary);
+  }
+  .workflow-mermaid-graph :deep(.edgeLabel rect) {
+    fill: var(--el-bg-color);
+  }
+  .workflow-mermaid-graph :deep(.node.crossDay rect) {
+    fill: #fef3c7;
+    stroke: #f59e0b;
+    stroke-dasharray: 5 5;
+  }
+  .workflow-mermaid-graph :deep(.node.crossDay text) {
+    fill: #78350f;
   }
   .workflow-mermaid-source {
     margin: 0;

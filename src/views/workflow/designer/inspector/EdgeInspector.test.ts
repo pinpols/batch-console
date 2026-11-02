@@ -94,6 +94,7 @@ const i18n = createI18n({
         validation: {
           conditionExprRequired: '条件连线 {source} → {target} 必须配置表达式',
           conditionExprTemplateWrapper: '不支持模板包裹',
+          conditionExprTooLong: '条件表达式过长',
         },
       },
     },
@@ -103,6 +104,7 @@ const i18n = createI18n({
 function factory() {
   setActivePinia(createPinia())
   const store = useDesignerStore()
+  store.setLock({ isMine: true, lockedBy: 'test', expiresAt: '2099-01-01' })
   store.reset({
     nodes: [
       {
@@ -170,6 +172,53 @@ describe('EdgeInspector', () => {
       label: 'amount > 1000',
       attrs: { edgeType: 'CONDITION', enabled: true },
     })
+  })
+
+  it('无失焦同步边表达式，重复提交不新增撤销项', async () => {
+    const { store, wrapper } = factory()
+    await wrapper.findAll('select')[2]!.setValue('CONDITION')
+    store.setSelection(['edge-1'])
+    await wrapper.find('textarea').setValue('amount > 42')
+    const editor = wrapper.vm as unknown as { hasDraft: () => boolean; flushDraft: () => void }
+    expect(editor.hasDraft()).toBe(true)
+    editor.flushDraft()
+    expect(store.edges[0]!.label).toBe('amount > 42')
+    expect([...store.selectedIds]).toEqual(['edge-1'])
+    expect(editor.hasDraft()).toBe(false)
+    editor.flushDraft()
+    store.undo()
+    expect(store.edges[0]!.label).toBeUndefined()
+    expect([...store.selectedIds]).toEqual(['edge-1'])
+  })
+
+  it('边锁丢失后仍报告草稿但不写入', async () => {
+    const { store, wrapper } = factory()
+    await wrapper.findAll('select')[2]!.setValue('CONDITION')
+    await wrapper.find('textarea').setValue('pending draft')
+    await wrapper.setProps({ readonly: true })
+    const editor = wrapper.vm as unknown as { hasDraft: () => boolean; flushDraft: () => void }
+    expect(editor.hasDraft()).toBe(true)
+    editor.flushDraft()
+    expect(store.edges[0]!.label).toBeUndefined()
+  })
+
+  it('按 Unicode 字符提示超长条件表达式并在失焦时保留完整值', async () => {
+    const { store, wrapper } = factory()
+    await wrapper.findAll('select')[2]!.setValue('CONDITION')
+    const item = wrapper
+      .findAll('.el-form-item')
+      .find((field) => field.attributes('data-label') === '条件表达式')!
+    const input = wrapper.get('textarea')
+    await input.setValue('😀'.repeat(1024))
+    expect(item.attributes('data-error') || '').toBe('')
+    await input.setValue('😀'.repeat(1025))
+    expect(item.attributes('data-error')).toBe('条件表达式过长')
+    expect((input.element as HTMLTextAreaElement).value).toBe('😀'.repeat(1025))
+    expect(store.edges[0]!.label).toBeUndefined()
+    await input.trigger('blur')
+    expect(store.edges[0]!.label).toBe('😀'.repeat(1025))
+    store.undo()
+    expect(store.edges[0]!.label).toBeUndefined()
   })
 
   it('禁用连线时保存状态并显示运行影响', async () => {

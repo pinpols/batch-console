@@ -34,7 +34,6 @@
               v-model="webhookFilterDraft.keyword"
               clearable
               :placeholder="t('notificationWebhooksTab.kwPlaceholder')"
-              @keyup.enter="applyWebhookFilter"
             />
           </el-form-item>
           <el-form-item :label="t('notificationCommon.enabledLabel')">
@@ -51,19 +50,34 @@
         :label="t('notificationWebhooksTab.colName')"
         min-width="140"
         show-overflow-tooltip
-      />
+      >
+        <template #default="{ row }">
+          <CopyableText v-if="row.name" :text="String(row.name)" />
+          <span v-else class="cell-empty">—</span>
+        </template>
+      </el-table-column>
       <el-table-column
         prop="callbackUrl"
         :label="t('notificationWebhooksTab.colUrl')"
         min-width="250"
         show-overflow-tooltip
-      />
+      >
+        <template #default="{ row }">
+          <CopyableText v-if="row.callbackUrl" :text="String(row.callbackUrl)" :copyable="false" />
+          <span v-else class="cell-empty">—</span>
+        </template>
+      </el-table-column>
       <el-table-column
         prop="eventTypes"
         :label="t('notificationWebhooksTab.colEventTypes')"
         min-width="160"
         show-overflow-tooltip
-      />
+      >
+        <template #default="{ row }">
+          <CopyableText v-if="row.eventTypes" :text="String(row.eventTypes)" />
+          <span v-else class="cell-empty">—</span>
+        </template>
+      </el-table-column>
       <el-table-column prop="enabled" :label="t('notificationCommon.colEnabled')" width="80">
         <template #default="{ row }">
           <StatusTag :value="String(row.enabled)" category="yn" />
@@ -96,12 +110,13 @@
         ref="webhookFormRef"
         :model="webhookForm"
         :rules="webhookFormRules"
-        label-width="88px"
+        label-position="top"
       >
         <el-form-item :label="t('notificationWebhooksTab.fieldName')" prop="name">
           <el-input
             v-model="webhookForm.name"
             :placeholder="t('notificationWebhooksTab.namePlaceholder')"
+            :disabled="webhookEditingId !== null"
             maxlength="128"
           />
         </el-form-item>
@@ -109,6 +124,7 @@
           <el-input
             v-model="webhookForm.callbackUrl"
             :placeholder="t('notificationWebhooksTab.urlPlaceholder')"
+            maxlength="1024"
           />
         </el-form-item>
         <el-form-item :label="t('notificationWebhooksTab.fieldEventTypes')" prop="eventTypes">
@@ -121,6 +137,7 @@
           <el-input
             v-model="webhookForm.secret"
             :placeholder="t('notificationWebhooksTab.secretPlaceholder')"
+            maxlength="256"
           />
         </el-form-item>
         <el-form-item :label="t('notificationCommon.enabledLabel')" prop="enabled">
@@ -140,7 +157,7 @@
     <el-dialog
       v-model="webhookLogVisible"
       :title="t('notificationWebhooksTab.deliveryLogDialogTitle')"
-      width="800px"
+      width="min(800px, calc(100% - 32px))"
     >
       <el-table :data="webhookDeliveryLogs" border size="small" height="400" class="console-table">
         <el-table-column prop="id" :label="t('notificationWebhooksTab.colId')" width="80" />
@@ -148,7 +165,12 @@
           prop="eventType"
           :label="t('notificationWebhooksTab.logColEvent')"
           width="160"
-        />
+        >
+          <template #default="{ row }">
+            <CopyableText v-if="row.eventType" :text="String(row.eventType)" />
+            <span v-else>{{ row.eventType }}</span>
+          </template>
+        </el-table-column>
         <el-table-column
           prop="httpStatus"
           :label="t('notificationWebhooksTab.logColHttp')"
@@ -159,7 +181,16 @@
           :label="t('notificationWebhooksTab.logColResponse')"
           min-width="200"
           show-overflow-tooltip
-        />
+        >
+          <template #default="{ row }">
+            <CopyableText
+              v-if="row.responseBody"
+              :text="String(row.responseBody)"
+              :copyable="false"
+            />
+            <span v-else class="cell-empty">—</span>
+          </template>
+        </el-table-column>
         <DatetimeColumn
           prop="createdAt"
           :label="t('notificationWebhooksTab.logColTime')"
@@ -171,6 +202,7 @@
 </template>
 
 <script setup lang="ts">
+  import CopyableText from '@/components/common/CopyableText.vue'
   import { ref, reactive, computed, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage, ElMessageBox } from 'element-plus'
@@ -237,7 +269,30 @@
     callbackUrl: [
       rules.required(t('notificationWebhooksTab.ruleUrl')),
       rules.pattern(/^https?:\/\/[^\s]+$/i, t('notificationWebhooksTab.ruleUrlPattern')),
+      rules.maxLength(1024),
     ],
+    eventTypes: [
+      rules.required(t('notificationWebhooksTab.ruleEventTypes')),
+      {
+        validator: (_rule, value: string, callback) => {
+          const eventTypes = String(value ?? '')
+            .split(',')
+            .map((item) => item.trim())
+            .filter(Boolean)
+          if (!eventTypes.length) callback(new Error(t('notificationWebhooksTab.ruleEventTypes')))
+          else if (eventTypes.some((item) => item.length > 64))
+            callback(new Error(t('notificationWebhooksTab.ruleEventTypeLength')))
+          else if (
+            Array.from([...new Set(eventTypes.map((item) => item.toUpperCase()))].join(','))
+              .length > 512
+          )
+            callback(new Error(t('notificationWebhooksTab.ruleEventListLength')))
+          else callback()
+        },
+        trigger: 'blur',
+      },
+    ],
+    secret: [rules.maxLength(256)],
   }
 
   const listScope = useTenantRequestScope()

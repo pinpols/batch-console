@@ -36,6 +36,17 @@ describe('useInstanceNoSearch', () => {
     scope.stop()
   })
 
+  it('实例候选按所选作业的精确编码查询', async () => {
+    queryJobInstances.mockResolvedValue({ records: [] })
+    const scope = effectScope()
+    const search = scope.run(() => useInstanceNoSearch(ref('JOB_A'), ref('2026-10-12'), ref('')))!
+    await search.loadInstances()
+    expect(queryJobInstances).toHaveBeenCalledWith(
+      expect.objectContaining({ exactJobCode: 'JOB_A' }),
+    )
+    scope.stop()
+  })
+
   it('does not repopulate candidates from a request for the previous job/date', async () => {
     let resolveRequest: ((value: { records: Array<Record<string, string>> }) => void) | undefined
     queryJobInstances.mockImplementationOnce(

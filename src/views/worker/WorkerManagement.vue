@@ -60,16 +60,17 @@
                 :options="workerGroupOptions"
               />
             </el-form-item>
-            <el-form-item :label="t('workerManagement.statusLabel')">
+            <el-form-item class="query-size-range" :label="t('workerManagement.statusLabel')">
               <StatusSegment
                 v-model="workerStatusSegmentValue"
+                class="worker-status-filter"
                 :items="workerStatusSegmentItems"
                 :aria-label="t('workerManagement.statusLabel')"
               />
             </el-form-item>
             <el-form-item :label="t('workerManagement.keywordLabel')">
               <el-input
-                class="query-w-200"
+                class="query-w-240"
                 v-model="workerFilters.keyword"
                 clearable
                 :placeholder="t('workerManagement.keywordPlaceholder')"
@@ -138,7 +139,9 @@
               <div class="wk-card__head">
                 <div class="wk-card__id">
                   <CopyableText class="wk-card__code" :text="row.workerCode" />
-                  <div class="wk-card__group">{{ row.workerGroup }}</div>
+                  <div class="wk-card__group">
+                    <CopyableText v-if="row.workerGroup" :text="row.workerGroup" />
+                  </div>
                   <div v-if="row.taskCapabilities?.length" class="wk-card__capabilities">
                     <div
                       v-for="capability in row.taskCapabilities"
@@ -261,7 +264,7 @@
               >
                 <el-form-item :label="t('workerManagement.channelCodeLabel')">
                   <el-input
-                    class="query-w-180"
+                    class="query-w-240"
                     v-model="channelFilters.channelCode"
                     clearable
                     :placeholder="t('workerManagement.channelCodePlaceholder')"
@@ -284,7 +287,12 @@
               prop="channelCode"
               :label="t('workerManagement.channelColCode')"
               min-width="140"
-            />
+            >
+              <template #default="{ row }">
+                <CopyableText v-if="row.channelCode" :text="row.channelCode" />
+                <span v-else>—</span>
+              </template>
+            </el-table-column>
             <el-table-column
               prop="channelType"
               :label="t('workerManagement.channelColType')"
@@ -370,7 +378,13 @@
           prop="errorCode"
           :label="t('workerManagement.claimedTaskErrorCode')"
           min-width="140"
-        />
+        >
+          <template #default="{ row }"
+            ><CopyableText v-if="row.errorCode" :text="row.errorCode" /><span v-else
+              >—</span
+            ></template
+          >
+        </el-table-column>
         <el-table-column :label="t('workerManagement.claimedTaskStarted')" min-width="170">
           <template #default="{ row }">{{ fmtDatetime(row.startedAt) }}</template>
         </el-table-column>
@@ -389,7 +403,7 @@
       :title="t('workerManagement.channelDetailTitle')"
       size="640px"
     >
-      <el-descriptions v-if="channelDetailRow" :column="2" border size="small">
+      <el-descriptions v-if="channelDetailRow" :column="isMobile ? 1 : 2" border size="small">
         <el-descriptions-item :label="t('workerManagement.channelCodeLabel')">{{
           channelDetailRow.channelCode
         }}</el-descriptions-item>
@@ -402,10 +416,15 @@
         <el-descriptions-item :label="t('workerManagement.channelColTimeout')">{{
           channelDetailRow.timeoutSeconds ?? '—'
         }}</el-descriptions-item>
-        <el-descriptions-item :label="t('workerManagement.channelColUpdated')" :span="2">{{
-          channelDetailRow.updatedAt || '—'
-        }}</el-descriptions-item>
-        <el-descriptions-item :label="t('workerManagement.channelDetailRawResponse')" :span="2">
+        <el-descriptions-item
+          :label="t('workerManagement.channelColUpdated')"
+          :span="isMobile ? 1 : 2"
+          >{{ channelDetailRow.updatedAt || '—' }}</el-descriptions-item
+        >
+        <el-descriptions-item
+          :label="t('workerManagement.channelDetailRawResponse')"
+          :span="isMobile ? 1 : 2"
+        >
           <JsonPreview :data="channelDetailRow" />
         </el-descriptions-item>
       </el-descriptions>
@@ -420,11 +439,12 @@
   import { ElMessage, ElMessageBox } from 'element-plus'
   import { RefreshCw as Refresh } from '@lucide/vue'
 
-  const { t } = useI18n({ useScope: 'global' })
+  const { t, te } = useI18n({ useScope: 'global' })
   import { confirmDanger } from '@/composables/useDangerConfirm'
   import { useQueryClient } from '@tanstack/vue-query'
   import { useRoute } from 'vue-router'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
+  import { useResponsive } from '@/composables/useResponsive'
 
   const route = useRoute()
   import { useListLoadState } from '@/composables/useListLoadState'
@@ -475,6 +495,7 @@
   const { ensureWriteAvailable } = useWriteAvailability()
   const { canMutateConfig } = usePermission()
   const auth = useAuthStore()
+  const { isMobile } = useResponsive()
   const actionScope = useTenantRequestScope()
   const channelScope = useTenantRequestScope()
   const queryClient = useQueryClient()
@@ -550,7 +571,8 @@
             : value === 'OFFLINE'
               ? 'danger'
               : 'muted'
-      return { value, label: option.label, tone }
+      const labelKey = `enum.workerStatus.${value}`
+      return { value, label: te(labelKey) ? t(labelKey) : option.label, tone }
     }),
   ])
 

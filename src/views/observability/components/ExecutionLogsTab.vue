@@ -31,11 +31,10 @@
       </el-form-item>
       <el-form-item label="Trace">
         <el-input
-          class="query-w-220"
+          class="query-w-320"
           v-model="execDraft.traceId"
           clearable
           :placeholder="t('observability.execKeywordPlaceholder')"
-          @keyup.enter="applyFilter"
         />
       </el-form-item>
     </ListPageQueryBar>
@@ -79,7 +78,12 @@
           :label="t('observability.execColOperator')"
           width="140"
           show-overflow-tooltip
-        />
+        >
+          <template #default="{ row }">
+            <CopyableText v-if="row.operatorId" :text="String(row.operatorId)" :copyable="false" />
+            <span v-else>{{ row.operatorId }}</span>
+          </template>
+        </el-table-column>
         <el-table-column
           prop="displaySummary"
           :label="t('observability.execColSummary')"
@@ -141,6 +145,7 @@
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import TablePagerBar from '@/components/table/TablePagerBar.vue'
   import DetailDrawer from '@/components/common/DetailDrawer.vue'
+  import CopyableText from '@/components/common/CopyableText.vue'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import { useListLoadState } from '@/composables/useListLoadState'
   import DataState from '@/components/common/DataState.vue'

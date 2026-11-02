@@ -24,11 +24,10 @@
           >
             <el-form-item :label="t('executionLog.traceLabel')">
               <el-input
-                class="query-w-200"
+                class="query-w-280"
                 v-model="traceDraft"
                 clearable
                 :placeholder="t('executionLog.tracePlaceholder')"
-                @keyup.enter="onSearch"
               />
             </el-form-item>
             <el-form-item :label="t('executionLog.opTypeLabel')">
@@ -72,20 +71,24 @@
           :label="t('executionLog.colOperatorType')"
           width="110"
         />
-        <el-table-column prop="operatorId" :label="t('executionLog.colOperator')" width="120" />
+        <el-table-column prop="operatorId" :label="t('executionLog.colOperator')" width="120">
+          <template #default="{ row }">
+            <CopyableText v-if="row.operatorId" :text="String(row.operatorId)" />
+            <span v-else>—</span>
+          </template>
+        </el-table-column>
         <el-table-column prop="fileId" :label="t('executionLog.colFileId')" width="100" />
-        <el-table-column
-          prop="traceId"
-          :label="t('executionLog.colTrace')"
-          min-width="120"
-          show-overflow-tooltip
-        />
-        <el-table-column
-          prop="evidenceRef"
-          :label="t('executionLog.colEvidence')"
-          width="140"
-          show-overflow-tooltip
-        />
+        <el-table-column prop="traceId" :label="t('executionLog.colTrace')" min-width="120">
+          <template #default="{ row }">
+            <CopyableText v-if="row.traceId" :text="row.traceId" />
+            <span v-else>—</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="evidenceRef" :label="t('executionLog.colEvidence')" width="140">
+          <template #default="{ row }">
+            <span class="wrap-cell">{{ row.evidenceRef || '—' }}</span>
+          </template>
+        </el-table-column>
         <el-table-column prop="detailSummary" :label="t('executionLog.colSummary')" min-width="260">
           <template #default="{ row }">
             <JsonPreviewPopover :data="row.detailSummary || '—'" :popover-width="640" />
@@ -109,6 +112,7 @@
   import { useTenantReload } from '@/composables/useTenantReload'
   import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
   import PageContainer from '@/components/common/PageContainer.vue'
+  import CopyableText from '@/components/common/CopyableText.vue'
   import MetaSelect from '@/components/common/MetaSelect.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
@@ -238,4 +242,9 @@
   })
 </script>
 
-<style scoped></style>
+<style scoped>
+  .wrap-cell {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+</style>

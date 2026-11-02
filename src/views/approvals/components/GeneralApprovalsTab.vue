@@ -116,20 +116,15 @@
       <el-table-column prop="approvalNo" :label="t('approvals.colApprovalNo')" width="160">
         <template #default="{ row }">
           <!-- dump:审批单号 mono + accent 蓝 -->
-          <CopyableText class="ap-no" :text="row.approvalNo" />
+          <CopyableText class="ap-no" :text="row.approvalNo" @click.stop />
         </template>
       </el-table-column>
-      <el-table-column
-        prop="approvalType"
-        :label="t('approvals.colType')"
-        width="110"
-        show-overflow-tooltip
-      >
+      <el-table-column prop="approvalType" :label="t('approvals.colType')" width="110">
         <template #default="{ row }">
-          {{ resolveType(row.approvalType) }}
+          <span class="wrap-cell">{{ resolveType(row.approvalType) }}</span>
         </template>
       </el-table-column>
-      <el-table-column :label="t('approvals.colTarget')" min-width="220" show-overflow-tooltip>
+      <el-table-column :label="t('approvals.colTarget')" min-width="220">
         <template #default="{ row }">
           <div class="target-cell">
             <span class="target-cell__type">{{ row.targetType || '—' }}</span>
@@ -145,12 +140,12 @@
           </div>
         </template>
       </el-table-column>
-      <el-table-column
-        prop="requesterId"
-        :label="t('approvals.colRequester')"
-        width="110"
-        show-overflow-tooltip
-      />
+      <el-table-column prop="requesterId" :label="t('approvals.colRequester')" width="110">
+        <template #default="{ row }">
+          <CopyableText v-if="row.requesterId" :text="String(row.requesterId)" @click.stop />
+          <span v-else>—</span>
+        </template>
+      </el-table-column>
       <!-- dump 列序:目标/申请人之后是「申请时间」,相对格式(今天 13:52 / 昨天 18:03) -->
       <el-table-column prop="createdAt" :label="requestedAtLabel" width="130">
         <template #default="{ row }">
@@ -795,6 +790,18 @@
       width: 100%;
       flex-basis: auto;
     }
+
+    .approval-status-filter :deep(.status-segment) {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      overflow: visible;
+    }
+
+    .approval-status-filter :deep(.status-segment__item) {
+      min-width: 0;
+      padding-inline: 6px;
+      white-space: normal;
+    }
   }
 </style>
 
@@ -829,6 +836,12 @@
     min-width: 0;
     flex-direction: column;
     gap: var(--space-xs);
+    overflow-wrap: anywhere;
+  }
+
+  .wrap-cell {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
   }
 
   .target-cell__type,

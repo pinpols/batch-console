@@ -215,7 +215,7 @@
           {{ forensicExport.exportId }}
         </el-descriptions-item>
         <el-descriptions-item :label="t('opsDiagnostic.forensicStatus')">
-          {{ forensicExport.status }}
+          {{ forensicStatusLabel }}
         </el-descriptions-item>
         <el-descriptions-item :label="t('opsDiagnostic.forensicFileSize')">
           {{ forensicSizeText }}
@@ -285,7 +285,7 @@
   import { createOpsDiagnosticSummaries } from './opsDiagnosticPresentation'
   import { positiveLongId } from '@/utils/positiveLongId'
 
-  const { t } = useI18n({ useScope: 'global' })
+  const { t, te } = useI18n({ useScope: 'global' })
   const tenant = useTenantStore()
   const {
     writesFrozen,
@@ -301,6 +301,11 @@
   const forensicDownloading = ref(false)
   const forensicErrorKey = ref('')
   const forensicExport = ref<ForensicExportResponse | null>(null)
+  const forensicStatusLabel = computed(() => {
+    const status = forensicExport.value?.status ?? ''
+    const key = `opsDiagnostic.forensicExportStatus.${status}`
+    return te(key) ? t(key) : status
+  })
   const forensicExportTenantId = ref('')
   let forensicRequestSequence = 0
 
@@ -1071,6 +1076,10 @@
 
   .forensic-export__form :deep(.el-form-item:last-child) {
     grid-column: 1 / -1;
+  }
+
+  .forensic-export__form :deep(.el-date-editor) {
+    width: 100%;
   }
 
   .forensic-export__validation {

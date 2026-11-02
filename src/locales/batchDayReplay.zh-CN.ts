@@ -1,5 +1,6 @@
 const batchDayReplay = {
-  submitFlowHint: '先填写范围和原因，再预览并核对影响；提交后在详情查看处理状态和结果。如需审批，由授权人员处理。',
+  submitFlowHint:
+    '先填写范围和原因，再预览并核对影响；提交后在详情查看处理状态和结果。如需审批，由授权人员处理。',
   statusGuidanceUnknown: '状态由服务端返回，请结合下方明细核对。',
   statusGuidance: {
     PENDING_APPROVAL: '等待审批；具备权限的管理员可在详情中处理。',
@@ -15,7 +16,15 @@ const batchDayReplay = {
   statusApprovalId: '审批 ID',
   statusStartedAt: '开始时间',
   statusCompletedAt: '完成时间',
-  statusLabels: { PENDING_APPROVAL: '待审批', REJECTED: '已拒绝', RUNNING: '执行中', SUCCEEDED: '成功', PARTIAL_FAILED: '部分失败', FAILED: '失败', CANCELLED: '已取消' },
+  statusLabels: {
+    PENDING_APPROVAL: '待审批',
+    REJECTED: '已拒绝',
+    RUNNING: '执行中',
+    SUCCEEDED: '成功',
+    PARTIAL_FAILED: '部分失败',
+    FAILED: '失败',
+    CANCELLED: '已取消',
+  },
   colActions: '操作',
   resultGovernanceTitle: '结果版本治理',
   resultGovernanceHint:
@@ -76,6 +85,8 @@ const batchDayReplay = {
   rangeSubmitTitle: '新建日期区间重放',
   fieldDateRange: '业务日范围',
   rangePreviewSummary: '共 {days} 个日期，候选 {candidates} 条',
+  rangeCandidates: '候选数',
+  rangeDisposition: { READY: '有候选项', NO_CANDIDATES: '无候选项', CALENDAR_BLOCKED: '日历限制' },
   rangeMissingRequired: '请填写日历、日期范围和原因',
   invalidRange: '开始日期不能晚于结束日期',
   rangeVersionIdsHint: '输入区间内要晋升的结果版本 ID，使用空格或逗号分隔。',
@@ -150,6 +161,8 @@ const batchDayReplay = {
   entriesSummary: '✓ {ok}  ✗ {fail}  ⏳ {pending}  / 共 {total}',
   allEntries: '全部',
   noEntries: '暂无条目',
+  calendarCodeTooLong: '日历编码最多 128 个字符',
+  reasonTooLong: '重放原因最多 512 个字符',
   missingRequired: '请填写业务日和原因',
   missingJobCodes: '选择“指定作业”时至少填写一个作业编码',
   missingVersionIds: '选择“仅输出结果”时至少填写一个结果版本 ID',

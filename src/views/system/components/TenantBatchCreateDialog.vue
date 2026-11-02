@@ -7,7 +7,13 @@
     size="640px"
     @update:model-value="(v: boolean) => emit('update:modelValue', v)"
   >
-    <el-form ref="batchFormRef" :model="form" :rules="batchFormRules" label-width="88px">
+    <el-form
+      ref="batchFormRef"
+      :model="form"
+      :rules="batchFormRules"
+      label-position="top"
+      class="batch-create-form"
+    >
       <el-form-item :label="t('tenantBatchCreateDialog.fieldTenants')" prop="tenantsText">
         <el-input
           v-model="form.tenantsText"
@@ -36,7 +42,7 @@
       </el-divider>
       <el-form-item :label="t('tenantBatchCreateDialog.fieldSource')">
         <el-select
-          class="query-w-280"
+          class="query-w-full"
           v-model="form.initConfigFrom"
           clearable
           filterable
@@ -137,6 +143,11 @@
       {
         validator: (_r, v: string, cb) => {
           const items = parseTenants(v ?? '')
+          const lineNumbers = (v ?? '')
+            .split('\n')
+            .map((line, index) => ({ line, number: index + 1 }))
+            .filter(({ line }) => line.trim())
+            .map(({ number }) => number)
           if (items.length === 0) {
             const errorMessage = t('tenantBatchCreateDialog.ruleAtLeastOne')
             const validationError = new Error(errorMessage)
@@ -147,7 +158,7 @@
             const validationError = new Error(errorMessage)
             return cb(validationError)
           }
-          for (const item of items) {
+          for (const [index, item] of items.entries()) {
             if (!item.tenantId || !item.tenantName) {
               const rowLabel = item.tenantId || t('tenantBatchCreateDialog.ruleLineEmpty')
               const validationMessage = t('tenantBatchCreateDialog.ruleLineMissing', {
@@ -155,6 +166,28 @@
               })
               const validationError = new Error(validationMessage)
               return cb(validationError)
+            }
+            const line = lineNumbers[index]
+            if (item.tenantId.length < 2) {
+              const message = t('tenantBatchCreateDialog.ruleLineIdLength', { line })
+              const validationError = new Error(message)
+              return cb(validationError)
+            }
+            for (const [field, value, max] of [
+              ['tenantFormDialog.fieldTenantId', item.tenantId, 64],
+              ['tenantFormDialog.fieldTenantName', item.tenantName, 256],
+              ['tenantFormDialog.fieldDescription', item.description ?? '', 512],
+            ] as const) {
+              if (value.length > max) {
+                const fieldLabel = t(field)
+                const message = t('tenantBatchCreateDialog.ruleLineTooLong', {
+                  line,
+                  field: fieldLabel,
+                  max,
+                })
+                const validationError = new Error(message)
+                return cb(validationError)
+              }
             }
           }
           cb()
@@ -215,6 +248,11 @@
 </script>
 
 <style scoped>
+  .batch-create-form :deep(.el-form-item__error) {
+    position: static;
+    width: 100%;
+  }
+
   .empty-hint {
     padding: 8px 12px;
     font-size: 12px;

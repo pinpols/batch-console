@@ -25,7 +25,12 @@
             <CopyableText :text="row.workerCode" />
           </template>
         </el-table-column>
-        <el-table-column prop="workerGroup" :label="t('myWorkers.colGroup')" width="120" />
+        <el-table-column prop="workerGroup" :label="t('myWorkers.colGroup')" width="140">
+          <template #default="{ row }">
+            <CopyableText v-if="row.workerGroup" :text="row.workerGroup" />
+            <span v-else>—</span>
+          </template>
+        </el-table-column>
         <el-table-column prop="status" :label="t('myWorkers.colStatus')" width="110">
           <template #default="{ row }">
             <StatusTag :value="String(row.status ?? '')" category="worker" />

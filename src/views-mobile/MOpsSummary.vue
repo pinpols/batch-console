@@ -105,6 +105,10 @@
       </div>
 
       <MSkeleton v-else-if="loading" :count="4" />
+      <div v-else-if="loadError" class="m-empty m-summary-error" role="alert">
+        <span>{{ t('mobile.common.loadFail') }}</span>
+        <button class="m-btn" type="button" @click="load">{{ t('common.retry') }}</button>
+      </div>
       <div v-else class="m-empty">{{ t('mobile.common.empty') }}</div>
 
       <!-- 快捷入口:Tab Bar 已占满 5 个槽位,这里导出二级常用列表 -->
@@ -166,6 +170,7 @@
   }
   const scope = useTenantRequestScope()
   const loading = ref(false)
+  const loadError = ref(false)
   const summary = ref<ConsoleOpsSummaryResponse | null>(null)
   const dailyProgress = ref<InstanceType<typeof MTenantDailyProgress> | null>(null)
 
@@ -177,12 +182,14 @@
     const request = scope.begin()
     if (!request.tenantId) return
     loading.value = true
+    loadError.value = false
     try {
       const result = await getOpsSummary(request.tenantId)
       if (scope.isCurrent(request)) summary.value = result
     } catch {
       if (scope.isCurrent(request)) {
         summary.value = null
+        loadError.value = true
         ElMessage.error(t('mobile.common.loadFail'))
       }
     } finally {
@@ -194,6 +201,7 @@
     () => {
       summary.value = null
       loading.value = false
+      loadError.value = false
     },
     { flush: 'sync' },
   )
@@ -203,6 +211,14 @@
 </script>
 
 <style scoped>
+  .m-summary-error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding-block: 32px;
+  }
+
   .m-quick-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);

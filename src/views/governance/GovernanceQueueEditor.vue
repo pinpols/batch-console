@@ -10,7 +10,7 @@
     destroy-on-close
   >
     <el-form :model="queueForm" label-width="120px">
-      <el-form-item :label="t('queueConfig.fieldQueueCode')" required>
+      <el-form-item :label="t('queueConfig.fieldQueueCode')" :error="errors?.queueCode" required>
         <el-input
           v-model="queueForm.queueCode"
           :disabled="queueEditingId != null"
@@ -20,18 +20,20 @@
       <el-form-item :label="t('queueConfig.fieldQueueName')"
         ><el-input v-model="queueForm.queueName" maxlength="256"
       /></el-form-item>
-      <el-form-item :label="t('queueConfig.fieldQueueType')" required
+      <el-form-item :label="t('queueConfig.fieldQueueType')" :error="errors?.queueType" required
         ><MetaSelect v-model="queueForm.queueType" enum-key="queueType" class="query-w-full"
       /></el-form-item>
-      <el-form-item :label="t('queueConfig.fieldMaxRunningJobs')"
-        ><el-input-number v-model="queueForm.maxRunningJobs" :min="0" :max="INT32_MAX"
-      /></el-form-item>
-      <el-form-item :label="t('queueConfig.fieldMaxRunningPartitions')"
-        ><el-input-number v-model="queueForm.maxRunningPartitions" :min="0" :max="INT32_MAX"
-      /></el-form-item>
-      <el-form-item :label="t('queueConfig.fieldMaxQps')"
-        ><el-input-number v-model="queueForm.maxQps" :min="0" :max="INT32_MAX"
-      /></el-form-item>
+      <div class="queue-limits">
+        <el-form-item :label="t('queueConfig.fieldMaxRunningJobs')" label-position="top">
+          <el-input-number v-model="queueForm.maxRunningJobs" :min="0" :max="INT32_MAX" />
+        </el-form-item>
+        <el-form-item :label="t('queueConfig.fieldMaxRunningPartitions')" label-position="top">
+          <el-input-number v-model="queueForm.maxRunningPartitions" :min="0" :max="INT32_MAX" />
+        </el-form-item>
+        <el-form-item :label="t('queueConfig.fieldMaxQps')" label-position="top">
+          <el-input-number v-model="queueForm.maxQps" :min="0" :max="INT32_MAX" />
+        </el-form-item>
+      </div>
       <el-form-item :label="t('queueConfig.fieldWorkerGroup')"
         ><el-input v-model="queueForm.workerGroup" maxlength="128"
       /></el-form-item>
@@ -84,6 +86,7 @@
       description: string
     }
     queueEditingId: number | null
+    errors?: { queueCode: string; queueType: string }
     saving: boolean
   }>()
   const visible = defineModel<boolean>({ required: true })
@@ -91,3 +94,19 @@
   const { t } = useI18n({ useScope: 'global' })
   const INT32_MAX = 2147483647
 </script>
+
+<style scoped>
+  .queue-limits {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 0 var(--space-md);
+  }
+
+  .queue-limits :deep(.el-input-number) {
+    width: 100%;
+  }
+
+  .queue-limits :deep(.el-form-item:last-child) {
+    margin-bottom: var(--space-md);
+  }
+</style>

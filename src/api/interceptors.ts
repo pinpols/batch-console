@@ -13,7 +13,12 @@ import { useAppStore } from '@/stores/app'
 import { STORAGE_KEYS } from '@/constants/storageKeys'
 import { LOCALE_STORAGE_KEY } from '@/constants/locale'
 import { userErrorMessage } from '@/utils/userErrorMessage'
-import { currentAuthSession, isSharedAuthRevisionCurrent, staleAuthSessionError } from './authSession'
+import { readActiveTenantId, readTenantContext } from '@/utils/tenantContext'
+import {
+  currentAuthSession,
+  isSharedAuthRevisionCurrent,
+  staleAuthSessionError,
+} from './authSession'
 import { coordinateAuthCookieRequest } from './authCookieLock'
 
 /**
@@ -71,6 +76,9 @@ type LoggedConfig = InternalAxiosRequestConfig & {
   _autoIdempotencySignature?: string
   /** 首次发送时的认证会话，重试沿用原值。 */
   _authSession?: number
+  /** 自动重试必须沿用首次发送时的租户，不能将原幂等键用于新租户。 */
+  _requestTenant?: string
+  _requestTenantRevision?: number | null
   /**
    * 调用方主动声明该请求"失败也不弹 toast"。日志、reject、redirect 仍照常,
    * 仅抑制 UI 错误提示，适用于调用方自行展示失败状态的场景。
@@ -131,10 +139,6 @@ function nextRetryDelay(attempt: number): number {
   const exp = RETRY_BASE_DELAY * Math.pow(2, attempt)
   const jitter = Math.random() * 200
   return exp + jitter
-}
-
-export function readStoredTenantId(): string {
-  return localStorage.getItem(STORAGE_KEYS.tenantId) ?? ''
 }
 
 function isSuccessCode(code: string | number | undefined): boolean {
@@ -211,10 +215,9 @@ function normalizeForIdempotency(value: unknown): unknown {
   }
   if (typeof FormData !== 'undefined' && value instanceof FormData) {
     const formEntries = Array.from(value.entries())
-    const normalizedEntries = formEntries.map(([key, entry]) => [
-      key,
-      normalizeFormDataValue(entry),
-    ] as const)
+    const normalizedEntries = formEntries.map(
+      ([key, entry]) => [key, normalizeFormDataValue(entry)] as const,
+    )
     return normalizedEntries.sort(([a], [b]) => a.localeCompare(b))
   }
   if (isRecord(value)) {
@@ -312,9 +315,7 @@ function extractHttpErrorMessage(error: unknown): string {
     // 例：`No static resource api/console/triggers for request '/api/console/triggers'.`
     // 这类信息对用户不友好，统一改成“接口不存在/版本不匹配”。
     const isSpringStaticResourceNotFound =
-      status === 404 &&
-      typeof d.message === 'string' &&
-      /No static resource/i.test(d.message)
+      status === 404 && typeof d.message === 'string' && /No static resource/i.test(d.message)
     if (isSpringStaticResourceNotFound) {
       return i18n.global.t('apiError.endpointVersionMismatch')
     }
@@ -404,9 +405,28 @@ export function applyApiInterceptors(client: AxiosInstance): void {
       // (后端 ConsoleAuthenticationFilter 优先读 cookie，header fallback 也仍兼容老客户端)
       // 2026-05-16:后端 Set-Cookie 已落地,dev fallback 已删,前端纯 cookie 路径生效。
 
-      const tenantId = readStoredTenantId()
+      const { tenantId, revision } = readTenantContext()
+      const loggable = config as LoggedConfig
+      if (loggable._authSession !== undefined && loggable._authSession !== currentAuthSession()) {
+        throw staleAuthSessionError(config)
+      }
+      if (
+        loggable._requestTenant !== undefined &&
+        (loggable._requestTenant !== tenantId || loggable._requestTenantRevision !== revision)
+      ) {
+        loggable._silent = true
+        throw Object.assign(new Error('Tenant context changed'), {
+          config,
+          code: 'ERR_TENANT_CONTEXT_CHANGED',
+          silenced: true,
+        })
+      }
+      loggable._requestTenant = tenantId
+      loggable._requestTenantRevision = revision
       if (tenantId) {
         config.headers['X-Tenant-Id'] = tenantId
+      } else {
+        config.headers.delete('X-Tenant-Id')
       }
 
       // 后端 /meta/enums 可按 Accept-Language 返回不同语言 label;FE 缺失 i18n key 时
@@ -416,7 +436,6 @@ export function applyApiInterceptors(client: AxiosInstance): void {
         (typeof localStorage !== 'undefined' && localStorage.getItem(LOCALE_STORAGE_KEY)) || 'zh-CN'
       config.headers['Accept-Language'] = locale === 'en-US' ? 'en-US,en;q=0.9' : 'zh-CN,zh;q=0.9'
 
-      const loggable = config as LoggedConfig
       loggable._authSession ??= currentAuthSession()
       const method = (config.method ?? 'get').toLowerCase()
       const pinia = getActivePinia()
@@ -707,7 +726,7 @@ export function applyApiInterceptors(client: AxiosInstance): void {
       // 这是预期的"先选租户"状态(NoTenantBanner 已显著提示并提供内嵌选择器/自动选),
       // 不该把同一句开发者级英文错误 + traceId 反复 toast 堆满屏幕。只在确实没选租户时
       // 静音这一类 400,其余 400(真实参数错)照常提示。
-      if (status === 400 && !readStoredTenantId()) {
+      if (status === 400 && !readActiveTenantId()) {
         const rawMsg =
           raw && typeof raw === 'object'
             ? String((raw as { message?: unknown }).message ?? '')

@@ -12,8 +12,9 @@
     :close-on-click-modal="false"
     :before-close="onBeforeClose"
     @update:model-value="onModelValueUpdate"
+    @opened="onFormOpened"
   >
-    <el-form ref="formRef" :model="form" :rules="formRules" label-width="88px">
+    <el-form ref="formRef" :model="form" :rules="formRules" label-position="top">
       <el-form-item :label="t('tenantFormDialog.fieldTenantId')" prop="tenantId">
         <!-- 编辑态走只读 input(主键不可改);创建态走 TenantIdInput 带实时校验 + 保留前缀提示 -->
         <el-input
@@ -162,7 +163,12 @@
 
   // 脏数据保护:抽屉关闭前若有未保存修改弹 confirm
   const dirty = useDirtyForm(() => form, { enabled: () => props.modelValue })
-  useFormFocus(formRef, () => props.modelValue)
+  const { focusFirst } = useFormFocus(formRef)
+
+  function onFormOpened() {
+    formRef.value?.clearValidate()
+    focusFirst()
+  }
 
   watch(
     () => props.modelValue,

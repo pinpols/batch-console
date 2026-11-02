@@ -9,6 +9,7 @@
     <TenantSelect
       v-if="canSwitch && !autoSelecting"
       :model-value="''"
+      :disabled="tenant.tenantSwitchPending"
       class="no-tenant-banner__select"
       @update:model-value="onPick"
     />
@@ -34,8 +35,10 @@
   import { ArrowRight, Building2 } from '@lucide/vue'
   import { useAuthStore } from '@/stores/auth'
   import { useTenantStore } from '@/stores/tenant'
+  import { useTenantSwitch } from '@/composables/useTenantSwitch'
   import { canSwitchTenant as checkCanSwitchTenant } from '@/utils/tenantAccess'
   import { listTenants } from '@/api/tenants'
+  import { currentAuthSession } from '@/api/authSession'
   import TenantSelect from '@/components/common/TenantSelect.vue'
 
   const { t } = useI18n({ useScope: 'global' })
@@ -43,6 +46,7 @@
   const route = useRoute()
   const auth = useAuthStore()
   const tenant = useTenantStore()
+  const { switchTenant } = useTenantSwitch()
   const { tenantId } = storeToRefs(tenant)
 
   // 排除三种本不依赖 tenantId 的页:维护页 / 自助账户 / 系统级管理页
@@ -66,14 +70,14 @@
   )
 
   // 选定租户:写 store(API interceptor 立即读到)+ 刷 profile 重取菜单
-  async function applyTenant(id: string) {
-    if (!id) return
-    tenant.setTenantId(id)
+  async function applyTenant(id: string): Promise<boolean> {
+    if (!(await switchTenant(id))) return false
     try {
       await auth.fetchMe()
     } catch (err) {
       if (import.meta.env.DEV) console.warn('[no-tenant-banner] fetchMe failed:', err)
     }
+    return true
   }
 
   function onPick(id: string) {
@@ -86,11 +90,13 @@
   onMounted(async () => {
     try {
       if (!visible.value || !canSwitch.value) return
+      const session = currentAuthSession()
       const res = await listTenants({ pageNo: 1, pageSize: 50 })
+      if (currentAuthSession() !== session || !visible.value || !canSwitch.value) return
       const usable = res.items.filter((it) => !HIDDEN_TENANTS.has(it.tenantId))
       if (usable.length === 1) {
-        await applyTenant(usable[0].tenantId)
-        ElMessage.success(`${t('nav.switchTenant')}: ${usable[0].tenantId}`)
+        const applied = await applyTenant(usable[0].tenantId)
+        if (applied) ElMessage.success(`${t('nav.switchTenant')}: ${usable[0].tenantId}`)
       }
     } catch {
       // 拉取失败不阻断:用户仍可用横幅内嵌选择器手动选

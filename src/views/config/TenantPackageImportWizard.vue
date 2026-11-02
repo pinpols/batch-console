@@ -117,8 +117,6 @@
               show-icon
             >
               <template #title>{{ t('excelMaintenanceWizard.uploadSuccess') }}</template>
-              <div class="excel-wizard__token-label">uploadToken</div>
-              <pre class="excel-wizard__token-code">{{ uploadToken }}</pre>
             </el-alert>
           </div>
 
@@ -208,16 +206,19 @@
                     min-width="180"
                   >
                     <template #default="{ row }">
-                      <span>{{ row.sheetName }}</span>
-                      <el-tag
-                        v-if="isDownstreamAtRisk(row.sheetName)"
-                        size="small"
-                        type="warning"
-                        effect="plain"
-                        class="sheet-risk-tag"
-                      >
-                        {{ t('tenantPackageImportWizard.sheetRiskDownstream') }}
-                      </el-tag>
+                      <div class="sheet-name-cell">
+                        <CopyableText v-if="row.sheetName" :text="String(row.sheetName)" />
+                        <span v-else>—</span>
+                        <el-tag
+                          v-if="isDownstreamAtRisk(row.sheetName)"
+                          size="small"
+                          type="warning"
+                          effect="plain"
+                          class="sheet-risk-tag"
+                        >
+                          {{ t('tenantPackageImportWizard.sheetRiskDownstream') }}
+                        </el-tag>
+                      </div>
                     </template>
                   </el-table-column>
                   <el-table-column
@@ -305,7 +306,7 @@
                   {{ t('tenantPackageImportWizard.previewReadyBody') }}
                 </template>
               </el-alert>
-              <div v-if="errorRows.length" class="excel-wizard__table-block">
+              <div v-if="errorRows.length" class="excel-wizard__table-block error-rows-block">
                 <div class="excel-wizard__table-caption issues-caption">
                   <span>
                     {{ t('tenantPackageImportWizard.errorRowsCaption') }}
@@ -379,14 +380,21 @@
                     prop="sheetName"
                     :label="t('excelMaintenanceWizard.colSheet')"
                     width="180"
-                  />
+                  >
+                    <template #default="{ row }">
+                      <CopyableText v-if="row.sheetName" :text="String(row.sheetName)" />
+                      <span v-else>—</span>
+                    </template>
+                  </el-table-column>
                   <el-table-column
                     prop="rowNo"
                     :label="t('excelMaintenanceWizard.colRowNo')"
                     width="80"
                   />
                   <el-table-column :label="t('excelMaintenanceWizard.colMessages')" min-width="240">
-                    <template #default="{ row }">{{ row.messages.join('; ') }}</template>
+                    <template #default="{ row }">
+                      <CopyableText :text="row.messages.join('; ')" :copyable="false" />
+                    </template>
                   </el-table-column>
                 </el-table>
               </div>
@@ -403,11 +411,7 @@
               <el-icon class="apply-zone__icon" :size="32"><WarningFilled /></el-icon>
               <h3 class="apply-zone__title">{{ t('excelMaintenanceWizard.applyTitle') }}</h3>
               <p class="apply-zone__desc">
-                {{ t('tenantPackageImportWizard.applyDescStart') }}
-                <code>uploadToken</code>
-                {{ t('tenantPackageImportWizard.applyDescMid') }}
-                <strong>{{ t('tenantPackageImportWizard.applyDescBold') }}</strong>
-                {{ t('tenantPackageImportWizard.applyDescEnd') }}
+                {{ t('tenantPackageImportWizard.applyDesc') }}
               </p>
               <!-- 闸门:有 invalid 行直接拦 apply,避免半坏数据落库 -->
               <el-alert
@@ -474,7 +478,12 @@
                       prop="entity"
                       :label="t('tenantPackageImportWizard.colEntity')"
                       min-width="140"
-                    />
+                    >
+                      <template #default="{ row }">
+                        <CopyableText v-if="row.entity" :text="String(row.entity)" />
+                        <span v-else>—</span>
+                      </template>
+                    </el-table-column>
                     <el-table-column
                       prop="inserted"
                       :label="t('tenantPackageImportWizard.colInserted')"
@@ -569,11 +578,13 @@
             clearable
             :prefix-icon="Search"
             :placeholder="t('tenantPackageImportWizard.guideSearchPlaceholder')"
+            :aria-label="t('tenantPackageImportWizard.guideSearchPlaceholder')"
           />
           <el-select
             v-model="guideSheetName"
             filterable
             :placeholder="t('tenantPackageImportWizard.guideSheetPlaceholder')"
+            :aria-label="t('tenantPackageImportWizard.guideSheetPlaceholder')"
           >
             <el-option
               v-for="sheet in guideSheets"
@@ -630,7 +641,8 @@
           >
             <template #default="{ row }">
               <div class="guide-column-name">
-                <code>{{ row.columnName }}</code>
+                <CopyableText v-if="row.columnName" :text="String(row.columnName)" />
+                <span v-else>—</span>
                 <el-tag v-if="row.required" size="small" type="danger" effect="plain">
                   {{ t('tenantPackageImportWizard.guideRequired') }}
                 </el-tag>
@@ -652,33 +664,55 @@
             prop="format"
             :label="t('tenantPackageImportWizard.guideColFormat')"
             min-width="110"
-          />
+          >
+            <template #default="{ row }">
+              <CopyableText v-if="row.format" :text="String(row.format)" />
+              <span v-else>—</span>
+            </template>
+          </el-table-column>
           <el-table-column
             prop="defaultBehavior"
             :label="t('tenantPackageImportWizard.guideColDefault')"
             min-width="220"
-          />
+          >
+            <template #default="{ row }">
+              <CopyableText v-if="row.defaultBehavior" :text="String(row.defaultBehavior)" />
+              <span v-else>—</span>
+            </template>
+          </el-table-column>
           <el-table-column
             prop="description"
             :label="t('tenantPackageImportWizard.guideColDescription')"
             min-width="280"
-            show-overflow-tooltip
-          />
+          >
+            <template #default="{ row }">
+              <CopyableText v-if="row.description" :text="String(row.description)" />
+              <span v-else>—</span>
+            </template>
+          </el-table-column>
           <el-table-column
             prop="allowedValues"
             :label="t('tenantPackageImportWizard.guideColAllowed')"
             min-width="240"
           >
             <template #default="{ row }">
-              <span>{{ row.allowedValues?.join(' / ') || '-' }}</span>
+              <CopyableText
+                v-if="row.allowedValues?.length"
+                :text="row.allowedValues.join(' / ')"
+              />
+              <span v-else>—</span>
             </template>
           </el-table-column>
           <el-table-column
             prop="example"
             :label="t('tenantPackageImportWizard.guideColExample')"
             min-width="180"
-            show-overflow-tooltip
-          />
+          >
+            <template #default="{ row }">
+              <CopyableText v-if="row.example" :text="String(row.example)" />
+              <span v-else>—</span>
+            </template>
+          </el-table-column>
         </el-table>
       </div>
     </el-drawer>
@@ -729,11 +763,17 @@
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
+  import CopyableText from '@/components/common/CopyableText.vue'
   import { useAuthStore } from '@/stores/auth'
+  import { useTenantStore } from '@/stores/tenant'
+  import { useTenantChangeGuard } from '@/composables/useTenantChangeGuard'
+  import { useTenantRequestScope } from '@/composables/useTenantRequestScope'
   import { userErrorMessage } from '@/utils/userErrorMessage'
   import TenantPackageScenarioSelector from './TenantPackageScenarioSelector.vue'
 
   const auth = useAuthStore()
+  const tenant = useTenantStore()
+  const exportScope = useTenantRequestScope()
   const canApplyPackage = computed(
     () => auth.hasPermission('ROLE_ADMIN') || auth.hasPermission('ROLE_TENANT_ADMIN'),
   )
@@ -1075,7 +1115,7 @@
     const rowH = 36
     const base = 64
     const estimatedHeight = base + n * rowH
-    const heightWithMinimum = Math.max(160, estimatedHeight)
+    const heightWithMinimum = Math.max(320, estimatedHeight)
     return Math.min(480, heightWithMinimum)
   })
 
@@ -1089,6 +1129,28 @@
   const applyLoading = ref(false)
   const applyError = ref<string | null>(null)
   const applyResult = shallowRef<TenantPackageApplyResponse | null>(null)
+
+  useTenantChangeGuard(
+    () => {
+      const changedRow = Object.entries(rowDrafts).some(([key, draft]) => {
+        const original = errorRows.value.find((row) => rowKeyOf(row) === key)
+        return !original || JSON.stringify(draft) !== JSON.stringify(original.values)
+      })
+      return (
+        changedRow ||
+        (!applyResult.value &&
+          !!(file.value || uploadToken.value || previewRaw.value || selectedScenarios.value.length))
+      )
+    },
+    () => [
+      file.value,
+      uploadToken.value,
+      previewRaw.value,
+      rowDrafts,
+      selectedScenarios.value,
+      applyResult.value,
+    ],
+  )
 
   /** 把后端 apply 返回的 7 实体 insert/update 拆分,展平成表行 */
   const applyBreakdownRows = computed<Array<{ entity: string; inserted: number; updated: number }>>(
@@ -1129,16 +1191,26 @@
     for (const key of Object.keys(rowDrafts)) delete rowDrafts[key]
   }
   watch(file, resetWorkbookSession, { flush: 'sync' })
+  watch(
+    () => tenant.tenantId,
+    () => {
+      if (file.value) file.value = null
+      else resetWorkbookSession()
+      applyLoading.value = false
+      exportLoading.value = false
+      selectedScenarios.value = []
+      uploadRef.value?.clearFiles()
+    },
+    { flush: 'sync' },
+  )
 
   /** I12 重置向导:回 step 0 + 清掉所有阶段状态,让用户重新走完整流程 */
   function resetWizard() {
     applyLoading.value = false
-    applyError.value = null
-    applyResult.value = null
-    uploadToken.value = ''
-    file.value = null
-    previewRaw.value = null
-    step.value = 0
+    if (file.value) file.value = null
+    else resetWorkbookSession()
+    selectedScenarios.value = []
+    uploadRef.value?.clearFiles()
   }
 
   async function doDownloadTemplate() {
@@ -1156,13 +1228,18 @@
   }
 
   async function doExport() {
+    if (exportLoading.value) return
+    const scope = exportScope.begin()
     exportLoading.value = true
     try {
       const blob = await tenantPackageExport()
+      if (!exportScope.isCurrent(scope)) return
       triggerBlobDownload(blob, 'tenant-package-export.xlsx')
       ElMessage.success(t('tenantPackageImportWizard.exportedToast'))
+    } catch (error) {
+      if (exportScope.isCurrent(scope)) throw error
     } finally {
-      exportLoading.value = false
+      if (exportScope.isCurrent(scope)) exportLoading.value = false
     }
   }
 

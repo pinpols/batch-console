@@ -37,7 +37,11 @@
               effect="light"
               round
             >
-              {{ row.syncDirection }}
+              {{
+                row.syncDirection === 'IMPORT'
+                  ? t('configSyncLogsTab.directionImport')
+                  : row.syncDirection
+              }}
             </el-tag>
             <span v-else class="cell-empty">—</span>
           </template>
@@ -51,14 +55,27 @@
               effect="light"
               round
             >
-              {{ row.syncStatus }}
+              {{
+                row.syncStatus === 'RUNNING'
+                  ? t('configSyncLogsTab.statusRunning')
+                  : row.syncStatus === 'SUCCESS'
+                    ? t('configSyncLogsTab.statusSuccess')
+                    : row.syncStatus === 'PARTIAL_FAILED'
+                      ? t('configSyncLogsTab.statusPartialFailed')
+                      : row.syncStatus
+              }}
             </el-tag>
             <span v-else class="cell-empty">—</span>
           </template>
         </el-table-column>
         <el-table-column :label="t('configSyncLogsTab.colOperator')" width="130">
           <template #default="{ row }">
-            <span v-if="row.operatorId" class="op-id">{{ row.operatorId }}</span>
+            <CopyableText
+              v-if="row.operatorId"
+              class="op-id"
+              :text="String(row.operatorId)"
+              :copyable="false"
+            />
             <span v-else class="cell-empty">—</span>
           </template>
         </el-table-column>
@@ -125,6 +142,7 @@
   import { useTenantReload } from '@/composables/useTenantReload'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import DatetimeColumn from '@/components/common/DatetimeColumn.vue'
+  import CopyableText from '@/components/common/CopyableText.vue'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import DataState from '@/components/common/DataState.vue'
   import TablePagerBar from '@/components/table/TablePagerBar.vue'

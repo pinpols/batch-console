@@ -2,13 +2,13 @@
   <el-dialog
     v-model="visible"
     :title="t('dryRunDialog.title', { code: jobCode })"
-    width="640px"
+    width="min(640px, calc(100vw - 32px))"
     :close-on-click-modal="false"
     @closed="onClosed"
   >
-    <el-form class="form-preserve-label-position" label-width="100px" label-position="left">
+    <el-form label-position="top">
       <el-form-item :label="t('dryRunDialog.levelLabel')">
-        <el-radio-group v-model="level">
+        <el-radio-group v-model="level" class="dry-run-levels">
           <el-radio-button value="CONFIG_VALIDATE">
             L1 · {{ t('dryRunDialog.l1') }}
           </el-radio-button>
@@ -67,14 +67,19 @@
           </template>
         </el-table-column>
         <el-table-column prop="scope" :label="t('dryRunDialog.colCategory')" width="100" />
-        <el-table-column prop="code" :label="t('dryRunDialog.colCode')" width="200" />
-        <el-table-column prop="message" :label="t('dryRunDialog.colMessage')" show-overflow-tooltip>
+        <el-table-column prop="code" :label="t('dryRunDialog.colCode')" width="200">
           <template #default="{ row }">
-            {{
+            <CopyableText v-if="row.code" :text="String(row.code)" />
+            <span v-else>{{ row.code }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="message" :label="t('dryRunDialog.colMessage')">
+          <template #default="{ row }">
+            <span class="wrap-cell">{{
               row.code === 'EXEC_SQL_PLAN_UNAVAILABLE'
                 ? t('dryRunDialog.sqlPlanUnavailable')
                 : row.message
-            }}
+            }}</span>
           </template>
         </el-table-column>
       </el-table>
@@ -90,8 +95,10 @@
 </template>
 
 <script setup lang="ts">
+  import CopyableText from '@/components/common/CopyableText.vue'
   import { ref, computed, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
+  import { useTenantRequestScope } from '@/composables/useTenantRequestScope'
   import { ElMessage } from 'element-plus'
   import { todayBusinessDate } from '@/utils/datetime'
   import { userErrorMessage } from '@/utils/userErrorMessage'
@@ -123,6 +130,7 @@
   const paramsError = ref<string>('')
   const result = ref<DryRunPlanResult | null>(null)
   const running = ref(false)
+  const requestScope = useTenantRequestScope()
 
   watch(visible, (v) => {
     if (v) {
@@ -159,6 +167,9 @@
   }
 
   async function runDryRun() {
+    const scope = requestScope.begin()
+    const targetTenant = props.tenantId
+    const targetJob = props.jobCode
     paramsError.value = ''
     let params: Record<string, unknown> | undefined
     const raw = paramsText.value.trim()
@@ -172,13 +183,21 @@
     }
     running.value = true
     try {
-      result.value = await dryRunApi.plan({
-        tenantId: props.tenantId,
-        jobCode: props.jobCode,
+      const response = await dryRunApi.plan({
+        tenantId: targetTenant,
+        jobCode: targetJob,
         level: level.value,
         bizDate: level.value === 'CONFIG_VALIDATE' ? undefined : bizDate.value || undefined,
         params,
       })
+      if (
+        !requestScope.isCurrent(scope) ||
+        !visible.value ||
+        props.tenantId !== targetTenant ||
+        props.jobCode !== targetJob
+      )
+        return
+      result.value = response
       const errs = (result.value.findings ?? []).filter((f) => f.severity === 'ERROR').length
       if (errs > 0) {
         ElMessage.warning(t('dryRunDialog.foundIssues', { n: errs }))
@@ -188,6 +207,7 @@
         ElMessage.success(t('dryRunDialog.passed'))
       }
     } catch (err) {
+      if (!requestScope.isCurrent(scope) || !visible.value) return
       // dryRunApi 内层 unwrap throws(BE 业务 4xx);axios 全局 toast 仅覆盖外层 envelope。
       ElMessage.error(userErrorMessage(err))
     } finally {
@@ -197,6 +217,10 @@
 </script>
 
 <style scoped>
+  .wrap-cell {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
   .level-hint {
     margin-top: 6px;
     color: var(--color-text-secondary);
@@ -213,5 +237,19 @@
   }
   .findings-table {
     margin-top: 12px;
+  }
+  @media (max-width: 600px) {
+    .dry-run-levels {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: var(--space-sm);
+      width: 100%;
+    }
+    .dry-run-levels :deep(.el-radio-button__inner) {
+      width: 100%;
+      border-left: var(--el-border);
+      border-radius: var(--el-border-radius-base);
+      box-shadow: none;
+    }
   }
 </style>

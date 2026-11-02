@@ -1,4 +1,14 @@
 export default {
+  dayStatuses: {
+    OPEN: '开放',
+    IN_FLIGHT: '运行中',
+    CUTOFF: '已截止',
+    SETTLING: '结算中',
+    SETTLED: '已结算',
+    FAILED: '失败',
+    SKIPPED: '已跳过',
+    MANUAL_RELEASED: '人工放行',
+  },
   recoveryBlocked:
     '原命令的标签页恢复记录不可读或已过安全重试期限。请人工核对批次日及操作审计，不能生成替代请求。',
   title: '批次日治理',

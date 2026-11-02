@@ -1,4 +1,11 @@
 export default {
+  eventNames: {
+    JOB_SUCCESS: '作业成功',
+    JOB_FAILED: '作业失败',
+    WORKFLOW_SUCCESS: '工作流成功',
+    WORKFLOW_FAILED: '工作流失败',
+    ALERT_ESCALATED: '告警升级',
+  },
   hint: '按实际事件载荷模拟当前租户的已启用规则、渠道和 Webhook 订阅。事件是否产生、限流、去重及实际投递结果未知；不会发送通知。',
   eventType: '事件类型',
   selectEvent: '选择可订阅的业务事件',

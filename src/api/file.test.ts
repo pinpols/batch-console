@@ -8,7 +8,7 @@ vi.mock('./client', () => ({
   del: vi.fn(),
 }))
 vi.mock('./adapters', () => ({ fetchAllPageItems: vi.fn() }))
-vi.mock('./interceptors', () => ({ readStoredTenantId: vi.fn() }))
+vi.mock('@/utils/tenantContext', () => ({ readActiveTenantId: vi.fn() }))
 
 import { get } from './client'
 

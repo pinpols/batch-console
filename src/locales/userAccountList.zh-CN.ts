@@ -9,7 +9,7 @@ export default {
   emptyDescription: '当前页没有符合条件的账户,可调整状态或关键字后重试。',
   headerCreate: '新增账户',
   keywordLabel: '关键字',
-  keywordPlaceholder: 'username / displayName',
+  keywordPlaceholder: '搜索用户名或显示名',
   colId: 'ID',
   colTenantId: '租户 ID',
   colUsername: '用户名',

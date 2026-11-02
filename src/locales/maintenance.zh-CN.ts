@@ -12,7 +12,7 @@ export default {
   pageTitle: '系统维护中',
   pageMessageFallback: '我们正在升级或修复系统,请稍候。',
   pageAffectedTitle: '受影响功能:',
-  pageHint: '此页面每 30 秒自动检测一次,恢复后自动跳回。',
+  pageHint: '页面会自动检查维护状态，恢复后返回。',
   pageContact: '紧急情况请联系运维。',
   pageRetry: '立即重试',
   writeBlocked: '维护期间禁止此操作',

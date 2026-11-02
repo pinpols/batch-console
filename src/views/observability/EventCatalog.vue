@@ -32,7 +32,6 @@
           v-model="activeKeyword"
           clearable
           :placeholder="activePlaceholder"
-          @keyup.enter="runActiveSearch"
         />
       </el-form-item>
     </ListPageQueryBar>
@@ -55,8 +54,13 @@
             <span class="catalog-list__name">{{ rowTitle(row) }}</span>
             <span class="catalog-list__meta">{{ rowSubtitle(row) }}</span>
           </button>
+          <EmptyState v-if="!activeLoading && activeError" variant="error" :image-size="64">
+            <template #action>
+              <el-button type="primary" @click="refreshActive">{{ t('common.retry') }}</el-button>
+            </template>
+          </EmptyState>
           <EmptyState
-            v-if="!activeLoading && activeRows.length === 0"
+            v-else-if="!activeLoading && activeRows.length === 0"
             :title="t('observability.eventCatalogEmptyTitle')"
             :description="t('observability.eventCatalogEmptyDescription')"
             :image-size="64"
@@ -113,7 +117,7 @@
           </template>
         </template>
         <EmptyState
-          v-else
+          v-else-if="!activeError"
           :title="t('observability.eventCatalogSelectTitle')"
           :description="t('observability.eventCatalogSelectDescription')"
           :image-size="72"
@@ -157,7 +161,13 @@
         />
         <el-table-column :label="t('observability.eventCatalogColActions')" width="104">
           <template #default="{ row }">
-            <el-button size="small" text type="primary" :icon="Eye" @click="openDetail('eventType', row)">
+            <el-button
+              size="small"
+              text
+              type="primary"
+              :icon="Eye"
+              @click="openDetail('eventType', row)"
+            >
               {{ t('observability.eventCatalogActionDetail') }}
             </el-button>
           </template>
@@ -204,7 +214,13 @@
         />
         <el-table-column :label="t('observability.eventCatalogColActions')" width="104">
           <template #default="{ row }">
-            <el-button size="small" text type="primary" :icon="Eye" @click="openDetail('topic', row)">
+            <el-button
+              size="small"
+              text
+              type="primary"
+              :icon="Eye"
+              @click="openDetail('topic', row)"
+            >
               {{ t('observability.eventCatalogActionDetail') }}
             </el-button>
           </template>
@@ -324,6 +340,9 @@
   const activeLoading = computed(() =>
     activeTab.value === 'eventTypes' ? loadingTypes.value : loadingTopics.value,
   )
+  const activeError = computed(() =>
+    activeTab.value === 'eventTypes' ? loadTypesError.value : loadTopicsError.value,
+  )
   const activeFilterBusy = computed(() =>
     activeTab.value === 'eventTypes' ? typesFilterBusy.value : topicsFilterBusy.value,
   )
@@ -386,9 +405,13 @@
   }
 
   function refreshActive() {
-    return activeTab.value === 'eventTypes'
-      ? runTypesRefresh(loadEventTypes)
-      : runTopicsRefresh(loadTopics)
+    const refresh =
+      activeTab.value === 'eventTypes'
+        ? runTypesRefresh(loadEventTypes)
+        : runTopicsRefresh(loadTopics)
+    return refresh.catch(() => {
+      /* 失败状态由对应列表展示。 */
+    })
   }
 
   const detailVisible = ref(false)
@@ -426,9 +449,10 @@
     await runLoadTypes(async () => {
       eventTypes.value = await listEventTypes()
       keepSelection()
-    }).catch(() => {
+    }).catch((error) => {
       eventTypes.value = []
       selectedEventType.value = null
+      throw error
     })
   }
 
@@ -436,17 +460,18 @@
     await runLoadTopics(async () => {
       topics.value = await listKafkaTopics()
       keepSelection()
-    }).catch(() => {
+    }).catch((error) => {
       topics.value = []
       selectedTopic.value = null
+      throw error
     })
   }
 
   watch([activeTab, filteredEventTypes, filteredTopics], keepSelection)
 
   onMounted(() => {
-    void loadEventTypes()
-    void loadTopics()
+    void loadEventTypes().catch(() => {})
+    void loadTopics().catch(() => {})
   })
 </script>
 

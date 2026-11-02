@@ -8,34 +8,28 @@
     :empty-text="t('common.noData')"
     class="console-table"
   >
-    <el-table-column :label="t('schedulerSnapshot.colQueue')" min-width="280">
+    <el-table-column :label="t('schedulerSnapshot.colQueue')" :min-width="isMobile ? 200 : 280">
       <template #default="{ row }">
         <div class="cell-stack">
           <div class="cell-main">
-            <el-tag size="small" effect="plain" type="success">{{ row.queueCode }}</el-tag>
-            <el-tag size="small" effect="plain" :type="tagTypeForKey(row.fairShareGroup)">
-              {{ row.fairShareGroup }}
-            </el-tag>
+            <CopyableText :text="String(row.queueCode ?? '')" :copyable="false">
+              <el-tag size="small" effect="plain" type="success">{{ row.queueCode }}</el-tag>
+            </CopyableText>
+            <CopyableText :text="String(row.fairShareGroup ?? '')" :copyable="false">
+              <el-tag size="small" effect="plain" :type="tagTypeForKey(row.fairShareGroup)">
+                {{ row.fairShareGroup }}
+              </el-tag>
+            </CopyableText>
           </div>
           <div class="cell-sub">
             {{ t('schedulerSnapshot.quotaResetPolicyLabel') }}:
-            <el-tag size="small" effect="plain" type="info">{{
-              row.quotaResetPolicy
-            }}</el-tag>
+            <el-tag size="small" effect="plain" type="info">{{ row.quotaResetPolicy }}</el-tag>
           </div>
         </div>
       </template>
     </el-table-column>
-    <el-table-column
-      prop="fairShareWeight"
-      :label="t('schedulerSnapshot.colWeight')"
-      width="90"
-    />
-    <el-table-column
-      prop="activeJobs"
-      :label="t('schedulerSnapshot.colActiveJobs')"
-      width="110"
-    />
+    <el-table-column prop="fairShareWeight" :label="t('schedulerSnapshot.colWeight')" width="90" />
+    <el-table-column prop="activeJobs" :label="t('schedulerSnapshot.colActiveJobs')" width="110" />
     <el-table-column
       prop="maxRunningJobs"
       :label="t('schedulerSnapshot.colMaxRunningJobs')"
@@ -50,16 +44,17 @@
       <template #default="{ row }">
         <template v-if="queuePartitionCapacity(row.activePartitions, row.maxRunningPartitions)">
           <span>{{ row.activePartitions }} / {{ row.maxRunningPartitions }}</span>
-          <el-progress :percentage="queuePartitionCapacity(row.activePartitions, row.maxRunningPartitions)!.percent" :show-text="false" />
+          <el-progress
+            :percentage="
+              queuePartitionCapacity(row.activePartitions, row.maxRunningPartitions)!.percent
+            "
+            :show-text="false"
+          />
         </template>
         <span v-else>{{ t('schedulerSnapshot.partitionCapacityUnknown') }}</span>
       </template>
     </el-table-column>
-    <el-table-column
-      prop="burstLimit"
-      :label="t('schedulerSnapshot.colBurstLimit')"
-      width="110"
-    />
+    <el-table-column prop="burstLimit" :label="t('schedulerSnapshot.colBurstLimit')" width="110" />
     <el-table-column
       prop="quotaBurstRemaining"
       :label="t('schedulerSnapshot.colQuotaBurstRemaining')"
@@ -80,7 +75,11 @@
       :label="t('schedulerSnapshot.colQuotaWindow')"
       width="170"
     />
-    <el-table-column :label="t('schedulerSnapshot.colActions')" width="140" fixed="right">
+    <el-table-column
+      :label="t('schedulerSnapshot.colActions')"
+      width="140"
+      :fixed="isMobile ? false : 'right'"
+    >
       <template #default="{ row }">
         <CopyableText :text="String(row.queueCode ?? '')" class="snapshot-copy-action">
           <el-button type="primary" plain size="small" :icon="DocumentCopy">
@@ -107,6 +106,7 @@
   import TablePagerBar from '@/components/table/TablePagerBar.vue'
   import type { ConsoleSchedulerQueueSnapshot } from '@/types/console-api'
   import { queuePartitionCapacity, tagTypeForKey } from '../schedulerSnapshotPresentation'
+  import { useResponsive } from '@/composables/useResponsive'
 
   defineProps<{
     records: ConsoleSchedulerQueueSnapshot[]
@@ -120,6 +120,7 @@
     'update:pageSize': [pageSize: number]
   }>()
   const { t } = useI18n({ useScope: 'global' })
+  const { isMobile } = useResponsive()
 </script>
 
 <style scoped>
@@ -133,6 +134,8 @@
     align-items: center;
     gap: var(--space-sm);
     flex-wrap: wrap;
+    min-width: 0;
+    max-width: 100%;
   }
   .cell-sub {
     font-size: 12px;

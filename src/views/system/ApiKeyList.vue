@@ -41,7 +41,6 @@
                 v-model="kwDraft"
                 clearable
                 :placeholder="t('apiKeyList.keywordPlaceholder')"
-                @keyup.enter="onSearch"
               />
             </el-form-item>
           </ListPageQueryBar>
@@ -61,19 +60,26 @@
           :label="t('apiKeyList.colName')"
           min-width="160"
           show-overflow-tooltip
-        />
+        >
+          <template #default="{ row }">
+            <CopyableText v-if="row.keyName" :text="String(row.keyName)" />
+            <span v-else class="cell-empty">—</span>
+          </template>
+        </el-table-column>
         <el-table-column
           prop="scopes"
           :label="t('apiKeyList.colScopes')"
           min-width="180"
           show-overflow-tooltip
-        />
+        >
+          <template #default="{ row }">
+            <CopyableText v-if="row.scopes" :text="String(row.scopes)" />
+            <span v-else class="cell-empty">—</span>
+          </template>
+        </el-table-column>
         <el-table-column :label="t('apiKeyList.colStatus')" width="110">
           <template #default="{ row }">
-            <StatusTag
-              :value="apiKeyStatus(row)"
-              category="apiKey"
-            />
+            <StatusTag :value="apiKeyStatus(row)" category="apiKey" />
           </template>
         </el-table-column>
         <DatetimeColumn prop="expiresAt" :label="t('apiKeyList.colExpiresAt')" width="160" />
@@ -94,7 +100,13 @@
       direction="rtl"
       size="480px"
     >
-      <el-form ref="apiKeyFormRef" :model="form" :rules="apiKeyFormRules" label-width="88px">
+      <el-form
+        ref="apiKeyFormRef"
+        :model="form"
+        :rules="apiKeyFormRules"
+        label-position="top"
+        class="api-key-form"
+      >
         <el-form-item :label="t('apiKeyList.fieldName')" prop="keyName">
           <el-input
             v-model="form.keyName"
@@ -118,6 +130,7 @@
               :value="opt.value"
             />
           </el-select>
+          <div class="field-hint">{{ t('apiKeyList.scopeEmptyHint') }}</div>
         </el-form-item>
         <el-form-item :label="t('apiKeyList.fieldExpiresAt')" prop="expiresAt">
           <InstantPicker
@@ -195,9 +208,9 @@
         <el-descriptions-item :label="t('apiKeyList.detailScopes')">
           {{ detail.scopes }}
         </el-descriptions-item>
-        <el-descriptions-item :label="t('common.status')">{{
-          String(detail.enabled ?? '')
-        }}</el-descriptions-item>
+        <el-descriptions-item :label="t('common.status')">
+          <StatusTag :value="apiKeyStatus(detail)" category="apiKey" />
+        </el-descriptions-item>
         <el-descriptions-item :label="t('apiKeyList.detailExpiresAt')">
           <DatetimeText :value="detail.expiresAt" />
         </el-descriptions-item>
@@ -216,6 +229,7 @@
 </template>
 
 <script setup lang="ts">
+  import CopyableText from '@/components/common/CopyableText.vue'
   import { ref, reactive, computed } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
@@ -341,9 +355,10 @@
   const detail = ref<Record<string, unknown> | null>(null)
   const form = reactive({ keyName: '', scopes: [] as string[], expiresAt: '' })
 
-  // 权限范围下拉可选集(后端不强制枚举,blank → "*" 全权限)。READ/WRITE/ADMIN 是技术码原样展示,
-  // "*" 用 i18n 标"全部"。提交时 join 成逗号串,匹配后端 scopes(逗号分隔字符串)。
+  // Worker 范围按服务端协议码提交；保留原有选项以兼容既有使用方式。
   const scopeOptions = computed(() => [
+    { value: 'worker.read', label: `${t('apiKeyList.scopeWorkerRead')} (worker.read)` },
+    { value: 'worker.execute', label: `${t('apiKeyList.scopeWorkerExecute')} (worker.execute)` },
     { value: 'READ', label: 'READ' },
     { value: 'WRITE', label: 'WRITE' },
     { value: 'ADMIN', label: 'ADMIN' },
@@ -457,6 +472,11 @@
 </script>
 
 <style scoped>
+  .api-key-form :deep(.el-form-item__error) {
+    position: static;
+    width: 100%;
+  }
+
   .raw-key-alert {
     margin-bottom: 16px;
   }

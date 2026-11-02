@@ -19,6 +19,7 @@ const mocks = vi.hoisted(() => ({
   prompt: vi.fn(),
 }))
 vi.mock('@/stores/tenant', () => ({ useTenantStore: () => mocks.state }))
+vi.mock('@/composables/useTenantChangeGuard', () => ({ useTenantChangeGuard: () => {} }))
 vi.mock('@/stores/auth', () => ({ useAuthStore: () => mocks.auth }))
 vi.mock('@/composables/usePermission', () => ({
   usePermission: () => ({ canManageSystem: computed(() => mocks.state.writer) }),
@@ -34,7 +35,7 @@ vi.mock('@/composables/queries/useConsoleMeta', () => ({
   useConsoleMetaEnumsQuery: () => ({ data: ref({}) }),
 }))
 vi.mock('@/composables/useDangerConfirm', () => ({ confirmDanger: mocks.confirm }))
-vi.mock('@/composables/useFormFocus', () => ({ useFormFocus: vi.fn() }))
+vi.mock('@/composables/useFormFocus', () => ({ useFormFocus: () => ({ focusFirst: vi.fn() }) }))
 vi.mock('element-plus', async (original) => ({
   ...(await original<typeof import('element-plus')>()),
   ElMessage: { success: vi.fn(), error: vi.fn(), warning: vi.fn() },
@@ -80,6 +81,12 @@ const stubs = {
   ElTable: true,
   ElTableColumn: true,
   ElPagination: true,
+  ElSelect: {
+    name: 'ElSelect',
+    props: ['modelValue', 'placeholder'],
+    emits: ['update:modelValue'],
+    template: '<div><slot /></div>',
+  },
   JsonPreview: { props: ['data'], template: '<pre>{{ JSON.stringify(data) }}</pre>' },
   ElInput: {
     props: ['modelValue', 'placeholder'],
@@ -138,7 +145,42 @@ beforeEach(() => {
   mocks.prompt.mockReset().mockResolvedValue({ value: 'reviewed' })
 })
 
+it('accepts config names and creation notes up to the backend limits', async () => {
+  const wrapper = render()
+  await click(wrapper, 'configReleaseList.headerCreate')
+  expect(
+    wrapper
+      .get('input[placeholder="configReleaseList.createNamePlaceholder"]')
+      .attributes('maxlength'),
+  ).toBe('256')
+  expect(
+    wrapper
+      .get('input[placeholder="configReleaseList.createNotePlaceholder"]')
+      .attributes('maxlength'),
+  ).toBe('512')
+})
+
 describe('配置发布的租户与异步操作边界', () => {
+  it('版本对比未选择目标版本时显示选择提示，选择后按原 ID 比较', async () => {
+    mocks.list.mockResolvedValue([row(), { ...row('PUBLISHED', 'release-b'), id: 42 }])
+    const wrapper = render()
+    await flushPromises()
+    await click(wrapper, 'configReleaseList.actionDiff')
+    const target = wrapper.findAllComponents({ name: 'ElSelect' })[1]
+    expect(target.props('modelValue')).toBeUndefined()
+    expect(target.props('placeholder')).toBe('configReleaseList.diffPlaceholder')
+    const compare = wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'configReleaseList.diffButton')!
+    expect(compare.attributes('disabled')).toBeDefined()
+    target.vm.$emit('update:modelValue', 42)
+    await flushPromises()
+    expect(compare.attributes('disabled')).toBeUndefined()
+    await compare.trigger('click')
+    await flushPromises()
+    expect(mocks.diff).toHaveBeenCalledWith('tenant-a', 41, 42)
+  })
+
   it('忽略租户切换后迟到的列表响应', async () => {
     const first = pending<ReturnType<typeof row>[]>()
     mocks.list

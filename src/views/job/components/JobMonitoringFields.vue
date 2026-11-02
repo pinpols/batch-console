@@ -10,7 +10,12 @@
         </el-form-item>
         <el-form-item :label="t('jobMonitoringPolicy.severity')">
           <el-select v-model="softRuntimeSeverity">
-            <el-option v-for="item in severities" :key="item" :label="item" :value="item" />
+            <el-option
+              v-for="item in severities"
+              :key="item"
+              :label="t(`enum.severity.${item}`)"
+              :value="item"
+            />
           </el-select>
         </el-form-item>
       </div>
@@ -25,7 +30,12 @@
         </el-form-item>
         <el-form-item :label="t('jobMonitoringPolicy.severity')">
           <el-select v-model="startGraceSeverity">
-            <el-option v-for="item in severities" :key="item" :label="item" :value="item" />
+            <el-option
+              v-for="item in severities"
+              :key="item"
+              :label="t(`enum.severity.${item}`)"
+              :value="item"
+            />
           </el-select>
         </el-form-item>
       </div>
@@ -53,7 +63,12 @@
         </el-form-item>
         <el-form-item :label="t('jobMonitoringPolicy.severity')">
           <el-select v-model="completionDeadlineSeverity">
-            <el-option v-for="item in severities" :key="item" :label="item" :value="item" />
+            <el-option
+              v-for="item in severities"
+              :key="item"
+              :label="t(`enum.severity.${item}`)"
+              :value="item"
+            />
           </el-select>
         </el-form-item>
       </div>
@@ -87,7 +102,12 @@
         </div>
         <el-form-item :label="t('jobMonitoringPolicy.severity')">
           <el-select v-model="completionDeadlineSeverity">
-            <el-option v-for="item in severities" :key="item" :label="item" :value="item" />
+            <el-option
+              v-for="item in severities"
+              :key="item"
+              :label="t(`enum.severity.${item}`)"
+              :value="item"
+            />
           </el-select>
         </el-form-item>
       </div>

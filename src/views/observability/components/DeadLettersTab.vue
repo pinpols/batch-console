@@ -24,7 +24,6 @@
           v-model="dlDraft.sourceId"
           clearable
           :placeholder="t('observability.dlqSourceIdPlaceholder')"
-          @keyup.enter="applyFilter"
         />
       </el-form-item>
       <el-form-item :label="t('observability.dlqKeywordLabel')">
@@ -33,7 +32,6 @@
           v-model="dlDraft.keyword"
           clearable
           :placeholder="t('observability.dlqKeywordPlaceholder')"
-          @keyup.enter="applyFilter"
         />
       </el-form-item>
     </ListPageQueryBar>

@@ -75,7 +75,7 @@
           >
             <el-form-item :label="t('jobDefinitionList.jobCodeLabel')">
               <el-input
-                class="query-w-160"
+                class="query-w-240"
                 v-model="filters.jobCode"
                 clearable
                 :placeholder="t('jobDefinitionList.jobCodePlaceholder')"
@@ -83,7 +83,7 @@
             </el-form-item>
             <el-form-item :label="t('jobDefinitionList.jobNameLabel')">
               <el-input
-                class="query-w-160"
+                class="query-w-240"
                 v-model="filters.jobName"
                 clearable
                 :placeholder="t('jobDefinitionList.jobNamePlaceholder')"
@@ -177,12 +177,15 @@
           <!-- 列序照设计 proto-jobs_view:JOB CODE(250) 名称 类型 WORKER GROUP QUEUE 启用 操作 -->
           <el-table-column prop="jobCode" :label="t('jobDefinitionList.colJobCode')" width="210">
             <template #default="{ row }">
-              <router-link
-                class="definition-link"
-                :to="definitionDetailLocation(row as ConsoleJobDefinitionResponse)"
-              >
-                {{ row.jobCode }}
-              </router-link>
+              <span class="long-link-cell">
+                <router-link
+                  class="definition-link"
+                  :to="definitionDetailLocation(row as ConsoleJobDefinitionResponse)"
+                >
+                  {{ row.jobCode }}
+                </router-link>
+                <CopyableText :text="row.jobCode" icon-only />
+              </span>
             </template>
           </el-table-column>
           <el-table-column
@@ -190,8 +193,12 @@
             prop="jobName"
             :label="t('jobDefinitionList.colJobName')"
             min-width="190"
-            show-overflow-tooltip
-          />
+          >
+            <template #default="{ row }">
+              <CopyableText v-if="row.jobName" :text="row.jobName" />
+              <span v-else>—</span>
+            </template>
+          </el-table-column>
           <el-table-column
             v-if="isColVisible('jobType')"
             prop="jobType"
@@ -210,17 +217,21 @@
             prop="tenantId"
             :label="t('jobDefinitionList.colTenant')"
             width="140"
-            show-overflow-tooltip
-          />
+          >
+            <template #default="{ row }">
+              <CopyableText v-if="row.tenantId" :text="row.tenantId" />
+              <span v-else>—</span>
+            </template>
+          </el-table-column>
           <el-table-column
             v-if="isColVisible('workerGroup')"
             prop="workerGroup"
             :label="t('jobDefinitionList.colWorkerGroup')"
             width="140"
-            show-overflow-tooltip
           >
             <template #default="{ row }">
-              <span class="jd-cell-sub">{{ row.workerGroup || '—' }}</span>
+              <CopyableText v-if="row.workerGroup" :text="row.workerGroup" />
+              <span v-else>—</span>
             </template>
           </el-table-column>
           <el-table-column
@@ -228,10 +239,10 @@
             prop="queueCode"
             :label="t('jobDefinitionList.colQueue')"
             width="130"
-            show-overflow-tooltip
           >
             <template #default="{ row }">
-              <span class="jd-cell-sub jd-cell-mono">{{ row.queueCode || '—' }}</span>
+              <CopyableText v-if="row.queueCode" :text="row.queueCode" />
+              <span v-else>—</span>
             </template>
           </el-table-column>
           <el-table-column
@@ -275,8 +286,12 @@
             prop="scheduleExpr"
             :label="t('jobDefinitionList.colScheduleExpr')"
             min-width="220"
-            show-overflow-tooltip
-          />
+          >
+            <template #default="{ row }">
+              <CopyableText v-if="row.scheduleExpr" :text="row.scheduleExpr" />
+              <span v-else>—</span>
+            </template>
+          </el-table-column>
           <el-table-column :label="t('jobDefinitionList.colActions')" width="228" fixed="right">
             <template #default="{ row }">
               <RowActions
@@ -377,7 +392,10 @@
           >
             <el-table-column :label="t('runs.colInstance')" min-width="200">
               <template #default="{ row }">
-                <span class="cell-link">{{ row.instanceNo }}</span>
+                <span class="long-link-cell">
+                  <span class="cell-link">{{ row.instanceNo }}</span>
+                  <CopyableText v-if="row.instanceNo" :text="row.instanceNo" icon-only />
+                </span>
               </template>
             </el-table-column>
             <el-table-column :label="t('runs.colStatus')" width="110">
@@ -551,10 +569,10 @@
     <el-dialog
       v-model="bundleImportVisible"
       :title="t('jobDefinitionList.bundleImportTitle')"
-      width="640px"
+      width="min(640px, calc(100% - 32px))"
       :close-on-click-modal="false"
     >
-      <el-form label-width="100px">
+      <el-form label-position="top">
         <el-form-item :label="t('jobDefinitionList.bundleImportTargetLabel')">
           <el-select
             v-model="bundleImportTargets"
@@ -567,7 +585,7 @@
           />
         </el-form-item>
         <el-form-item :label="t('jobDefinitionList.bundleImportModeLabel')">
-          <el-radio-group v-model="bundleImportMode">
+          <el-radio-group v-model="bundleImportMode" class="bundle-import-mode">
             <el-radio value="UPSERT">{{ t('jobDefinitionList.bundleImportModeUpsert') }}</el-radio>
             <el-radio value="SKIP_EXISTING">{{
               t('jobDefinitionList.bundleImportModeSkip')
@@ -666,7 +684,7 @@
   import { useJobBundleRecovery } from './useJobBundleRecovery'
   import { assessBatchInitOutcome } from '@/utils/batchInitOutcome'
   import { isConsoleServiceUnavailable } from '@/utils/serviceAvailability'
-  import { instanceApi } from '@/api/instance'
+  import { useJobDefinitionDetailRuns } from './useJobDefinitionDetailRuns'
   import { fmtDatetime } from '@/utils/datetime'
   import { getMetaEnums, getMetaQueues, type MetaOption } from '@/api/meta'
   import { fetchPipelineStages } from '@/api/pipelineMeta'
@@ -682,6 +700,7 @@
   import { useAuthStore } from '@/stores/auth'
   import { showCreateSuccess } from '@/composables/useCreateSuccess'
   import PageContainer from '@/components/common/PageContainer.vue'
+  import CopyableText from '@/components/common/CopyableText.vue'
   import JsonTextareaInput from '@/components/common/JsonTextareaInput.vue'
   import JobConfigBasicForm from './components/JobConfigBasicForm.vue'
   import JsonPreview from '@/components/common/JsonPreview.vue'
@@ -908,9 +927,18 @@
   const bundleImportScope = useTenantRequestScope()
   const auth = useAuthStore()
   const {
-    recoveryCommands, recoveryStorageBlocked, recoveryLoadingKey, recoveryCurrent,
-    recoveryKindLabel, headerTenant, refreshRecoveryCommands, prepareRecovery,
-    checkRecovery, canStopRecovery, stopTrackingRecovery, acknowledgeRecovery,
+    recoveryCommands,
+    recoveryStorageBlocked,
+    recoveryLoadingKey,
+    recoveryCurrent,
+    recoveryKindLabel,
+    headerTenant,
+    refreshRecoveryCommands,
+    prepareRecovery,
+    checkRecovery,
+    canStopRecovery,
+    stopTrackingRecovery,
+    acknowledgeRecovery,
   } = useJobBundleRecovery()
   let bundleImportRevision = 0
   // 输入、主体或权限曾经变化即使旧响应失效，关闭后重开的面板属于另一会话。
@@ -976,8 +1004,11 @@
     const expectedHeader = headerTenant()
     const authSession = currentAuthSession()
     if (!isSharedAuthRevisionCurrent()) return
-    const isCurrent = () => bundleImportScope.isCurrent(scope) && revision === bundleImportRevision &&
-      headerTenant() === expectedHeader && currentAuthSession() === authSession &&
+    const isCurrent = () =>
+      bundleImportScope.isCurrent(scope) &&
+      revision === bundleImportRevision &&
+      headerTenant() === expectedHeader &&
+      currentAuthSession() === authSession &&
       isSharedAuthRevisionCurrent()
     bundleImportSaving.value = true
     try {
@@ -1017,11 +1048,7 @@
       void refetch()
     } catch (error) {
       const status = (error as { response?: { status?: number } })?.response?.status
-      if (
-        !dryRun &&
-        isCurrent() &&
-        (isConsoleServiceUnavailable(error) || status === 409)
-      ) {
+      if (!dryRun && isCurrent() && (isConsoleServiceUnavailable(error) || status === 409)) {
         ElMessage.warning(t('jobDefinitionList.bundleImportUnknownOutcome'))
       }
       throw error
@@ -1100,12 +1127,13 @@
   async function triggerRow(row: ConsoleJobDefinitionResponse) {
     let payloadText = ''
     try {
-      // 文件/内容型作业(IMPORT/EXPORT/DISPATCH)裸触发(空 {})会失败(缺 templateCode/content/fileId),
-      // 预填 payload 模板引导用户填必填字段——字段名是英文,不涉 i18n;非文件型保持 {}。
-      const promptMsg =
-        row.jobType === 'IMPORT' || row.jobType === 'EXPORT' || row.jobType === 'DISPATCH'
-          ? t('jobDefinitionList.triggerPromptFileJob', { jobType: row.jobType })
-          : t('jobDefinitionList.triggerPrompt')
+      const promptKeys: Record<string, string> = {
+        IMPORT: 'jobDefinitionList.triggerPromptImport',
+        EXPORT: 'jobDefinitionList.triggerPromptExport',
+        DISPATCH: 'jobDefinitionList.triggerPromptDispatch',
+      }
+      const promptKey = row.jobType ? promptKeys[row.jobType] : undefined
+      const promptMsg = t(promptKey ?? 'jobDefinitionList.triggerPrompt')
       // inputValidator 在用户点"确认"时实时拦截 JSON 语法错,
       // 而不是关掉对话框、ElMessage 再 toast,避免用户白填一大坨参数。
       const { value } = await ElMessageBox.prompt(
@@ -1113,6 +1141,7 @@
         t('jobDefinitionList.triggerTitle', { code: row.jobCode }),
         {
           inputType: 'textarea',
+          customClass: 'job-trigger-prompt',
           inputValue: triggerInputTemplate(row.jobType),
           confirmButtonText: t('jobDefinitionList.triggerConfirm'),
           cancelButtonText: t('common.cancel'),
@@ -1195,34 +1224,18 @@
   const systemPipelineStages = computed(
     () => pipelineStagesByType.value[systemPipelineCode.value] ?? [],
   )
-  const detailRunsRows = ref<ConsoleJobInstanceResponse[]>([])
-  const detailRunsLoading = ref(false)
-  const detailRunsLoadedForJobCode = ref('')
-
-  async function loadDetailRuns() {
-    const def = detailRow.value
-    if (!def?.jobCode || detailRunsLoadedForJobCode.value === def.jobCode) return
-    detailRunsLoading.value = true
-    try {
-      const pageResult = await instanceApi.list({
-        tenantId: def.tenantId ?? tenant.tenantId,
-        jobCode: def.jobCode,
-        page: 1,
-        pageSize: 15,
-      })
-      detailRunsRows.value = pageResult.records ?? []
-      detailRunsLoadedForJobCode.value = def.jobCode
-    } catch {
-      detailRunsRows.value = []
-    } finally {
-      detailRunsLoading.value = false
-    }
-  }
+  const jdVisible = ref(false)
+  const jdMode = ref<'view' | 'edit' | 'create'>('view')
+  const {
+    rows: detailRunsRows,
+    loading: detailRunsLoading,
+    load: loadDetailRuns,
+    reset: resetDetailRuns,
+  } = useJobDefinitionDetailRuns(detailRow, jdVisible)
 
   function openDetail(row: ConsoleJobDefinitionResponse) {
+    resetDetailRuns()
     detailRow.value = row
-    detailRunsRows.value = []
-    detailRunsLoadedForJobCode.value = ''
     jdMode.value = 'view'
     jdVisible.value = true
     if (Object.keys(pipelineStagesByType.value).length === 0) {
@@ -1239,8 +1252,6 @@
   }
 
   // ── 设计三态抽屉(view/edit/create)状态机 ─────
-  const jdVisible = ref(false)
-  const jdMode = ref<'view' | 'edit' | 'create'>('view')
   // 编辑态是否从查看态切入(取消时回到查看态而非直接关闭)
   const editFromView = ref(false)
 

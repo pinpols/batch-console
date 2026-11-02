@@ -11,14 +11,19 @@
   >
     <!-- 空态:右侧一个轻量「粘贴」图标(有值时 EP 清除键接管,互不打架);回车 / 点前缀直达。 -->
     <template #suffix>
-      <el-tooltip v-if="!model" :content="t('traceIdInput.paste')" placement="top">
-        <el-icon
+      <el-tooltip
+        v-if="!model"
+        :content="t('traceIdInput.paste')"
+        :trigger-keys="[]"
+        placement="top"
+      >
+        <el-button
           class="trace-id-input__paste"
+          link
+          :icon="ClipboardPaste"
           :aria-label="t('traceIdInput.paste')"
           @click.stop="onPaste"
-        >
-          <ClipboardPaste />
-        </el-icon>
+        />
       </el-tooltip>
     </template>
   </el-input>

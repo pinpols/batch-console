@@ -5,94 +5,161 @@
     :title="t('tenantCopyConfigDialog.title')"
     direction="rtl"
     size="860px"
+    class="tenant-copy-drawer"
     @update:model-value="(v: boolean) => emit('update:modelValue', v)"
   >
-    <el-alert type="info" :closable="false" show-icon class="mb-12">
-      <template #title>{{ t('tenantCopyConfigDialog.infoAlert') }}</template>
-    </el-alert>
-    <el-form ref="copyFormRef" :model="form" :rules="copyFormRules" label-width="88px">
-      <el-form-item :label="t('tenantCopyConfigDialog.fieldSource')" prop="sourceTenantId">
-        <el-select
-          class="query-w-280"
-          v-model="form.sourceTenantId"
-          filterable
-          :placeholder="t('tenantCopyConfigDialog.sourcePlaceholder')"
-        >
-          <el-option
-            v-for="ten in sourceableItems"
-            :key="ten.tenantId"
-            :label="`${ten.tenantId} — ${ten.tenantName}`"
-            :value="ten.tenantId"
-          >
-            <span>{{ ten.tenantId }} — {{ ten.tenantName }}</span>
-            <el-tag
-              v-if="isTemplateTenant(ten.tenantId)"
-              size="small"
-              type="primary"
-              effect="plain"
-              class="u-ml-8"
+    <p class="copy-intro">{{ t('tenantCopyConfigDialog.infoAlert') }}</p>
+    <el-form
+      ref="copyFormRef"
+      :model="form"
+      :rules="copyFormRules"
+      label-position="top"
+      class="copy-form"
+    >
+      <section class="copy-section" :aria-label="t('tenantCopyConfigDialog.sectionTenants')">
+        <h3>{{ t('tenantCopyConfigDialog.sectionTenants') }}</h3>
+        <div class="tenant-fields">
+          <el-form-item :label="t('tenantCopyConfigDialog.fieldSource')" prop="sourceTenantId">
+            <el-select
+              class="query-w-full"
+              v-model="form.sourceTenantId"
+              filterable
+              :placeholder="t('tenantCopyConfigDialog.sourcePlaceholder')"
             >
-              {{ t('tenantConfigShared.templateTag') }}
-            </el-tag>
-          </el-option>
-        </el-select>
-        <div class="field-hint">{{ t('tenantCopyConfigDialog.sourceHint') }}</div>
-      </el-form-item>
-      <el-form-item :label="t('tenantCopyConfigDialog.fieldTargets')" prop="targetTenantIds">
-        <el-select
-          v-model="form.targetTenantIds"
-          multiple
-          filterable
-          :placeholder="t('tenantCopyConfigDialog.targetsPlaceholder')"
-          class="query-w-full"
-        >
-          <el-option
-            v-for="ten in targetableItems"
-            :key="ten.tenantId"
-            :label="`${ten.tenantId} — ${ten.tenantName}`"
-            :value="ten.tenantId"
+              <el-option
+                v-for="ten in sourceableItems"
+                :key="ten.tenantId"
+                :label="`${ten.tenantId} — ${ten.tenantName}`"
+                :value="ten.tenantId"
+              >
+                <span>{{ ten.tenantId }} — {{ ten.tenantName }}</span>
+                <el-tag
+                  v-if="isTemplateTenant(ten.tenantId)"
+                  size="small"
+                  type="primary"
+                  effect="plain"
+                  class="u-ml-8"
+                >
+                  {{ t('tenantConfigShared.templateTag') }}
+                </el-tag>
+              </el-option>
+            </el-select>
+            <div class="field-hint">{{ t('tenantCopyConfigDialog.sourceHint') }}</div>
+          </el-form-item>
+          <el-form-item
+            :label="t('tenantCopyConfigDialog.fieldTargets')"
+            prop="targetTenantIds"
+            required
+          >
+            <el-select
+              v-model="form.targetTenantIds"
+              multiple
+              filterable
+              :placeholder="t('tenantCopyConfigDialog.targetsPlaceholder')"
+              class="query-w-full"
+            >
+              <el-option
+                v-for="ten in targetableItems"
+                :key="ten.tenantId"
+                :label="`${ten.tenantId} — ${ten.tenantName}`"
+                :value="ten.tenantId"
+              />
+            </el-select>
+          </el-form-item>
+        </div>
+      </section>
+      <section class="copy-section" :aria-label="t('tenantCopyConfigDialog.sectionScope')">
+        <h3>{{ t('tenantCopyConfigDialog.sectionScope') }}</h3>
+        <el-form-item :label="t('tenantConfigShared.configTypeLabel')">
+          <el-checkbox-group v-model="form.configTypes" class="config-type-grid">
+            <el-checkbox v-for="ct in ALL_CONFIG_TYPES" :key="ct" :value="ct">
+              {{ t(`tenantConfigShared.configTypes.${ct}`) }}
+            </el-checkbox>
+          </el-checkbox-group>
+          <div class="field-hint">{{ t('tenantConfigShared.configTypeHintAll') }}</div>
+        </el-form-item>
+        <el-form-item :label="t('tenantCopyConfigDialog.fieldJobCodes')">
+          <el-input-tag
+            v-model="form.jobCodes"
+            class="query-w-full"
+            :placeholder="t('tenantCopyConfigDialog.jobCodesPlaceholder')"
           />
-        </el-select>
-      </el-form-item>
-      <el-form-item :label="t('tenantConfigShared.configTypeLabel')">
-        <el-checkbox-group v-model="form.configTypes">
-          <el-checkbox v-for="ct in ALL_CONFIG_TYPES" :key="ct" :label="ct" :value="ct" />
-        </el-checkbox-group>
-        <div class="field-hint">{{ t('tenantConfigShared.configTypeHintAll') }}</div>
-      </el-form-item>
-      <el-form-item :label="t('tenantCopyConfigDialog.fieldJobCodes')">
-        <el-input-tag
-          v-model="form.jobCodes"
-          class="query-w-full"
-          :placeholder="t('tenantCopyConfigDialog.jobCodesPlaceholder')"
-        />
-        <div class="field-hint">{{ t('tenantCopyConfigDialog.jobCodesHint') }}</div>
-      </el-form-item>
-      <el-form-item :label="t('tenantConfigShared.writeModeLabel')">
-        <el-radio-group v-model="form.mode">
-          <el-radio value="SKIP_EXISTING">{{ t('tenantConfigShared.modeSkipExisting') }}</el-radio>
-          <el-radio value="UPSERT">{{ t('tenantConfigShared.modeUpsert') }}</el-radio>
-        </el-radio-group>
-      </el-form-item>
-      <el-form-item :label="t('tenantCopyConfigDialog.previewOptions')">
-        <el-checkbox v-model="form.includeUnchanged">
-          {{ t('tenantCopyConfigDialog.includeUnchanged') }}
-        </el-checkbox>
-        <el-checkbox v-model="form.includeDeleteCandidates">
-          {{ t('tenantCopyConfigDialog.includeDeleteCandidates') }}
-        </el-checkbox>
-      </el-form-item>
+          <div class="field-hint">{{ t('tenantCopyConfigDialog.jobCodesHint') }}</div>
+        </el-form-item>
+      </section>
+      <section class="copy-section" :aria-label="t('tenantCopyConfigDialog.sectionOptions')">
+        <h3>{{ t('tenantCopyConfigDialog.sectionOptions') }}</h3>
+        <el-form-item :label="t('tenantConfigShared.writeModeLabel')">
+          <el-radio-group v-model="form.mode">
+            <el-radio value="SKIP_EXISTING">{{
+              t('tenantConfigShared.modeSkipExisting')
+            }}</el-radio>
+            <el-radio value="UPSERT">{{ t('tenantConfigShared.modeUpsert') }}</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item :label="t('tenantCopyConfigDialog.previewOptions')">
+          <el-checkbox v-model="form.includeUnchanged">
+            {{ t('tenantCopyConfigDialog.includeUnchanged') }}
+          </el-checkbox>
+          <el-checkbox v-model="form.includeDeleteCandidates">
+            {{ t('tenantCopyConfigDialog.includeDeleteCandidates') }}
+          </el-checkbox>
+        </el-form-item>
+        <div
+          class="comparison-tools"
+          role="group"
+          :aria-label="t('tenantCopyConfigDialog.comparisonTools')"
+        >
+          <span class="comparison-tools__label">{{
+            t('tenantCopyConfigDialog.comparisonTools')
+          }}</span>
+          <div class="comparison-tools__actions">
+            <el-button
+              plain
+              :loading="previewing === 'copy'"
+              :disabled="busy || !canWriteSystem"
+              @click="runCopyPreview"
+            >
+              {{ t('tenantCopyConfigDialog.btnCopyPreview') }}
+            </el-button>
+            <el-button
+              plain
+              :loading="previewing === 'overlay'"
+              :disabled="busy || !canWriteSystem"
+              @click="runOverlayPreview"
+            >
+              {{ t('tenantCopyConfigDialog.btnOverlayPreview') }}
+            </el-button>
+            <el-button
+              plain
+              :loading="previewing === 'matrix'"
+              :disabled="busy || !canWriteSystem"
+              @click="runMatrix"
+            >
+              {{ t('tenantCopyConfigDialog.btnMatrix') }}
+            </el-button>
+          </div>
+        </div>
+      </section>
     </el-form>
 
     <section v-if="recoveries.length || recoveryStorageBlocked" class="recovery-panel">
       <h3>{{ t('tenantCopyConfigDialog.recoveryTitle') }}</h3>
       <el-alert v-if="recoveryStorageBlocked" type="warning" :closable="false" show-icon>
         <template #title>
-          {{ t(recoveryScopeMismatch ? 'tenantCopyConfigDialog.recoveryTenantMismatch' : 'tenantCopyConfigDialog.recoveryStorageUnavailable') }}
+          {{
+            t(
+              recoveryScopeMismatch
+                ? 'tenantCopyConfigDialog.recoveryTenantMismatch'
+                : 'tenantCopyConfigDialog.recoveryStorageUnavailable',
+            )
+          }}
         </template>
       </el-alert>
       <div v-for="command in recoveries" :key="command.key" class="recovery-entry">
-        <span>{{ command.auditTenantId }} · {{ new Date(command.createdAt).toLocaleString() }}</span>
+        <span
+          >{{ command.auditTenantId }} · {{ new Date(command.createdAt).toLocaleString() }}</span
+        >
         <el-button size="small" :disabled="recoveryLoading" @click="queryRecovery(command)">
           {{ t('tenantCopyConfigDialog.recoveryQuery') }}
         </el-button>
@@ -116,15 +183,29 @@
           <template #title>{{ t('tenantCopyConfigDialog.recoveryUnknown') }}</template>
         </el-alert>
         <template v-if="recoveryResult">
-          <p>{{ t('tenantCopyConfigDialog.recoveryOperation') }}: {{ recoveryResult.operationId }}</p>
+          <p>
+            {{ t('tenantCopyConfigDialog.recoveryOperation') }}: {{ recoveryResult.operationId }}
+          </p>
           <p>
             {{ t('tenantCopyConfigDialog.recoveryReceiptStatus') }}:
-            {{ recoveryResult.status === 'COMPLETE' ? t('tenantCopyConfigDialog.recoveryComplete') : t('tenantCopyConfigDialog.recoveryUnknown') }}
+            {{
+              recoveryResult.status === 'COMPLETE'
+                ? t('tenantCopyConfigDialog.recoveryComplete')
+                : t('tenantCopyConfigDialog.recoveryUnknown')
+            }}
           </p>
-          <div v-for="target in recoveryResult.targets" :key="target.ordinal" class="recovery-target">
+          <div
+            v-for="target in recoveryResult.targets"
+            :key="target.ordinal"
+            class="recovery-target"
+          >
             <strong>{{ target.ordinal + 1 }}. {{ target.tenantId }}</strong>
             <el-tag v-if="target.result" :type="target.result.success ? 'success' : 'danger'">
-              {{ target.result.success ? t('tenantCopyConfigDialog.recoverySucceeded') : t('tenantCopyConfigDialog.recoveryFailed') }}
+              {{
+                target.result.success
+                  ? t('tenantCopyConfigDialog.recoverySucceeded')
+                  : t('tenantCopyConfigDialog.recoveryFailed')
+              }}
             </el-tag>
             <el-tag v-else type="warning">{{ t('tenantCopyConfigDialog.recoveryUnknown') }}</el-tag>
             <pre v-if="target.result">{{ JSON.stringify(target.result, null, 2) }}</pre>
@@ -154,7 +235,12 @@
               :label="t('tenantCopyConfigDialog.colTenant')"
               width="130"
               show-overflow-tooltip
-            />
+            >
+              <template #default="{ row }">
+                <CopyableText v-if="row.tenantId" :text="String(row.tenantId)" />
+                <span v-else class="cell-empty">—</span>
+              </template>
+            </el-table-column>
             <el-table-column
               prop="addCount"
               :label="t('tenantCopyConfigDialog.colAdd')"
@@ -202,19 +288,41 @@
                   :label="t('tenantCopyConfigDialog.colTenant')"
                   width="120"
                   show-overflow-tooltip
-                />
+                >
+                  <template #default="{ row }">
+                    <CopyableText v-if="row.tenantId" :text="String(row.tenantId)" />
+                    <span v-else class="cell-empty">—</span>
+                  </template>
+                </el-table-column>
                 <el-table-column
                   prop="configType"
                   :label="t('tenantCopyConfigDialog.colConfigType')"
                   width="150"
                   show-overflow-tooltip
-                />
+                >
+                  <template #default="{ row }">
+                    {{
+                      te(`tenantConfigShared.configTypes.${row.configType}`)
+                        ? t(`tenantConfigShared.configTypes.${row.configType}`)
+                        : row.configType || '—'
+                    }}
+                  </template>
+                </el-table-column>
                 <el-table-column
                   prop="configKey"
                   :label="t('tenantCopyConfigDialog.colConfigKey')"
                   min-width="180"
                   show-overflow-tooltip
-                />
+                >
+                  <template #default="{ row }">
+                    <CopyableText
+                      v-if="row.configKey"
+                      :text="String(row.configKey)"
+                      :copyable="false"
+                    />
+                    <span v-else class="cell-empty">—</span>
+                  </template>
+                </el-table-column>
                 <el-table-column
                   prop="action"
                   :label="t('tenantCopyConfigDialog.colAction')"
@@ -222,7 +330,11 @@
                 >
                   <template #default="{ row }">
                     <el-tag :type="actionTagType(row.action)" size="small" effect="plain">
-                      {{ row.action }}
+                      {{
+                        te(`tenantCopyConfigDialog.actions.${row.action}`)
+                          ? t(`tenantCopyConfigDialog.actions.${row.action}`)
+                          : row.action || '—'
+                      }}
                     </el-tag>
                   </template>
                 </el-table-column>
@@ -231,7 +343,12 @@
                   :label="t('tenantCopyConfigDialog.colReason')"
                   min-width="180"
                   show-overflow-tooltip
-                />
+                >
+                  <template #default="{ row }">
+                    <CopyableText v-if="row.reason" :text="String(row.reason)" :copyable="false" />
+                    <span v-else class="cell-empty">—</span>
+                  </template>
+                </el-table-column>
               </el-table>
             </el-collapse-item>
           </el-collapse>
@@ -251,13 +368,23 @@
             :label="t('tenantCopyConfigDialog.colTenant')"
             width="120"
             show-overflow-tooltip
-          />
+          >
+            <template #default="{ row }">
+              <CopyableText v-if="row.tenantId" :text="String(row.tenantId)" />
+              <span v-else class="cell-empty">—</span>
+            </template>
+          </el-table-column>
           <el-table-column
             prop="jobCode"
             :label="t('tenantCopyConfigDialog.colJobCode')"
             min-width="180"
             show-overflow-tooltip
-          />
+          >
+            <template #default="{ row }">
+              <CopyableText v-if="row.jobCode" :text="String(row.jobCode)" />
+              <span v-else class="cell-empty">—</span>
+            </template>
+          </el-table-column>
           <el-table-column
             prop="exists"
             :label="t('tenantCopyConfigDialog.colExists')"
@@ -294,37 +421,18 @@
             :label="t('tenantCopyConfigDialog.colQueue')"
             width="130"
             show-overflow-tooltip
-          />
+          >
+            <template #default="{ row }">
+              <CopyableText v-if="row.queueCode" :text="String(row.queueCode)" />
+              <span v-else class="cell-empty">—</span>
+            </template>
+          </el-table-column>
         </el-table>
       </el-tab-pane>
     </el-tabs>
     <template #footer>
       <el-button @click="emit('update:modelValue', false)">
         {{ t('tenantConfigShared.cancel') }}
-      </el-button>
-      <el-button
-        plain
-        :loading="previewing === 'copy'"
-        :disabled="busy || !canWriteSystem"
-        @click="runCopyPreview"
-      >
-        {{ t('tenantCopyConfigDialog.btnCopyPreview') }}
-      </el-button>
-      <el-button
-        plain
-        :loading="previewing === 'overlay'"
-        :disabled="busy || !canWriteSystem"
-        @click="runOverlayPreview"
-      >
-        {{ t('tenantCopyConfigDialog.btnOverlayPreview') }}
-      </el-button>
-      <el-button
-        plain
-        :loading="previewing === 'matrix'"
-        :disabled="busy || !canWriteSystem"
-        @click="runMatrix"
-      >
-        {{ t('tenantCopyConfigDialog.btnMatrix') }}
       </el-button>
       <el-button
         plain
@@ -347,6 +455,7 @@
 </template>
 
 <script setup lang="ts">
+  import CopyableText from '@/components/common/CopyableText.vue'
   import { computed, onScopeDispose, reactive, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage, ElMessageBox } from 'element-plus'
@@ -361,7 +470,10 @@
     type TenantConfigMatrixResponse,
   } from '@/api/ops'
   import { assessBatchInitOutcome } from '@/utils/batchInitOutcome'
-  import { getConfigBatchOperation, type ConfigBatchRecoveryResponse } from '@/api/configBatchRecovery'
+  import {
+    getConfigBatchOperation,
+    type ConfigBatchRecoveryResponse,
+  } from '@/api/configBatchRecovery'
   import {
     canReadConfigBatchRecovery,
     clearConfigBatchRecovery,
@@ -377,9 +489,9 @@
   import { usePermission } from '@/composables/usePermission'
   import { useAuthStore } from '@/stores/auth'
   import { useTenantStore } from '@/stores/tenant'
-  import { STORAGE_KEYS } from '@/constants/storageKeys'
+  import { readActiveTenantId } from '@/utils/tenantContext'
 
-  const { t } = useI18n({ useScope: 'global' })
+  const { t, te } = useI18n({ useScope: 'global' })
 
   const props = defineProps<{
     modelValue: boolean
@@ -466,15 +578,27 @@
       },
     ]
   })
+  const diffReasonKeys = new Map([
+    ['missing in target tenant', 'tenantCopyConfigDialog.reasons.missing'],
+    ['same as source tenant', 'tenantCopyConfigDialog.reasons.unchanged'],
+    ['target tenant value differs from source tenant', 'tenantCopyConfigDialog.reasons.different'],
+    [
+      'exists only in target tenant; preview never deletes automatically',
+      'tenantCopyConfigDialog.reasons.deleteCandidate',
+    ],
+  ])
   const diffItems = computed(() =>
     (diffPreview.value?.tenants ?? []).flatMap((tenant) =>
-      (tenant.items ?? []).map((item) => ({
-        tenantId: tenant.tenantId,
-        configType: item.configType,
-        configKey: item.configKey,
-        action: item.action,
-        reason: item.reason,
-      })),
+      (tenant.items ?? []).map((item) => {
+        const reasonKey = item.reason ? diffReasonKeys.get(item.reason) : undefined
+        return {
+          tenantId: tenant.tenantId,
+          configType: item.configType,
+          configKey: item.configKey,
+          action: item.action,
+          reason: reasonKey ? t(reasonKey) : item.reason,
+        }
+      }),
     ),
   )
 
@@ -532,7 +656,7 @@
     },
     { immediate: true, flush: 'sync' },
   )
-  // 租户 store 先更新响应式值再写入 localStorage，等同步切换结束后读取请求身份。
+  // 同步代次先撤销旧结果，刷新回查记录交由下一个响应式批次执行。
   watch(
     [() => props.modelValue, actor, () => tenant.tenantId, canManageSystem],
     refreshRecoveries,
@@ -574,21 +698,31 @@
 
   function headerTenant(): string | null {
     try {
-      return localStorage.getItem(STORAGE_KEYS.tenantId) ?? ''
+      return readActiveTenantId()
     } catch {
       return null
     }
   }
 
   function currentRecovery(command: ConfigBatchRecovery, attempt: number) {
-    return !disposed && props.modelValue && canManageSystem.value && recoveryAttempt === attempt &&
+    return (
+      !disposed &&
+      props.modelValue &&
+      canManageSystem.value &&
+      recoveryAttempt === attempt &&
       headerTenant() === command.headerTenant &&
       canReadConfigBatchRecovery(command, actor.value, tenant.tenantId)
+    )
   }
 
   async function queryRecovery(command: ConfigBatchRecovery) {
-    if (!props.modelValue || !canManageSystem.value || headerTenant() !== command.headerTenant ||
-        !canReadConfigBatchRecovery(command, actor.value, tenant.tenantId)) return
+    if (
+      !props.modelValue ||
+      !canManageSystem.value ||
+      headerTenant() !== command.headerTenant ||
+      !canReadConfigBatchRecovery(command, actor.value, tenant.tenantId)
+    )
+      return
     const attempt = ++recoveryAttempt
     selectedRecovery.value = command
     recoveryResult.value = null
@@ -607,9 +741,14 @@
   }
 
   function clearRecovery(command: ConfigBatchRecovery) {
-    if (!selectedRecovery.value || selectedRecovery.value.key !== command.key ||
-        recoveryResult.value?.status !== 'COMPLETE' || headerTenant() !== command.headerTenant ||
-        !canReadConfigBatchRecovery(command, actor.value, tenant.tenantId)) return
+    if (
+      !selectedRecovery.value ||
+      selectedRecovery.value.key !== command.key ||
+      recoveryResult.value?.status !== 'COMPLETE' ||
+      headerTenant() !== command.headerTenant ||
+      !canReadConfigBatchRecovery(command, actor.value, tenant.tenantId)
+    )
+      return
     if (!clearConfigBatchRecovery(command)) {
       ElMessage.warning(t('tenantCopyConfigDialog.recoveryStorageUnavailable'))
       return
@@ -622,8 +761,12 @@
 
   async function stopTrackingRecovery(command: ConfigBatchRecovery) {
     const attempt = recoveryAttempt
-    if (!currentRecovery(command, attempt) || selectedRecovery.value?.key !== command.key ||
-        !recoveryUnknown.value) return
+    if (
+      !currentRecovery(command, attempt) ||
+      selectedRecovery.value?.key !== command.key ||
+      !recoveryUnknown.value
+    )
+      return
     try {
       await ElMessageBox.confirm(
         t('tenantCopyConfigDialog.recoveryStopConfirm'),
@@ -633,8 +776,12 @@
     } catch {
       return
     }
-    if (!currentRecovery(command, attempt) || selectedRecovery.value?.key !== command.key ||
-        !recoveryUnknown.value) return
+    if (
+      !currentRecovery(command, attempt) ||
+      selectedRecovery.value?.key !== command.key ||
+      !recoveryUnknown.value
+    )
+      return
     if (!clearConfigBatchRecovery(command)) {
       ElMessage.warning(t('tenantCopyConfigDialog.recoveryStorageUnavailable'))
       return
@@ -780,7 +927,9 @@
         refreshRecoveries()
       }
       sent = true
-      const res = command ? await copyTenantConfig(payload, command.key) : await copyTenantConfig(payload)
+      const res = command
+        ? await copyTenantConfig(payload, command.key)
+        : await copyTenantConfig(payload)
       if (!isCurrent() || (command && headerTenant() !== command.headerTenant)) return
       emit('result', res)
       if (!dryRun) {
@@ -818,6 +967,93 @@
 </script>
 
 <style scoped>
+  .copy-intro {
+    margin: 0 0 var(--space-lg);
+    color: var(--el-text-color-secondary);
+    line-height: 1.6;
+  }
+
+  .copy-form {
+    display: grid;
+    gap: var(--space-lg);
+  }
+
+  .copy-section {
+    min-width: 0;
+  }
+
+  .copy-section + .copy-section {
+    padding-top: var(--space-lg);
+    border-top: 1px solid var(--el-border-color-lighter);
+  }
+
+  .copy-section h3 {
+    margin: 0 0 var(--space-md);
+    color: var(--el-text-color-primary);
+    font-size: var(--el-font-size-base);
+    font-weight: 600;
+  }
+
+  .tenant-fields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+    gap: var(--space-lg);
+  }
+
+  .tenant-fields :deep(.el-form-item) {
+    margin-bottom: 0;
+  }
+
+  .copy-section :deep(.el-form-item:last-child) {
+    margin-bottom: 0;
+  }
+
+  .comparison-tools {
+    display: grid;
+    gap: var(--space-sm);
+    margin-top: var(--space-lg);
+  }
+
+  .comparison-tools__label {
+    color: var(--el-text-color-secondary);
+    font-size: var(--el-font-size-base);
+  }
+
+  .comparison-tools__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+  }
+
+  .comparison-tools__actions :deep(.el-button + .el-button) {
+    margin-left: 0;
+  }
+
+  @media (max-width: 600px) {
+    .tenant-fields {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  .config-type-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr));
+    width: 100%;
+    gap: var(--space-xs) var(--space-md);
+  }
+
+  .config-type-grid :deep(.el-checkbox) {
+    height: auto;
+    min-height: 32px;
+    margin-right: 0;
+  }
+
+  .config-type-grid :deep(.el-checkbox__label) {
+    white-space: normal;
+    line-height: 1.4;
+  }
+
   .recovery-panel {
     margin: 12px 0;
     padding: 12px;

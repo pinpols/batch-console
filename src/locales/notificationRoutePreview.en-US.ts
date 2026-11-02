@@ -1,4 +1,11 @@
 export default {
+  eventNames: {
+    JOB_SUCCESS: 'Job succeeded',
+    JOB_FAILED: 'Job failed',
+    WORKFLOW_SUCCESS: 'Workflow succeeded',
+    WORKFLOW_FAILED: 'Workflow failed',
+    ALERT_ESCALATED: 'Alert escalated',
+  },
   hint: 'Preview enabled rules, channels and Webhook subscriptions using the actual event payload fields. Event production, rate limits, deduplication and delivery are unknown; no notification is sent.',
   eventType: 'Event type',
   selectEvent: 'Select a subscribable business event',

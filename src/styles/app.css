@@ -878,11 +878,7 @@ html.dark .data-panel {
  * ListPageQueryBar（.query-form）：与 ProTable #query 槽内布局一致。
  * 治理页等场景未包 ProTable 时，查询/重置/刷新同样靠右、换行间距一致。
  */
-/* 注:.query-form.el-form--inline 的布局(display + 列宽)由 ListPageQueryBar 的 scoped grid
-   接管,这里**不再**写 `display: flex; flex-wrap: wrap`。
-   原 flex-wrap 在某些屏幕宽度下与 scoped grid 同时命中,聚焦输入框时控件宽度微抖 →
-   换行点漂移 → Worker Group 这种末位字段会「回缩」一档。统一用 grid,断点切换才稳。
-   公共字段保留(只重置 form-item 边距,与 scoped 不冲突)。 */
+/* 搜索字段布局由 ListPageQueryBar 负责；此处只保留公共边距。 */
 .query-form.el-form--inline {
   width: 100%;
   min-width: 0;
@@ -896,8 +892,8 @@ html.dark .data-panel {
 
 /**
  * 查询条控件默认宽度（不写 style/class 宽度时生效）
- * - 关键字/普通输入：220px
- * - 下拉/日期：200px（更紧凑）
+ * - 关键字/普通输入：180px
+ * - 下拉/日期：168px（更紧凑）
  *
  * 需要“固定档位宽度”时，优先用 `query-w-###`（替代手写 `style="width: ###px"`），避免 inline style 与全局默认打架。
  */
@@ -1114,6 +1110,23 @@ html.dark .data-panel {
     .el-date-editor--monthrange
   ):not(.el-date-editor--dates) {
   --el-date-editor-width: 300px;
+}
+
+.query-w-320.el-input,
+.query-w-320.el-input-number {
+  --el-input-width: 320px;
+  width: var(--el-input-width);
+}
+
+.query-w-320.el-select {
+  --el-select-width: 320px;
+  width: var(--el-select-width);
+}
+
+.query-w-320.el-date-editor:not(.el-date-editor--daterange):not(.el-date-editor--datetimerange):not(
+    .el-date-editor--monthrange
+  ):not(.el-date-editor--dates) {
+  --el-date-editor-width: 320px;
 }
 
 .query-w-340.el-input,

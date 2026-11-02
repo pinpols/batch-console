@@ -4,47 +4,66 @@
       <div class="m-page__header">
         <div>
           <div class="m-page__title">{{ t('mobile.catchup.title') }}</div>
-          <div class="m-page__subtitle">
+          <div v-if="!loading && (!loadError || rows.length)" class="m-page__subtitle">
             {{ t('mobile.catchup.pendingCount', { n: pendingCount }) }}
           </div>
         </div>
       </div>
 
       <MSkeleton v-if="loading && rows.length === 0" :count="3" />
-      <div v-else-if="rows.length === 0" class="m-empty">{{ t('mobile.catchup.empty') }}</div>
+      <div v-else-if="!loadError && rows.length === 0" class="m-empty">
+        {{ t('mobile.catchup.empty') }}
+      </div>
+      <div v-if="loadError" class="m-load-error" :class="{ 'm-empty': !rows.length }" role="alert">
+        <span>{{ rows.length ? t('mobile.catchup.stale') : t('mobile.common.loadFail') }}</span>
+        <button class="m-btn" type="button" @click="load">{{ t('common.retry') }}</button>
+      </div>
 
       <div v-for="row in rows" :key="row.id" class="m-card">
         <div class="m-card__row">
-          <div class="m-card__title">{{ row.workflowCode }} · {{ row.bizDate }}</div>
-          <span :class="['m-chip', statusChipClass(row.requestStatus)]">
-            {{ resolveEnumLabel('approvalStatus', row.requestStatus) }}
+          <div class="m-card__title m-catchup-title">
+            <span>{{ row.workflowCode }}</span>
+            <span class="m-catchup-title__date">{{ row.bizDate }}</span>
+          </div>
+          <span :class="['m-chip', statusChipClass(row.approvalStatus)]">
+            {{
+              row.approvalStatus
+                ? resolveEnumLabel('approvalStatus', row.approvalStatus)
+                : resolveEnumLabel('triggerRequestStatus', row.requestStatus)
+            }}
           </span>
         </div>
-        <div class="m-card__sub">request: {{ row.requestId }}</div>
+        <div class="m-card__sub">{{ t('mobile.catchup.requestId') }}: {{ row.requestId }}</div>
         <div class="m-card__meta">
           <div>
             <span class="m-card__meta-key">{{ t('mobile.tenants.created') }}</span>
             {{ fmt(row.createdAt) }}
           </div>
-          <div><span class="m-card__meta-key">trace</span>{{ row.traceId }}</div>
+          <div>
+            <span class="m-card__meta-key">{{ t('common.trace') }}</span
+            >{{ row.traceId }}
+          </div>
         </div>
         <div v-if="canOperate && isActionable(row)" class="m-card__actions">
           <button
             class="m-btn m-btn--primary"
-            :disabled="busyKey === row.approvalNo"
-            @click="onApprove(row)"
+            :disabled="writesFrozen || loading || loadError || busyKey !== null"
+            @click="decide(row, 'approve')"
           >
             {{ t('mobile.catchup.approve') }}
           </button>
           <button
             class="m-btn m-btn--danger"
-            :disabled="busyKey === row.approvalNo"
-            @click="onReject(row)"
+            :disabled="writesFrozen || loading || loadError || busyKey !== null"
+            @click="decide(row, 'reject')"
           >
             {{ t('mobile.catchup.reject') }}
           </button>
         </div>
-        <div v-else-if="isPending(row.requestStatus) && !row.approvalNo" class="m-card__notice">
+        <div
+          v-else-if="isPendingRequest(row.requestStatus) && !row.approvalNo"
+          class="m-card__notice"
+        >
           {{ t('mobile.catchup.legacyNoApprovalNo') }}
         </div>
       </div>
@@ -53,10 +72,11 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, ref } from 'vue'
+  import { computed, ref, watch } from 'vue'
   import { useTenantReload } from '@/composables/useTenantReload'
+  import { useTenantRequestScope } from '@/composables/useTenantRequestScope'
+  import { useWriteAvailability } from '@/composables/useWriteAvailability'
   import { useI18n } from 'vue-i18n'
-  import { RefreshCw as Refresh } from '@lucide/vue'
   import { ElMessage } from 'element-plus'
   import { useTenantStore } from '@/stores/tenant'
   import { useAuthStore } from '@/stores/auth'
@@ -71,6 +91,9 @@
   const { t, te } = useI18n({ useScope: 'global' })
   const tenant = useTenantStore()
   const auth = useAuthStore()
+  const { writesFrozen, ensureWriteAvailable } = useWriteAvailability()
+  const listScope = useTenantRequestScope()
+  const actionScope = useTenantRequestScope()
   const busyKey = ref<string | null>(null)
   const canOperate = computed(() => auth.canAccess('OPERATOR'))
 
@@ -82,19 +105,32 @@
     return metaEnums.value?.[group]?.find((o) => o.value === value)?.label ?? value
   }
   const loading = ref(false)
+  const loadError = ref(false)
   const rows = ref<ConsolePendingCatchUpResponse[]>([])
+  watch(
+    () => tenant.tenantId,
+    (tenantId) => {
+      rows.value = []
+      loadError.value = false
+      busyKey.value = null
+      if (!tenantId) loading.value = false
+    },
+    { flush: 'sync' },
+  )
 
-  const pendingCount = computed(() => rows.value.filter((r) => isPending(r.requestStatus)).length)
+  const pendingCount = computed(
+    () => rows.value.filter((r) => r.approvalStatus === 'PENDING').length,
+  )
 
   function fmt(ts?: string | null) {
     return fmtDatetime(ts)
   }
 
-  function isPending(s?: string) {
-    return s === 'PENDING' || s === 'PENDING_APPROVAL'
+  function isPendingRequest(s?: string) {
+    return s === 'ACCEPTED' || s === 'PENDING' || s === 'PENDING_APPROVAL'
   }
 
-  function statusChipClass(s?: string) {
+  function statusChipClass(s?: string | null) {
     switch (s) {
       case 'APPROVED':
       case 'EXECUTED':
@@ -110,16 +146,24 @@
   }
 
   async function load() {
-    loading.value = true
-    try {
-      rows.value = await fetchAllPageItems<ConsolePendingCatchUpResponse>(
-        '/api/console/queries/catch-up-approvals',
-        { tenantId: tenant.tenantId },
-      )
-    } catch {
-      ElMessage.error(t('mobile.common.loadFail'))
-    } finally {
+    const scope = listScope.begin()
+    if (!scope.tenantId) {
+      rows.value = []
       loading.value = false
+      return
+    }
+    loading.value = true
+    loadError.value = false
+    try {
+      const result = await fetchAllPageItems<ConsolePendingCatchUpResponse>(
+        '/api/console/queries/catch-up-approvals',
+        { tenantId: scope.tenantId },
+      )
+      if (listScope.isCurrent(scope)) rows.value = result
+    } catch {
+      if (listScope.isCurrent(scope)) loadError.value = true
+    } finally {
+      if (listScope.isCurrent(scope)) loading.value = false
     }
   }
 
@@ -135,38 +179,78 @@
     return !status || status === 'PENDING'
   }
 
-  async function onApprove(row: ConsolePendingCatchUpResponse) {
-    if (!row.approvalNo) return
-    busyKey.value = row.approvalNo
+  async function decide(row: ConsolePendingCatchUpResponse, decision: 'approve' | 'reject') {
+    if (
+      !row.approvalNo ||
+      busyKey.value ||
+      loading.value ||
+      loadError.value ||
+      !canOperate.value ||
+      !ensureWriteAvailable()
+    )
+      return
+    const scope = actionScope.begin()
+    const operatorId = auth.userInfo?.username
+    const actor = operatorId ?? auth.userInfo?.userId
+    const isCurrent = () =>
+      actionScope.isCurrent(scope) &&
+      canOperate.value &&
+      !writesFrozen.value &&
+      actor === (auth.userInfo?.username ?? auth.userInfo?.userId)
+    const approvalNo = row.approvalNo
+    if (
+      !isCurrent() ||
+      !rows.value.some((item) => item.approvalNo === approvalNo && isActionable(item))
+    )
+      return
+    busyKey.value = approvalNo
     try {
-      await approveOne(row.approvalNo, {
-        tenantId: tenant.tenantId,
-        operatorId: auth.userInfo?.username,
-      })
-      ElMessage.success(t('mobile.catchup.approveSuccess'))
+      const request = { tenantId: scope.tenantId, operatorId }
+      if (decision === 'approve') await approveOne(approvalNo, request)
+      else await rejectOne(approvalNo, request)
+      if (!isCurrent()) return
+      ElMessage.success(
+        t(
+          decision === 'approve' ? 'mobile.catchup.approveSuccess' : 'mobile.catchup.rejectSuccess',
+        ),
+      )
       await load()
     } catch {
-      ElMessage.error(t('mobile.catchup.approveFail'))
+      if (isCurrent())
+        ElMessage.error(
+          t(decision === 'approve' ? 'mobile.catchup.approveFail' : 'mobile.catchup.rejectFail'),
+        )
     } finally {
-      busyKey.value = null
+      if (actionScope.isCurrent(scope)) busyKey.value = null
     }
   }
 
-  async function onReject(row: ConsolePendingCatchUpResponse) {
-    if (!row.approvalNo) return
-    busyKey.value = row.approvalNo
-    try {
-      await rejectOne(row.approvalNo, {
-        tenantId: tenant.tenantId,
-        operatorId: auth.userInfo?.username,
-      })
-      ElMessage.success(t('mobile.catchup.rejectSuccess'))
-      await load()
-    } catch {
-      ElMessage.error(t('mobile.catchup.rejectFail'))
-    } finally {
-      busyKey.value = null
-    }
-  }
   useTenantReload(load)
 </script>
+
+<style scoped>
+  .m-load-error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 12px;
+    color: var(--ios-label-secondary);
+  }
+
+  .m-load-error .m-btn {
+    flex: none;
+  }
+
+  .m-catchup-title {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 6px;
+  }
+
+  .m-catchup-title__date {
+    white-space: nowrap;
+  }
+</style>

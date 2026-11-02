@@ -30,6 +30,28 @@ beforeEach(() => {
   mocks.summary.mockReset().mockResolvedValue({})
 })
 describe('文件列表今日到达筛选', () => {
+  it('按 Trace 查询时保留在文件列表并将完整 Trace 传给查询', async () => {
+    const wrapper = shallowMount(FileList, {
+      global: {
+        stubs: {
+          PageContainer: { template: '<div><slot /></div>' },
+          SectionCard: { template: '<div><slot /></div>' },
+          ProTable: { template: '<div><slot name="query" /></div>' },
+          ListPageQueryBar: { name: 'ListPageQueryBar', template: '<div><slot /></div>' },
+          ElFormItem: { template: '<div><slot /></div>' },
+        },
+      },
+    })
+    await flushPromises()
+    const trace = wrapper.findComponent({ name: 'TraceIdInput' })
+    expect(trace.props('goTo')).toBe(false)
+    const fullTrace = 'trace-1234567890-业务-abcdefghijk'
+    trace.vm.$emit('update:modelValue', fullTrace)
+    wrapper.findComponent({ name: 'ListPageQueryBar' }).vm.$emit('search')
+    await flushPromises()
+    expect(mocks.list).toHaveBeenLastCalledWith(expect.objectContaining({ traceId: fullTrace }))
+  })
+
   it('点击今日到达后使用到达日，再次点击恢复业务日期范围', async () => {
     const wrapper = shallowMount(FileList, {
       global: {

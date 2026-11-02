@@ -337,7 +337,7 @@
   }
 
   .diff-page__version-select {
-    width: min(260px, 28vw);
+    width: min(260px, 100%);
   }
   .diff-page__notice {
     font-size: 12px;
@@ -345,6 +345,7 @@
   }
   .diff-page__summary {
     display: flex;
+    flex-wrap: wrap;
     gap: 16px;
     font-size: 13px;
   }
@@ -367,11 +368,12 @@
   }
   .diff-page__canvases {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 16px;
     min-height: 320px;
   }
   .diff-canvas {
+    min-width: 0;
     border: 1px solid var(--color-border);
     border-radius: 4px;
     padding: 12px;
@@ -386,6 +388,8 @@
   .diff-canvas__nodes {
     display: flex;
     flex-wrap: wrap;
+    align-content: flex-start;
+    align-items: flex-start;
     gap: 8px;
     min-height: 200px;
   }
@@ -402,6 +406,7 @@
     padding: 6px 10px;
     background: var(--color-bg-base, #fafafa);
     min-width: 100px;
+    max-width: 100%;
   }
   .diff-node__type {
     font-size: 10px;
@@ -409,6 +414,7 @@
     color: var(--color-text-secondary, #909399);
   }
   .diff-node__code {
+    overflow-wrap: anywhere;
     font-size: 12px;
     font-weight: 500;
     color: var(--color-text-primary, #303133);
@@ -432,6 +438,7 @@
   .diff-table {
     width: 100%;
     border-collapse: collapse;
+    table-layout: fixed;
     font-size: 13px;
   }
   .diff-table th,
@@ -439,6 +446,10 @@
     border: 1px solid var(--color-border-light, #ebeef5);
     padding: 6px 10px;
     text-align: left;
+    overflow-wrap: anywhere;
+  }
+  .diff-table th:first-child {
+    width: 40%;
   }
   .diff-table__code {
     font-family: monospace;
@@ -459,6 +470,18 @@
   .diff-badge--modified {
     background: var(--el-color-warning-light-9);
     color: var(--el-color-warning-dark-2);
+  }
+  @media (max-width: 720px) {
+    .diff-page__version-select {
+      flex: 1 1 140px;
+    }
+    .diff-page__canvases {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .diff-table th,
+    .diff-table td {
+      padding: 6px 5px;
+    }
   }
   .diff-badge--unchanged {
     background: var(--color-bg-base, #fafafa);

@@ -9,7 +9,12 @@
       </div>
 
       <div v-if="loading && !mermaidText" class="m-loading">{{ t('mobile.common.loading') }}</div>
-      <div v-else-if="errorMessage" class="m-empty">{{ errorMessage }}</div>
+      <div v-else-if="errorMessage" class="m-empty m-load-error" role="alert">
+        <span>{{ errorMessage }}</span>
+        <button v-if="validId" class="m-btn" type="button" @click="load">
+          {{ t('common.retry') }}
+        </button>
+      </div>
 
       <template v-else>
         <!-- 概要卡 -->
@@ -23,7 +28,7 @@
           <div class="m-card__meta">
             <div>
               <span class="m-card__meta-key">{{ t('mobile.workflowViewer.fldType') }}</span>
-              {{ detail.workflowType || '?' }}
+              {{ enumLabel('workflowType', detail.workflowType) }}
             </div>
           </div>
         </div>
@@ -50,7 +55,7 @@
             </div>
             <div class="m-sheet__row">
               <span class="m-sheet__key">{{ t('mobile.workflowViewer.fldNodeType') }}</span>
-              <span>{{ selectedNodeMeta.nodeType || '?' }}</span>
+              <span>{{ enumLabel('workflowNodeType', selectedNodeMeta.nodeType) }}</span>
             </div>
             <div v-if="selectedNodeMeta.relatedJobCode" class="m-sheet__row">
               <span class="m-sheet__key">{{ t('mobile.workflowViewer.fldRelatedJob') }}</span>
@@ -96,11 +101,18 @@
 
   const route = useRoute()
   const tenant = useTenantStore()
-  const { t } = useI18n({ useScope: 'global' })
+  const { t, te } = useI18n({ useScope: 'global' })
+
+  function enumLabel(group: string, value?: string | null) {
+    if (!value) return '?'
+    const key = `enum.${group}.${value}`
+    return te(key) ? t(key) : value
+  }
   // useSmartBack 返回 () => void(非 { goBack }),直接当函数赋名
   const goBack = useSmartBack('/m/ops/summary')
 
   const id = computed(() => Number(route.params.id))
+  const validId = computed(() => Number.isSafeInteger(id.value) && id.value > 0)
   const detail = ref<WorkflowDefinitionDetailResponse | null>(null)
   const mermaidText = ref('')
   const graphRef = ref<HTMLDivElement | null>(null)
@@ -126,9 +138,10 @@
     const revision = loadRevision
     const tenantId = tenant.tenantId
     const workflowId = id.value
-    const isCurrent = () => revision === loadRevision && tenantId === tenant.tenantId && workflowId === id.value
+    const isCurrent = () =>
+      revision === loadRevision && tenantId === tenant.tenantId && workflowId === id.value
     if (!tenantId) return
-    if (!Number.isSafeInteger(workflowId) || workflowId <= 0) {
+    if (!validId.value) {
       errorMessage.value = t('mobile.workflowViewer.invalidId')
       return
     }
@@ -210,7 +223,8 @@
       setTrustedMermaidSvg(graphRef.value, svg)
       return renderId
     } catch (err: unknown) {
-      if (isCurrent()) errorMessage.value = t('mobile.workflowViewer.renderFailPrefix') + userErrorMessage(err)
+      if (isCurrent())
+        errorMessage.value = t('mobile.workflowViewer.renderFailPrefix') + userErrorMessage(err)
     }
   }
 
@@ -219,6 +233,12 @@
 </script>
 
 <style scoped>
+  .m-load-error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
   .m-card--graph {
     /* graph 区可能很宽 */
     padding-right: 0;
@@ -233,6 +253,32 @@
   .m-graph :deep(svg) {
     max-width: none;
     height: auto;
+  }
+  /* SVG 净化会移除 Mermaid 内联样式，使用应用样式恢复节点和连线。 */
+  .m-graph :deep(.node rect),
+  .m-graph :deep(.node polygon),
+  .m-graph :deep(.node path) {
+    fill: var(--el-fill-color-light);
+    stroke: var(--el-border-color);
+  }
+  .m-graph :deep(.node text),
+  .m-graph :deep(.edgeLabel text) {
+    fill: var(--color-text-primary);
+    text-anchor: middle;
+  }
+  .m-graph :deep(path.flowchart-link) {
+    fill: none;
+    stroke: var(--color-text-secondary);
+  }
+  .m-graph :deep(path.flowchart-link.edge-pattern-dotted) {
+    stroke-dasharray: 2px;
+  }
+  .m-graph :deep(marker path) {
+    fill: var(--color-text-secondary);
+    stroke: var(--color-text-secondary);
+  }
+  .m-graph :deep(.edgeLabel rect) {
+    fill: var(--el-bg-color);
   }
   .m-legend {
     display: flex;
@@ -343,15 +389,22 @@
   .m-sheet__row {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
+    gap: 12px;
     padding: 8px 0;
     border-bottom: 1px solid var(--color-border-light);
     font-size: 13px;
+  }
+  .m-sheet__row > :last-child {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    text-align: right;
   }
   .m-sheet__row:last-of-type {
     border-bottom: none;
   }
   .m-sheet__key {
+    flex: none;
     color: var(--color-text-secondary);
   }
   .m-sheet__close {

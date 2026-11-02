@@ -8,6 +8,9 @@ import { getClusterDiagnostic, getWorkerConsistency } from '@/api/clusterDiagnos
 import { getKafkaLag, getOutboxStats, republishOutbox } from '@/api/ops'
 import { useTenantStore } from '@/stores/tenant'
 import zhCN from '@/locales/zh-CN'
+import enUS from '@/locales/en-US'
+import * as dangerConfirm from '@/composables/useDangerConfirm'
+import { requestForensicExport } from '@/api/forensic'
 import OpsDiagnostic from './OpsDiagnostic.vue'
 
 vi.mock('@/stores/tenant', async () => {
@@ -53,10 +56,10 @@ vi.mock('@/api/forensic', () => ({
 enableAutoUnmount(afterEach)
 const slotStub = { template: '<div><slot name="actions" /><slot /></div>' }
 
-function renderPage() {
+function renderPage(locale: 'zh-CN' | 'en-US' = 'zh-CN') {
   return mount(OpsDiagnostic, {
     global: {
-      plugins: [createI18n({ legacy: false, locale: 'zh-CN', messages: { 'zh-CN': zhCN } })],
+      plugins: [createI18n({ legacy: false, locale, messages: { 'zh-CN': zhCN, 'en-US': enUS } })],
       directives: { 'track-click': () => {} },
       stubs: {
         PageContainer: slotStub,
@@ -77,6 +80,26 @@ function renderPage() {
     },
   })
 }
+
+describe('取证导出状态', () => {
+  it.each([
+    ['zh-CN', 'COMPLETED', '已完成'],
+    ['en-US', 'COMPLETED', 'Completed'],
+    ['zh-CN', 'FUTURE_STATE', 'FUTURE_STATE'],
+  ] as const)('以 %s 展示 %s 状态', async (locale, status, label) => {
+    const confirm = vi.spyOn(dangerConfirm, 'confirmDanger').mockResolvedValueOnce(undefined)
+    vi.mocked(requestForensicExport).mockResolvedValueOnce({ exportId: 'test-export', status })
+    try {
+      const wrapper = renderPage(locale)
+      await flushPromises()
+      await wrapper.get('.forensic-export__actions button').trigger('click')
+      await flushPromises()
+      expect(wrapper.get('.forensic-export__result').text()).toContain(label)
+    } finally {
+      confirm.mockRestore()
+    }
+  })
+})
 
 describe('运维诊断结果', () => {
   it.each([

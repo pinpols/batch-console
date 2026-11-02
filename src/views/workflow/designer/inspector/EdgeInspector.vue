@@ -5,6 +5,7 @@
   import { useDesignerStore } from '../store/useDesignerStore'
   import type { DesignerEdge } from '../types'
   import { usesConditionTemplateWrapper } from '../validators/dagValidators'
+  import { useInspectorTextDraft } from './useInspectorTextDraft'
 
   const props = defineProps<{ edge: DesignerEdge; readonly: boolean }>()
   const emit = defineEmits<{ (event: 'topology-changed'): void }>()
@@ -33,6 +34,17 @@
   }
 
   const local = ref<EdgeAttrs>(readAttrs(props.edge))
+  const {
+    value: localCondition,
+    update: updateCondition,
+    captureInput: captureCondition,
+    isCurrent,
+  } = useInspectorTextDraft(
+    'edgeCondition',
+    () => props.edge.id,
+    () => props.edge.label ?? '',
+    () => props.readonly,
+  )
 
   function endpointLabel(nodeId: string): string {
     const node = store.nodes.find((item) => item.id === nodeId)
@@ -44,13 +56,16 @@
   const targetOptions = computed(() => store.nodes.filter((node) => node.nodeType !== 'START'))
   const conditionError = computed(() => {
     if (local.value.edgeType !== 'CONDITION') return ''
-    if (!local.value.conditionExpr.trim()) {
+    if (!localCondition.value.trim()) {
       return t('workflowDesignerMvp.validation.conditionExprRequired', {
         source: props.edge.source,
         target: props.edge.target,
       })
     }
-    if (usesConditionTemplateWrapper(local.value.conditionExpr)) {
+    if (Array.from(localCondition.value).length > 1024) {
+      return t('workflowDesignerMvp.validation.conditionExprTooLong')
+    }
+    if (usesConditionTemplateWrapper(localCondition.value)) {
       return t('workflowDesignerMvp.validation.conditionExprTemplateWrapper')
     }
     return ''
@@ -66,36 +81,55 @@
     },
   )
 
-  function commit() {
-    if (props.readonly) return
+  function hasDraft() {
     const current = readAttrs(props.edge)
-    const edgeAttributesAreUnchanged =
-      current.edgeType === local.value.edgeType &&
-      current.conditionExpr === local.value.conditionExpr &&
-      current.enabled === local.value.enabled
-    if (edgeAttributesAreUnchanged) {
+    const expressionChanged = !!store.getInspectorDraft('edgeCondition', props.edge.id)
+    return (
+      current.edgeType !== local.value.edgeType ||
+      expressionChanged ||
+      current.enabled !== local.value.enabled
+    )
+  }
+
+  function commit() {
+    if (!isCurrent() || props.readonly || !store.editable || !hasDraft()) return
+    if (!store.applyInspectorDrafts(props.edge.id)) {
+      local.value = readAttrs(props.edge)
+      ElMessage.warning(t('workflowDesignerMvp.drafts.resolveBeforeSave'))
       return
     }
+    const current = readAttrs(props.edge)
+    if (current.edgeType === local.value.edgeType && current.enabled === local.value.enabled) return
     store.updateEdge(props.edge.id, {
-      label: local.value.conditionExpr.trim() || undefined,
+      label: localCondition.value.trim() || undefined,
       attrs: {
         edgeType: local.value.edgeType,
         enabled: local.value.enabled,
       },
     })
   }
+  defineExpose({ hasDraft, flushDraft: commit, getDraftState: () => local.value })
 
   function onEdgeTypeChange(value: EdgeType) {
+    if (!isCurrent() || props.readonly || !store.editable) return
+    if (
+      store.getInspectorDraft('edgeCondition', props.edge.id) &&
+      !store.applyInspectorDrafts(props.edge.id)
+    ) {
+      local.value = readAttrs(props.edge)
+      ElMessage.warning(t('workflowDesignerMvp.drafts.resolveBeforeSave'))
+      return
+    }
     local.value.edgeType = value
     if (value !== 'CONDITION') {
-      local.value.conditionExpr = ''
+      updateCondition('')
     }
     commit()
   }
 
   function rewire(endpoint: 'source' | 'target', rawNodeId: unknown) {
     const nodeId = String(rawNodeId)
-    if (props.readonly) return
+    if (!isCurrent() || props.readonly || !store.editable) return
     const source = endpoint === 'source' ? nodeId : props.edge.source
     const target = endpoint === 'target' ? nodeId : props.edge.target
     const result = store.rewireDependency(props.edge.id, source, target)
@@ -108,7 +142,7 @@
   }
 
   function deleteDependency() {
-    if (props.readonly) return
+    if (!isCurrent() || props.readonly || !store.editable) return
     store.deleteEdge(props.edge.id)
     store.setSelection([])
     ElMessage.success(t('workflowDesignerMvp.dependency.deleted'))
@@ -166,13 +200,15 @@
       :label="t('workflowDesignerMvp.field.conditionExpr')"
       :error="conditionError"
       required
+      @input.capture="captureCondition"
     >
       <el-input
-        v-model="local.conditionExpr"
+        :model-value="localCondition"
         type="textarea"
         :rows="3"
         :readonly="props.readonly"
         :placeholder="t('workflowDesignerMvp.field.conditionExprPlaceholder')"
+        @update:model-value="updateCondition"
         @blur="commit"
       />
       <div class="edge-inspector__hint">
@@ -198,6 +234,13 @@
 </template>
 
 <style scoped>
+  .edge-inspector :deep(.el-form-item__error) {
+    position: static;
+    width: 100%;
+    overflow-wrap: anywhere;
+    line-height: 1.4;
+  }
+
   .edge-inspector__hint {
     width: 100%;
     margin-top: 6px;

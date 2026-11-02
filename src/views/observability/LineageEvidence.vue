@@ -30,7 +30,6 @@
               class="query-w-320"
               clearable
               :placeholder="t('lineageEvidence.businessKeyPlaceholder')"
-              @keyup.enter="loadEvidence"
             />
           </el-form-item>
           <el-form-item v-else :label="t('lineageEvidence.resultVersionIdLabel')">
@@ -40,8 +39,9 @@
 
         <div v-if="evidence" class="evidence-grid">
           <MetricCard
+            class="evidence-scope"
             :label="t('lineageEvidence.metricScope')"
-            :value="evidence.coverage?.scope || '—'"
+            :value="coverageScopeLabel(evidence.coverage?.scope)"
             :description="t('lineageEvidence.metricScopeDesc')"
           />
           <MetricCard
@@ -188,7 +188,9 @@
           >
             <template #title>{{ t('lineageEvidence.coverageGaps') }}</template>
             <ul>
-              <li v-for="gap in evidence.coverage.knownGaps" :key="gap">{{ gap }}</li>
+              <li v-for="gap in evidence.coverage.knownGaps" :key="gap">
+                {{ coverageGapLabel(gap) }}
+              </li>
             </ul>
           </el-alert>
         </section>
@@ -237,7 +239,6 @@
               class="query-w-260"
               clearable
               :placeholder="t('lineageEvidence.jobCodePlaceholder')"
-              @keyup.enter="loadReadiness"
             />
           </el-form-item>
           <el-form-item :label="t('lineageEvidence.bizDateLabel')">
@@ -314,12 +315,36 @@
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import MetricCard from '@/components/common/MetricCard.vue'
+  import CopyableText from '@/components/common/CopyableText.vue'
   import JsonPreview from '@/components/common/JsonPreview.vue'
   import LineageRelationExplorer from './LineageRelationExplorer.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import { todayBusinessDate } from '@/utils/datetime'
 
   const { t } = useI18n({ useScope: 'global' })
+  const coverageScopes: Record<string, string> = {
+    BFS_HOT_TABLES: 'lineageEvidence.scopeHot',
+    BFS_HOT_AND_ARCHIVE: 'lineageEvidence.scopeHotAndArchive',
+  }
+  const coverageGaps: Record<string, string> = {
+    'job_instance not found in hot or archive tables': 'lineageEvidence.gapJobMissing',
+    'payload_ref file_record not found in hot or archive tables':
+      'lineageEvidence.gapPayloadMissing',
+    'no related file_record found in hot or archive tables': 'lineageEvidence.gapFileMissing',
+    'no dispatch receipt found in hot or archive tables': 'lineageEvidence.gapDispatchMissing',
+  }
+
+  function coverageScopeLabel(scope?: string | null): string {
+    if (!scope) return '—'
+    const key = coverageScopes[scope]
+    return key ? t(key) : scope
+  }
+
+  function coverageGapLabel(gap: string): string {
+    const key = coverageGaps[gap]
+    return key ? t(key) : gap
+  }
+
   const tenant = useTenantStore()
   const evidenceScope = useTenantRequestScope()
   const readinessScope = useTenantRequestScope()
@@ -450,6 +475,16 @@
     return String(value)
   }
 
+  // 只为已确认的业务标识提供完整查看，动态元数据与存储字段保留原有展示边界。
+  const inspectableEvidenceFields = new Set([
+    'job_code',
+    'file_code',
+    'file_name',
+    'biz_type',
+    'channel_code',
+    'trace_id',
+  ])
+
   const GenericRowsTable = defineComponent({
     name: 'GenericRowsTable',
     props: {
@@ -485,11 +520,20 @@
                   key,
                   label: key,
                   minWidth: 160,
-                  showOverflowTooltip: true,
+                  showOverflowTooltip: !inspectableEvidenceFields.has(key),
                 },
                 {
-                  default: ({ row }: { row: Record<string, unknown> }) =>
-                    formatGenericCell(row[key]),
+                  default: ({ row }: { row: Record<string, unknown> }) => {
+                    const value = row[key]
+                    if (
+                      inspectableEvidenceFields.has(key) &&
+                      typeof value === 'string' &&
+                      value !== ''
+                    ) {
+                      return h(CopyableText, { text: value, copyable: false })
+                    }
+                    return formatGenericCell(value)
+                  },
                 },
               ),
             ),
@@ -504,6 +548,13 @@
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: var(--space-md);
     margin-top: var(--page-block-gap);
+  }
+
+  .evidence-scope :deep(.metric-card__value) {
+    font-family: inherit;
+    font-size: var(--font-size-lg);
+    line-height: 1.4;
+    overflow-wrap: anywhere;
   }
 
   .lineage-section {

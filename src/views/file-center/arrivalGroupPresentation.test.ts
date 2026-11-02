@@ -24,23 +24,29 @@ function group(
 }
 
 describe('summarizeArrivalGroups', () => {
-  it('summarizes group states and file-level progress', () => {
+  it('按租户和组编码统计组，并按实际记录状态汇总文件数', () => {
     expect(
       summarizeArrivalGroups([
-        group({ arrivalState: 'COMPLETE', arrivedCount: 4 }),
-        group({ arrivalState: 'PARTIAL', arrivedCount: 2, waitingCount: 2 }),
-        group({ arrivalState: 'TIMEOUT', timeoutCount: 1 }),
+        group({ arrivalState: 'WAITING_ARRIVAL', arrivedCount: 2, waitingCount: 2 }),
+        group({ arrivalState: 'TRIGGERED', arrivedCount: 1, triggeredCount: 1 }),
+        group({ fileGroupCode: 'g2', arrivalState: 'TIMEOUT', arrivedCount: 1, timeoutCount: 1 }),
+        group({
+          tenantId: 'tb',
+          arrivalState: 'WAITING_ARRIVAL',
+          arrivedCount: 1,
+          waitingCount: 1,
+        }),
+        group({ fileGroupCode: 'g3', arrivalState: 'UNKNOWN', arrivedCount: 1 }),
       ]),
     ).toEqual({
-      totalGroups: 3,
+      totalGroups: 4,
       readyGroups: 1,
-      waitingGroups: 1,
+      waitingGroups: 2,
       timeoutGroups: 1,
       arrivedFiles: 6,
-      waitingFiles: 2,
+      waitingFiles: 3,
       timeoutFiles: 1,
-      triggeredFiles: 0,
-      progress: 67,
+      triggeredFiles: 1,
     })
   })
 })

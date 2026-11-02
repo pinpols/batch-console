@@ -1,4 +1,6 @@
 <script setup lang="ts">
+  import { rules as formRules } from '@/composables/useFormValidate'
+  import CopyableText from '@/components/common/CopyableText.vue'
   /**
    * Workflow DAG 设计器顶层容器(MVP 阶段)。
    *
@@ -36,6 +38,7 @@
   import { workflowDesignerApi } from '@/api/workflowDesigner'
   import { workflowApi } from '@/api/workflow'
   import { useLockManager } from '@/composables/useLockManager'
+  import { useTenantChangeGuard } from '@/composables/useTenantChangeGuard'
   import { logRoute } from '@/utils/logger'
   import { userErrorMessage } from '@/utils/userErrorMessage'
   import DagCanvas from './canvas/DagCanvas.vue'
@@ -59,9 +62,12 @@
 
   const store = useDesignerStore()
   const canvasRef = ref<InstanceType<typeof DagCanvas> | null>(null)
+  const jsonPanelRef = ref<InstanceType<typeof JsonSyncPanel> | null>(null)
+  const inspectorRef = ref<InstanceType<typeof NodeInspector> | null>(null)
   const mermaidDialogVisible = ref(false)
   const mermaidText = ref('')
   const errorDrawerVisible = ref(false)
+  const composing = ref(false)
   const saving = ref(false)
   const loading = ref(false)
 
@@ -78,9 +84,34 @@
     },
   })
 
+  function hasUnsavedChanges() {
+    return (
+      composing.value ||
+      store.dirty ||
+      store.inspectorDrafts.length > 0 ||
+      !!jsonPanelRef.value?.hasDraft?.() ||
+      !!inspectorRef.value?.hasDraft?.()
+    )
+  }
+  function getOverwriteState() {
+    return JSON.stringify([
+      hasUnsavedChanges(),
+      store.snapshot,
+      store.inspectorDrafts,
+      jsonPanelRef.value?.getDraftState?.(),
+    ])
+  }
+  useTenantChangeGuard(hasUnsavedChanges, () => [
+    composing.value,
+    store.snapshot,
+    store.inspectorDrafts,
+    inspectorRef.value?.getDraftState?.(),
+    jsonPanelRef.value?.getDraftState?.(),
+  ])
+
   /** 路由离开会销毁当前画布；用户取消时保留草稿、编辑锁和续租。 */
   async function confirmCanvasDiscard(): Promise<boolean> {
-    if (!store.dirty) return true
+    if (!hasUnsavedChanges()) return true
     try {
       await ElMessageBox.confirm(t('dirtyForm.confirmMessage'), t('dirtyForm.confirmTitle'), {
         type: 'warning',
@@ -274,6 +305,7 @@
       }
       return
     }
+    jsonPanelRef.value?.discardDraft?.()
     store.reset({ nodes: [], edges: [] })
     store.setLock(null)
     store.setMeta({
@@ -396,12 +428,31 @@
 
   // useLockManager 在作用域销毁时释放锁；只有路由确认通过后才会销毁当前画布。
 
+  let compositionGeneration = 0
+  function onCompositionStart() {
+    compositionGeneration += 1
+    composing.value = true
+  }
+  function onCompositionEnd() {
+    const generation = compositionGeneration
+    // Element Plus 在组合结束后的 nextTick 才同步输入值。
+    void nextTick()
+      .then(() => nextTick())
+      .then(() => {
+        if (generation === compositionGeneration) composing.value = false
+      })
+  }
+
   onMounted(() => {
     window.addEventListener('keydown', onGlobalKeyDown)
+    window.addEventListener('compositionstart', onCompositionStart, true)
+    window.addEventListener('compositionend', onCompositionEnd, true)
   })
   onBeforeUnmount(() => {
     loadGeneration += 1
     window.removeEventListener('keydown', onGlobalKeyDown)
+    window.removeEventListener('compositionstart', onCompositionStart, true)
+    window.removeEventListener('compositionend', onCompositionEnd, true)
   })
 
   function onAutoLayout() {
@@ -446,6 +497,10 @@
     }
     if (key === 's') {
       ev.preventDefault()
+      if (ev.isComposing) {
+        ElMessage.warning(t('workflowDesignerMvp.finishComposition'))
+        return
+      }
       void onSave()
       return
     }
@@ -516,6 +571,18 @@
     return JSON.parse(snapshotJson) as DesignerSnapshot
   }
 
+  function validateWorkflowCode(value: string): true | string {
+    const code = value.trim()
+    if (code.length > 128) return t('form.maxLength', { max: 128 })
+    const pattern = formRules.code().pattern
+    if (!(pattern instanceof RegExp) || !pattern.test(code)) return t('form.codePattern')
+    return true
+  }
+
+  function validateWorkflowName(value: string): true | string {
+    return value.trim().length <= 256 ? true : t('form.maxLength', { max: 256 })
+  }
+
   async function createNewWorkflow(generation: number): Promise<boolean> {
     let workflowCode = store.meta.workflowCode
     let workflowName = store.meta.workflowName
@@ -528,8 +595,7 @@
             confirmButtonText: t('common.ok'),
             cancelButtonText: t('common.cancel'),
             inputValue: workflowCode,
-            inputPattern: /^[A-Za-z0-9_-]+$/,
-            inputErrorMessage: t('workflowDesignerMvp.create.codeInvalid'),
+            inputValidator: validateWorkflowCode,
           },
         )
         workflowCode = codeRes.value.trim()
@@ -540,6 +606,7 @@
             confirmButtonText: t('common.ok'),
             cancelButtonText: t('common.cancel'),
             inputValue: workflowName || workflowCode,
+            inputValidator: validateWorkflowName,
           },
         )
         workflowName = nameRes.value.trim() || workflowCode
@@ -548,6 +615,14 @@
       }
     }
     if (generation !== loadGeneration) return false
+    workflowCode = workflowCode.trim()
+    workflowName = workflowName.trim() || workflowCode
+    const codeError = validateWorkflowCode(workflowCode)
+    const nameError = validateWorkflowName(workflowName)
+    if (codeError !== true || nameError !== true) {
+      ElMessage.warning(codeError !== true ? codeError : (nameError as string))
+      return false
+    }
     const savedSnapshot = captureSaveSnapshot()
     const def = graphToDefinition(savedSnapshot)
     const body = {
@@ -572,9 +647,26 @@
 
   async function onSave() {
     if (loading.value || saving.value) return
+    if (composing.value) {
+      ElMessage.warning(t('workflowDesignerMvp.finishComposition'))
+      return
+    }
     const generation = loadGeneration
     if (!store.editable) {
       ElMessage.warning(t('workflowDesignerMvp.lock.cannotSaveReadonly'))
+      return
+    }
+    inspectorRef.value?.flushDraft?.()
+    if (!store.applyInspectorDrafts()) {
+      inspectorExpanded.value = true
+      paletteCollapsed.value = true
+      focusMode.value = false
+      ElMessage.warning(t('workflowDesignerMvp.drafts.resolveBeforeSave'))
+      return
+    }
+    if (jsonPanelRef.value?.flushDraft && !jsonPanelRef.value.flushDraft()) {
+      jsonPanelCollapsed.value = false
+      ElMessage.warning(t('workflowDesignerJson.finishDraft'))
       return
     }
     if (!runValidation()) {
@@ -699,7 +791,9 @@
       {{ t('workflowDesignerMvp.errorBanner', { count: errorCount }) }}
     </div>
     <JsonSyncPanel
-      v-if="!jsonPanelCollapsed"
+      :key="store.inspectorScope"
+      v-show="!jsonPanelCollapsed"
+      ref="jsonPanelRef"
       v-model:collapsed="jsonPanelCollapsed"
       :readonly="!store.editable"
     />
@@ -720,6 +814,12 @@
       <section class="workflow-designer__canvas-shell">
         <div class="workflow-designer__canvas-status">
           <span>{{ store.meta.workflowCode || t('workflowDesignerMvp.untitledWorkflow') }}</span>
+          <CopyableText
+            v-if="store.meta.workflowCode"
+            :text="store.meta.workflowCode"
+            icon-only
+            :copyable="false"
+          />
           <el-tag size="small" effect="plain">
             {{
               t('workflowDesignerMvp.graphStats', {
@@ -763,6 +863,8 @@
       </section>
       <NodeInspector
         v-if="inspectorVisible"
+        :key="store.inspectorScope"
+        ref="inspectorRef"
         @close="inspectorExpanded = false"
         @topology-changed="onTopologyChanged"
       />
@@ -799,7 +901,11 @@
       :layout-direction="layoutDirection"
       @created="onQuickPaletteCreated"
     />
-    <TemplateLibrary v-model:visible="templateLibraryVisible" />
+    <TemplateLibrary
+      v-model:visible="templateLibraryVisible"
+      :has-unsaved-changes="hasUnsavedChanges"
+      :get-overwrite-state="getOverwriteState"
+    />
 
     <el-dialog
       v-model="mermaidDialogVisible"

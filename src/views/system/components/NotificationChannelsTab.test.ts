@@ -32,7 +32,7 @@ vi.mock('@/composables/useFormValidate', async () => {
 vi.mock('@/composables/useDirtyForm', () => ({
   useDirtyForm: () => ({ confirmDiscard: vi.fn(async () => true), markPristine: vi.fn() }),
 }))
-vi.mock('@/composables/useFormFocus', () => ({ useFormFocus: vi.fn() }))
+vi.mock('@/composables/useFormFocus', () => ({ useFormFocus: () => ({ focusFirst: vi.fn() }) }))
 vi.mock('@/composables/useDangerConfirm', () => ({ confirmDanger: state.confirmDanger }))
 vi.mock('@/composables/useListLoadState', async () => {
   const { ref } = await import('vue')
@@ -71,7 +71,8 @@ vi.mock('element-plus', async () => {
 const stubs = {
   ProTable: {
     props: ['data'],
-    template: '<section><pre data-testid="channels">{{ JSON.stringify(data) }}</pre><slot /></section>',
+    template:
+      '<section><pre data-testid="channels">{{ JSON.stringify(data) }}</pre><slot /></section>',
   },
   EmptyState: true,
   ListPageQueryBar: true,
@@ -80,7 +81,8 @@ const stubs = {
   DatetimeColumn: true,
   RowActions: {
     props: ['actions'],
-    template: '<div><button v-for="action in actions" :key="action.key" @click="action.onClick()">{{ action.key }}</button></div>',
+    template:
+      '<div><button v-for="action in actions" :key="action.key" @click="action.onClick()">{{ action.key }}</button></div>',
   },
   ElTableColumn: {
     setup: () => ({ row: state.channelRow ?? {} }),
@@ -118,13 +120,20 @@ describe('notification channel tenant scope', () => {
 
   it('does not submit an A form when the tenant changes while validation is pending', async () => {
     let resolveValidation!: (isValid: boolean) => void
-    state.validate.mockReturnValueOnce(new Promise((resolve) => { resolveValidation = resolve }))
+    state.validate.mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveValidation = resolve
+      }),
+    )
     const wrapper = mount(NotificationChannelsTab, { global: { stubs } })
     await flushPromises()
     ;(wrapper.vm as unknown as { openChannelCreate: () => void }).openChannelCreate()
     await nextTick()
 
-    await wrapper.findAll('button').find((button) => button.text() === 'common.save')!.trigger('click')
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'common.save')!
+      .trigger('click')
     state.tenant.tenantId = 'tenant-b'
     await nextTick()
     resolveValidation(true)
@@ -141,7 +150,10 @@ describe('notification channel tenant scope', () => {
     ;(wrapper.vm as unknown as { openChannelCreate: () => void }).openChannelCreate()
     await nextTick()
 
-    await wrapper.findAll('button').find((button) => button.text() === 'common.save')!.trigger('click')
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'common.save')!
+      .trigger('click')
     await flushPromises()
 
     expect(createNotificationChannel).toHaveBeenCalledTimes(1)
@@ -160,7 +172,11 @@ describe('notification channel tenant scope', () => {
     const tenantARow = { tenantId: 'tenant-a', channelCode: 'shared', channelName: 'A channel' }
     const tenantBRow = { tenantId: 'tenant-b', channelCode: 'shared', channelName: 'B channel' }
     state.listChannels
-      .mockReturnValueOnce(new Promise((resolve) => { resolveTenantA = resolve }))
+      .mockReturnValueOnce(
+        new Promise((resolve) => {
+          resolveTenantA = resolve
+        }),
+      )
       .mockResolvedValueOnce([tenantBRow])
 
     const wrapper = mount(NotificationChannelsTab, { global: { stubs } })
@@ -186,11 +202,18 @@ describe('notification channel tenant scope', () => {
       enabled: true,
     }
     state.listChannels.mockResolvedValueOnce([state.channelRow])
-    state.confirmDanger.mockReturnValueOnce(new Promise((resolve) => { resolveConfirmation = resolve }))
+    state.confirmDanger.mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveConfirmation = resolve
+      }),
+    )
     const wrapper = mount(NotificationChannelsTab, { global: { stubs } })
     await flushPromises()
 
-    await wrapper.findAll('button').find((button) => button.text() === 'delete')!.trigger('click')
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'delete')!
+      .trigger('click')
     state.tenant.tenantId = 'tenant-b'
     await nextTick()
     resolveConfirmation()

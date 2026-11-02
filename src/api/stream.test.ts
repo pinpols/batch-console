@@ -1,7 +1,7 @@
 /**
  * stream.ts 走 EventSource 原生 API + 受保护的 ticket 接口。
  * 运行环境是 node,需要在测试里:
- *   - 用 vi.mock 打桩 `@/api/client`(post)和 `@/api/interceptors`(readStoredTenantId)
+ *   - 用 vi.mock 打桩 `@/api/client`(post)和 `@/utils/tenantContext`(readActiveTenantId)
  *   - 手写极简 EventSource 替身(保存 URL 供断言,支持 dispatch/close)
  *   - 通过 import.meta.env 的 hook 模拟 base url(直接赋值 globalThis 不够,改用 stub)
  */
@@ -53,8 +53,10 @@ class FakeEventSource {
 vi.mock('@/api/client', () => ({
   post: vi.fn(),
 }))
-vi.mock('@/api/interceptors', () => ({
-  readStoredTenantId: vi.fn(() => 'tenant-x'),
+const tenantContext = vi.hoisted(() => ({ tenantId: 'tenant-x', revision: 0 }))
+vi.mock('@/utils/tenantContext', () => ({
+  readActiveTenantId: vi.fn(() => tenantContext.tenantId),
+  readTenantContext: vi.fn(() => ({ ...tenantContext })),
 }))
 
 // 全局替换 EventSource
@@ -77,6 +79,8 @@ const mockedPost = vi.mocked(post)
 
 beforeEach(() => {
   FakeEventSource.instances.length = 0
+  tenantContext.tenantId = 'tenant-x'
+  tenantContext.revision = 0
   mockedPost.mockReset()
   mockedPost.mockResolvedValue({ ticket: 'T-abc' } as unknown as never)
 })
@@ -210,6 +214,7 @@ describe('createLogStream', () => {
 describe('createWorkflowExecutionStream', () => {
   it('uses the captured tenant and consumes only scoped full snapshots', async () => {
     const handlers = { snapshot: vi.fn(), ready: vi.fn(), error: vi.fn(), reset: vi.fn() }
+    tenantContext.tenantId = 'captured-tenant'
     await createWorkflowExecutionStream(7, 'captured-tenant', handlers)
     const es = FakeEventSource.instances[0]
     expect(es.url).toContain('tenantId=captured-tenant')
@@ -236,6 +241,7 @@ describe('createWorkflowExecutionStream', () => {
   })
   it('reports malformed snapshots and explicit server errors as disconnected', async () => {
     const handlers = { snapshot: vi.fn(), ready: vi.fn(), error: vi.fn(), reset: vi.fn() }
+    tenantContext.tenantId = 'ta'
     await createWorkflowExecutionStream(7, 'ta', handlers)
     FakeEventSource.instances[0].emitNamed('workflow-execution-progress', '{')
     expect(handlers.error).toHaveBeenCalledOnce()
@@ -246,6 +252,7 @@ describe('createWorkflowExecutionStream', () => {
 describe('createDailyProgressStream', () => {
   it('fixes date and tenant in the stream URL and rejects wrong-date snapshots', async () => {
     const handlers = { ready: vi.fn(), snapshot: vi.fn(), error: vi.fn(), reset: vi.fn() }
+    tenantContext.tenantId = 'daily-a'
     await createDailyProgressStream('2040-04-05', 'daily-a', handlers)
     const source = FakeEventSource.instances[0]
     expect(source.url).toContain('bizDate=2040-04-05')
@@ -272,6 +279,7 @@ describe('SSE production base URL', () => {
     async (kind) => {
       vi.stubEnv('VITE_API_BASE_URL', '/')
       const handlers = { ready: vi.fn(), snapshot: vi.fn(), error: vi.fn(), reset: vi.fn() }
+      tenantContext.tenantId = 'ta'
       if (kind === 'pipeline') await createPipelineProgressSnapshotStream('7', 'ta', handlers)
       if (kind === 'job') await createJobExecutionStream(42, 'ta', handlers)
       if (kind === 'workflow') await createWorkflowExecutionStream(7, 'ta', handlers)
@@ -284,6 +292,7 @@ describe('SSE production base URL', () => {
   )
   it('preserves an absolute API origin and path prefix with a trailing slash', async () => {
     vi.stubEnv('VITE_API_BASE_URL', 'https://console.example.test/backend/')
+    tenantContext.tenantId = 'ta'
     await createWorkflowExecutionStream(7, 'ta', {
       ready: vi.fn(),
       snapshot: vi.fn(),
@@ -300,6 +309,7 @@ describe('SSE production base URL', () => {
 describe('createJobExecutionStream', () => {
   it('fixes job/tenant scope and fails closed on wrong job snapshots', async () => {
     const handlers = { ready: vi.fn(), snapshot: vi.fn(), error: vi.fn(), reset: vi.fn() }
+    tenantContext.tenantId = 'owned'
     await createJobExecutionStream(42, 'owned', handlers)
     const es = FakeEventSource.instances[0]
     expect(es.url).toContain('/job-instances/42/execution-progress/events')
@@ -323,6 +333,7 @@ describe('createJobExecutionStream', () => {
 describe('createPipelineProgressSnapshotStream', () => {
   it('fixes the complete sorted range and rejects incomplete or cross-tenant snapshots', async () => {
     const handlers = { ready: vi.fn(), snapshot: vi.fn(), error: vi.fn(), reset: vi.fn() }
+    tenantContext.tenantId = 'owned'
     await createPipelineProgressSnapshotStream('7,9', 'owned', handlers)
     const source = FakeEventSource.instances[0]
     expect(source.url).toContain('pipelineInstanceIds=7%2C9')

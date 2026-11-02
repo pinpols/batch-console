@@ -12,7 +12,10 @@ vi.mock('@/stores/tenant', () => ({ useTenantStore: () => mocks.tenant }))
 vi.mock('@/api/approvals', () => ({ queryCatchUpApprovalsPage: mocks.query }))
 vi.mock('vue-i18n', async (original) => ({
   ...(await original<typeof import('vue-i18n')>()),
-  useI18n: () => ({ t: (key: string) => key }),
+  useI18n: () => ({
+    t: (key: string) => key,
+    te: (key: string) => key === 'enum.triggerRequestStatus.ACCEPTED',
+  }),
 }))
 enableAutoUnmount(afterEach)
 function pending<T>() {
@@ -35,6 +38,72 @@ beforeEach(() => {
   mocks.query.mockReset().mockResolvedValue(page('request-b'))
 })
 describe('补跑审批只显示当前租户与当前页请求', () => {
+  it('分别展示请求状态和可空的审批状态', async () => {
+    const row = {
+      ...page('request-b').items[0],
+      requestStatus: 'ACCEPTED',
+      approvalStatus: 'PENDING',
+    }
+    mocks.query.mockResolvedValue({ items: [row], total: 1 })
+    const wrapper = shallowMount(CatchUpApprovalsTab, {
+      global: {
+        stubs: {
+          DetailDrawer: { props: ['visible'], template: '<div v-if="visible"><slot /></div>' },
+          ElDescriptions: { template: '<div><slot /></div>' },
+          ElDescriptionsItem: {
+            props: ['label'],
+            template: '<div :data-label="label"><slot /></div>',
+          },
+        },
+      },
+    })
+    await flushPromises()
+    wrapper.findComponent({ name: 'ProTable' }).vm.$emit('row-click', row)
+    await flushPromises()
+    expect(wrapper.get('[data-label="approvals.catchUpRequestStatus"]').text()).toBe(
+      'enum.triggerRequestStatus.ACCEPTED',
+    )
+    expect(
+      wrapper
+        .get('[data-label="approvals.catchUpApprovalStatus"]')
+        .findComponent({ name: 'StatusTag' })
+        .props('value'),
+    ).toBe('PENDING')
+    wrapper
+      .findComponent({ name: 'ProTable' })
+      .vm.$emit('row-click', { ...row, approvalStatus: null })
+    await flushPromises()
+    expect(wrapper.get('[data-label="approvals.catchUpApprovalStatus"]').text()).toBe('—')
+  })
+  it('查看完整请求号时不打开审批详情', async () => {
+    const wrapper = shallowMount(CatchUpApprovalsTab, {
+      global: {
+        stubs: {
+          ProTable: {
+            props: ['data'],
+            emits: ['row-click'],
+            template:
+              '<div data-testid="table" @click="$emit(\'row-click\', data[0])"><slot /></div>',
+          },
+          ElTableColumn: {
+            props: ['prop'],
+            template:
+              '<div v-if="prop === \'requestId\'"><slot :row="{ requestId: \'request-b\' }" /></div>',
+          },
+          CopyableText: {
+            props: ['text'],
+            template: '<button data-testid="request-id">{{ text }}</button>',
+          },
+        },
+      },
+    })
+    await flushPromises()
+    await wrapper.get('[data-testid="request-id"]').trigger('click')
+    expect(wrapper.findComponent({ name: 'DetailDrawer' }).props('visible')).toBe(false)
+    await wrapper.get('[data-testid="table"]').trigger('click')
+    expect(wrapper.findComponent({ name: 'DetailDrawer' }).props('visible')).toBe(true)
+  })
+
   it('迟到的旧租户列表不能覆盖新租户结果', async () => {
     const first = pending<ReturnType<typeof page>>()
     mocks.query.mockReturnValueOnce(first.promise)

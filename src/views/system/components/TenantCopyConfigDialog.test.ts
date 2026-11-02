@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
-import { computed, reactive } from 'vue'
+import { computed, h, inject, provide, reactive } from 'vue'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ElMessage } from 'element-plus'
 import TenantCopyConfigDialog from './TenantCopyConfigDialog.vue'
@@ -42,11 +42,14 @@ vi.mock('@/stores/auth', () => ({
 vi.mock('@/stores/tenant', async (original) => {
   const actual = await original<typeof import('@/stores/tenant')>()
   return {
-    useTenantStore: () => state.useRealTenant ? actual.useTenantStore() : {
-      get tenantId() {
-        return state.context.tenant
-      },
-    },
+    useTenantStore: () =>
+      state.useRealTenant
+        ? actual.useTenantStore()
+        : {
+            get tenantId() {
+              return state.context.tenant
+            },
+          },
   }
 })
 vi.mock('@/composables/usePermission', () => ({
@@ -57,7 +60,7 @@ vi.mock('@/composables/usePermission', () => ({
 }))
 vi.mock('vue-i18n', async (original) => ({
   ...(await original<typeof import('vue-i18n')>()),
-  useI18n: () => ({ t: (key: string) => key }),
+  useI18n: () => ({ t: (key: string) => key, te: () => false }),
 }))
 vi.mock('element-plus', async (original) => ({
   ...(await original<typeof import('element-plus')>()),
@@ -102,6 +105,24 @@ const stubs = {
     template: '<div />',
   },
   ElButton: { template: '<button><slot /></button>' },
+}
+
+const previewRowKey = Symbol('previewRow')
+const previewTableStub = {
+  props: ['data'],
+  setup(props: { data?: unknown[] }, { slots }: { slots: { default?: () => unknown } }) {
+    provide(
+      previewRowKey,
+      computed(() => props.data?.[0] ?? {}),
+    )
+    return () => h('div', slots.default?.() as never)
+  },
+}
+const previewColumnStub = {
+  setup(_props: unknown, { slots }: { slots: { default?: (props: { row: unknown }) => unknown } }) {
+    const row = inject<{ value: unknown }>(previewRowKey)
+    return () => h('div', slots.default?.({ row: row?.value ?? {} }) as never)
+  },
 }
 function pending<T>() {
   let resolve!: (value: T) => void
@@ -160,6 +181,7 @@ describe('租户复制的输入与异步结果边界', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
     vi.clearAllMocks()
+    setActivePinia(createPinia())
     sessionStorage.clear()
     localStorage.setItem(STORAGE_KEYS.tenantId, 'tenant-a')
     state.useRealTenant = false
@@ -266,14 +288,17 @@ describe('租户复制的输入与异步结果边界', () => {
   it('正常正式复制提交明确目标并按完整成功结果关闭', async () => {
     const wrapper = await open()
     await click(wrapper, 'tenantCopyConfigDialog.btnRunFormal')
-    expect(state.copy).toHaveBeenCalledExactlyOnceWith({
-      sourceTenantId: 'source-a',
-      targetTenantIds: ['target-a'],
-      configTypes: undefined,
-      jobCodes: ['JOB_A'],
-      mode: 'SKIP_EXISTING',
-      dryRun: false,
-    }, expect.any(String))
+    expect(state.copy).toHaveBeenCalledExactlyOnceWith(
+      {
+        sourceTenantId: 'source-a',
+        targetTenantIds: ['target-a'],
+        configTypes: undefined,
+        jobCodes: ['JOB_A'],
+        mode: 'SKIP_EXISTING',
+        dryRun: false,
+      },
+      expect.any(String),
+    )
     expect(wrapper.emitted('update:modelValue')).toEqual([[false]])
     expect(listConfigBatchRecoveries('operator', 'tenant-a').commands).toHaveLength(0)
     wrapper.unmount()
@@ -362,30 +387,29 @@ describe('租户复制的输入与异步结果边界', () => {
     wrapper.unmount()
   })
 
-  it('租户状态与请求租户不一致时提示刷新并阻止正式复制', async () => {
+  it('另一标签更新默认租户不影响本标签正式复制', async () => {
     const wrapper = await open()
     localStorage.setItem(STORAGE_KEYS.tenantId, 'tenant-b')
 
     await click(wrapper, 'tenantCopyConfigDialog.btnRunFormal')
 
-    expect(state.copy).not.toHaveBeenCalled()
-    expect(ElMessage.warning).toHaveBeenCalledWith(
-      'tenantCopyConfigDialog.recoveryTenantMismatch',
-    )
+    expect(state.copy).toHaveBeenCalledOnce()
     wrapper.unmount()
   })
 
-  it('无法读取请求租户时阻止正式复制', async () => {
+  it('无法读取回查记录时阻止正式复制', async () => {
     const wrapper = await open()
-    vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
-      throw new Error('storage unavailable')
+    const original = Storage.prototype.getItem
+    vi.spyOn(Storage.prototype, 'getItem').mockImplementation(function (this: Storage, key) {
+      if (this === sessionStorage) throw new Error('storage unavailable')
+      return original.call(this, key)
     })
 
     await click(wrapper, 'tenantCopyConfigDialog.btnRunFormal')
 
     expect(state.copy).not.toHaveBeenCalled()
     expect(ElMessage.warning).toHaveBeenCalledWith(
-      'tenantCopyConfigDialog.recoveryTenantMismatch',
+      'tenantCopyConfigDialog.recoveryStorageUnavailable',
     )
     wrapper.unmount()
   })
@@ -399,10 +423,18 @@ describe('租户复制的输入与异步结果边界', () => {
     expect(key).toEqual(expect.any(String))
     first.unmount()
     state.recover.mockResolvedValueOnce({
-      operationId: 'op-original', operationKind: 'TENANT_COPY', responseMetadata: {},
+      operationId: 'op-original',
+      operationKind: 'TENANT_COPY',
+      responseMetadata: {},
       status: 'COMPLETE',
-      targets: [{ ordinal: 0, tenantId: 'target-a', status: 'COMPLETE',
-        result: { tenantId: 'target-a', success: false, errorMessage: '真实失败原因' } }],
+      targets: [
+        {
+          ordinal: 0,
+          tenantId: 'target-a',
+          status: 'COMPLETE',
+          result: { tenantId: 'target-a', success: false, errorMessage: '真实失败原因' },
+        },
+      ],
     })
 
     const reopened = await open()
@@ -420,7 +452,10 @@ describe('租户复制的输入与异步结果边界', () => {
 
   it('回查 404 保留原请求身份，不能清除或重发', async () => {
     const command = createConfigBatchRecovery({
-      actor: 'operator', headerTenant: 'tenant-a', auditTenantId: 'source-a', operationKind: 'TENANT_COPY',
+      actor: 'operator',
+      headerTenant: 'tenant-a',
+      auditTenantId: 'source-a',
+      operationKind: 'TENANT_COPY',
     })
     expect(saveConfigBatchRecovery(command)).toBe(true)
     state.recover.mockRejectedValueOnce({ response: { status: 404 } })
@@ -428,8 +463,11 @@ describe('租户复制的输入与异步结果边界', () => {
 
     await click(wrapper, 'tenantCopyConfigDialog.recoveryQuery')
 
-    expect(wrapper.findAll('button').some((button) =>
-      button.text() === 'tenantCopyConfigDialog.recoveryClear')).toBe(false)
+    expect(
+      wrapper
+        .findAll('button')
+        .some((button) => button.text() === 'tenantCopyConfigDialog.recoveryClear'),
+    ).toBe(false)
     expect(state.copy).not.toHaveBeenCalled()
     wrapper.unmount()
     const reopened = await open()
@@ -439,7 +477,10 @@ describe('租户复制的输入与异步结果边界', () => {
 
   it('404 后只有明确确认停止跟踪才删除本地记录，且不重发', async () => {
     const command = createConfigBatchRecovery({
-      actor: 'operator', headerTenant: 'tenant-a', auditTenantId: 'source-a', operationKind: 'TENANT_COPY',
+      actor: 'operator',
+      headerTenant: 'tenant-a',
+      auditTenantId: 'source-a',
+      operationKind: 'TENANT_COPY',
     })
     expect(saveConfigBatchRecovery(command)).toBe(true)
     state.recover.mockRejectedValueOnce({ response: { status: 404 } })
@@ -463,7 +504,10 @@ describe('租户复制的输入与异步结果边界', () => {
 
   it('停止跟踪确认期间切换账号，不删除原账号记录', async () => {
     const command = createConfigBatchRecovery({
-      actor: 'operator', headerTenant: 'tenant-a', auditTenantId: 'source-a', operationKind: 'TENANT_COPY',
+      actor: 'operator',
+      headerTenant: 'tenant-a',
+      auditTenantId: 'source-a',
+      operationKind: 'TENANT_COPY',
     })
     expect(saveConfigBatchRecovery(command)).toBe(true)
     state.recover.mockRejectedValueOnce({ response: { status: 404 } })
@@ -484,17 +528,33 @@ describe('租户复制的输入与异步结果边界', () => {
 
   it('多个原请求独立回查，只清除用户确认且回执完整的那一项', async () => {
     const first = createConfigBatchRecovery({
-      actor: 'operator', headerTenant: 'tenant-a', auditTenantId: 'source-a', operationKind: 'TENANT_COPY',
+      actor: 'operator',
+      headerTenant: 'tenant-a',
+      auditTenantId: 'source-a',
+      operationKind: 'TENANT_COPY',
     })
     const second = createConfigBatchRecovery({
-      actor: 'operator', headerTenant: 'tenant-a', auditTenantId: 'source-b', operationKind: 'TENANT_COPY',
+      actor: 'operator',
+      headerTenant: 'tenant-a',
+      auditTenantId: 'source-b',
+      operationKind: 'TENANT_COPY',
     })
     expect(saveConfigBatchRecovery(first)).toBe(true)
     expect(saveConfigBatchRecovery(second)).toBe(true)
-    state.recover.mockResolvedValueOnce({ operationId: 'op-first', operationKind: 'TENANT_COPY',
-      responseMetadata: {}, status: 'COMPLETE',
-      targets: [{ ordinal: 0, tenantId: 'target-a', status: 'COMPLETE',
-        result: { tenantId: 'target-a', success: true } }] })
+    state.recover.mockResolvedValueOnce({
+      operationId: 'op-first',
+      operationKind: 'TENANT_COPY',
+      responseMetadata: {},
+      status: 'COMPLETE',
+      targets: [
+        {
+          ordinal: 0,
+          tenantId: 'target-a',
+          status: 'COMPLETE',
+          result: { tenantId: 'target-a', success: true },
+        },
+      ],
+    })
     const wrapper = await open()
     expect(wrapper.text()).toContain('source-a')
     expect(wrapper.text()).toContain('source-b')
@@ -510,7 +570,10 @@ describe('租户复制的输入与异步结果边界', () => {
 
   it('账号或租户切换时隐藏原记录并丢弃旧回查响应', async () => {
     const command = createConfigBatchRecovery({
-      actor: 'operator', headerTenant: 'tenant-a', auditTenantId: 'source-a', operationKind: 'TENANT_COPY',
+      actor: 'operator',
+      headerTenant: 'tenant-a',
+      auditTenantId: 'source-a',
+      operationKind: 'TENANT_COPY',
     })
     expect(saveConfigBatchRecovery(command)).toBe(true)
     const delayed = pending<object>()
@@ -518,8 +581,13 @@ describe('租户复制的输入与异步结果边界', () => {
     const wrapper = await open()
     await click(wrapper, 'tenantCopyConfigDialog.recoveryQuery')
     state.context.tenant = 'tenant-b'
-    delayed.resolve({ operationId: 'old-operation', operationKind: 'TENANT_COPY',
-      responseMetadata: {}, status: 'COMPLETE', targets: [] })
+    delayed.resolve({
+      operationId: 'old-operation',
+      operationKind: 'TENANT_COPY',
+      responseMetadata: {},
+      status: 'COMPLETE',
+      targets: [],
+    })
     await flushPromises()
     expect(wrapper.text()).not.toContain('old-operation')
     expect(wrapper.text()).not.toContain('tenantCopyConfigDialog.recoveryQuery')
@@ -536,15 +604,20 @@ describe('租户复制的输入与异步结果边界', () => {
   it('真实租户切换后显示新租户待查记录，并撤销旧租户的在途结果', async () => {
     state.useRealTenant = true
     setActivePinia(createPinia())
-    const { useTenantStore } = await vi.importActual<typeof import('@/stores/tenant')>(
-      '@/stores/tenant',
-    )
+    const { useTenantStore } =
+      await vi.importActual<typeof import('@/stores/tenant')>('@/stores/tenant')
     const tenant = useTenantStore()
     const first = createConfigBatchRecovery({
-      actor: 'operator', headerTenant: 'tenant-a', auditTenantId: 'source-a', operationKind: 'TENANT_COPY',
+      actor: 'operator',
+      headerTenant: 'tenant-a',
+      auditTenantId: 'source-a',
+      operationKind: 'TENANT_COPY',
     })
     const second = createConfigBatchRecovery({
-      actor: 'operator', headerTenant: 'tenant-b', auditTenantId: 'source-b', operationKind: 'TENANT_COPY',
+      actor: 'operator',
+      headerTenant: 'tenant-b',
+      auditTenantId: 'source-b',
+      operationKind: 'TENANT_COPY',
     })
     expect(saveConfigBatchRecovery(first)).toBe(true)
     expect(saveConfigBatchRecovery(second)).toBe(true)
@@ -555,8 +628,13 @@ describe('租户复制的输入与异步结果边界', () => {
     await click(wrapper, 'tenantCopyConfigDialog.recoveryQuery')
 
     tenant.setTenantId('tenant-b')
-    delayed.resolve({ operationId: 'old-operation', operationKind: 'TENANT_COPY',
-      responseMetadata: {}, status: 'COMPLETE', targets: [] })
+    delayed.resolve({
+      operationId: 'old-operation',
+      operationKind: 'TENANT_COPY',
+      responseMetadata: {},
+      status: 'COMPLETE',
+      targets: [],
+    })
     await flushPromises()
 
     expect(localStorage.getItem(STORAGE_KEYS.tenantId)).toBe('tenant-b')
@@ -654,6 +732,40 @@ describe('租户复制的输入与异步结果边界', () => {
     changeSource(wrapper, 'target-a')
     await flushPromises()
     expect(target.props('modelValue')).toEqual(['target-b'])
+    wrapper.unmount()
+  })
+
+  it.each([
+    ['missing in target tenant', 'tenantCopyConfigDialog.reasons.missing'],
+    ['same as source tenant', 'tenantCopyConfigDialog.reasons.unchanged'],
+    ['target tenant value differs from source tenant', 'tenantCopyConfigDialog.reasons.different'],
+    [
+      'exists only in target tenant; preview never deletes automatically',
+      'tenantCopyConfigDialog.reasons.deleteCandidate',
+    ],
+    ['future server explanation', 'future server explanation'],
+  ])('差异详情显示已知原因的译文并保留未知原因：%s', async (reason, expected) => {
+    state.preview.mockResolvedValue({
+      tenants: [{ tenantId: 'target-a', items: [{ reason }] }],
+    })
+    const wrapper = mount(TenantCopyConfigDialog, {
+      props: { modelValue: false, items: [] },
+      global: {
+        stubs: {
+          ...stubs,
+          ElTable: previewTableStub,
+          ElTableColumn: previewColumnStub,
+          CopyableText: { props: ['text'], template: '<span>{{ text }}</span>' },
+        },
+      },
+    })
+    await wrapper.setProps({ modelValue: true })
+    const selects = wrapper.findAllComponents({ name: 'ElSelect' })
+    selects[0]!.vm.$emit('update:modelValue', 'source-a')
+    selects[1]!.vm.$emit('update:modelValue', ['target-a'])
+    await flushPromises()
+    await click(wrapper, 'tenantCopyConfigDialog.btnCopyPreview')
+    expect(wrapper.text()).toContain(expected)
     wrapper.unmount()
   })
 })

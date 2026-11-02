@@ -88,10 +88,12 @@
   .pro-pagination__cursor {
     display: inline-flex;
     align-items: center;
+    flex-wrap: wrap;
     gap: 8px;
   }
   .pro-pagination__size {
     width: 110px;
+    flex: 0 0 110px;
   }
   .pro-pagination__hint {
     font-size: 12px;

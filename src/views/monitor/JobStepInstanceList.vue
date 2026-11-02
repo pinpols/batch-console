@@ -19,7 +19,7 @@
             :refresh-busy="loading"
             @search="onQuerySearch"
             @reset="onQueryReset"
-            @refresh="() => runRefresh(load)"
+            @refresh="onQueryRefresh"
           >
             <el-form-item :label="t('monitor.stepInstanceIdLabel')">
               <el-input
@@ -41,18 +41,28 @@
               />
             </el-form-item>
           </ListPageQueryBar>
+          <el-alert
+            v-if="validationError"
+            :title="validationError"
+            type="warning"
+            :closable="false"
+            show-icon
+          />
         </template>
         <el-table-column prop="jobInstanceId" :label="t('monitor.stepColInstanceId')" width="100">
           <template #default="{ row }">
-            <router-link class="cell-link" :to="`/monitor/job-instances/${row.jobInstanceId}`">
-              {{ row.jobInstanceId }}
-            </router-link>
+            <CopyableText :text="String(row.jobInstanceId)" :copyable="false">
+              <router-link class="cell-link" :to="`/monitor/job-instances/${row.jobInstanceId}`">
+                {{ row.jobInstanceId }}
+              </router-link>
+            </CopyableText>
           </template>
         </el-table-column>
         <el-table-column :label="t('monitor.stepColStep')" width="180">
           <template #default="{ row }">
             <div class="cell-stack">
-              <span class="cell-main">{{ row.stepCode }}</span>
+              <CopyableText v-if="row.stepCode" class="cell-main" :text="String(row.stepCode)" />
+              <span v-else class="cell-main">{{ row.stepCode }}</span>
               <span v-if="row.stepType" class="cell-sub">{{ row.stepType }}</span>
             </div>
           </template>
@@ -72,15 +82,19 @@
         <DatetimeColumn prop="finishedAt" :label="t('monitor.stepColFinished')" width="160" />
         <el-table-column :label="t('monitor.stepColError')" min-width="200" show-overflow-tooltip>
           <template #default="{ row }">
-            <span v-if="row.errorCode" class="mono">[{{ row.errorCode }}]</span>
-            <span v-if="row.errorMessage">{{ row.errorMessage }}</span>
-            <span v-if="!row.errorCode && !row.errorMessage" class="muted">—</span>
+            <ErrorDetailsText :code="row.errorCode" :message="row.errorMessage" />
           </template>
         </el-table-column>
         <el-table-column :label="t('monitor.stepColActions')" width="110" fixed="right">
           <template #default="{ row }">
             <div class="table-actions">
-              <el-button size="small" plain type="primary" :icon="Eye" @click="goInstance(row.jobInstanceId)">
+              <el-button
+                size="small"
+                plain
+                type="primary"
+                :icon="Eye"
+                @click="goInstance(row.jobInstanceId)"
+              >
                 {{ t('monitor.stepActionInstance') }}
               </el-button>
             </div>
@@ -92,6 +106,8 @@
 </template>
 
 <script setup lang="ts">
+  import CopyableText from '@/components/common/CopyableText.vue'
+  import ErrorDetailsText from '@/components/common/ErrorDetailsText.vue'
   import { Eye } from '@lucide/vue'
   import { computed, ref } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
@@ -118,6 +134,7 @@
   const tenant = useTenantStore()
   const loading = ref(false)
   const loadError = ref<unknown>(null)
+  const validationError = ref('')
   const {
     filterBusy: queryActionBusy,
     runSearch,
@@ -139,6 +156,7 @@
   }
 
   function onQuerySearch() {
+    if (readInstanceId() === null) return load()
     return runSearch(() => {
       page.value = 1
       return load()
@@ -154,17 +172,33 @@
     })
   }
 
+  function onQueryRefresh() {
+    if (readInstanceId() === null) return load()
+    return runRefresh(load)
+  }
+
+  // Long 查询参数保留十进制原文，避免转换为 Number 时丢失精度。
+  function readInstanceId(): string | undefined | null {
+    const text = filterInstanceId.value.trim()
+    if (!text) return undefined
+    if (!/^\d+$/.test(text)) return null
+    const id = BigInt(text)
+    return id > 0n && id <= 9223372036854775807n ? text : null
+  }
+
   async function load() {
     loading.value = true
     loadError.value = null
     try {
-      const instanceIdText = filterInstanceId.value.trim()
-      const parsedInstanceId = Number(instanceIdText)
+      const jobInstanceId = readInstanceId()
+      if (jobInstanceId === null) {
+        validationError.value = t('monitor.stepInvalidInstanceId')
+        return
+      }
+      validationError.value = ''
       const tenantId = tenant.tenantId
       const pageNo = page.value
       const requestedPageSize = pageSize.value
-      const hasValidInstanceId = instanceIdText !== '' && Number.isFinite(parsedInstanceId)
-      const jobInstanceId = hasValidInstanceId ? parsedInstanceId : undefined
       const stepStatus = filterStepStatus.value.trim() || undefined
       const result = await queryJobStepInstancePage({
         tenantId,
@@ -194,3 +228,17 @@
 
   useTenantReload(load)
 </script>
+
+<style scoped>
+  .cell-stack {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    min-width: 0;
+  }
+
+  .cell-sub {
+    color: var(--color-text-tertiary);
+    font-size: 12px;
+  }
+</style>

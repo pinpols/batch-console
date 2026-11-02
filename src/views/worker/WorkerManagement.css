@@ -6,6 +6,10 @@
   flex-wrap: wrap;
 }
 
+.worker-status-filter {
+  flex-wrap: wrap;
+}
+
 .worker-empty-meta {
   width: 100%;
   margin-top: 4px;

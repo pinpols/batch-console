@@ -46,18 +46,24 @@
 
         <el-table-column prop="placementKey" :label="t('shardCatalogList.colKey')" min-width="160">
           <template #default="{ row }">
-            <el-tag size="small" effect="plain">{{ row.placementKey }}</el-tag>
+            <CopyableText v-if="row.placementKey" :text="row.placementKey" />
+            <span v-else>—</span>
           </template>
         </el-table-column>
         <el-table-column :label="t('shardCatalogList.colEndpoint')" min-width="220">
-          <template #default="{ row }">{{ row.host }}:{{ row.port }}/{{ row.dbName }}</template>
+          <template #default="{ row }"
+            ><CopyableText :text="`${row.host}:${row.port}/${row.dbName}`"
+          /></template>
         </el-table-column>
         <el-table-column
           prop="secretRef"
           :label="t('shardCatalogList.colSecretRef')"
           min-width="140"
-          show-overflow-tooltip
-        />
+        >
+          <template #default="{ row }"
+            ><span class="wrap-cell">{{ row.secretRef || '—' }}</span></template
+          >
+        </el-table-column>
         <el-table-column :label="t('shardCatalogList.colPool')" width="100">
           <template #default="{ row }">{{ row.poolMaxSize ?? '—' }}</template>
         </el-table-column>
@@ -86,8 +92,12 @@
       size="560px"
       destroy-on-close
     >
-      <el-form :model="form" label-width="120px">
-        <el-form-item :label="t('shardCatalogList.colKey')" required>
+      <el-form :model="form" label-width="120px" class="shard-form">
+        <el-form-item
+          :label="t('shardCatalogList.colKey')"
+          :error="validationErrors.placementKey"
+          required
+        >
           <el-input
             v-model="form.placementKey"
             :disabled="editing"
@@ -95,19 +105,27 @@
             :placeholder="t('shardCatalogList.keyPlaceholder')"
           />
         </el-form-item>
-        <el-form-item :label="t('shardCatalogList.fieldHost')" required>
+        <el-form-item
+          :label="t('shardCatalogList.fieldHost')"
+          :error="validationErrors.host"
+          required
+        >
           <el-input v-model="form.host" maxlength="255" />
         </el-form-item>
         <el-form-item :label="t('shardCatalogList.fieldPort')" required>
           <el-input-number v-model="form.port" :min="1" :max="65535" />
         </el-form-item>
-        <el-form-item :label="t('shardCatalogList.fieldDbName')" required>
-          <el-input v-model="form.dbName" maxlength="128" />
+        <el-form-item
+          :label="t('shardCatalogList.fieldDbName')"
+          :error="validationErrors.dbName"
+          required
+        >
+          <el-input v-model="form.dbName" maxlength="64" />
         </el-form-item>
-        <el-form-item :label="t('shardCatalogList.colSecretRef')" required>
+        <el-form-item :label="t('shardCatalogList.colSecretRef')">
           <el-input
             v-model="form.secretRef"
-            maxlength="255"
+            maxlength="128"
             :placeholder="t('shardCatalogList.secretRefPlaceholder')"
           />
         </el-form-item>
@@ -138,6 +156,7 @@
   import { ElMessage } from 'element-plus'
   import { confirmDanger } from '@/composables/useDangerConfirm'
   import PageContainer from '@/components/common/PageContainer.vue'
+  import CopyableText from '@/components/common/CopyableText.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
   import ProTable from '@/components/table/ProTable.vue'
@@ -149,6 +168,7 @@
   import { useWriteAvailability } from '@/composables/useWriteAvailability'
   import {
     listShardCatalog,
+    PLACEMENT_KEY_PATTERN,
     upsertShardCatalog,
     deleteShardCatalog,
     type ShardCatalogRow,
@@ -169,6 +189,7 @@
   const dialogVisible = ref(false)
   const editing = ref(false)
   const saving = ref(false)
+  const showValidation = ref(false)
   const form = reactive<ShardCatalogSavePayload>({
     placementKey: '',
     host: '',
@@ -178,6 +199,21 @@
     poolMaxSize: undefined,
     enabled: true,
     description: '',
+  })
+  const validationErrors = computed(() => {
+    if (!showValidation.value) return { placementKey: '', host: '', dbName: '' }
+    const placementKey = !form.placementKey.trim()
+      ? t('form.required', { field: t('shardCatalogList.colKey') })
+      : !PLACEMENT_KEY_PATTERN.test(form.placementKey)
+        ? t('tenantPlacementList.keyPatternError')
+        : ''
+    return {
+      placementKey,
+      host: form.host.trim() ? '' : t('form.required', { field: t('shardCatalogList.fieldHost') }),
+      dbName: form.dbName.trim()
+        ? ''
+        : t('form.required', { field: t('shardCatalogList.fieldDbName') }),
+    }
   })
 
   async function load() {
@@ -197,6 +233,7 @@
   function openCreate() {
     if (!ensureWriteAvailable()) return
     editing.value = false
+    showValidation.value = false
     Object.assign(form, {
       placementKey: '',
       host: '',
@@ -212,6 +249,7 @@
 
   function openEdit(row: ShardCatalogRow) {
     editing.value = true
+    showValidation.value = false
     Object.assign(form, {
       placementKey: row.placementKey,
       host: row.host,
@@ -227,6 +265,22 @@
 
   async function save() {
     if (!ensureWriteAvailable()) return
+    showValidation.value = true
+    if (
+      validationErrors.value.placementKey ||
+      validationErrors.value.host ||
+      validationErrors.value.dbName
+    ) {
+      return
+    }
+    if (form.host.length > 255) {
+      ElMessage.warning(`${t('shardCatalogList.fieldHost')}: ${t('form.maxLength', { max: 255 })}`)
+      return
+    }
+    if (form.dbName.length > 64) {
+      ElMessage.warning(`${t('shardCatalogList.fieldDbName')}: ${t('form.maxLength', { max: 64 })}`)
+      return
+    }
     saving.value = true
     try {
       await upsertShardCatalog({ ...form })
@@ -271,6 +325,14 @@
 </script>
 
 <style scoped>
+  .shard-form :deep(.el-input-number) {
+    width: 100%;
+  }
+
+  .wrap-cell {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
   .scl__header {
     display: flex;
     align-items: center;

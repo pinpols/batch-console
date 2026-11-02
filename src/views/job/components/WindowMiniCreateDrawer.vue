@@ -16,9 +16,8 @@
       ref="formRef"
       :model="form"
       :rules="rules"
-      label-width="92px"
-      label-position="right"
-      class="mini-create-form form-preserve-label-position"
+      label-position="top"
+      class="mini-create-form"
       @submit.prevent="submit"
     >
       <el-form-item :label="t('jobConfigBasic.miniWindowCode')" prop="windowCode">
@@ -108,6 +107,7 @@
    */
   import { computed, reactive, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
+  import { useTenantRequestScope } from '@/composables/useTenantRequestScope'
   import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
   import { governanceApi, type GovernanceBatchWindowSavePayload } from '@/api/governance'
   import { useDirtyForm } from '@/composables/useDirtyForm'
@@ -136,6 +136,7 @@
   ] as const
 
   const formRef = ref<FormInstance>()
+  const submitScope = useTenantRequestScope()
   const saving = ref(false)
   const form = reactive<GovernanceBatchWindowSavePayload>({
     tenantId: props.tenantId,
@@ -187,6 +188,16 @@
     ],
     timezone: [
       { required: true, message: t('jobConfigBasic.miniTimezoneRequired'), trigger: 'change' },
+      {
+        validator: (_rule, value: unknown, callback) => {
+          if (typeof value === 'string' && value.length > 64) {
+            callback(new Error(t('common.maxLength', { max: 64 })))
+          } else {
+            callback()
+          }
+        },
+        trigger: 'change',
+      },
     ],
     startTime: [
       { required: true, message: t('jobConfigBasic.miniWindowStartRequired'), trigger: 'change' },
@@ -218,12 +229,21 @@
   }
 
   async function submit() {
+    const scope = submitScope.begin()
+    const targetTenant = props.tenantId
     const valid = await formRef.value?.validate().catch(() => false)
-    if (!valid) return
+    if (
+      !valid ||
+      !submitScope.isCurrent(scope) ||
+      !visible.value ||
+      props.tenantId !== targetTenant
+    )
+      return
     saving.value = true
     try {
-      const payload: GovernanceBatchWindowSavePayload = { ...form, tenantId: props.tenantId }
+      const payload: GovernanceBatchWindowSavePayload = { ...form, tenantId: targetTenant }
       await governanceApi.createBatchWindow(payload)
+      if (!submitScope.isCurrent(scope) || !visible.value) return
       ElMessage.success(t('jobConfigBasic.miniWindowCreated', { code: form.windowCode }))
       emit('created', form.windowCode || '')
       dirty.markPristine()
@@ -233,6 +253,7 @@
       form.startTime = ''
       form.endTime = ''
     } catch (err) {
+      if (!submitScope.isCurrent(scope) || !visible.value) return
       const message = userErrorMessage(err)
       ElMessage.error(t('jobConfigBasic.miniWindowCreateFailed', { message }))
     } finally {
@@ -271,10 +292,15 @@
     margin-bottom: 4px;
   }
 
+  .mini-create-form :deep(.el-form-item__error) {
+    position: static;
+    width: 100%;
+  }
+
   /* 嵌套 form-item:外层只承担 label,内层各自负责校验提示,不再额外缩进 */
   .time-range {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 10px;
     width: 100%;
   }
@@ -286,6 +312,7 @@
     margin-left: 0 !important;
   }
   .time-range__dash {
+    margin-top: 6px;
     color: var(--color-text-tertiary);
     font-size: 14px;
   }

@@ -75,6 +75,13 @@
     <div v-if="report" class="capacity-charts">
       <SectionCard class="capacity-charts__trend">
         <template #header>{{ t('capacityProfile.trendTitle') }}</template>
+        <el-alert
+          v-if="trendIncomplete"
+          :title="t('capacityProfile.trendIncomplete')"
+          type="warning"
+          :closable="false"
+          show-icon
+        />
         <VChart
           class="capacity-chart"
           :option="trendOption"
@@ -138,8 +145,12 @@
             <el-table-column :label="dimensionLabel" min-width="220">
               <template #default="{ row }">
                 <div class="cell-stack">
-                  <div class="cell-main">{{ dimensionValue(row as CapacityProfileRow) }}</div>
-                  <div class="cell-sub">{{ secondaryDimensionValue(row as CapacityProfileRow) }}</div>
+                  <div class="cell-main">
+                    <CopyableText :text="dimensionValue(row as CapacityProfileRow)" />
+                  </div>
+                  <div class="cell-sub">
+                    <CopyableText :text="secondaryDimensionValue(row as CapacityProfileRow)" />
+                  </div>
                 </div>
               </template>
             </el-table-column>
@@ -223,6 +234,7 @@
   import { useAppStore } from '@/stores/app'
   import { useTenantReload } from '@/composables/useTenantReload'
   import PageContainer from '@/components/common/PageContainer.vue'
+  import CopyableText from '@/components/common/CopyableText.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import { fmtNumber } from '@/utils/number'
   import SectionCard from '@/components/common/SectionCard.vue'
@@ -258,6 +270,7 @@
   const report = ref<CapacityProfileReport | null>(null)
   const trendBuckets = ref<CapacityBucket[]>([])
   const trendReports = ref<Array<CapacityProfileReport | null>>([])
+  const trendIncomplete = computed(() => trendReports.value.some((item) => item === null))
   const detailSections = ref<string[]>([])
   // 默认最近 7 天窗口:后端 capacity-profile 端点缺省 from/to 会 500,首屏必须带窗口。
   function defaultWindow(): [string, string] {
@@ -284,7 +297,7 @@
     const points = buildCapacityTrend(trendBuckets.value, trendReports.value, displayTimezone.value)
     if (
       !points.length ||
-      points.every((point) => point.instanceCount === 0 && point.taskCount === 0)
+      points.every((point) => (point.instanceCount ?? 0) === 0 && (point.taskCount ?? 0) === 0)
     ) {
       return emptyOption(t('common.noData'))
     }
@@ -420,7 +433,8 @@
       trendReports.value = bucketResults.map((result) =>
         result.status === 'fulfilled' ? result.value : null,
       )
-      ElMessage.success(t('capacityProfile.loadOk'))
+      if (trendIncomplete.value) ElMessage.warning(t('capacityProfile.trendIncomplete'))
+      else ElMessage.success(t('capacityProfile.loadOk'))
     } catch (error) {
       report.value = null
       trendBuckets.value = []

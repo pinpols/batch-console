@@ -14,13 +14,10 @@
     prop="dependsOnJobCode"
     :label="t('jobDefinitionList.colDependency')"
     min-width="150"
-    show-overflow-tooltip
   >
     <template #default="{ row }">
-      <JobDefinitionTaxonomyCell
-        :value="row.dependsOnJobCode || t('jobDefinitionList.noDependency')"
-        :muted="!row.dependsOnJobCode"
-      />
+      <CopyableText v-if="row.dependsOnJobCode" :text="row.dependsOnJobCode" />
+      <JobDefinitionTaxonomyCell v-else :value="t('jobDefinitionList.noDependency')" muted />
     </template>
   </el-table-column>
 </template>
@@ -28,6 +25,7 @@
 <script setup lang="ts">
   import { useI18n } from 'vue-i18n'
   import JobDefinitionTaxonomyCell from './JobDefinitionTaxonomyCell.vue'
+  import CopyableText from '@/components/common/CopyableText.vue'
 
   const props = defineProps<{
     isColVisible: (key: string) => boolean

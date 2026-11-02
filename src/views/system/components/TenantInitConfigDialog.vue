@@ -13,40 +13,58 @@
         {{ t('tenantInitConfigDialog.advancedAlert') }}
       </template>
     </el-alert>
-    <el-alert type="info" :closable="false" show-icon class="mb-12">
-      <template #title>{{ t('tenantInitConfigDialog.descAlert') }}</template>
-    </el-alert>
-    <el-form ref="initFormRef" :model="form" :rules="initFormRules" label-width="88px">
-      <el-form-item :label="t('tenantInitConfigDialog.fieldTarget')">
-        <el-tag>{{ form.targetTenantId }}</el-tag>
-      </el-form-item>
-      <el-form-item :label="t('tenantConfigShared.configTypeLabel')" prop="configTypes">
-        <el-checkbox-group v-model="form.configTypes">
-          <el-checkbox v-for="ct in ALL_CONFIG_TYPES" :key="ct" :label="ct" :value="ct" />
-        </el-checkbox-group>
-        <div class="field-hint">{{ t('tenantConfigShared.configTypeHintAll') }}</div>
-      </el-form-item>
-      <el-form-item :label="t('tenantConfigShared.writeModeLabel')" prop="mode">
-        <el-radio-group v-model="form.mode">
-          <el-radio value="SKIP_EXISTING">{{ t('tenantConfigShared.modeSkipExisting') }}</el-radio>
-          <el-radio value="UPSERT">{{ t('tenantConfigShared.modeUpsert') }}</el-radio>
-        </el-radio-group>
-        <div class="field-hint">
-          {{
-            form.mode === 'SKIP_EXISTING'
-              ? t('tenantInitConfigDialog.modeHintSkip')
-              : t('tenantInitConfigDialog.modeHintUpsert')
-          }}
-        </div>
-      </el-form-item>
-      <el-form-item :label="t('tenantInitConfigDialog.fieldSpecJson')" prop="specJson">
-        <JsonTextareaInput
-          v-model="form.specJson"
-          :rows="10"
-          expect="object"
-          :placeholder="t('tenantInitConfigDialog.specPlaceholder')"
-        />
-      </el-form-item>
+    <p class="init-intro">{{ t('tenantInitConfigDialog.descAlert') }}</p>
+    <el-form
+      ref="initFormRef"
+      :model="form"
+      :rules="initFormRules"
+      label-position="top"
+      class="init-form"
+    >
+      <section class="init-section" :aria-label="t('tenantInitConfigDialog.sectionScope')">
+        <h3>{{ t('tenantInitConfigDialog.sectionScope') }}</h3>
+        <el-form-item :label="t('tenantInitConfigDialog.fieldTarget')">
+          <el-tag>{{ form.targetTenantId }}</el-tag>
+        </el-form-item>
+        <el-form-item :label="t('tenantConfigShared.configTypeLabel')" prop="configTypes">
+          <el-checkbox-group v-model="form.configTypes" class="config-type-grid">
+            <el-checkbox v-for="ct in ALL_CONFIG_TYPES" :key="ct" :value="ct">
+              {{ t(`tenantConfigShared.configTypes.${ct}`) }}
+            </el-checkbox>
+          </el-checkbox-group>
+          <div class="field-hint">{{ t('tenantConfigShared.configTypeHintAll') }}</div>
+        </el-form-item>
+      </section>
+      <section class="init-section" :aria-label="t('tenantInitConfigDialog.sectionContent')">
+        <h3>{{ t('tenantInitConfigDialog.sectionContent') }}</h3>
+        <el-form-item :label="t('tenantConfigShared.writeModeLabel')" prop="mode">
+          <el-radio-group v-model="form.mode">
+            <el-radio value="SKIP_EXISTING">{{
+              t('tenantConfigShared.modeSkipExisting')
+            }}</el-radio>
+            <el-radio value="UPSERT">{{ t('tenantConfigShared.modeUpsert') }}</el-radio>
+          </el-radio-group>
+          <div class="field-hint">
+            {{
+              form.mode === 'SKIP_EXISTING'
+                ? t('tenantInitConfigDialog.modeHintSkip')
+                : t('tenantInitConfigDialog.modeHintUpsert')
+            }}
+          </div>
+        </el-form-item>
+        <el-form-item
+          :label="t('tenantInitConfigDialog.fieldSpecJson')"
+          prop="specJson"
+          :show-message="!form.specJson.trim()"
+        >
+          <JsonTextareaInput
+            v-model="form.specJson"
+            :rows="10"
+            expect="object"
+            :placeholder="t('tenantInitConfigDialog.specPlaceholder')"
+          />
+        </el-form-item>
+      </section>
     </el-form>
     <template #footer>
       <el-button @click="emit('update:modelValue', false)">
@@ -120,9 +138,17 @@
       rules.required(t('tenantInitConfigDialog.ruleSpec')),
       {
         validator: (_r, value: string, cb: (err?: Error) => void) => {
-          if (!value || !value.trim()) return cb()
+          if (!value) return cb()
+          if (!value.trim()) {
+            const message = t('tenantInitConfigDialog.ruleSpec')
+            return cb(new Error(message))
+          }
           try {
-            JSON.parse(value)
+            const parsed: unknown = JSON.parse(value)
+            if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+              cb(new Error(t('jsonTextareaInput.expectObject')))
+              return
+            }
             cb()
           } catch {
             const errorMessage = t('tenantInitConfigDialog.errInvalidJson')
@@ -210,6 +236,53 @@
 </script>
 
 <style scoped>
+  .init-intro {
+    margin: 0 0 var(--space-lg);
+    color: var(--el-text-color-secondary);
+    line-height: 1.6;
+  }
+
+  .init-form {
+    display: grid;
+    gap: var(--space-md);
+  }
+
+  .init-section {
+    padding: var(--space-lg);
+    border: 1px solid var(--el-border-color-lighter);
+    border-radius: var(--radius-content);
+    background: var(--color-bg-card);
+  }
+
+  .init-section h3 {
+    margin: 0 0 var(--space-md);
+    color: var(--el-text-color-primary);
+    font-size: var(--el-font-size-base);
+    font-weight: 600;
+  }
+
+  .init-section :deep(.el-form-item:last-child) {
+    margin-bottom: 0;
+  }
+
+  .config-type-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr));
+    width: 100%;
+    gap: var(--space-xs) var(--space-md);
+  }
+
+  .config-type-grid :deep(.el-checkbox) {
+    height: auto;
+    min-height: 32px;
+    margin-right: 0;
+  }
+
+  .config-type-grid :deep(.el-checkbox__label) {
+    white-space: normal;
+    line-height: 1.4;
+  }
+
   .mb-12 {
     margin-bottom: 12px;
   }

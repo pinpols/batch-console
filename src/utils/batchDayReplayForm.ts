@@ -1,10 +1,21 @@
 import type { BatchDayReplayRangeRequest, BatchDayReplaySubmitRequest } from '@/api/batchDayReplay'
 
-export type BatchDayReplayFormError = 'missingRequired' | 'missingJobCodes' | 'missingVersionIds'
+export type BatchDayReplayFieldError = 'missingRequired' | 'calendarCodeTooLong' | 'reasonTooLong'
+export type BatchDayReplayFormError =
+  BatchDayReplayFieldError | 'missingJobCodes' | 'missingVersionIds'
 
 export type BatchDayReplayFormResult =
   | { request: BatchDayReplaySubmitRequest; error?: never }
   | { request?: never; error: BatchDayReplayFormError }
+
+export function validateBatchDayReplayFields(
+  form: Pick<BatchDayReplaySubmitRequest, 'calendarCode' | 'reason'>,
+): BatchDayReplayFieldError | null {
+  if (!form.calendarCode.trim() || !form.reason.trim()) return 'missingRequired'
+  if (form.calendarCode.length > 128) return 'calendarCodeTooLong'
+  if (form.reason.length > 512) return 'reasonTooLong'
+  return null
+}
 
 export function buildBatchDayReplayRequest(
   form: BatchDayReplaySubmitRequest,
@@ -12,9 +23,9 @@ export function buildBatchDayReplayRequest(
   jobCodesText: string,
   versionIdsText: string,
 ): BatchDayReplayFormResult {
-  if (!form.bizDate || !form.reason.trim()) {
-    return { error: 'missingRequired' }
-  }
+  if (!form.bizDate) return { error: 'missingRequired' }
+  const fieldError = validateBatchDayReplayFields(form)
+  if (fieldError) return { error: fieldError }
 
   const request: BatchDayReplaySubmitRequest = { ...form, tenantId }
   if (request.executionMode === 'DRY_RUN') {

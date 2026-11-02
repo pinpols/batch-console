@@ -14,7 +14,7 @@
  */
 
 import { pushApi } from '@/api/push'
-import { readStoredTenantId } from '@/api/interceptors'
+import { readActiveTenantId } from '@/utils/tenantContext'
 
 export type PushPermissionResult = 'granted' | 'denied' | 'unsupported' | 'not-standalone'
 
@@ -78,7 +78,7 @@ export async function requestPushPermission(): Promise<PushPermissionResult> {
   })
 
   // 4. 上报后端持久化
-  const tenantId = readStoredTenantId()
+  const tenantId = readActiveTenantId()
   const subscriptionPayload = sub.toJSON()
   await pushApi.subscribe(tenantId, subscriptionPayload)
 
@@ -91,7 +91,7 @@ export async function unsubscribePush(): Promise<void> {
   const reg = await navigator.serviceWorker.ready
   const sub = await reg.pushManager.getSubscription()
   if (!sub) return
-  const tenantId = readStoredTenantId()
+  const tenantId = readActiveTenantId()
   await pushApi.unsubscribe(tenantId, sub.endpoint).catch(() => {
     /* 后端失败也继续 unsubscribe,前端态优先 */
   })

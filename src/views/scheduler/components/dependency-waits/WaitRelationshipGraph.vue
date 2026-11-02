@@ -29,9 +29,11 @@
       <el-form-item :label="t('dependencyWaits.toDate')">
         <el-date-picker v-model="bizDateTo" type="date" value-format="YYYY-MM-DD" />
       </el-form-item>
-      <el-button type="primary" :loading="loading" @click="load">{{
-        t('common.search')
-      }}</el-button>
+      <el-form-item>
+        <el-button type="primary" :loading="loading" @click="load">{{
+          t('common.search')
+        }}</el-button>
+      </el-form-item>
     </el-form>
     <el-alert
       :title="t('dependencyWaits.graph.liveHint')"
@@ -296,7 +298,11 @@
   }
   .wait-graph__topology {
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     gap: var(--space-sm);
+  }
+  .wait-graph__topology :deep(.mini-dag) {
+    min-width: 0;
   }
   .wait-graph h3 {
     margin: var(--space-sm) 0 0;

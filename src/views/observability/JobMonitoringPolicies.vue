@@ -14,9 +14,9 @@
       <el-form-item :label="t('jobMonitoringPolicy.jobCode')">
         <el-input
           v-model="filters.jobCode"
+          class="query-w-260"
           clearable
           :placeholder="t('jobMonitoringPolicy.jobCodePlaceholder')"
-          @keyup.enter="search"
         />
       </el-form-item>
       <el-form-item :label="t('jobMonitoringPolicy.jobStatus')">
@@ -104,13 +104,19 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column :label="t('common.actions')" width="90" fixed="right">
+        <el-table-column
+          :label="t('common.actions')"
+          width="90"
+          :fixed="isMobile ? false : 'right'"
+        >
           <template #default="{ row }">
             <el-tooltip :content="t('common.edit')" placement="top">
               <el-button
                 :icon="Edit"
+                :aria-label="t('jobMonitoringPolicy.editTitle', { jobCode: row.jobCode })"
                 text
                 type="primary"
+                :disabled="!canMutateConfig"
                 @click="openEdit(row as ConsoleJobDefinitionResponse)"
               />
             </el-tooltip>
@@ -133,6 +139,7 @@
 
     <el-drawer
       v-model="drawerOpen"
+      class="monitoring-policy-drawer"
       :title="t('jobMonitoringPolicy.editTitle', { jobCode: editingJob?.jobCode ?? '' })"
       direction="rtl"
       size="min(600px, 96vw)"
@@ -147,7 +154,7 @@
         <div class="job-identity">
           <span>{{ editingJob?.jobName }}</span>
           <code>{{ editingJob?.jobCode }}</code>
-          <el-tag effect="plain">{{ editingJob?.scheduleType }}</el-tag>
+          <el-tag effect="plain">{{ scheduleTypeLabel(editingJob?.scheduleType) }}</el-tag>
           <span v-if="isScheduled(editingJob?.scheduleType)">
             {{ editingJob?.timezone || 'UTC' }}
           </span>
@@ -175,6 +182,7 @@
           native-type="submit"
           form="job-monitoring-policy-form"
           :loading="saving"
+          :disabled="!canMutateConfig"
         >
           {{ t('common.save') }}
         </el-button>
@@ -191,7 +199,12 @@
   import { jobApi } from '@/api/job'
   import type { ConsoleJobDefinitionResponse } from '@/types/console-api'
   import { useTenantReload } from '@/composables/useTenantReload'
+  import { useResponsive } from '@/composables/useResponsive'
+  import { useTenantRequestScope } from '@/composables/useTenantRequestScope'
+  import { usePermission } from '@/composables/usePermission'
+  import { useWriteAvailability } from '@/composables/useWriteAvailability'
   import { useTenantStore } from '@/stores/tenant'
+  import { useAuthStore } from '@/stores/auth'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
@@ -219,6 +232,11 @@
   const { data: metaEnums } = useConsoleMetaEnumsQuery()
   const scheduleTypes = computed(() => metaEnums.value?.scheduleType ?? [])
   const tenant = useTenantStore()
+  const { isMobile } = useResponsive()
+  const auth = useAuthStore()
+  const { canMutateConfig } = usePermission()
+  const { ensureWriteAvailable } = useWriteAvailability()
+  const editScope = useTenantRequestScope()
   const rows = ref<ConsoleJobDefinitionResponse[]>([])
   const editingJob = ref<ConsoleJobDefinitionResponse | null>(null)
   const loading = ref(false)
@@ -229,6 +247,8 @@
   const pageSize = ref(15)
   const total = ref(0)
   let loadSequence = 0
+  let editContext: ReturnType<typeof editScope.begin> | null = null
+  let editOperator: string | number | undefined
   const filters = reactive<{
     jobCode: string
     enabled: boolean
@@ -260,6 +280,32 @@
       loadError.value = ''
       loading.value = false
     },
+    { flush: 'sync' },
+  )
+
+  function clearEdit() {
+    editContext = null
+    editOperator = undefined
+    editingJob.value = null
+    drawerOpen.value = false
+    saving.value = false
+  }
+
+  watch(
+    [
+      () => tenant.tenantId,
+      () => auth.userInfo?.username ?? auth.userInfo?.userId,
+      canMutateConfig,
+    ],
+    clearEdit,
+    { flush: 'sync' },
+  )
+  watch(
+    drawerOpen,
+    (open) => {
+      if (!open) clearEdit()
+    },
+    { flush: 'sync' },
   )
 
   function emptyPolicy(): PolicyForm {
@@ -322,6 +368,9 @@
   }
 
   function openEdit(job: ConsoleJobDefinitionResponse) {
+    if (!canMutateConfig.value || !ensureWriteAvailable()) return
+    editContext = editScope.begin()
+    editOperator = auth.userInfo?.username ?? auth.userInfo?.userId
     editingJob.value = job
     Object.assign(form, {
       softRuntimeSeconds: job.softRuntimeSeconds ?? 0,
@@ -338,24 +387,36 @@
 
   async function save() {
     const job = editingJob.value
-    if (!job || !tenant.tenantId) return
+    const scope = editContext
+    const operator = editOperator
+    if (!job || !scope || saving.value || !canMutateConfig.value || !ensureWriteAvailable()) return
+    const isCurrent = () =>
+      editContext === scope &&
+      editScope.isCurrent(scope) &&
+      drawerOpen.value &&
+      editingJob.value?.id === job.id &&
+      canMutateConfig.value &&
+      operator === (auth.userInfo?.username ?? auth.userInfo?.userId)
+    if (!isCurrent()) return
     saving.value = true
     try {
       await jobApi.updateDefinition(job.id, {
-        tenantId: tenant.tenantId,
+        tenantId: scope.tenantId,
         ...form,
         completionDeadlineEnabled: Boolean(form.completionDeadlineLocalTime),
         completionDeadlineLocalTime: form.completionDeadlineLocalTime ?? undefined,
       })
+      if (!isCurrent()) return
       drawerOpen.value = false
       ElMessage.success(t('jobMonitoringPolicy.saveSuccess'))
       await load()
     } catch (error) {
+      if (!isCurrent()) return
       const fallbackMessage = t('jobMonitoringPolicy.saveFailed')
       const displayMessage = userErrorMessage(error, fallbackMessage)
       ElMessage.error(displayMessage)
     } finally {
-      saving.value = false
+      if (editContext === scope) saving.value = false
     }
   }
 
@@ -413,6 +474,15 @@
 </script>
 
 <style scoped>
+  :global(.monitoring-policy-drawer .el-drawer__title) {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  :global(.monitoring-policy-drawer .el-drawer__close-btn) {
+    flex-shrink: 0;
+  }
+
   .policy-table-wrap {
     margin-top: var(--page-block-gap);
   }
@@ -443,6 +513,7 @@
     display: grid;
     gap: 3px;
     min-width: 0;
+    white-space: normal;
   }
 
   .job-cell__name {

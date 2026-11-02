@@ -58,6 +58,20 @@ export type DesignerLockState = null | DesignerLockMine | DesignerLockReadonly
 export type DependencyMutationResult =
   { ok: true } | { ok: false; reason: 'invalidEndpoint' | 'duplicate' | 'cycle' }
 
+export type InspectorDraftField =
+  | 'nodeName'
+  | 'nodeSkipExpression'
+  | 'edgeCondition'
+  | 'nodeMaxRetries'
+  | 'nodeTimeoutSeconds'
+  | 'gatewayThreshold'
+export interface InspectorDraft {
+  field: InspectorDraftField
+  elementId: string
+  base: string
+  value: string
+}
+
 const EMPTY_META: DesignerMeta = {
   id: null,
   tenantId: '',
@@ -80,6 +94,9 @@ export const useDesignerStore = defineStore('workflowDesigner', () => {
   const meta = ref<DesignerMeta>({ ...EMPTY_META })
   const lock = ref<DesignerLockState>(null)
   const validationErrors = ref<ValidationError[]>([])
+  // 输入中的局部草稿不进入画布快照；失锁或检查器卸载时仍属于当前画布。
+  const inspectorDrafts = ref<InspectorDraft[]>([])
+  const inspectorScope = ref(0)
 
   const canUndo = computed(() => undoStack.value.length > 0)
   const canRedo = computed(() => redoStack.value.length > 0)
@@ -123,7 +140,9 @@ export const useDesignerStore = defineStore('workflowDesigner', () => {
   }
 
   function reset(snap: DesignerSnapshot = { nodes: [], edges: [] }) {
+    inspectorScope.value += 1
     applySnapshot(snap)
+    inspectorDrafts.value = []
     cleanFingerprint.value = snapshotFingerprint(nodes.value, edges.value)
     selectedIds.value = new Set()
     dirty.value = false
@@ -132,7 +151,178 @@ export const useDesignerStore = defineStore('workflowDesigner', () => {
     validationErrors.value = []
   }
 
+  /** JSON 应用清除画布历史，但不把未保存内容当成保存基线。 */
+  function replaceGraphFromJson(snap: DesignerSnapshot) {
+    if (inspectorDrafts.value.length) return false
+    const savedFingerprint = cleanFingerprint.value
+    reset(snap)
+    cleanFingerprint.value = savedFingerprint
+    refreshDirtyFromBaseline()
+    return true
+  }
+
+  function inspectorValue(field: InspectorDraftField, elementId: string): string | null {
+    if (field === 'edgeCondition') {
+      const edge = edges.value.find((item) => item.id === elementId)
+      return edge ? (edge.label ?? '') : null
+    }
+    const node = nodes.value.find((item) => item.id === elementId)
+    if (!node) return null
+    if (field === 'nodeName') return node.nodeName
+    const key =
+      field === 'nodeSkipExpression'
+        ? 'skipExpression'
+        : field === 'nodeMaxRetries'
+          ? 'maxRetries'
+          : field === 'nodeTimeoutSeconds'
+            ? 'timeoutSeconds'
+            : 'joinThreshold'
+    const value = node.attrs?.[key]
+    return typeof value === 'string' || typeof value === 'number' ? String(value) : ''
+  }
+
+  function normalizeDraft(field: InspectorDraftField, value: string): string {
+    return field === 'edgeCondition' ? value.trim() : value
+  }
+
+  function getInspectorDraft(field: InspectorDraftField, elementId: string) {
+    return inspectorDrafts.value.find(
+      (draft) => draft.field === field && draft.elementId === elementId,
+    )
+  }
+
+  function setInspectorDraft(
+    field: InspectorDraftField,
+    elementId: string,
+    value: string,
+    scope = inspectorScope.value,
+  ) {
+    if (scope !== inspectorScope.value) return
+    const current = inspectorValue(field, elementId)
+    if (current === null) return
+    const existing = getInspectorDraft(field, elementId)
+    if (normalizeDraft(field, value) === normalizeDraft(field, current)) {
+      inspectorDrafts.value = inspectorDrafts.value.filter((draft) => draft !== existing)
+      return
+    }
+    if (existing) existing.value = value
+    else inspectorDrafts.value.push({ field, elementId, base: current, value })
+  }
+
+  function validInspectorDraft(draft: InspectorDraft) {
+    if (!['nodeMaxRetries', 'nodeTimeoutSeconds', 'gatewayThreshold'].includes(draft.field))
+      return true
+    if (!draft.value.trim()) return draft.field !== 'gatewayThreshold'
+    if (!/^\d+$/.test(draft.value.trim())) return false
+    const value = Number(draft.value)
+    if (!Number.isSafeInteger(value)) return false
+    if (draft.field === 'nodeMaxRetries') return value <= 10
+    if (draft.field === 'nodeTimeoutSeconds') return value >= 0
+    const node = nodes.value.find((item) => item.id === draft.elementId)
+    if (String(node?.attrs?.joinMode ?? '').toUpperCase() !== 'N_OF') return false
+    const incoming = edges.value.filter((edge) => edge.target === draft.elementId).length
+    return value >= 1 && value <= incoming
+  }
+
+  const inspectorDraftConflicts = computed(() =>
+    inspectorDrafts.value.filter((draft) => {
+      const current = inspectorValue(draft.field, draft.elementId)
+      return (
+        !validInspectorDraft(draft) ||
+        current === null ||
+        (normalizeDraft(draft.field, current) !== normalizeDraft(draft.field, draft.base) &&
+          normalizeDraft(draft.field, current) !== normalizeDraft(draft.field, draft.value))
+      )
+    }),
+  )
+
+  function applyInspectorDraft(draft: InspectorDraft) {
+    if (draft.field === 'edgeCondition') {
+      updateEdge(draft.elementId, { label: draft.value.trim() || undefined })
+    } else if (draft.field === 'nodeName') {
+      updateNode(draft.elementId, { nodeName: draft.value })
+    } else if (draft.field === 'nodeSkipExpression') {
+      updateNode(draft.elementId, { attrs: { skipExpression: draft.value } })
+    } else {
+      const key =
+        draft.field === 'nodeMaxRetries'
+          ? 'maxRetries'
+          : draft.field === 'nodeTimeoutSeconds'
+            ? 'timeoutSeconds'
+            : 'joinThreshold'
+      const value = draft.value.trim() === '' ? undefined : Number(draft.value)
+      updateNode(draft.elementId, { attrs: { [key]: value } })
+    }
+  }
+
+  function resolveInspectorDraft(
+    field: InspectorDraftField,
+    elementId: string,
+    action: 'apply' | 'discard',
+  ) {
+    const draft = getInspectorDraft(field, elementId)
+    if (!draft) return false
+    if (action === 'apply') {
+      if (
+        !editable.value ||
+        !validInspectorDraft(draft) ||
+        inspectorValue(field, elementId) === null
+      )
+        return false
+      applyInspectorDraft(draft)
+    }
+    inspectorDrafts.value = inspectorDrafts.value.filter((item) => item !== draft)
+    return true
+  }
+
+  function applyInspectorDrafts(elementId?: string) {
+    if (!editable.value) return false
+    const drafts = inspectorDrafts.value.filter(
+      (draft) => !elementId || draft.elementId === elementId,
+    )
+    if (drafts.some((draft) => inspectorDraftConflicts.value.includes(draft))) return false
+    const nodePatches = new Map<string, { nodeName?: string; attrs?: Record<string, unknown> }>()
+    for (const draft of drafts) {
+      if (inspectorValue(draft.field, draft.elementId) === normalizeDraft(draft.field, draft.value))
+        continue
+      if (draft.field === 'edgeCondition') {
+        applyInspectorDraft(draft)
+        continue
+      }
+      const patch = nodePatches.get(draft.elementId) ?? {}
+      if (draft.field === 'nodeName') patch.nodeName = draft.value
+      else {
+        const key =
+          draft.field === 'nodeSkipExpression'
+            ? 'skipExpression'
+            : draft.field === 'nodeMaxRetries'
+              ? 'maxRetries'
+              : draft.field === 'nodeTimeoutSeconds'
+                ? 'timeoutSeconds'
+                : 'joinThreshold'
+        const value =
+          draft.field === 'nodeSkipExpression'
+            ? draft.value
+            : draft.value.trim() === ''
+              ? undefined
+              : Number(draft.value)
+        patch.attrs = { ...(patch.attrs ?? {}), [key]: value }
+      }
+      nodePatches.set(draft.elementId, patch)
+    }
+    for (const [id, patch] of nodePatches) updateNode(id, patch)
+    inspectorDrafts.value = inspectorDrafts.value.filter((draft) => !drafts.includes(draft))
+    return true
+  }
+
   function setMeta(next: Partial<DesignerMeta>) {
+    const tenantChanged = next.tenantId !== undefined && next.tenantId !== meta.value.tenantId
+    const existingWorkflowChanged =
+      meta.value.id !== null && next.id !== undefined && next.id !== meta.value.id
+    if (tenantChanged || existingWorkflowChanged) {
+      inspectorScope.value += 1
+      inspectorDrafts.value = []
+    }
     meta.value = { ...meta.value, ...next }
   }
 
@@ -449,18 +639,28 @@ export const useDesignerStore = defineStore('workflowDesigner', () => {
     meta,
     lock,
     validationErrors,
+    inspectorDrafts,
+    inspectorScope,
     // 派生状态
     canUndo,
     canRedo,
     snapshot,
     editable,
+    inspectorDraftConflicts,
     errorNodeIds,
     errorEdgeIds,
     // 操作
     reset,
+    replaceGraphFromJson,
     setMeta,
     setLock,
     setValidationErrors,
+    getInspectorDraft,
+    inspectorValue,
+    setInspectorDraft,
+    validInspectorDraft,
+    resolveInspectorDraft,
+    applyInspectorDrafts,
     addNode,
     addConnectedNode,
     addEdge,

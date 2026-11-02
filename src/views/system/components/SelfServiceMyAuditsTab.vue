@@ -26,7 +26,16 @@
         :label="t('selfServicePanel.colAction')"
         min-width="160"
         show-overflow-tooltip
-      />
+      >
+        <template #default="{ row }">
+          <CopyableText
+            v-if="row.operationType"
+            :text="String(row.operationType)"
+            :copyable="false"
+          />
+          <span v-else class="cell-empty">—</span>
+        </template>
+      </el-table-column>
       <el-table-column
         prop="targetType"
         :label="t('selfServicePanel.colTarget')"
@@ -34,7 +43,10 @@
         show-overflow-tooltip
       >
         <template #default="{ row }">
-          <span>{{ row.targetType }}/{{ row.targetId ?? '—' }}</span>
+          <CopyableText
+            :text="`${row.targetType ?? ''}/${row.targetId ?? '—'}`"
+            :copyable="false"
+          />
         </template>
       </el-table-column>
       <el-table-column :label="t('selfServicePanel.colResult')" width="100">
@@ -50,7 +62,14 @@
       </el-table-column>
       <el-table-column prop="traceId" :label="t('selfServicePanel.colTrace')" width="110">
         <template #default="{ row }">
-          <span class="trace-short">{{ String(row.traceId ?? '').slice(0, 8) || '—' }}</span>
+          <CopyableText
+            v-if="row.traceId != null && String(row.traceId) !== ''"
+            :text="String(row.traceId)"
+            :copyable="false"
+          >
+            <span class="trace-short">{{ String(row.traceId).slice(0, 8) }}</span>
+          </CopyableText>
+          <span v-else class="trace-short">—</span>
         </template>
       </el-table-column>
     </ProTable>
@@ -58,6 +77,7 @@
 </template>
 
 <script setup lang="ts">
+  import CopyableText from '@/components/common/CopyableText.vue'
   import { ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import ProTable from '@/components/table/ProTable.vue'

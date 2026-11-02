@@ -29,6 +29,45 @@ function snap(
 }
 
 describe('validateDag', () => {
+  it.each(['a', '中', '😀'])('按字符数校验节点名称，不截断 %s', (character) => {
+    const graph = snap(
+      [
+        { id: 's', type: 'START' },
+        { id: 'e', type: 'END' },
+      ],
+      [['s', 'e']],
+    )
+    graph.nodes[0].nodeName = character.repeat(256)
+    expect(validateDag(graph).some((error) => error.field === 'nodeName')).toBe(false)
+    graph.nodes[0].nodeName = character.repeat(257)
+    expect(validateDag(graph)).toContainEqual(
+      expect.objectContaining({
+        nodeId: 's',
+        field: 'nodeName',
+        messageKey: 'workflowDesignerMvp.validation.nodeNameTooLong',
+      }),
+    )
+  })
+
+  it.each(['a', '中', '😀'])('检查所有边的完整表达式长度并保留合法 %s', (character) => {
+    const graph = snap(
+      [
+        { id: 's', type: 'START' },
+        { id: 'e', type: 'END' },
+      ],
+      [['s', 'e']],
+    )
+    graph.edges[0].label = character.repeat(1024)
+    expect(validateDag(graph).some((error) => error.field === 'conditionExpr')).toBe(false)
+    graph.edges[0].label = character.repeat(1025)
+    expect(validateDag(graph)).toContainEqual(
+      expect.objectContaining({
+        edgeId: 'e0',
+        field: 'conditionExpr',
+        messageKey: 'workflowDesignerMvp.validation.conditionExprTooLong',
+      }),
+    )
+  })
   it('R1 缺少 START → missingStart', () => {
     const errs = validateDag(snap([{ id: 'e', type: 'END' }], []))
     expect(errs.some((e) => e.messageKey.endsWith('.missingStart'))).toBe(true)

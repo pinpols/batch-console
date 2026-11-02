@@ -9,25 +9,28 @@
         <el-button :icon="Refresh" :loading="loading" @click="load">
           {{ t('common.refresh') }}
         </el-button>
-        <el-button v-if="job && canMutateConfig" :icon="Edit" @click="goEdit">
+        <el-button v-if="canActOnJob" :icon="Edit" @click="goEdit">
           {{ t('common.edit') }}
         </el-button>
-        <el-button v-if="job && canMutateConfig" :icon="MagicStick" @click="dryRunVisible = true">
+        <el-button v-if="canActOnJob" :icon="MagicStick" @click="dryRunVisible = true">
           {{ t('jobDefinitionDetail.dryRun') }}
         </el-button>
-        <el-button
-          v-if="job && canMutateConfig"
-          type="primary"
-          :loading="triggering"
-          @click="triggerJob"
-        >
+        <el-button v-if="canActOnJob" type="primary" :loading="triggering" @click="triggerJob">
           {{ t('jobDefinitionDetail.manualTrigger') }}
         </el-button>
       </template>
     </PageHeader>
 
+    <el-alert
+      v-if="job && !sameTenant"
+      :title="t('jobDefinitionDetail.switchTenantForDetails', { tenant: job.tenantId })"
+      type="warning"
+      :closable="false"
+      show-icon
+    />
+
     <DryRunPlanDialog
-      v-if="job"
+      v-if="job && canActOnJob"
       v-model="dryRunVisible"
       :tenant-id="job.tenantId"
       :job-code="job.jobCode"
@@ -35,24 +38,29 @@
     />
 
     <CalendarMiniCreateDrawer
-      v-if="job?.tenantId"
+      v-if="job && canActOnJob"
       v-model:visible="calendarMiniVisible"
       :tenant-id="job.tenantId"
       @created="onCalendarCreated"
     />
     <WindowMiniCreateDrawer
-      v-if="job?.tenantId"
+      v-if="job && canActOnJob"
       v-model:visible="windowMiniVisible"
       :tenant-id="job.tenantId"
       @created="onWindowCreated"
     />
 
+    <el-alert v-if="loadError" type="error" :closable="false" show-icon>
+      <template #title>{{ t('jobDefinitionDetail.loadFailed') }}</template>
+      <el-button link type="primary" @click="load">{{ t('common.retry') }}</el-button>
+    </el-alert>
+
     <SectionCard>
       <div v-if="loading && !job" class="detail-loading">
         <el-skeleton :rows="8" animated />
       </div>
-      <EmptyState v-else-if="!job" :description="t('jobDefinitionDetail.emptyJob')" />
-      <template v-else>
+      <EmptyState v-else-if="!job && !loadError" :description="t('jobDefinitionDetail.emptyJob')" />
+      <template v-else-if="job">
         <div class="detail-summary">
           <div>
             <div class="summary-code">{{ job.jobCode }}</div>
@@ -82,7 +90,7 @@
                 :closable="false"
                 show-icon
               />
-              <el-descriptions :column="2" border size="small">
+              <el-descriptions :column="isMobile ? 1 : 2" border size="small">
                 <el-descriptions-item :label="t('jobConfigBasic.fieldScheduleType')">
                   {{ job.scheduleType || '—' }}
                 </el-descriptions-item>
@@ -105,7 +113,7 @@
                   {{ job.dagEnabled ? t('common.yes') : t('common.no') }}
                 </el-descriptions-item>
               </el-descriptions>
-              <div v-if="canMutateConfig" class="panel-actions">
+              <div v-if="canActOnJob" class="panel-actions">
                 <el-button type="primary" @click="router.push('/workflow/definitions')">
                   {{ t('jobDefinitionDetail.maintainWorkflowDefinition') }}
                 </el-button>
@@ -127,7 +135,7 @@
 
           <el-tab-pane :label="t('jobDefinitionDetail.tabResource')" name="resource">
             <div class="tab-panel">
-              <el-descriptions :column="2" border size="small">
+              <el-descriptions :column="isMobile ? 1 : 2" border size="small">
                 <el-descriptions-item :label="t('jobConfigBasic.fieldQueueCode')">
                   {{ job.queueCode || '—' }}
                 </el-descriptions-item>
@@ -147,7 +155,7 @@
                   {{ job.retryPolicy || '—' }}
                 </el-descriptions-item>
               </el-descriptions>
-              <div v-if="canMutateConfig" class="panel-actions">
+              <div v-if="canActOnJob" class="panel-actions">
                 <el-button @click="router.push('/governance/queues')">
                   {{ t('jobDefinitionDetail.maintainQueue') }}
                 </el-button>
@@ -160,15 +168,21 @@
 
           <el-tab-pane :label="t('jobDefinitionDetail.tabTrigger')" name="trigger">
             <div class="tab-panel">
-              <el-descriptions :column="2" border size="small">
-                <el-descriptions-item :label="t('jobConfigBasic.fieldDefaultParams')" :span="2">
+              <el-descriptions :column="isMobile ? 1 : 2" border size="small">
+                <el-descriptions-item
+                  :label="t('jobConfigBasic.fieldDefaultParams')"
+                  :span="isMobile ? 1 : 2"
+                >
                   <JsonPreview :data="job.defaultParams" />
                 </el-descriptions-item>
-                <el-descriptions-item :label="t('jobConfigBasic.fieldParamSchema')" :span="2">
+                <el-descriptions-item
+                  :label="t('jobConfigBasic.fieldParamSchema')"
+                  :span="isMobile ? 1 : 2"
+                >
                   <JsonPreview :data="job.paramSchema" />
                 </el-descriptions-item>
               </el-descriptions>
-              <div v-if="canMutateConfig" class="panel-actions">
+              <div v-if="canActOnJob" class="panel-actions">
                 <el-button type="primary" :loading="triggering" @click="triggerJob">
                   {{ t('jobDefinitionDetail.manualTrigger') }}
                 </el-button>
@@ -191,14 +205,17 @@
 
           <el-tab-pane :label="t('jobDefinitionDetail.tabWorkflow')" name="workflow" lazy>
             <div class="tab-panel">
-              <el-descriptions :column="2" border size="small">
+              <el-descriptions :column="isMobile ? 1 : 2" border size="small">
                 <el-descriptions-item :label="t('jobConfigBasic.fieldJobType')">{{
                   job.jobType
                 }}</el-descriptions-item>
                 <el-descriptions-item :label="t('jobConfigBasic.fieldDagEnabled')">
                   {{ job.dagEnabled ? t('common.yes') : t('common.no') }}
                 </el-descriptions-item>
-                <el-descriptions-item :label="t('jobConfigBasic.fieldExecutionHandler')" :span="2">
+                <el-descriptions-item
+                  :label="t('jobConfigBasic.fieldExecutionHandler')"
+                  :span="isMobile ? 1 : 2"
+                >
                   <span class="mono">{{ job.executionHandler || '—' }}</span>
                 </el-descriptions-item>
               </el-descriptions>
@@ -222,14 +239,22 @@
                   min-width="200"
                 >
                   <template #default="{ row }">
-                    <span class="cell-link">{{ row.workflowCode }}</span>
+                    <span class="long-link-cell">
+                      <span class="cell-link">{{ row.workflowCode }}</span>
+                      <CopyableText v-if="row.workflowCode" :text="row.workflowCode" icon-only />
+                    </span>
                   </template>
                 </el-table-column>
                 <el-table-column
                   prop="workflowName"
                   :label="t('jobDefinitionDetail.colName')"
                   min-width="180"
-                />
+                >
+                  <template #default="{ row }">
+                    <CopyableText v-if="row.workflowName" :text="row.workflowName" />
+                    <span v-else>—</span>
+                  </template>
+                </el-table-column>
                 <el-table-column
                   prop="workflowType"
                   :label="t('jobDefinitionDetail.colType')"
@@ -262,7 +287,7 @@
                   </template>
                 </el-table-column>
               </el-table>
-              <div v-if="canMutateConfig" class="panel-actions">
+              <div v-if="canActOnJob" class="panel-actions">
                 <el-button @click="router.push('/workflow/definitions')">
                   {{ t('jobDefinitionDetail.maintainWorkflowDefinition') }}
                 </el-button>
@@ -289,12 +314,19 @@
                   prop="routeCode"
                   :label="t('jobDefinitionDetail.colRouteCode')"
                   min-width="160"
-                />
-                <el-table-column
-                  prop="team"
-                  :label="t('jobDefinitionDetail.colTeam')"
-                  width="140"
-                />
+                >
+                  <template #default="{ row }">
+                    <CopyableText v-if="row.routeCode" :text="row.routeCode" />
+                    <span v-else>—</span>
+                  </template>
+                </el-table-column>
+                <el-table-column prop="team" :label="t('jobDefinitionDetail.colTeam')" width="140">
+                  <template #default="{ row }"
+                    ><CopyableText v-if="row.team" :text="row.team" /><span v-else
+                      >—</span
+                    ></template
+                  >
+                </el-table-column>
                 <el-table-column
                   prop="severity"
                   :label="t('jobDefinitionDetail.colSeverity')"
@@ -304,8 +336,13 @@
                   prop="receiver"
                   :label="t('jobDefinitionDetail.colReceiver')"
                   min-width="200"
-                  show-overflow-tooltip
-                />
+                >
+                  <template #default="{ row }"
+                    ><CopyableText v-if="row.receiver" :text="row.receiver" /><span v-else
+                      >—</span
+                    ></template
+                  >
+                </el-table-column>
                 <el-table-column :label="t('jobDefinitionDetail.colEnabled')" width="80">
                   <template #default="{ row }">
                     <el-tag size="small" :type="row.enabled ? 'success' : 'info'">
@@ -314,7 +351,7 @@
                   </template>
                 </el-table-column>
               </el-table>
-              <div v-if="canMutateConfig" class="panel-actions">
+              <div v-if="canActOnJob" class="panel-actions">
                 <el-button @click="router.push('/observability/alert-routings')">
                   {{ t('jobDefinitionDetail.maintainAlertRouting') }}
                 </el-button>
@@ -344,7 +381,10 @@
                   min-width="220"
                 >
                   <template #default="{ row }">
-                    <span class="cell-link">{{ row.instanceNo }}</span>
+                    <span class="long-link-cell">
+                      <span class="cell-link">{{ row.instanceNo }}</span>
+                      <CopyableText v-if="row.instanceNo" :text="row.instanceNo" icon-only />
+                    </span>
                   </template>
                 </el-table-column>
                 <el-table-column :label="t('jobDefinitionDetail.colStatus')" width="130">
@@ -396,7 +436,14 @@
                   prop="operatorId"
                   :label="t('jobDefinitionDetail.colOperator')"
                   width="160"
-                />
+                >
+                  <template #default="{ row }"
+                    ><CopyableText v-if="row.operatorId" :text="String(row.operatorId)" /><span
+                      v-else
+                      >—</span
+                    ></template
+                  >
+                </el-table-column>
                 <el-table-column
                   prop="detailSummary"
                   :label="t('jobDefinitionDetail.colSummary')"
@@ -435,8 +482,12 @@
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
   import { usePermission } from '@/composables/usePermission'
   import { useTenantReload } from '@/composables/useTenantReload'
+  import { useTenantRequestScope } from '@/composables/useTenantRequestScope'
+  import { currentAuthSession, isSharedAuthRevisionCurrent } from '@/api/authSession'
+  import { useResponsive } from '@/composables/useResponsive'
   import { fmtDatetime } from '@/utils/datetime'
   import PageContainer from '@/components/common/PageContainer.vue'
+  import CopyableText from '@/components/common/CopyableText.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
   import JsonPreview from '@/components/common/JsonPreview.vue'
@@ -482,6 +533,7 @@
   const { t } = useI18n({ useScope: 'global' })
   const { data: metaEnumsData } = useConsoleMetaEnumsQuery()
   const { canMutateConfig } = usePermission()
+  const { isMobile } = useResponsive()
 
   type JobDefinitionDetailModel = ConsoleJobDefinitionResponse &
     Partial<{
@@ -500,9 +552,19 @@
 
   const activeTab = ref<DetailTab>(tabFromQuery())
   const loading = ref(false)
+  const loadError = ref(false)
   const triggering = ref(false)
   const dryRunVisible = ref(false)
   const job = ref<JobDefinitionDetailModel | null>(null)
+  let contextRevision = 0
+  let loadRevision = 0
+  let runsRevision = 0
+  let auditsRevision = 0
+  let alertsRevision = 0
+  let workflowsRevision = 0
+  const triggerScope = useTenantRequestScope()
+  const sameTenant = computed(() => !!job.value && job.value.tenantId === tenant.tenantId)
+  const canActOnJob = computed(() => sameTenant.value && canMutateConfig.value)
   const runs = ref<ConsoleJobInstanceResponse[]>([])
   const runsLoading = ref(false)
   const runsLoaded = ref(false)
@@ -536,97 +598,143 @@
   }
 
   async function load() {
-    if (!Number.isFinite(jobId.value) || jobId.value <= 0) {
+    const targetId = jobId.value
+    const targetTenant = tenantId.value
+    const context = contextRevision
+    const request = ++loadRevision
+    loadError.value = false
+    if (!Number.isFinite(targetId) || targetId <= 0) {
       job.value = null
+      loading.value = false
       return
+    }
+    if (job.value && (job.value.id !== targetId || job.value.tenantId !== targetTenant)) {
+      job.value = null
+      runs.value = []
+      auditRows.value = []
+      alertRows.value = []
+      workflowRows.value = []
     }
     loading.value = true
     try {
-      job.value = await jobApi.getDefinition(jobId.value, tenantId.value)
-      if (
-        activeTab.value === 'files' &&
-        isUnsupportedFileTabJobType(job.value.jobType)
-      ) {
+      const result = await jobApi.getDefinition(targetId, targetTenant)
+      if (request !== loadRevision || context !== contextRevision) return
+      ++runsRevision
+      ++auditsRevision
+      ++alertsRevision
+      ++workflowsRevision
+      runsLoading.value = false
+      auditLoading.value = false
+      alertsLoading.value = false
+      workflowsLoading.value = false
+      job.value = result
+      if (activeTab.value === 'files' && isUnsupportedFileTabJobType(job.value.jobType)) {
         activeTab.value = 'basic'
       }
       runsLoaded.value = false
       auditsLoaded.value = false
       alertsLoaded.value = false
       workflowsLoaded.value = false
-      runs.value = []
-      auditRows.value = []
-      alertRows.value = []
-      workflowRows.value = []
       void loadLazyTab(activeTab.value)
+    } catch {
+      if (request === loadRevision && context === contextRevision) loadError.value = true
     } finally {
-      loading.value = false
+      if (request === loadRevision && context === contextRevision) loading.value = false
     }
   }
 
   async function loadRuns() {
     if (!job.value || runsLoaded.value) return
+    const sourceJob = job.value
+    const context = contextRevision
+    const request = ++runsRevision
     runsLoading.value = true
     try {
       const result = await instanceApi.list({
-        tenantId: job.value.tenantId,
-        jobCode: job.value.jobCode,
+        tenantId: sourceJob.tenantId,
+        exactJobCode: sourceJob.jobCode,
         page: 1,
         pageSize: 15,
       })
+      if (request !== runsRevision || context !== contextRevision) return
       runs.value = result.records ?? []
       runsLoaded.value = true
     } finally {
-      runsLoading.value = false
+      if (request === runsRevision && context === contextRevision) runsLoading.value = false
     }
   }
 
   async function loadAudits() {
     if (!job.value) return
+    const sourceJob = job.value
+    const context = contextRevision
+    const request = ++auditsRevision
     auditLoading.value = true
     try {
-      const result = await queryAuditsPage(job.value.tenantId, 1, 50)
+      const result = await queryAuditsPage(sourceJob.tenantId, 1, 50)
+      if (request !== auditsRevision || context !== contextRevision) return
       auditRows.value = (result.items ?? [])
         .filter((row) => {
           const text = `${row.operationType ?? ''} ${row.detailSummary ?? ''} ${row.evidenceRef ?? ''}`
-          return text.includes(job.value?.jobCode ?? '')
+          return text.includes(sourceJob.jobCode)
         })
         .slice(0, 50)
       auditsLoaded.value = true
     } finally {
-      auditLoading.value = false
+      if (request === auditsRevision && context === contextRevision) auditLoading.value = false
     }
   }
 
   async function loadAlerts() {
     if (!job.value) return
+    const sourceJob = job.value
+    const context = contextRevision
+    const request = ++alertsRevision
     alertsLoading.value = true
     try {
-      alertRows.value = await governanceApi.listAlertRoutings(job.value.tenantId)
+      const result = await governanceApi.listAlertRoutings(sourceJob.tenantId)
+      if (request !== alertsRevision || context !== contextRevision) return
+      alertRows.value = result
       alertsLoaded.value = true
     } finally {
-      alertsLoading.value = false
+      if (request === alertsRevision && context === contextRevision) alertsLoading.value = false
     }
   }
 
   async function loadWorkflows() {
     if (!job.value) return
+    const sourceJob = job.value
+    const context = contextRevision
+    const request = ++workflowsRevision
     workflowsLoading.value = true
     try {
       const result = await workflowApi.listDefinitions({
-        tenantId: job.value.tenantId,
-        relatedJobCode: job.value.jobCode,
+        tenantId: sourceJob.tenantId,
+        relatedJobCode: sourceJob.jobCode,
         page: 1,
         pageSize: 50,
       })
+      if (request !== workflowsRevision || context !== contextRevision) return
       workflowRows.value = result.records ?? []
       workflowsLoaded.value = true
     } finally {
-      workflowsLoading.value = false
+      if (request === workflowsRevision && context === contextRevision)
+        workflowsLoading.value = false
     }
   }
 
   function goWorkflowDesigner(row: ConsoleWorkflowDefinitionResponse) {
+    if (!isCurrentTenantForNavigation()) return
     void router.push(`/workflow/viewer/${row.id}`)
+  }
+
+  function isCurrentTenantForNavigation() {
+    if (!job.value) return false
+    if (job.value.tenantId === tenant.tenantId) return true
+    ElMessage.warning(
+      t('jobDefinitionDetail.switchTenantForDetails', { tenant: job.value.tenantId }),
+    )
+    return false
   }
 
   function onCalendarCreated(code: string) {
@@ -647,12 +755,22 @@
   }
 
   async function triggerJob() {
-    if (!job.value) return
-    let payloadText = job.value.defaultParams?.trim() || '{}'
+    if (!job.value || !canMutateConfig.value || !isCurrentTenantForNavigation()) return
+    const sourceJob = job.value
+    const scope = triggerScope.begin()
+    const authSession = currentAuthSession()
+    const isCurrent = () =>
+      triggerScope.isCurrent(scope) &&
+      isSharedAuthRevisionCurrent() &&
+      currentAuthSession() === authSession &&
+      canActOnJob.value &&
+      job.value?.id === sourceJob.id &&
+      job.value?.tenantId === sourceJob.tenantId
+    let payloadText = sourceJob.defaultParams?.trim() || '{}'
     try {
       const { value } = await ElMessageBox.prompt(
         t('jobDefinitionDetail.triggerPromptMessage'),
-        t('jobDefinitionDetail.triggerPromptTitle', { code: job.value.jobCode }),
+        t('jobDefinitionDetail.triggerPromptTitle', { code: sourceJob.jobCode }),
         {
           inputType: 'textarea',
           inputValue: payloadText,
@@ -673,12 +791,14 @@
     } catch {
       return
     }
+    if (!isCurrent()) return
     triggering.value = true
     try {
-      const workflowDefinitionId = job.value.defaultWorkflowDefinitionId ?? 0
-      const requestTenantId = job.value.tenantId
+      const workflowDefinitionId = sourceJob.defaultWorkflowDefinitionId ?? 0
+      const requestTenantId = sourceJob.tenantId
       const triggerPayload = JSON.parse(payloadText)
       await jobApi.trigger(workflowDefinitionId, requestTenantId, triggerPayload)
+      if (!isCurrent()) return
       ElMessage.success(t('jobDefinitionDetail.triggerSubmitted'))
       runsLoaded.value = false
       if (activeTab.value === 'runs') await loadRuns()
@@ -688,15 +808,15 @@
   }
 
   function goAllRuns() {
-    if (!job.value) return
+    if (!job.value || !isCurrentTenantForNavigation()) return
     void router.push({
       path: '/monitor/job-instances',
-      query: { jobCode: job.value.jobCode, range: 'all' },
+      query: { exactJobCode: job.value.jobCode, range: 'all' },
     })
   }
 
   function goEdit() {
-    if (!job.value || !canMutateConfig.value) return
+    if (!job.value || !canMutateConfig.value || !isCurrentTenantForNavigation()) return
     void router.push({
       path: '/jobs/definitions',
       query: {
@@ -709,6 +829,7 @@
   }
 
   function goRunDetail(row: ConsoleJobInstanceResponse) {
+    if (!isCurrentTenantForNavigation()) return
     void router.push(`/monitor/job-instances/${row.id}`)
   }
 
@@ -745,6 +866,28 @@
   )
 
   watch(
+    [() => tenant.tenantId, () => route.params.id, () => route.query.tenantId],
+    () => {
+      ++contextRevision
+      triggerScope.begin()
+      dryRunVisible.value = false
+      calendarMiniVisible.value = false
+      windowMiniVisible.value = false
+    },
+    { flush: 'sync' },
+  )
+  watch(
+    canMutateConfig,
+    () => {
+      triggerScope.begin()
+      dryRunVisible.value = false
+      calendarMiniVisible.value = false
+      windowMiniVisible.value = false
+    },
+    { flush: 'sync' },
+  )
+
+  watch(
     () => route.params.id,
     () => {
       void load()
@@ -755,6 +898,18 @@
 </script>
 
 <style scoped>
+  .long-link-cell {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+  }
+
+  .long-link-cell > :first-child {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
   .detail-loading {
     padding: 8px 0;
   }
@@ -807,6 +962,11 @@
 
   .panel-actions {
     justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .panel-actions :deep(.el-button + .el-button) {
+    margin-left: 0;
   }
 
   .mono {

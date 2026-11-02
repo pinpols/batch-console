@@ -52,7 +52,7 @@
           ref="formRef"
           :model="form"
           :rules="rules"
-          label-width="128px"
+          label-width="160px"
           class="wizard-form"
           @submit.prevent
         >
@@ -368,7 +368,7 @@
   import { computed, reactive, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { useRouter } from 'vue-router'
-  import type { FormInstance, FormRules } from 'element-plus'
+  import type { FormInstance } from 'element-plus'
   import { ElMessage } from 'element-plus'
   import JsonTextareaInput from '@/components/common/JsonTextareaInput.vue'
   import { jobApi, type JobBundlePayload } from '@/api/job'
@@ -388,6 +388,7 @@
   import { useWriteAvailability } from '@/composables/useWriteAvailability'
   import { useTenantReload } from '@/composables/useTenantReload'
   import { useTenantRequestScope } from '@/composables/useTenantRequestScope'
+  import { useDirtyForm } from '@/composables/useDirtyForm'
   import { useAuthStore } from '@/stores/auth'
   import { logError } from '@/utils/logger'
   import type {
@@ -402,6 +403,7 @@
   import JobConfigBasicForm from './components/JobConfigBasicForm.vue'
   import JobConfigBasicSection from './components/JobConfigBasicSection.vue'
   import { createEmptyJobEditForm } from './jobEditFormTypes'
+  import { createJobDefinitionWizardRules } from './jobDefinitionWizardRules'
 
   const { t } = useI18n({ useScope: 'global' })
   const steps = computed(
@@ -446,7 +448,16 @@
   const formRef = ref<FormInstance>()
   const step = ref(0)
   const current = computed(() => steps.value[step.value])
-  const form = reactive(createEmptyJobEditForm())
+  function newWizardForm(): ReturnType<typeof createEmptyJobEditForm> {
+    return {
+      ...createEmptyJobEditForm(),
+      jobType: 'GENERAL',
+      scheduleType: 'MANUAL',
+      executionMode: 'FULL',
+      enabled: false,
+    }
+  }
+  const form = reactive(newWizardForm())
   const saving = ref(false)
   const advancing = ref(false)
   const executionModeOptions = ref<MetaOption[]>([])
@@ -469,22 +480,37 @@
   const selectedWorkflowIds = ref<number[]>([])
   const selectedAlertRoutingIds = ref<number[]>([])
 
-  // JobType 由 BE /meta/enums 提供，GENERAL 是默认通用任务。
-  form.jobType = 'GENERAL'
-  form.scheduleType = 'MANUAL'
-  form.executionMode = 'FULL'
-  // 新建定义默认禁用:CRON 一旦启用就会按表达式持续触发,
-  // 强制创建者先在列表页 dry-run / 校验后再 enable,避免脏数据(参考 e2e-job-* 历史)
-  form.enabled = false
+  // 新建定义默认禁用，避免 CRON 在创建后立即持续触发。
+  const { markPristine } = useDirtyForm(() => ({
+    form,
+    fileChannelsJson: fileChannelsJson.value,
+    fileTemplatesJson: fileTemplatesJson.value,
+    workflowDefinitionsJson: workflowDefinitionsJson.value,
+    alertRoutingsJson: alertRoutingsJson.value,
+    bundlePrefillJson: bundlePrefillJson.value,
+    selectedChannelIds: selectedChannelIds.value,
+    selectedTemplateIds: selectedTemplateIds.value,
+    selectedWorkflowIds: selectedWorkflowIds.value,
+    selectedAlertRoutingIds: selectedAlertRoutingIds.value,
+  }))
   const submissionScope = useTenantRequestScope()
   const navigationScope = useTenantRequestScope()
   const optionsScope = useTenantRequestScope()
   const auth = useAuthStore()
   const actor = computed(() => auth.userInfo?.userId ?? auth.userInfo?.username)
   const {
-    recoveryCommands, recoveryStorageBlocked, recoveryLoadingKey, recoveryCurrent,
-    recoveryKindLabel, headerTenant, refreshRecoveryCommands, prepareRecovery,
-    checkRecovery, canStopRecovery, stopTrackingRecovery, acknowledgeRecovery,
+    recoveryCommands,
+    recoveryStorageBlocked,
+    recoveryLoadingKey,
+    recoveryCurrent,
+    recoveryKindLabel,
+    headerTenant,
+    refreshRecoveryCommands,
+    prepareRecovery,
+    checkRecovery,
+    canStopRecovery,
+    stopTrackingRecovery,
+    acknowledgeRecovery,
   } = useJobBundleRecovery()
   let submissionRevision = 0
   watch(
@@ -508,102 +534,7 @@
     { deep: true, flush: 'sync' },
   )
 
-  // 表单校验:与编辑 drawer (JobDefinitionList) 一致的口径,避免向导提交后 BE 才报错
-  const jobCodePattern = /^[a-zA-Z][a-zA-Z0-9_-]{0,127}$/
-  const watermarkPattern = /^[a-zA-Z_][a-zA-Z0-9_]*$/
-  const jsonValidator = (
-    _rule: unknown,
-    value: string | undefined,
-    callback: (err?: Error) => void,
-  ) => {
-    if (!value || !value.trim()) return callback()
-    try {
-      JSON.parse(value)
-      callback()
-    } catch {
-      const errorMessage = t('jobDefinitionWizard.errJsonInvalid')
-      const validationError = new Error(errorMessage)
-      callback(validationError)
-    }
-  }
-  const watermarkValidator = (_rule: unknown, value: unknown, callback: (err?: Error) => void) => {
-    if (form.executionMode !== 'INCREMENTAL') return callback()
-    const v = typeof value === 'string' ? value.trim() : ''
-    if (!v) {
-      const errorMessage = t('jobDefinitionWizard.errWatermarkRequired')
-      const validationError = new Error(errorMessage)
-      return callback(validationError)
-    }
-    if (!watermarkPattern.test(v)) {
-      const errorMessage = t('jobDefinitionWizard.errWatermarkPattern')
-      const validationError = new Error(errorMessage)
-      return callback(validationError)
-    }
-    return callback()
-  }
-  const jobCodeRefValidator = (_rule: unknown, value: unknown, callback: (err?: Error) => void) => {
-    const v = typeof value === 'string' ? value.trim() : ''
-    if (!v) return callback()
-    if (jobCodePattern.test(v)) return callback()
-    const errorMessage = t('jobDefinitionWizard.errJobCodePattern')
-    const validationError = new Error(errorMessage)
-    return callback(validationError)
-  }
-  const scheduleExprValidator = (
-    _rule: unknown,
-    value: unknown,
-    callback: (err?: Error) => void,
-  ) => {
-    if (form.scheduleType === 'MANUAL') return callback()
-    const v = typeof value === 'string' ? value.trim() : ''
-    if (!v) {
-      const errorMessage = t('jobDefinitionWizard.errScheduleExprRequired')
-      const validationError = new Error(errorMessage)
-      return callback(validationError)
-    }
-    return callback()
-  }
-  const rules: FormRules = {
-    jobCode: [
-      { required: true, message: t('jobDefinitionWizard.errJobCodeRequired'), trigger: 'blur' },
-      {
-        validator: (_r, v, cb) => {
-          if (!v) return cb()
-          const candidateJobCode = String(v)
-          if (jobCodePattern.test(candidateJobCode)) return cb()
-          const errorMessage = t('jobDefinitionWizard.errJobCodePattern')
-          const validationError = new Error(errorMessage)
-          return cb(validationError)
-        },
-        trigger: 'blur',
-      },
-    ],
-    jobName: [
-      { required: true, message: t('jobDefinitionWizard.errJobNameRequired'), trigger: 'blur' },
-    ],
-    jobType: [
-      { required: true, message: t('jobDefinitionWizard.errJobTypeRequired'), trigger: 'change' },
-    ],
-    scheduleType: [
-      {
-        required: true,
-        message: t('jobDefinitionWizard.errScheduleTypeRequired'),
-        trigger: 'change',
-      },
-    ],
-    executionMode: [
-      {
-        required: true,
-        message: t('jobDefinitionWizard.errExecutionModeRequired'),
-        trigger: 'change',
-      },
-    ],
-    watermarkField: [{ validator: watermarkValidator, trigger: 'blur' }],
-    dependsOnJobCode: [{ validator: jobCodeRefValidator, trigger: 'blur' }],
-    scheduleExpr: [{ validator: scheduleExprValidator, trigger: 'blur' }],
-    paramSchema: [{ validator: jsonValidator, trigger: 'blur' }],
-    defaultParams: [{ validator: jsonValidator, trigger: 'blur' }],
-  }
+  const rules = createJobDefinitionWizardRules(form, t)
 
   // 切非 INCREMENTAL 时自动清空 watermarkField,避免脏数据被 build 进 bundle
   watch(
@@ -644,6 +575,26 @@
     selectedWorkflowIds.value = []
     selectedAlertRoutingIds.value = []
   }
+
+  function resetWizardDraft() {
+    const initial = newWizardForm()
+    for (const key of Object.keys(form)) {
+      if (!(key in initial)) Reflect.deleteProperty(form, key)
+    }
+    Object.assign(form, initial)
+    fileChannelsJson.value = ''
+    fileTemplatesJson.value = ''
+    workflowDefinitionsJson.value = ''
+    alertRoutingsJson.value = ''
+    bundlePrefillJson.value = ''
+    bundlePrefillVisible.value = false
+    step.value = 0
+    clearAssociationOptions()
+    formRef.value?.clearValidate?.()
+    markPristine()
+  }
+
+  watch(() => tenant.tenantId, resetWizardDraft, { flush: 'sync' })
 
   watch(
     [() => tenant.tenantId, actor],
@@ -919,8 +870,11 @@
     const expectedHeader = headerTenant()
     const authSession = currentAuthSession()
     if (!isSharedAuthRevisionCurrent()) return
-    const isCurrent = () => submissionScope.isCurrent(scope) && revision === submissionRevision &&
-      headerTenant() === expectedHeader && currentAuthSession() === authSession &&
+    const isCurrent = () =>
+      submissionScope.isCurrent(scope) &&
+      revision === submissionRevision &&
+      headerTenant() === expectedHeader &&
+      currentAuthSession() === authSession &&
       isSharedAuthRevisionCurrent()
     saving.value = true
     let sent = false
@@ -930,12 +884,15 @@
       const command = prepareRecovery('JOB_BUNDLE_CREATE', tenantId)
       if (!command) return
       sent = true
-      const response = await jobApi.createBundle({
-        tenantId,
-        mode: 'SKIP_EXISTING',
-        dryRun: false,
-        bundle,
-      }, command.key)
+      const response = await jobApi.createBundle(
+        {
+          tenantId,
+          mode: 'SKIP_EXISTING',
+          dryRun: false,
+          bundle,
+        },
+        command.key,
+      )
       sent = false
       if (!isCurrent()) return
       const outcome = assessBatchInitOutcome(response.result)
@@ -954,17 +911,15 @@
       }
       refreshRecoveryCommands()
       ElMessage.success(t('jobDefinitionWizard.createBundleSuccess'))
+      markPristine()
       await router.push({ path: '/jobs/definitions', query: { jobCode: submittedJobCode } })
     } catch (error) {
+      if (!isCurrent()) return
       if (error instanceof SyntaxError) {
         ElMessage.error(t('jobDefinitionWizard.relatedJsonInvalid'))
       } else {
         const status = (error as { response?: { status?: number } })?.response?.status
-        if (
-          sent &&
-          isCurrent() &&
-          (isConsoleServiceUnavailable(error) || status === 409)
-        ) {
+        if (sent && isCurrent() && (isConsoleServiceUnavailable(error) || status === 409)) {
           ElMessage.warning(t('jobDefinitionWizard.createBundleUnknownOutcome'))
         }
         throw error
@@ -992,6 +947,10 @@
     margin: 0 auto;
   }
 
+  .wizard-steps :deep(.el-step__title) {
+    line-height: 1.35;
+  }
+
   .wizard-form {
     max-width: 920px;
     margin: 0 auto;
@@ -1003,6 +962,14 @@
     max-width: none;
   }
 
+  .wizard-form :deep(.el-form-item__label) {
+    align-items: center;
+    align-self: flex-start;
+    height: auto;
+    min-height: 32px;
+    line-height: 20px;
+  }
+
   .wizard-form :deep(.el-input),
   .wizard-form :deep(.el-select),
   .wizard-form :deep(.el-input-number) {
@@ -1012,6 +979,11 @@
 
   .wizard-form :deep(.el-form-item__content) {
     min-width: 0;
+  }
+
+  .wizard-form :deep(.el-form-item__error) {
+    position: static;
+    width: 100%;
   }
 
   .wizard-form :deep(.el-textarea),
@@ -1142,21 +1114,45 @@
     }
 
     .wizard-steps :deep(.el-step__title) {
-      font-size: 11px;
-      line-height: 1.3;
-      overflow-wrap: anywhere;
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
     }
 
     .wizard-steps :deep(.el-step__description) {
       display: none;
     }
 
+    .wizard-form :deep(.el-form-item) {
+      display: block;
+    }
+
     .wizard-form :deep(.el-form-item__label) {
       justify-content: flex-start;
+      width: 100% !important;
+      height: auto;
+      min-height: 0;
+      margin-bottom: 8px;
+      padding-right: 0;
+      line-height: 22px;
+      text-align: left;
+    }
+
+    .wizard-form :deep(.el-form-item__content) {
+      width: 100%;
+      margin-left: 0 !important;
     }
 
     .wizard-form :deep(.cnb-row) {
-      grid-template-columns: minmax(0, 1fr);
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .wizard-form :deep(.cnb-version) {
+      grid-column: 1 / -1;
     }
 
     .wizard-form :deep(.cnb-sep) {

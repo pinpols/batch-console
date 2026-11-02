@@ -7,7 +7,7 @@ vi.mock('@/api/client', () => ({
   del: vi.fn(),
 }))
 vi.mock('@/api/adapters', () => ({ fetchAllPageItems: vi.fn() }))
-vi.mock('@/api/interceptors', () => ({ readStoredTenantId: vi.fn(() => 'tenant-a') }))
+vi.mock('@/utils/tenantContext', () => ({ readActiveTenantId: vi.fn(() => 'tenant-a') }))
 
 import { apiClient, get, post } from '@/api/client'
 import { fileApi } from '@/api/file'
@@ -67,14 +67,10 @@ describe('file upload API', () => {
     await expect(
       fileApi.presignUpload('tenant-a', 'inbound', 'orders.csv', 'group-session-key', binding),
     ).resolves.toEqual(response)
-    expect(mockedPost).toHaveBeenCalledWith(
-      '/api/console/files/presign-upload',
-      binding,
-      {
-        params: { tenantId: 'tenant-a', channelCode: 'inbound', fileName: 'orders.csv' },
-        headers: { 'Idempotency-Key': 'group-session-key' },
-      },
-    )
+    expect(mockedPost).toHaveBeenCalledWith('/api/console/files/presign-upload', binding, {
+      params: { tenantId: 'tenant-a', channelCode: 'inbound', fileName: 'orders.csv' },
+      headers: { 'Idempotency-Key': 'group-session-key' },
+    })
   })
 
   it('creates an upload session with tenant, channel, filename, and an idempotency key', async () => {

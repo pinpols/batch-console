@@ -4,8 +4,8 @@
       <div class="m-page__header">
         <div>
           <div class="m-page__title">{{ t('mobile.jobs.title') }}</div>
-          <div class="m-page__subtitle">
-            {{ t('mobile.jobs.summary', { total, page }) }}
+          <div v-if="!loading && !loadError" class="m-page__subtitle">
+            {{ t('mobile.jobs.summary', { total }) }}
           </div>
         </div>
         <button
@@ -49,7 +49,11 @@
       <!-- SLA 违约筛选指示条:服务端按 deadline_at<now AND active status 过滤 -->
       <div v-if="slaBreachedOnly" class="m-filter-chip">
         <span class="m-filter-chip__label">
-          {{ t('mobile.jobs.slaFilterChip', { total }) }}
+          {{
+            loading || loadError
+              ? t('mobile.jobs.slaFilterActive')
+              : t('mobile.jobs.slaFilterChip', { total })
+          }}
         </span>
         <button type="button" class="m-filter-chip__clear" @click="clearSlaFilter">
           {{ t('mobile.common.clear') }}
@@ -57,8 +61,12 @@
       </div>
 
       <MSkeleton v-if="loading && rows.length === 0" :count="4" />
-      <div v-else-if="rows.length === 0" class="m-empty">
+      <div v-else-if="!loadError && rows.length === 0" class="m-empty">
         {{ slaBreachedOnly ? t('mobile.jobs.slaEmpty') : t('mobile.jobs.empty') }}
+      </div>
+      <div v-if="loadError" class="m-empty m-load-error" role="alert">
+        <div>{{ t('mobile.common.loadFail') }}</div>
+        <button class="m-btn" type="button" @click="load">{{ t('common.retry') }}</button>
       </div>
 
       <div
@@ -68,18 +76,28 @@
         @click="openDetail(row)"
       >
         <div class="m-card__row">
-          <div class="m-card__title">
+          <button
+            type="button"
+            class="m-card__title m-job-card__detail"
+            :aria-label="`${t('common.detail')} ${row.jobCode}`"
+            @click.stop="openDetail(row)"
+          >
             {{ row.jobCode }}
-          </div>
+          </button>
           <span :class="['m-chip', statusChipClass(row.instanceStatus)]">
             {{ resolveEnumLabel('instanceStatus', row.instanceStatus) }}
           </span>
         </div>
         <div class="m-card__sub m-job-card__instance">
           <span class="m-job-card__instance-label">{{ t('mobile.jobs.instanceNo') }}</span>
-          <span class="m-copy-text" @click.stop="copy(row.instanceNo, 'instanceNo')">{{
-            row.instanceNo
-          }}</span>
+          <button
+            type="button"
+            class="m-copy-text"
+            :aria-label="`${t('common.copy')} ${t('mobile.jobs.instanceNo')} ${row.instanceNo}`"
+            @click.stop="copy(row.instanceNo, 'instanceNo')"
+          >
+            {{ row.instanceNo }}
+          </button>
         </div>
         <div class="m-card__meta m-job-card__meta">
           <div class="m-job-card__meta-item">
@@ -134,6 +152,10 @@
         <span v-if="loadingMore" class="m-infinite__text">{{
           t('mobile.common.loadingMore')
         }}</span>
+        <div v-else-if="loadMoreError" class="m-load-error" role="alert">
+          <span>{{ t('mobile.common.loadFail') }}</span>
+          <button class="m-btn" type="button" @click="loadMore">{{ t('common.retry') }}</button>
+        </div>
         <span v-else-if="!hasMore" class="m-infinite__text">{{ t('mobile.common.noMore') }}</span>
       </div>
     </div>
@@ -173,9 +195,12 @@
   const tenant = useTenantStore()
   const { copy } = useCopy()
   const loading = ref(false)
+  const loadError = ref(false)
+  const loadingMore = ref(false)
+  const loadMoreError = ref(false)
   const rows = ref<ConsoleJobInstanceResponse[]>([])
   const total = ref(0)
-  const page = ref(1)
+  let requestSequence = 0
 
   // 4 状态 tab — '' = 全部。tab 用单数 status,跟后端 query.instanceStatus 直接对应。
   // RUNNING/FAILED/COMPLETED 是 oncall 三大高频档,其它细分状态压在「全部」里。
@@ -216,7 +241,6 @@
     delete q.slaBreached
     router.replace({ path: route.path, query: q })
     query.slaBreached = false
-    page.value = 1
     load()
   }
 
@@ -246,34 +270,45 @@
   // cursor 模式相比之前 offset+touch-bottom 拼接的优势:并发写时不漏/不重(token 锁定 id<N 区间)
   const hasMoreRef = ref(false)
   async function load() {
+    const sequence = ++requestSequence
     loading.value = true
+    loadingMore.value = false
+    loadError.value = false
+    loadMoreError.value = false
+    rows.value = []
+    total.value = 0
+    hasMoreRef.value = false
+    query.tenantId = tenant.tenantId
+    query.cursor = null
     try {
-      query.tenantId = tenant.tenantId
-      query.cursor = null
-      const res = await instanceApi.list(query)
+      const res = await instanceApi.list({ ...query })
+      if (sequence !== requestSequence) return
       rows.value = res.records
       total.value = res.total
       query.cursor = res.nextCursor ?? null
       hasMoreRef.value = res.hasMore ?? false
     } catch {
-      ElMessage.error(t('mobile.common.loadFail'))
+      if (sequence !== requestSequence) return
+      loadError.value = true
     } finally {
-      loading.value = false
+      if (sequence === requestSequence) loading.value = false
     }
   }
 
-  const loadingMore = ref(false)
   const hasMore = computed(() => hasMoreRef.value)
 
   async function loadMore() {
-    const cannotLoadMoreInstances = loadingMore.value || loading.value || !hasMore.value || !query.cursor
+    const cannotLoadMoreInstances =
+      loadingMore.value || loading.value || !hasMore.value || !query.cursor
     if (cannotLoadMoreInstances) {
       return
     }
+    const sequence = requestSequence
     loadingMore.value = true
+    loadMoreError.value = false
     try {
-      query.tenantId = tenant.tenantId
-      const res = await instanceApi.list(query)
+      const res = await instanceApi.list({ ...query })
+      if (sequence !== requestSequence) return
       // 追加去重(虽然 cursor 保证不重,保留兜底防止 BE 异常)
       const known = new Set(rows.value.map((r) => r.id))
       const fresh = res.records.filter((r) => !known.has(r.id))
@@ -281,9 +316,10 @@
       query.cursor = res.nextCursor ?? null
       hasMoreRef.value = res.hasMore ?? false
     } catch {
-      /* 单次失败不刷状态,下次触底再重试 */
+      if (sequence !== requestSequence) return
+      loadMoreError.value = true
     } finally {
-      loadingMore.value = false
+      if (sequence === requestSequence) loadingMore.value = false
     }
   }
 
@@ -295,7 +331,7 @@
     if (!el) return
     io = new IntersectionObserver(
       (entries) => {
-        if (entries.some((e) => e.isIntersecting)) loadMore()
+        if (!loadMoreError.value && entries.some((e) => e.isIntersecting)) loadMore()
       },
       { rootMargin: '200px' },
     )
@@ -309,7 +345,6 @@
 
   function onStatusTab(status: string) {
     query.instanceStatus = status
-    page.value = 1
     load()
   }
 
@@ -319,7 +354,6 @@
     // 250ms 防抖,避免每个字符都请求
     if (kwTimer) clearTimeout(kwTimer)
     kwTimer = setTimeout(() => {
-      page.value = 1
       load()
     }, 250)
   }
@@ -331,7 +365,6 @@
       // 收起 → 清空 keyword 并立即重查
       if (query.jobCode) {
         query.jobCode = ''
-        page.value = 1
         load()
       }
       searchOpen.value = false
@@ -376,9 +409,16 @@
 </script>
 
 <style scoped>
+  .m-load-error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+
   .m-job-card__instance {
     display: flex;
-    align-items: baseline;
+    align-items: center;
     gap: 6px;
     min-width: 0;
   }
@@ -389,13 +429,35 @@
     font-size: 12px;
   }
 
+  .m-job-card__detail,
   .m-job-card__instance .m-copy-text {
-    min-width: 0;
-    overflow: hidden;
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    line-height: inherit;
+    text-align: left;
+  }
+
+  .m-job-card__detail {
+    font-family: inherit;
+    cursor: pointer;
+  }
+
+  .m-job-card__detail:focus-visible,
+  .m-job-card__instance .m-copy-text:focus-visible {
+    outline: 2px solid var(--ios-blue);
+    outline-offset: 2px;
+  }
+
+  .m-job-card__instance .m-copy-text {
+    min-width: 44px;
     color: var(--ios-blue);
     font-family: var(--font-mono);
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    font-size: inherit;
+    overflow-wrap: anywhere;
+    white-space: normal;
   }
 
   .m-job-card__meta {

@@ -1,8 +1,9 @@
 import { post } from '@/api/client'
-import { readStoredTenantId } from '@/api/interceptors'
+import { readActiveTenantId, readTenantContext } from '@/utils/tenantContext'
 import { createIdempotencyKey } from '@/utils/idempotency'
 import type { WorkflowExecutionProgress } from '@/api/workflowRuns'
 import type { AxiosRequestConfig } from 'axios'
+import { currentAuthSession, isSharedAuthRevisionCurrent } from '@/api/authSession'
 
 type SseStreamType =
   | 'job-instances'
@@ -27,6 +28,25 @@ export async function fetchStreamTicket(): Promise<string> {
   return res.ticket
 }
 
+/** 换票期间如果租户变化，不能把旧范围与新票据组合使用。 */
+async function ticketForTenant(tenantId: string): Promise<string> {
+  const initial = readTenantContext()
+  const authSession = currentAuthSession()
+  if (initial.tenantId !== tenantId || !isSharedAuthRevisionCurrent())
+    throw new Error('Tenant context changed')
+  const ticket = await fetchStreamTicket()
+  const current = readTenantContext()
+  if (
+    current.tenantId !== initial.tenantId ||
+    current.revision !== initial.revision ||
+    currentAuthSession() !== authSession ||
+    !isSharedAuthRevisionCurrent()
+  ) {
+    throw new Error('Tenant context changed')
+  }
+  return ticket
+}
+
 function resolvePath(domain: SseStreamType): string {
   const streamDomains: SseStreamType[] = [
     'job-instances',
@@ -42,7 +62,7 @@ function resolvePath(domain: SseStreamType): string {
 function buildStreamUrl(
   path: string,
   ticket: string,
-  tenantId = readStoredTenantId(),
+  tenantId = readActiveTenantId(),
   extra: Record<string, string> = {},
 ): string {
   const base =
@@ -61,9 +81,10 @@ export async function createSseStream(
   onMessage: (data: string) => void,
   onError?: (e: Event) => void,
 ): Promise<EventSource> {
-  const ticket = await fetchStreamTicket()
+  const tenantId = readActiveTenantId()
+  const ticket = await ticketForTenant(tenantId)
   const path = resolvePath(domain)
-  const url = buildStreamUrl(path, ticket)
+  const url = buildStreamUrl(path, ticket, tenantId)
   const es = new EventSource(url)
   const forward = (e: MessageEvent) =>
     onMessage(typeof e.data === 'string' ? e.data : String(e.data ?? ''))
@@ -119,8 +140,9 @@ export async function createLogStream(
   onMessage: (log: string) => void,
   onError?: (e: Event) => void,
 ): Promise<EventSource> {
-  const ticket = await fetchStreamTicket()
-  const url = buildStreamUrl('/api/console/stream/job-instances/events', ticket)
+  const tenantId = readActiveTenantId()
+  const ticket = await ticketForTenant(tenantId)
+  const url = buildStreamUrl('/api/console/stream/job-instances/events', ticket, tenantId)
   const es = new EventSource(url)
 
   const forward = (e: MessageEvent) => {
@@ -158,7 +180,7 @@ export async function createWorkflowExecutionStream(
   tenantId: string,
   handlers: WorkflowExecutionStreamHandlers,
 ): Promise<EventSource> {
-  const ticket = await fetchStreamTicket()
+  const ticket = await ticketForTenant(tenantId)
   const url = buildStreamUrl(
     `/api/console/workflow-runs/${runId}/execution-progress/events`,
     ticket,
@@ -203,7 +225,7 @@ export async function createDailyProgressStream(
     import('@/api/dailyProgress').DailyProgress
   >,
 ): Promise<EventSource> {
-  const ticket = await fetchStreamTicket()
+  const ticket = await ticketForTenant(tenantId)
   const url = buildStreamUrl('/api/console/dashboard/daily-progress/events', ticket, tenantId, {
     bizDate,
   })
@@ -248,7 +270,7 @@ export async function createJobExecutionStream(
     import('@/api/jobProgress').JobExecutionProgress
   >,
 ): Promise<EventSource> {
-  const ticket = await fetchStreamTicket()
+  const ticket = await ticketForTenant(tenantId)
   const source = new EventSource(
     buildStreamUrl(
       `/api/console/job-instances/${jobId}/execution-progress/events`,
@@ -296,7 +318,7 @@ export async function createPipelineProgressSnapshotStream(
     import('@/api/pipelineProgress').PipelineProgressSnapshot
   >,
 ): Promise<EventSource> {
-  const ticket = await fetchStreamTicket()
+  const ticket = await ticketForTenant(tenantId)
   const source = new EventSource(
     buildStreamUrl('/api/console/pipeline-progress/events', ticket, tenantId, {
       pipelineInstanceIds: scope,

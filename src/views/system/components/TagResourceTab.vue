@@ -16,13 +16,12 @@
           :options="resourceTypeOptions"
         />
       </el-form-item>
-      <el-form-item :label="t('tagResourceTab.resourceCodeLabel')">
+      <el-form-item :label="t('tagResourceTab.resourceCodeLabel')" class="query-size-medium">
         <el-input
           v-model="queryForm.resourceCode"
           clearable
           :placeholder="t('tagResourceTab.resourceCodePlaceholder')"
           class="tag-query__code"
-          @keyup.enter="loadTags"
         />
       </el-form-item>
     </ListPageQueryBar>
@@ -47,7 +46,12 @@
           :label="t('tagResourceTab.colTagKey')"
           min-width="220"
           show-overflow-tooltip
-        />
+        >
+          <template #default="{ row }">
+            <CopyableText v-if="row.tagKey" :text="String(row.tagKey)" />
+            <span v-else class="cell-empty">—</span>
+          </template>
+        </el-table-column>
         <el-table-column :label="t('tagResourceTab.colTagValue')" min-width="260">
           <template #default="{ row }">
             <el-input
@@ -95,7 +99,7 @@
       direction="rtl"
       size="480px"
     >
-      <el-form label-width="88px" class="new-dialog-form">
+      <el-form label-position="top" class="new-dialog-form">
         <el-form-item :label="t('tagResourceTab.fieldTagKey')" required>
           <el-input
             v-model="newTag.tagKey"
@@ -125,6 +129,7 @@
 </template>
 
 <script setup lang="ts">
+  import CopyableText from '@/components/common/CopyableText.vue'
   import { Save, Trash2 } from '@lucide/vue'
   import { ref, reactive, computed, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
@@ -232,11 +237,11 @@
   ) {
     if (!identity.resourceType || !identity.resourceCode.trim()) {
       ElMessage.warning(t('tagResourceTab.selectAbove'))
-      return
+      return false
     }
     if (!tagKey.trim()) {
       ElMessage.warning(t('tagResourceTab.tagKeyRequired'))
-      return
+      return false
     }
     try {
       await upsertResourceTag(identity.tenantId, {
@@ -247,8 +252,10 @@
       })
       ElMessage.success(t('tagResourceTab.savedToast'))
       await loadTags()
+      return true
     } catch {
       ElMessage.error(t('tagResourceTab.saveFailed'))
+      return false
     }
   }
 
@@ -273,7 +280,8 @@
     }
     savingNew.value = true
     try {
-      await upsertTag(newTag.tagKey.trim(), newTag.tagValue.trim())
+      const saved = await upsertTag(newTag.tagKey.trim(), newTag.tagValue.trim())
+      if (!saved) return
       newTag.tagKey = ''
       newTag.tagValue = ''
       newDialogVisible.value = false

@@ -4,17 +4,33 @@
       <div class="m-page__header">
         <div>
           <div class="m-page__title">{{ t('mobile.outbox.title') }}</div>
-          <div class="m-page__subtitle">
+          <div v-if="!loadError && (!loading || rows.length > 0)" class="m-page__subtitle">
             {{ t('mobile.outbox.summary', { total: rows.length }) }}
           </div>
         </div>
       </div>
 
       <div class="m-page__header u-gap-8">
-        <el-segmented v-model="filter" :options="filterOptions" size="small" class="u-w-full" />
+        <el-select
+          v-model="filter"
+          :aria-label="t('mobile.outbox.filterLabel')"
+          size="small"
+          class="u-w-full"
+        >
+          <el-option
+            v-for="option in filterOptions"
+            :key="option.value"
+            :label="option.label"
+            :value="option.value"
+          />
+        </el-select>
       </div>
 
       <MSkeleton v-if="loading && filtered.length === 0" :count="3" />
+      <div v-else-if="loadError" class="m-empty m-outbox-error" role="alert">
+        <span>{{ t('mobile.common.loadFail') }}</span>
+        <button class="m-btn" type="button" @click="load">{{ t('common.retry') }}</button>
+      </div>
       <div v-else-if="filtered.length === 0" class="m-empty">
         {{ t('mobile.outbox.empty') }}
       </div>
@@ -23,14 +39,17 @@
         <div class="m-card__row">
           <div class="m-card__title">#{{ row.id }} · {{ row.eventType }}</div>
           <span :class="['m-chip', statusChipClass(row.retryStatus)]">
-            {{ resolveEnumLabel('outboxRetryStatus', row.retryStatus) }}
+            {{ resolveEnumLabel('retryScheduleStatus', row.retryStatus) }}
           </span>
         </div>
         <div class="m-card__sub">{{ row.eventKey }}</div>
         <div class="m-card__meta">
           <div>
             <span class="m-card__meta-key">{{ t('mobile.outbox.retryCount') }}</span>
-            {{ row.retryCount }} · {{ row.retryPolicy }}
+            {{ row.retryCount
+            }}<template v-if="row.retryPolicy">
+              · {{ resolveEnumLabel('retryPolicy', row.retryPolicy) }}
+            </template>
           </div>
           <div>
             <span class="m-card__meta-key">{{ t('mobile.outbox.eventType') }}</span>
@@ -87,6 +106,7 @@
   }
 
   const loading = ref(false)
+  const loadError = ref(false)
   const rows = ref<ConsoleOutboxRetryLogResponse[]>([])
   const busyId = ref<number | null>(null)
   let requestSequence = 0
@@ -98,6 +118,7 @@
       requestSequence += 1
       rows.value = []
       loading.value = false
+      loadError.value = false
     },
     { flush: 'sync' },
   )
@@ -132,12 +153,14 @@
     if (!tenantId) return
     const sequence = ++requestSequence
     loading.value = true
+    loadError.value = false
     try {
       const result = await queryOutboxRetries(tenantId)
       if (sequence === requestSequence && tenant.tenantId === tenantId) rows.value = result
     } catch {
       if (sequence === requestSequence && tenant.tenantId === tenantId) {
         rows.value = []
+        loadError.value = true
         ElMessage.error(t('mobile.common.loadFail'))
       }
     } finally {
@@ -170,3 +193,13 @@
   useTenantReload(load)
   useAutoRefresh(load, REFRESH_INTERVAL_COLD_MS)
 </script>
+
+<style scoped>
+  .m-outbox-error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding-block: 32px;
+  }
+</style>

@@ -18,12 +18,12 @@
         ref="formRef"
         :model="form"
         :rules="formRules"
-        label-width="120px"
+        label-position="top"
         class="initial-setup__form"
         @submit.prevent="onSubmit"
       >
         <el-form-item :label="t('initialSetup.fieldTenantId')" prop="tenantId">
-          <TenantIdInput v-model="form.tenantId" />
+          <TenantIdInput v-model="form.tenantId" :show-suggestion="false" />
           <div class="initial-setup__hint">{{ t('initialSetup.tenantIdHint') }}</div>
         </el-form-item>
         <el-form-item :label="t('initialSetup.fieldTenantName')" prop="tenantName">

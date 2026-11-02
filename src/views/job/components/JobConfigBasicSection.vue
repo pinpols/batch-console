@@ -3,7 +3,7 @@
     <el-descriptions
       v-if="!overviewOnly"
       :title="t('jobConfigBasic.groupBasic')"
-      :column="2"
+      :column="isMobile ? 1 : 2"
       border
       size="small"
       class="config-group"
@@ -32,7 +32,7 @@
 
     <el-descriptions
       :title="t('jobConfigBasic.groupSchedule')"
-      :column="2"
+      :column="isMobile ? 1 : 2"
       border
       size="small"
       class="config-group"
@@ -57,7 +57,7 @@
     <el-descriptions
       v-if="!overviewOnly"
       :title="t('jobConfigBasic.groupResource')"
-      :column="2"
+      :column="isMobile ? 1 : 2"
       border
       size="small"
       class="config-group"
@@ -79,7 +79,7 @@
     <el-descriptions
       v-if="!overviewOnly"
       :title="t('jobConfigBasic.groupRetry')"
-      :column="2"
+      :column="isMobile ? 1 : 2"
       border
       size="small"
       class="config-group"
@@ -90,7 +90,10 @@
       <el-descriptions-item :label="t('jobConfigBasic.fieldRetryMaxCount')">
         {{ job.retryMaxCount ?? '—' }}
       </el-descriptions-item>
-      <el-descriptions-item :label="t('jobConfigBasic.fieldExecutionHandler')" :span="2">
+      <el-descriptions-item
+        :label="t('jobConfigBasic.fieldExecutionHandler')"
+        :span="isMobile ? 1 : 2"
+      >
         <span class="config-mono">{{ job.executionHandler || '—' }}</span>
       </el-descriptions-item>
     </el-descriptions>
@@ -116,7 +119,7 @@
 
     <el-descriptions
       :title="t('jobConfigBasic.groupAudit')"
-      :column="2"
+      :column="isMobile ? 1 : 2"
       border
       size="small"
       class="config-group"
@@ -145,6 +148,7 @@
    * 当前(Day 1)只读。Day 2 加 `:editable="true"` 内联编辑能力。
    */
   import { useI18n } from 'vue-i18n'
+  import { useResponsive } from '@/composables/useResponsive'
   import JsonPreview from '@/components/common/JsonPreview.vue'
   import type { ConsoleJobDefinitionResponse } from '@/types/console-api'
   import { fmtDatetime } from '@/utils/datetime'
@@ -162,6 +166,7 @@
   }>()
 
   const { t } = useI18n({ useScope: 'global' })
+  const { isMobile } = useResponsive()
   // 兜底:父组件没传 label 时,直接显原值
   void props
 </script>

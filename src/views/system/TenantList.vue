@@ -54,7 +54,6 @@
                 v-model="queryDraft.keyword"
                 clearable
                 :placeholder="t('common.search')"
-                @keyup.enter="onSearch"
               />
             </el-form-item>
             <el-form-item :label="t('tenantList.statusLabel')">
@@ -98,16 +97,22 @@
         -->
         <template #default="{ isColVisible }">
           <el-table-column type="selection" width="38" />
-          <!-- i18n-todo: tenantList.colTenantProto = 'TENANT' -->
-          <el-table-column prop="tenantId" label="TENANT" width="140" show-overflow-tooltip>
+          <el-table-column
+            prop="tenantId"
+            :label="t('common.tenantId')"
+            width="140"
+            show-overflow-tooltip
+          >
             <template #default="{ row }">
-              <span
-                class="tl-code"
-                :class="{ 'is-current': row.tenantId === tenant.tenantId }"
-                @click="switchToTenant(row as Tenant)"
-              >
-                {{ row.tenantId }}
-              </span>
+              <CopyableText :text="String(row.tenantId ?? '')" :copyable="false">
+                <span
+                  class="tl-code"
+                  :class="{ 'is-current': row.tenantId === tenant.tenantId }"
+                  @click="switchToTenant(row as Tenant)"
+                >
+                  {{ row.tenantId }}
+                </span>
+              </CopyableText>
             </template>
           </el-table-column>
           <el-table-column
@@ -116,21 +121,40 @@
             :label="t('tenantList.colName')"
             min-width="180"
             show-overflow-tooltip
-          />
+          >
+            <template #default="{ row }">
+              <CopyableText v-if="row.tenantName" :text="String(row.tenantName)" />
+              <span v-else class="cell-empty">—</span>
+            </template>
+          </el-table-column>
           <el-table-column
             v-if="isColVisible('description')"
             prop="description"
             :label="t('tenantList.colDescription')"
             min-width="240"
             show-overflow-tooltip
-          />
+          >
+            <template #default="{ row }">
+              <CopyableText
+                v-if="row.description"
+                :text="String(row.description)"
+                :copyable="false"
+              />
+              <span v-else class="cell-empty">—</span>
+            </template>
+          </el-table-column>
           <el-table-column
             v-if="isColVisible('createdBy')"
             prop="createdBy"
             :label="t('tenantList.colCreatedBy')"
             width="120"
             show-overflow-tooltip
-          />
+          >
+            <template #default="{ row }">
+              <CopyableText v-if="row.createdBy" :text="String(row.createdBy)" :copyable="false" />
+              <span v-else class="cell-empty">—</span>
+            </template>
+          </el-table-column>
           <DatetimeColumn
             v-if="isColVisible('createdAt')"
             prop="createdAt"
@@ -187,6 +211,7 @@
 </template>
 
 <script setup lang="ts">
+  import CopyableText from '@/components/common/CopyableText.vue'
   import { computed, onMounted, reactive, ref } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
@@ -204,6 +229,7 @@
     type TenantStatus,
   } from '@/api/tenants'
   import { useAuthStore } from '@/stores/auth'
+  import { useTenantSwitch } from '@/composables/useTenantSwitch'
   import { useTenantStore } from '@/stores/tenant'
   import StatusSegment, { type StatusSegmentItem } from '@/components/table/StatusSegment.vue'
   import MetaSelect from '@/components/common/MetaSelect.vue'
@@ -229,6 +255,7 @@
 
   const auth = useAuthStore()
   const tenant = useTenantStore()
+  const { switchTenant } = useTenantSwitch()
   const { loading, error: loadError, run: runLoad } = useListLoadState()
   const listRemote = ref(true)
   const { filterBusy, runSearch, runReset } = useListFilterFeedback(listRemote)
@@ -293,8 +320,7 @@
 
   // 列设置(proto 头部「☰ 列」):TENANT/状态为必选;proto 未展示的列默认隐藏,可按需开
   const columnDefs = computed(() => [
-    // i18n-todo: tenantList.colTenantProto = 'TENANT'
-    { key: 'tenantId', label: 'TENANT', hideable: false },
+    { key: 'tenantId', label: t('common.tenantId'), hideable: false },
     { key: 'tenantName', label: t('tenantList.colName') },
     { key: 'description', label: t('tenantList.colDescription'), defaultHidden: true },
     { key: 'createdBy', label: t('tenantList.colCreatedBy'), defaultHidden: true },
@@ -384,7 +410,7 @@
         key: 'switch',
         label: t('tenantList.actionSwitch'),
         primary: true,
-        disabled: !isActive,
+        disabled: !isActive || tenant.tenantSwitchPending,
         onClick: () => switchToTenant(row),
       })
     }
@@ -489,8 +515,7 @@
   }
 
   async function switchToTenant(row: Tenant) {
-    if (row.tenantId === tenant.tenantId) return
-    tenant.setTenantId(row.tenantId)
+    if (!(await switchTenant(row.tenantId))) return
     ElMessage.success(t('tenantList.switchedToast', { id: row.tenantId }))
     // 切租户后必须刷新 auth profile,否则 role/menus/permissions 还是上一个租户的。
     // 同时 await,避免侧边栏 / 路由 guard 在过渡窗口期用旧权限渲染或放行。

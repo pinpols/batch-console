@@ -90,6 +90,7 @@
         </el-form>
 
         <el-table
+          v-if="!loadError"
           v-loading="loading"
           :data="identities"
           stripe
@@ -97,25 +98,49 @@
           class="oidc-bindings__table"
           :empty-text="t('oidcIdentityBindings.empty')"
         >
-          <el-table-column prop="username" :label="t('oidcIdentityBindings.username')" />
+          <el-table-column
+            prop="username"
+            :label="t('oidcIdentityBindings.username')"
+            min-width="160"
+          >
+            <template #default="{ row }">
+              <CopyableText v-if="row.username" :text="String(row.username)" :copyable="false" />
+              <span v-else>{{ row.username }}</span>
+            </template>
+          </el-table-column>
           <el-table-column
             prop="subject"
             :label="t('oidcIdentityBindings.subject')"
             min-width="180"
             show-overflow-tooltip
-          />
+          >
+            <template #default="{ row }">
+              <CopyableText v-if="row.subject" :text="String(row.subject)" :copyable="false" />
+              <span v-else class="cell-empty">—</span>
+            </template>
+          </el-table-column>
           <el-table-column
             prop="issuer"
             :label="t('oidcIdentityBindings.issuer')"
             min-width="180"
             show-overflow-tooltip
-          />
+          >
+            <template #default="{ row }">
+              <CopyableText v-if="row.issuer" :text="String(row.issuer)" :copyable="false" />
+              <span v-else class="cell-empty">—</span>
+            </template>
+          </el-table-column>
           <el-table-column
             prop="linkedBy"
             :label="t('oidcIdentityBindings.linkedBy')"
             min-width="120"
             show-overflow-tooltip
-          />
+          >
+            <template #default="{ row }">
+              <CopyableText v-if="row.linkedBy" :text="String(row.linkedBy)" :copyable="false" />
+              <span v-else class="cell-empty">—</span>
+            </template>
+          </el-table-column>
           <el-table-column
             prop="linkedAt"
             :label="t('oidcIdentityBindings.linkedAt')"
@@ -142,6 +167,7 @@
 </template>
 
 <script setup lang="ts">
+  import CopyableText from '@/components/common/CopyableText.vue'
   import { computed, reactive, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
@@ -244,9 +270,10 @@
       form.username = ''
       form.subject = ''
       await load()
+      if (tenantId.value !== tenantSnapshot || contextSequence !== contextSnapshot) return
       ElMessage.success(
         t(
-          loadError.value
+          loadError.value || providerEnabled.value !== true
             ? 'oidcIdentityBindings.bindAccepted'
             : 'oidcIdentityBindings.bindSuccess',
         ),
@@ -254,6 +281,11 @@
     } catch {
       if (tenantId.value !== tenantSnapshot || contextSequence !== contextSnapshot) return
       await load()
+      if (tenantId.value !== tenantSnapshot || contextSequence !== contextSnapshot) return
+      if (loadError.value || providerEnabled.value !== true) {
+        ElMessage.error(t('oidcIdentityBindings.bindUnknown'))
+        return
+      }
       const reconciled = identities.value.some(
         (identity) =>
           identity.username.toLowerCase() === request.username.toLowerCase() &&
@@ -295,9 +327,10 @@
       await unbindConsoleOidcIdentity(tenantSnapshot, identity.id)
       if (tenantId.value !== tenantSnapshot || contextSequence !== contextSnapshot) return
       await load()
+      if (tenantId.value !== tenantSnapshot || contextSequence !== contextSnapshot) return
       ElMessage.success(
         t(
-          loadError.value
+          loadError.value || providerEnabled.value !== true
             ? 'oidcIdentityBindings.unbindAccepted'
             : 'oidcIdentityBindings.unbindSuccess',
         ),
@@ -305,6 +338,11 @@
     } catch {
       if (tenantId.value !== tenantSnapshot || contextSequence !== contextSnapshot) return
       await load()
+      if (tenantId.value !== tenantSnapshot || contextSequence !== contextSnapshot) return
+      if (loadError.value || providerEnabled.value !== true) {
+        ElMessage.error(t('oidcIdentityBindings.unbindUnknown'))
+        return
+      }
       const stillBound = identities.value.some((item) => String(item.id) === identityId)
       ElMessage[stillBound ? 'error' : 'success'](
         t(
@@ -357,16 +395,15 @@
   .oidc-bindings__form-actions {
     display: flex;
     gap: var(--space-sm, 12px);
-    padding-left: 140px;
   }
 
   .oidc-bindings__table {
     width: 100%;
   }
 
-  @media (max-width: 640px) {
-    .oidc-bindings__form-actions {
-      padding-left: 0;
-    }
+  .oidc-bindings__table :deep(.el-table__empty-text) {
+    width: 100%;
+    padding: 12px;
+    line-height: 1.5;
   }
 </style>

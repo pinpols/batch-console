@@ -1,4 +1,14 @@
 export default {
+  dayStatuses: {
+    OPEN: 'Open',
+    IN_FLIGHT: 'In progress',
+    CUTOFF: 'Cutoff',
+    SETTLING: 'Settling',
+    SETTLED: 'Settled',
+    FAILED: 'Failed',
+    SKIPPED: 'Skipped',
+    MANUAL_RELEASED: 'Manually released',
+  },
   recoveryBlocked:
     'The tab recovery record is unreadable or past its safe retry window. Verify the batch day and operation audit manually; a replacement request will not be generated.',
   title: 'Batch day governance',

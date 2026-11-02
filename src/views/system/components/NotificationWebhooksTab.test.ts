@@ -118,6 +118,83 @@ describe('webhook tenant scope', () => {
     state.ruleRow = null
   })
 
+  it('exposes URL and secret request length limits', async () => {
+    const wrapper = mount(NotificationWebhooksTab, { global: { stubs } })
+    await flushPromises()
+    ;(wrapper.vm as unknown as { openWebhookCreate: () => void }).openWebhookCreate()
+    await flushPromises()
+    expect(
+      wrapper
+        .get('input[placeholder="notificationWebhooksTab.urlPlaceholder"]')
+        .attributes('maxlength'),
+    ).toBe('1024')
+    expect(
+      wrapper
+        .get('input[placeholder="notificationWebhooksTab.secretPlaceholder"]')
+        .attributes('maxlength'),
+    ).toBe('256')
+    wrapper.unmount()
+  })
+
+  it('新增时可以填写名称，编辑时名称不可修改', async () => {
+    state.ruleRow = {
+      tenantId: 'tenant-a',
+      id: 1,
+      name: 'existing',
+      callbackUrl: 'https://example.test/hooks',
+      eventTypes: 'JOB_FAILED',
+      enabled: true,
+    }
+    state.listRules.mockResolvedValueOnce([state.ruleRow])
+    const wrapper = mount(NotificationWebhooksTab, { global: { stubs } })
+    await flushPromises()
+    ;(wrapper.vm as unknown as { openWebhookCreate: () => void }).openWebhookCreate()
+    await flushPromises()
+    expect(
+      wrapper
+        .get('input[placeholder="notificationWebhooksTab.namePlaceholder"]')
+        .attributes('disabled'),
+    ).toBeUndefined()
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'edit')!
+      .trigger('click')
+    await flushPromises()
+    expect(
+      wrapper
+        .get('input[placeholder="notificationWebhooksTab.namePlaceholder"]')
+        .attributes('disabled'),
+    ).toBeDefined()
+    wrapper.unmount()
+  })
+
+  it('rejects an empty event list and event codes longer than 64 characters', async () => {
+    const wrapper = mount(NotificationWebhooksTab, { global: { stubs } })
+    const formRules = (
+      wrapper.vm as unknown as {
+        webhookFormRules: {
+          eventTypes: Array<{
+            validator?: (rule: object, value: string, done: (error?: Error) => void) => void
+          }>
+        }
+      }
+    ).webhookFormRules
+    const validator = formRules.eventTypes.find((rule) => rule.validator)?.validator
+    expect(validator).toBeDefined()
+    const done = vi.fn()
+    validator!({}, ' , ', done)
+    expect(done).toHaveBeenLastCalledWith(expect.any(Error))
+    validator!({}, 'a'.repeat(64), done)
+    expect(done).toHaveBeenLastCalledWith()
+    validator!({}, 'a'.repeat(65), done)
+    expect(done).toHaveBeenLastCalledWith(expect.any(Error))
+    validator!({}, Array(10).fill('job_failed').join(','), done)
+    expect(done).toHaveBeenLastCalledWith()
+    validator!({}, Array.from({ length: 9 }, (_, i) => `${i}${'a'.repeat(63)}`).join(','), done)
+    expect(done).toHaveBeenLastCalledWith(expect.any(Error))
+    wrapper.unmount()
+  })
+
   it('does not submit an A form when the tenant changes while validation is pending', async () => {
     let resolveValidation!: (isValid: boolean) => void
     state.validate.mockReturnValueOnce(

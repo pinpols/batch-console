@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   listSchemas: vi.fn(),
   listConfigs: vi.fn(),
   createConfig: vi.fn(),
+  writeText: vi.fn(),
   tenant: { tenantId: 'tenant-a' },
 }))
 
@@ -37,7 +38,10 @@ const stubs = {
   HelpLabel: slotStub,
   AtomicRuntimePanel: true,
   SensitiveFieldAlert: true,
-  JsonPreview: true,
+  JsonPreview: {
+    props: ['data'],
+    template: '<pre data-test="preview">{{ JSON.stringify(data) }}</pre>',
+  },
   EmptyState: true,
   ElAlert: true,
   ElSkeleton: true,
@@ -67,6 +71,7 @@ const stubs = {
 describe('AtomicTaskTypeCenter timeout validation', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    vi.stubGlobal('navigator', { clipboard: { writeText: mocks.writeText } })
     mocks.listSchemas.mockResolvedValue([
       {
         taskType: 'sql',
@@ -81,7 +86,10 @@ describe('AtomicTaskTypeCenter timeout validation', () => {
     ])
     mocks.listConfigs.mockResolvedValue([])
     mocks.createConfig.mockResolvedValue({})
+    mocks.writeText.mockResolvedValue(undefined)
   })
+
+  afterEach(() => vi.unstubAllGlobals())
 
   it('blocks invalid timeout before save and submits a valid integer', async () => {
     const wrapper = mount(AtomicTaskTypeCenter, { global: { stubs } })
@@ -108,5 +116,50 @@ describe('AtomicTaskTypeCenter timeout validation', () => {
       name: 'cfg',
       parameters: { sql: 'select 1', statementTimeoutSeconds: 1 },
     })
+  })
+
+  it.each([
+    ['stored_proc', 'inParams', 'list', '[1,"x"]', [1, 'x']],
+    ['http', 'headers', 'map', '{"Accept":"application/json"}', { Accept: 'application/json' }],
+  ])('%s 的 %s 预览和复制使用解析后的类型', async (taskType, field, type, input, expected) => {
+    mocks.listSchemas.mockResolvedValueOnce([
+      {
+        taskType,
+        displayName: taskType,
+        enabledByDefault: true,
+        parameters: [{ name: field, type, required: false, description: '' }],
+        securityGates: [],
+      },
+    ])
+    const wrapper = mount(AtomicTaskTypeCenter, { global: { stubs } })
+    await flushPromises()
+    await wrapper.get(`[data-label="${field}"] input`).setValue(input)
+    const preview = JSON.parse(wrapper.get('[data-test="preview"]').text())
+    expect(preview[field]).toEqual(expected)
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text().includes('atomicTaskTypeCenter.btnCopyJson'))!
+      .trigger('click')
+    expect(JSON.parse(mocks.writeText.mock.calls[0][0])[field]).toEqual(expected)
+  })
+
+  it('列表参数无法解析时不提供可复制的参数预览', async () => {
+    mocks.listSchemas.mockResolvedValueOnce([
+      {
+        taskType: 'stored_proc',
+        displayName: 'stored_proc',
+        enabledByDefault: true,
+        parameters: [{ name: 'inParams', type: 'list', required: false, description: '' }],
+        securityGates: [],
+      },
+    ])
+    const wrapper = mount(AtomicTaskTypeCenter, { global: { stubs } })
+    await flushPromises()
+    await wrapper.get('[data-label="inParams"] input').setValue('[invalid')
+    const copy = wrapper
+      .findAll('button')
+      .find((button) => button.text().includes('atomicTaskTypeCenter.btnCopyJson'))!
+    expect(copy.attributes('disabled')).toBeDefined()
+    expect(wrapper.find('[data-test="preview"]').exists()).toBe(false)
   })
 })

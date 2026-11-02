@@ -506,6 +506,8 @@
   }
 
   .me-form :deep(.el-form-item__error) {
+    position: static;
+    width: 100%;
     padding-top: var(--space-xs);
     font-size: 0.75rem;
   }

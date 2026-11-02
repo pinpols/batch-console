@@ -13,7 +13,6 @@
           v-model="receiptDraft.channelCode"
           clearable
           :placeholder="t('observability.chanPlaceholder')"
-          @keyup.enter="applyFilter"
         />
       </el-form-item>
       <el-form-item :label="t('observability.chanFileIdLabel')">
@@ -22,7 +21,6 @@
           v-model="receiptDraft.fileId"
           clearable
           :placeholder="t('observability.chanFileIdPlaceholder')"
-          @keyup.enter="applyFilter"
         />
       </el-form-item>
       <el-form-item :label="t('observability.chanReceiptStatusLabel')">
@@ -58,7 +56,16 @@
           :label="t('observability.chanColChannel')"
           min-width="160"
           show-overflow-tooltip
-        />
+        >
+          <template #default="{ row }">
+            <CopyableText
+              v-if="row.channelCode"
+              :text="String(row.channelCode)"
+              :copyable="false"
+            />
+            <span v-else>{{ row.channelCode }}</span>
+          </template>
+        </el-table-column>
         <el-table-column prop="fileId" :label="t('observability.chanColFileId')" width="100">
           <template #default="{ row }">
             <router-link
@@ -86,7 +93,16 @@
           :label="t('observability.chanColError')"
           min-width="250"
           show-overflow-tooltip
-        />
+        >
+          <template #default="{ row }">
+            <CopyableText
+              v-if="row.errorMessage"
+              :text="String(row.errorMessage)"
+              :copyable="false"
+            />
+            <span v-else>{{ row.errorMessage }}</span>
+          </template>
+        </el-table-column>
         <DatetimeColumn
           prop="dispatchedAt"
           :label="t('observability.chanColDispatchedAt')"
@@ -131,6 +147,7 @@
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import TablePagerBar from '@/components/table/TablePagerBar.vue'
   import DetailDrawer from '@/components/common/DetailDrawer.vue'
+  import CopyableText from '@/components/common/CopyableText.vue'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import { useListLoadState } from '@/composables/useListLoadState'
   import DataState from '@/components/common/DataState.vue'

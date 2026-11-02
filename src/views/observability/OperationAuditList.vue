@@ -61,7 +61,7 @@
             </el-form-item>
             <el-form-item :label="t('operationAuditList.aggregateIdLabel')">
               <el-input
-                class="query-w-140"
+                class="query-w-240"
                 v-model="filters.aggregateId"
                 clearable
                 :placeholder="t('operationAuditList.aggregateIdPlaceholder')"
@@ -82,13 +82,13 @@
                 clearable
                 :placeholder="t('operationAuditList.resultPlaceholder')"
               >
-                <el-option label="SUCCESS" value="SUCCESS" />
-                <el-option label="FAILED" value="FAILED" />
+                <el-option :label="t('enum.operationResult.SUCCESS')" value="SUCCESS" />
+                <el-option :label="t('enum.operationResult.FAILED')" value="FAILED" />
               </el-select>
             </el-form-item>
             <el-form-item :label="t('operationAuditList.traceLabel')">
               <el-input
-                class="query-w-200"
+                class="query-w-320"
                 v-model="filters.traceId"
                 clearable
                 :placeholder="t('operationAuditList.tracePlaceholder')"
@@ -116,36 +116,41 @@
         <el-table-column
           prop="aggregateId"
           :label="t('operationAuditList.colAggregateId')"
-          width="140"
-          show-overflow-tooltip
-        />
+          min-width="180"
+        >
+          <template #default="{ row }">
+            <CopyableText v-if="row.aggregateId" :text="String(row.aggregateId)" />
+          </template>
+        </el-table-column>
         <el-table-column prop="operatorId" :label="t('operationAuditList.colOperator')" width="140">
           <template #default="{ row }">
-            <span>{{ row.operatorId || '—' }}</span>
+            <CopyableText v-if="row.operatorId" :text="String(row.operatorId)" :copyable="false" />
+            <span v-else>—</span>
             <span v-if="row.operatorRole" class="operator-role"> · {{ row.operatorRole }}</span>
           </template>
         </el-table-column>
         <el-table-column prop="result" :label="t('operationAuditList.colResult')" width="100">
           <template #default="{ row }">
             <el-tag :type="row.result === 'SUCCESS' ? 'success' : 'danger'" size="small">
-              {{ row.result }}
+              {{
+                te(`enum.operationResult.${row.result}`)
+                  ? t(`enum.operationResult.${row.result}`)
+                  : row.result
+              }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column
-          prop="traceId"
-          :label="t('operationAuditList.colTrace')"
-          min-width="140"
-          show-overflow-tooltip
-        >
+        <el-table-column prop="traceId" :label="t('operationAuditList.colTrace')" min-width="140">
           <template #default="{ row }">
-            <RouterLink
-              v-if="row.traceId"
-              class="trace-link"
-              :to="{ path: '/observability/trace', query: { traceId: row.traceId } }"
-            >
-              {{ row.traceId }}
-            </RouterLink>
+            <span v-if="row.traceId" class="trace-value">
+              <RouterLink
+                class="trace-link"
+                :to="{ path: '/observability/trace', query: { traceId: row.traceId } }"
+              >
+                {{ row.traceId }}
+              </RouterLink>
+              <CopyableText :text="row.traceId" icon-only />
+            </span>
             <span v-else>—</span>
           </template>
         </el-table-column>
@@ -159,12 +164,13 @@
           prop="errorMessage"
           :label="t('operationAuditList.colError')"
           min-width="160"
-          show-overflow-tooltip
         >
           <template #default="{ row }">
             <span v-if="row.errorCode || row.errorMessage" class="error-cell">
-              <span v-if="row.errorCode" class="error-code">[{{ row.errorCode }}]</span>
-              {{ row.errorMessage }}
+              <CopyableText
+                :text="`${row.errorCode ? `[${row.errorCode}] ` : ''}${row.errorMessage || ''}`"
+                :copyable="false"
+              />
             </span>
             <span v-else class="muted">—</span>
           </template>
@@ -184,6 +190,7 @@
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import { queryOperationAudits, type OperationAuditResponse } from '@/api/operationAudits'
   import PageContainer from '@/components/common/PageContainer.vue'
+  import CopyableText from '@/components/common/CopyableText.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
   import DateRangePresetPicker from '@/components/common/DateRangePresetPicker.vue'
@@ -192,7 +199,7 @@
   import DatetimeColumn from '@/components/common/DatetimeColumn.vue'
   import JsonPreviewPopover from '@/components/common/JsonPreviewPopover.vue'
 
-  const { t } = useI18n({ useScope: 'global' })
+  const { t, te } = useI18n({ useScope: 'global' })
 
   const tenant = useTenantStore()
   const loading = ref(false)
@@ -298,6 +305,19 @@
 </script>
 
 <style scoped>
+  .trace-value {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+  }
+
+  .trace-value > .trace-link {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
   .operator-role {
     color: var(--color-text-tertiary);
     font-size: 12px;
@@ -323,10 +343,6 @@
   .error-cell {
     color: var(--el-color-danger);
     font-size: 12px;
-  }
-  .error-code {
-    font-weight: 600;
-    margin-right: 4px;
   }
   .muted {
     color: var(--color-text-tertiary);
