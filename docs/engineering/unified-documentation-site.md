@@ -7,6 +7,8 @@
 | 本地开发 | `http://localhost:5173/` | `http://localhost:5173/docs/` |
 | 生产 | 同一域名的 `/` | 同一域名的 `/docs/` |
 
+文档站首页和顶部“后端 → 架构图导览”提供按主题浏览架构图的入口；主题页顶部的目录可跳转到对应图，每图可回到后端原文章节。图示包含典型状态、条件性配置及规划，需结合原文边界阅读。
+
 文档只有一个 VitePress 站点、一个搜索索引。本地 5174 是仅供 Vite 代理的预览端口，不是第二个文档站；生产由控制台 Nginx 直接提供静态产物。
 
 ## 内容来源与路径
@@ -17,7 +19,7 @@
 | 配对后端仓 `docs/` | `/docs/backend/` | 后端仓库 |
 | 构建期生成的首页 | `/docs/` | `scripts/docs-prepare.mjs` |
 
-构建脚本只读复制两仓文档到被 Git 忽略的 `tools/docs-bridge/frontend/content/`。后端源仓不写入软链或索引，生成目录不可手工维护。两仓的 `README.md` 分别对应 `/docs/frontend/` 和 `/docs/backend/`。旧 `/fe-docs/*` 返回 `410 Gone`，未加 `backend/` 前缀的后端页面路径返回 `404`；均不设兼容入口。
+构建脚本只读复制两仓文档到被 Git 忽略的 `tools/docs-bridge/frontend/content/`。架构图导览在构建时从复制的后端 Markdown 提取 Mermaid 图，按主题生成页面；它是发布视图，不能手工维护，源文缺失或无图时构建失败。后端源仓不写入软链或索引，生成目录不可手工维护。两仓的 `README.md` 分别对应 `/docs/frontend/` 和 `/docs/backend/`。旧 `/fe-docs/*` 返回 `410 Gone`，未加 `backend/` 前缀的后端页面路径返回 `404`；均不设兼容入口。
 
 超长历史证据按 `scripts/docs-prepare.mjs` 中的显式清单分卷发布：只改生成副本，权威源不删减或改名。每卷保留完整 Markdown 块、原始行范围和原章节锚点，目录记录原文 SHA-256；生成的 `.publication-manifest.json` 可用于复核完整性。不可安全拆开的超大块、HTML 容器或引用式链接使构建失败，不截断正文。`*.part-NNN` 是生成发布名，不是源文档的日期或生命周期后缀。
 

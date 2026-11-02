@@ -92,3 +92,98 @@ test('主题从原文旧锚点定位本卷，保留查询参数并拒绝外部�
     null,
   )
 })
+
+test('架构图发布页提取当前 Markdown 图并链接到原章节，忽略其他代码块', async () => {
+  const { renderDiagramPage } = await import('../lib/docs-diagrams.mjs')
+  const source =
+    '# 源文\n\n## 运行主链\n\n```text\n不属于图\n```\n\n```mermaid\nflowchart LR\n A-->B\n```\n\n## 运行主链\n\n**租户执行边界**\n\n```mermaid\nsequenceDiagram\n A->>B: OK\n```\n'
+  const output = await renderDiagramPage(
+    { title: '模块结构', path: 'architecture/project-structure.md' },
+    source,
+  )
+  assert.match(
+    output,
+    /\.\.\/backend\/architecture\/project-structure\.md#%E8%BF%90%E8%A1%8C%E4%B8%BB%E9%93%BE/,
+  )
+  assert.match(output, /%E8%BF%90%E8%A1%8C%E4%B8%BB%E9%93%BE-1/)
+  assert.match(output, /flowchart LR\n A-->B/)
+  assert.match(output, /sequenceDiagram\n A->>B: OK/)
+  assert.match(output, /图 2 · 租户执行边界/)
+  assert.match(output, /\[架构图导览\]\(\.\/README\.md\)/)
+  assert.doesNotMatch(output, /不属于图/)
+  assert.doesNotMatch(output, /<script/)
+})
+
+test('架构图发布页的源文没有图时明确失败，避免生成空页面', async () => {
+  const { renderDiagramPage } = await import('../lib/docs-diagrams.mjs')
+  await assert.rejects(
+    renderDiagramPage({ title: '缺图', path: 'architecture/empty.md' }, '# 没有图\n'),
+    /没有 Mermaid 图/,
+  )
+})
+
+test('架构图目录按源文标题生成可跳转链接，重复标题也对应各自图', async () => {
+  const { renderDiagramPage } = await import('../lib/docs-diagrams.mjs')
+  const source =
+    '# 源文\n\n## 相同标题\n\n```mermaid\nflowchart LR\n A-->B\n```\n\n' +
+    '## 相同标题\n\n```mermaid\nflowchart LR\n C-->D\n```\n\n' +
+    '## PROCESS 和 ATOMIC\n\n```mermaid\nflowchart LR\n E-->F\n```\n'
+  const page = await renderDiagramPage({ title: '整体流程', path: 'architecture/flows.md' }, source)
+  const md = await createMarkdownRenderer(process.cwd())
+  const tokens = md.parse(page.replace(/^---\n[\s\S]*?\n---\n/, ''), {
+    relativePath: 'architecture-diagrams/flows.md',
+  })
+  const links = tokens
+    .filter((token) => token.type === 'inline')
+    .flatMap((token) => token.children || [])
+    .filter((token) => token.type === 'link_open' && token.attrGet('class') !== 'header-anchor')
+    .map((token) => token.attrGet('href'))
+    .filter((href) => href?.startsWith('#'))
+    .map((href) => decodeURIComponent(href.slice(1)))
+  const headings = tokens
+    .filter((token) => token.type === 'heading_open' && token.tag === 'h2')
+    .map((token) => token.attrGet('id'))
+  assert.equal(links.length, 3)
+  assert.deepEqual(links, headings)
+  assert.equal(new Set(headings).size, 3)
+  assert.match(page, /\[图 3 · PROCESS 和 ATOMIC\]\(#/)
+})
+
+test('架构图随每次生成读取最新源文，缺失源文时报错', async () => {
+  const { mkdtemp, mkdir, readFile, rm, writeFile } = await import('node:fs/promises')
+  const { tmpdir } = await import('node:os')
+  const { join } = await import('node:path')
+  const { writeDiagramPages } = await import('../lib/docs-diagrams.mjs')
+  const root = await mkdtemp(join(tmpdir(), 'docs-diagrams-test-'))
+  const sourceDir = join(root, 'backend')
+  const targetDir = join(root, 'site')
+  const topic = { slug: 'example', title: '示例', path: 'architecture/a.md' }
+  try {
+    await mkdir(join(sourceDir, 'architecture'), { recursive: true })
+    await assert.rejects(writeDiagramPages(sourceDir, targetDir, [topic]), /ENOENT/)
+    const path = join(sourceDir, topic.path)
+    await writeFile(path, '# 图\n\n## 原标题\n\n```mermaid\nflowchart LR\n A-->B\n```\n')
+    await writeDiagramPages(sourceDir, targetDir, [topic])
+    assert.match(await readFile(join(targetDir, 'example.md'), 'utf8'), /A-->B/)
+    await writeFile(path, '# 图\n\n## 新标题\n\n```mermaid\nflowchart LR\n A-->C\n```\n')
+    await writeDiagramPages(sourceDir, targetDir, [topic])
+    const updated = await readFile(join(targetDir, 'example.md'), 'utf8')
+    assert.match(updated, /A-->C/)
+    assert.doesNotMatch(updated, /A-->B/)
+    assert.match(updated, /\[图 1 · 新标题\]\(#/)
+    assert.doesNotMatch(updated, /原标题/)
+  } finally {
+    await rm(root, { recursive: true, force: true })
+  }
+})
+
+test('架构图生成页和目录不显示指向不存在文件的编辑入口', async () => {
+  const { renderDiagramPage, renderDiagramIndex } = await import('../lib/docs-diagrams.mjs')
+  const page = await renderDiagramPage(
+    { title: '模块结构', path: 'architecture/project-structure.md' },
+    '# 源文\n\n```mermaid\nflowchart LR\n A-->B\n```\n',
+  )
+  assert.match(renderDiagramIndex(), /^---\neditLink: false\n---\n/)
+  assert.match(page, /^---\neditLink: false\n---\n/)
+  assert.match(page, /\.\.\/backend\/architecture\/project-structure\.md#/)
+})
