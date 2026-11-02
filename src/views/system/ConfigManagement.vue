@@ -92,6 +92,14 @@
   )
 
   watch(
+    () => route.query.tab,
+    (tab) => {
+      const selected = validTabs.has(tab as ConfigTab) ? (tab as ConfigTab) : 'logs'
+      activeTab.value = navItems.value.some((item) => item.key === selected) ? selected : 'logs'
+    },
+  )
+
+  watch(
     activeTab,
     (tab) => {
       void router.replace({ query: { ...route.query, tab } })

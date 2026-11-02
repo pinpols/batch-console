@@ -116,6 +116,7 @@
     display: flex;
     align-items: center;
     min-width: 0;
+    max-width: 100%;
     flex: 0 0 auto;
   }
 

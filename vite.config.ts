@@ -6,6 +6,8 @@ import Components from 'unplugin-vue-components/vite'
 import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
 import { VitePWA } from 'vite-plugin-pwa'
 import { fileURLToPath, URL } from 'node:url'
+import { existsSync } from 'node:fs'
+import { docsStaticMiddleware } from './scripts/lib/docs-static.mjs'
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
@@ -45,32 +47,22 @@ export default defineConfig(({ mode }) => {
     } satisfies ViteUserConfig['test'],
     plugins: [
       {
-        name: 'docs-trailing-slash',
+        name: 'docs-static',
         configureServer(server) {
-          server.middlewares.use((req, res, next) => {
-            const { pathname, search } = new URL(req.url || '/', 'http://localhost')
-            if (pathname === '/docs') {
-              res.writeHead(301, { Location: `/docs/${search}` })
-              res.end()
-              return
-            }
-            if (pathname === '/fe-docs' || pathname.startsWith('/fe-docs/')) {
-              res.statusCode = 410
-              res.end()
-              return
-            }
-            if (
-              pathname.startsWith('/docs/') &&
-              !/^\/docs\/(?:frontend|backend|assets)(?:\/|$)/.test(pathname) &&
-              pathname !== '/docs/' &&
-              pathname !== '/docs/index.html'
-            ) {
-              res.statusCode = 404
-              res.end()
-              return
-            }
-            next()
-          })
+          const docsRoot = fileURLToPath(
+            new URL('./tools/docs-bridge/frontend/.vitepress/dist', import.meta.url),
+          )
+          if (!existsSync(`${docsRoot}/index.html`))
+            server.config.logger.warn('文档尚未构建，请运行 npm run docs:build 后访问 /docs/')
+          server.middlewares.use(docsStaticMiddleware(docsRoot))
+        },
+        configurePreviewServer(server) {
+          const docsRoot = fileURLToPath(
+            new URL('./tools/docs-bridge/frontend/.vitepress/dist', import.meta.url),
+          )
+          if (!existsSync(`${docsRoot}/index.html`))
+            server.config.logger.warn('文档尚未构建，请运行 npm run docs:build 后访问 /docs/')
+          server.middlewares.use(docsStaticMiddleware(docsRoot))
         },
       },
       {
@@ -124,7 +116,7 @@ export default defineConfig(({ mode }) => {
           navigateFallback: '/index.html',
           navigateFallbackDenylist: [
             /^\/api\//,
-            /^\/docs\//,
+            /^\/docs(?:\/|$)/,
             /^\/oauth2\/authorization(?:\/|$)/,
             /^\/login\/oauth2\/code(?:\/|$)/,
           ],
@@ -243,10 +235,6 @@ export default defineConfig(({ mode }) => {
         ],
       },
       proxy: {
-        '/docs': {
-          target: 'http://127.0.0.1:5174',
-          changeOrigin: true,
-        },
         '/api': {
           target: devProxyTarget,
           changeOrigin: true,
@@ -260,8 +248,6 @@ export default defineConfig(({ mode }) => {
           target: devProxyTarget,
           changeOrigin: false,
         },
-        // 代理的是静态构建后的 VitePress preview，不是 dev server。
-        // preview 保留 /docs/ base，路径和生产 nginx 完全一致。
       },
       /**
        * 预热：dev 启动时后台编译这些文件，用户首次导航立即到位。

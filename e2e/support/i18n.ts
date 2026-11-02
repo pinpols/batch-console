@@ -4,7 +4,8 @@ import type { Page } from '@playwright/test'
 import enUS from '../../src/locales/en-US'
 import zhCN from '../../src/locales/zh-CN'
 
-export type E2eLocale = 'zh-CN' | 'en-US'
+export const E2E_LOCALES = ['zh-CN', 'en-US'] as const
+export type E2eLocale = (typeof E2E_LOCALES)[number]
 
 export const E2E_DEFAULT_LOCALE = DEFAULT_LOCALE as E2eLocale
 

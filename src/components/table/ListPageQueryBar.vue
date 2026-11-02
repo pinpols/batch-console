@@ -157,7 +157,7 @@
   .query-form.el-form--inline {
     display: flex;
     flex-wrap: wrap;
-    align-items: end;
+    align-items: start;
     gap: 6px 8px;
     padding: 0;
     background: transparent;

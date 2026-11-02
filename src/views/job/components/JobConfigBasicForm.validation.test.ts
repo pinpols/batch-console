@@ -8,6 +8,9 @@ import { createEmptyJobEditForm } from '../jobEditFormTypes'
 import { createJobDefinitionWizardRules } from '../jobDefinitionWizardRules'
 import JobConfigBasicForm from './JobConfigBasicForm.vue'
 
+vi.mock('@/composables/usePermission', () => ({
+  usePermission: () => ({ canWriteSystem: ref(false) }),
+}))
 vi.mock('vue-i18n', async (original) => ({
   ...(await original<typeof import('vue-i18n')>()),
   useI18n: () => ({ t: (key: string) => key }),

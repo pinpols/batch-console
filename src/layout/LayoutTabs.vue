@@ -48,10 +48,20 @@
                     </span>
                     <template #dropdown>
                       <el-dropdown-menu>
-                        <el-dropdown-item command="left" :disabled="tabDisableCloseLeft(tab.key)">
+                        <el-dropdown-item
+                          command="left"
+                          :disabled="tabDisableCloseLeft(tab.key)"
+                          :title="t('nav.closeLeftAll')"
+                          :aria-label="t('nav.closeLeftAll')"
+                        >
                           {{ t('nav.closeLeft') }}
                         </el-dropdown-item>
-                        <el-dropdown-item command="right" :disabled="tabDisableCloseRight(tab.key)">
+                        <el-dropdown-item
+                          command="right"
+                          :disabled="tabDisableCloseRight(tab.key)"
+                          :title="t('nav.closeRightAll')"
+                          :aria-label="t('nav.closeRightAll')"
+                        >
                           {{ t('nav.closeRight') }}
                         </el-dropdown-item>
                         <el-dropdown-item command="others" :disabled="tabDisableCloseOthers()">
@@ -96,10 +106,20 @@
               </span>
               <template #dropdown>
                 <el-dropdown-menu>
-                  <el-dropdown-item command="left" :disabled="tabDisableCloseLeft(tab.key)">
+                  <el-dropdown-item
+                    command="left"
+                    :disabled="tabDisableCloseLeft(tab.key)"
+                    :title="t('nav.closeLeftAll')"
+                    :aria-label="t('nav.closeLeftAll')"
+                  >
                     {{ t('nav.closeLeft') }}
                   </el-dropdown-item>
-                  <el-dropdown-item command="right" :disabled="tabDisableCloseRight(tab.key)">
+                  <el-dropdown-item
+                    command="right"
+                    :disabled="tabDisableCloseRight(tab.key)"
+                    :title="t('nav.closeRightAll')"
+                    :aria-label="t('nav.closeRightAll')"
+                  >
                     {{ t('nav.closeRight') }}
                   </el-dropdown-item>
                   <el-dropdown-item command="others" :disabled="tabDisableCloseOthers()">

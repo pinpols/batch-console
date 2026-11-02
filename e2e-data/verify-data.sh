@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# verify-data.sh — 只读核验保留的历史输入文件完整性；不证明当前 schema/API 兼容
+# verify-data.sh — 只读核验保留输入文件及配置包快照契约；不证明 API/业务验收
 # 用法:  ./verify-data.sh
 
 set +e
@@ -48,7 +48,7 @@ check_sql() {
   fi
 }
 
-echo "本检查只核验历史文件可解析，不代表当前 WDI 契约或业务验收。"
+echo "本检查核验输入可解析及配置包快照契约，不代表 API 或业务验收。"
 echo "═════════ 00-tenant-lifecycle ═════════"
 check_json 00-tenant-lifecycle/payloads/single-create.json
 check_json 00-tenant-lifecycle/payloads/batch-create.json
@@ -61,6 +61,11 @@ echo "═════════ 01-tenant-config-import ═══════�
 check_xlsx 01-tenant-config-import/ta-tenant-config-package-test.xlsx
 check_xlsx 01-tenant-config-import/tb-tenant-config-package-test.xlsx
 check_xlsx 01-tenant-config-import/tc-tenant-config-package-test.xlsx
+if PYTHONDONTWRITEBYTECODE=1 python3 01-tenant-config-import/test_tenant_package_fixtures.py; then
+  ok "配置包 sheet 及可用的配对后端快照核对通过"
+else
+  bad "配置包 sheet 或配对后端快照核对失败"
+fi
 
 echo "═════════ 02-excel-edge-cases ═════════"
 check_xlsx 02-excel-edge-cases/bad-missing-required-col.xlsx

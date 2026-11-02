@@ -58,14 +58,14 @@ npm run build:fast     # 仅 Vite 构建
 npm run test:unit      # Vitest
 npm run test:e2e       # Playwright 常规套件，排除 @slow
 npm run test:e2e:all   # 发布验收全量套件
-npm run docs:serve     # 构建并预览内嵌文档中心
+npm run dev:all        # 构建文档并从同端口 /docs/ 访问
 npm run check:health   # 联调健康检查(BE actuator + OpenAPI 漂移 + preview 端口),make health 别名
 npm run check:architecture # API 分层与循环依赖
 npm run check:docs     # 当前文档链接与本机路径漂移
 npm run verify:local   # 无后端完整本地门禁
 ```
 
-本地用 `npm run dev:all` 同时启动控制台与统一文档站，访问 `http://localhost:5173/docs/`。前后端文档源可分别通过 `FRONTEND_DOCS_ROOT`、`BACKEND_DOCS_ROOT` 覆盖；详情见[统一文档站](docs/engineering/unified-documentation-site.md)。
+本地用 `npm run dev:all` 构建文档并启动控制台，通过同端口 `http://localhost:5173/docs/` 访问统一文档站。前后端文档源可分别通过 `FRONTEND_DOCS_ROOT`、`BACKEND_DOCS_ROOT` 覆盖；详情见[统一文档站](docs/engineering/unified-documentation-site.md)。
 
 > **联调遇怪问题先 `make health`** — 协议层探测 BE console-api / trigger / orchestrator + API 漂移。
 > Staging:覆盖 `BE_CONSOLE_URL` / `BE_TRIGGER_URL` / `BE_ORCH_URL` 指向远端。
@@ -124,13 +124,13 @@ src/
 
 前端贡献不只包括页面开发，也包括 API 契约同步、交互与可访问性、测试、文档和交付治理。开始修改前，请先按改动类型确认权威入口：
 
-| 改动类型 | 先看哪里 | 最低交付要求 |
-| --- | --- | --- |
-| 页面、组件与交互 | `src/views/`、`src/components/`、`src/styles/` | 复用现有设计 token 和组件；同步中英文文案；补充与风险匹配的桌面端测试 |
-| API、权限与租户逻辑 | 后端 OpenAPI、`src/api/`、`src/types/api.generated.ts` | 以后端契约为准，运行 `npm run gen:api`，不手写生成类型或绕过统一客户端 |
-| 状态、分页与轮询 | `src/composables/`、`src/stores/`、`src/api/queries/` | 保持租户切换、缓存键、取消与错误状态一致，避免页面自行复制数据流逻辑 |
-| 测试与 CI | [测试说明](./docs/testing/README.md)、[CI 手册](./docs/runbook/ci.md) | 区分单元、模拟 E2E 与真实后端验收，不把 SKIP 或未运行写成通过 |
-| 文档与发布 | [文档索引](./docs/README.md)、`CHANGELOG.md` | 更新权威文档和必要索引；用户、部署或契约变化同步变更日志 |
+| 改动类型            | 先看哪里                                                              | 最低交付要求                                                           |
+| ------------------- | --------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| 页面、组件与交互    | `src/views/`、`src/components/`、`src/styles/`                        | 复用现有设计 token 和组件；同步中英文文案；补充与风险匹配的桌面端测试  |
+| API、权限与租户逻辑 | 后端 OpenAPI、`src/api/`、`src/types/api.generated.ts`                | 以后端契约为准，运行 `npm run gen:api`，不手写生成类型或绕过统一客户端 |
+| 状态、分页与轮询    | `src/composables/`、`src/stores/`、`src/api/queries/`                 | 保持租户切换、缓存键、取消与错误状态一致，避免页面自行复制数据流逻辑   |
+| 测试与 CI           | [测试说明](./docs/testing/README.md)、[CI 手册](./docs/runbook/ci.md) | 区分单元、模拟 E2E 与真实后端验收，不把 SKIP 或未运行写成通过          |
+| 文档与发布          | [文档索引](./docs/README.md)、`CHANGELOG.md`                          | 更新权威文档和必要索引；用户、部署或契约变化同步变更日志               |
 
 推荐流程：
 

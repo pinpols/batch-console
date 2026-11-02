@@ -308,6 +308,6 @@ test.describe('data-heavy pages use the intended primary views', () => {
     await expect(tools).toBeVisible()
     await tools.click()
     await expect(page.getByText('移动端预览', { exact: true })).toBeVisible()
-    await expect(page.getByText('打开文档', { exact: true })).toBeVisible()
+    await expect(page.getByText('系统文档', { exact: true })).toBeVisible()
   })
 })

@@ -57,7 +57,7 @@ test.describe('navigation and tabs', () => {
     await expect(page).toHaveURL(/\/monitor\/workflow-runs/)
 
     await expect(page.getByRole('progressbar').first()).toBeHidden()
-    await page.locator('.nav__group-hd', { hasText: '告警与投递' }).click()
+    await page.locator('.nav__group-hd', { hasText: '告警投递' }).click()
     await page
       .getByRole('link', { name: /^告警事件$|^事件告警$|^告警$/ })
       .first()

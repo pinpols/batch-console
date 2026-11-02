@@ -36,7 +36,7 @@ Skill界面元数据由各自`agents/openai.yaml`维护；它不是执行脚本�
 
 完整文件盘点和静态路由复核不等于逐行业务审查、脚本执行成功、测试通过或目标环境验收。真实写入、清理、启停、Git/PR 与部署按当前用户请求判断授权，不因加载 Skill 或看到历史命令就执行。
 
-统一文档站的 `scripts/lib/docs-publication.mjs`、`scripts/tests/docs-publication.test.mjs` 和 VitePress 主题 `publicationNavigation.mjs` 归 `frontend-docs-release-governance`，构建／预检门禁由 `frontend-testing-ci` 配合。`test:docs-publication` 验证无损块分卷、重复／自定义锚点和同目录同基名跳转；完整 `docs:build` 仍检查体积。只处理被忽略的发布副本，不改配对后端权威证据；真实浏览器导航另行复验，见[统一文档站](unified-documentation-site.md)。
+统一文档站的 `scripts/lib/docs-publication.mjs`、`scripts/tests/docs-publication.test.mjs` 和 VitePress 主题 `publicationNavigation.mjs` 归 `frontend-docs-release-governance`，构建／预检门禁由 `frontend-testing-ci` 配合。`test:docs-publication` 验证无损块分卷、重复／自定义锚点、同目录同基名跳转及本地同源文档静态路由；完整 `docs:build` 仍检查体积。`scripts/lib/docs-static.mjs` 和 `scripts/tests/docs-static.test.mjs` 由 `frontend-deploy-runtime` 维护，分别负责开发／预览时的文档路由和隔离 HTTP 回归。只处理被忽略的发布副本，不改配对后端权威证据；真实浏览器导航另行复验，见[统一文档站](unified-documentation-site.md)。
 
 运行DAG/每日进度的真实验收入口为 `npm run test:e2e:progress:real`，由 `frontend-testing-ci` 负责；该控制图场景不创建Job/Worker，通过真实API验证Workflow暂停/恢复与角色边界、SSE冻结DAG状态和运维总览统计，手工业务日期不能代表Quartz计划。`e2e/fixtures/runtime-progress/` 包含正式运行包密码适配器与身份准备/清理SQL，边界见[夹具说明](../../e2e/fixtures/runtime-progress/README.md)。进度状态与图表组合规则由 `frontend-state-data-flow` 维护。
 

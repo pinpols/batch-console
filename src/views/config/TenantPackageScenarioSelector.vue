@@ -193,7 +193,7 @@
     display: flex;
     flex-direction: column;
     align-items: stretch;
-    gap: 8px;
+    gap: 6px;
     width: 100%;
     min-width: 0;
     padding: 0;
@@ -225,9 +225,8 @@
 
   .scenario-template-control__groups {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    column-gap: 20px;
-    row-gap: 4px;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr));
+    gap: 4px 12px;
   }
 
   .scenario-template-control__group {
@@ -242,15 +241,19 @@
 
   .scenario-template-control__options {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    column-gap: 8px;
-    row-gap: 0;
-    padding: 4px 0 0 22px;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 110px), 1fr));
+    gap: 2px 4px;
+    padding-top: 4px;
   }
 
   .scenario-template-control__group--other .scenario-template-control__options {
-    padding-left: 0;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 100px), 1fr));
+  }
+
+  .scenario-template-control:lang(en)
+    .scenario-template-control__group--other
+    .scenario-template-control__options {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 140px), 1fr));
   }
 
   .scenario-template-control__group-title {
@@ -269,10 +272,61 @@
     white-space: normal;
   }
 
+  .scenario-template-control__options :deep(.el-checkbox) {
+    width: 100%;
+    min-height: var(--control-height-sm);
+    padding: 2px 6px;
+    background: var(--color-bg-card);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-input);
+    transition:
+      border-color 0.15s,
+      background-color 0.15s,
+      box-shadow 0.15s;
+  }
+
+  .scenario-template-control__options :deep(.el-checkbox:not(.is-disabled):hover) {
+    border-color: var(--color-primary);
+  }
+
+  .scenario-template-control__options :deep(.el-checkbox.is-checked) {
+    background: var(--color-bg-info);
+    border-color: color-mix(in srgb, var(--color-primary) 55%, var(--color-border));
+  }
+
+  .scenario-template-control__options :deep(.el-checkbox:focus-within) {
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 22%, transparent);
+  }
+
+  .scenario-template-control__options :deep(.el-checkbox.is-disabled) {
+    cursor: not-allowed;
+  }
+
   .scenario-template-control :deep(.el-checkbox__label) {
     white-space: normal;
     overflow-wrap: anywhere;
     line-height: 1.35;
+  }
+
+  .scenario-template-control :deep(.el-checkbox__inner) {
+    width: 16px;
+    height: 16px;
+    background: var(--color-bg-card);
+    border-color: color-mix(in srgb, var(--color-text-secondary) 70%, transparent);
+    border-radius: 4px;
+  }
+
+  .scenario-template-control
+    :deep(.el-checkbox__input.is-checked:not(.is-disabled) .el-checkbox__inner),
+  .scenario-template-control
+    :deep(.el-checkbox__input.is-indeterminate:not(.is-disabled) .el-checkbox__inner) {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+  }
+
+  .scenario-template-control :deep(.el-checkbox__input.is-checked .el-checkbox__inner::after) {
+    top: 2px;
+    left: 5px;
   }
 
   .scenario-template-control :deep(.el-button.scenario-template-control__button) {
@@ -284,37 +338,5 @@
     padding: 0 12px;
     border-radius: var(--radius-input);
     font-weight: 600;
-  }
-
-  @media (max-width: 1100px) {
-    .scenario-template-control__groups {
-      column-gap: 14px;
-    }
-
-    .scenario-template-control__options {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-    .scenario-template-control__group--other .scenario-template-control__options {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
-  }
-
-  @media (max-width: 720px) {
-    .scenario-template-control__groups {
-      grid-template-columns: minmax(0, 1fr);
-    }
-
-    .scenario-template-control__group--other {
-      grid-column: auto;
-    }
-
-    .scenario-template-control__group--other .scenario-template-control__options {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-    .scenario-template-control__options {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
   }
 </style>

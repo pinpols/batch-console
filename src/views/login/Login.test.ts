@@ -13,6 +13,7 @@ vi.mock('@/api/oidc', () => ({
   getConsoleOidcProvider: vi.fn().mockResolvedValue({ enabled: false }),
 }))
 vi.mock('@/stores/auth', () => ({ useAuthStore: () => ({ login: mocks.login }) }))
+vi.mock('@/stores/app', () => ({ useAppStore: () => ({}) }))
 vi.mock('vue-router', () => ({
   useRouter: () => ({ push: mocks.push }),
   useRoute: () => ({ query: {} }),
@@ -25,13 +26,6 @@ vi.mock('@/composables/useLocale', async () => {
   const { ref } = await import('vue')
   return { useLocale: () => ({ current: ref('zh-CN'), setLocale: vi.fn() }) }
 })
-vi.mock('@/constants/theme', () => ({
-  applyThemeToDocument: vi.fn(),
-  getSystemIsDark: () => false,
-  readThemePreference: () => 'system',
-  resolveEffectiveTheme: () => 'light',
-}))
-
 beforeEach(() => {
   vi.clearAllMocks()
   vi.stubGlobal('__APP_VERSION__', 'test')

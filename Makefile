@@ -6,7 +6,7 @@ PORT ?= 5173
 DOCS_PORT ?= 5174
 FE_CONTAINER ?= batch-console
 
-# 单站文档默认内部端口 5174。
+# 可选独立文档预览的默认端口为 5174。
 DPORT ?=
 BG ?=
 
@@ -31,10 +31,10 @@ CI_SCRIPT := ./scripts/ci.sh
 help:
 	@echo "Local dev:"
 	@echo "  make dev               SPA only (Vite, http://localhost:$(PORT))"
-	@echo "  make dev-stack         SPA + 单站文档(/docs/,build → preview,Ctrl+C 一起停)"
+	@echo "  make dev-stack         SPA + 同源文档(/docs/,先构建文档)"
 	@echo "                           BG=1 后台+日志(.dev-stack.log)"
 	@echo "  make logs-stack        tail 后台 stack 日志(BG=1 启动时)"
-	@echo "  make dev-all           旧入口(清理占用端口后运行 npm dev:all;不停止容器)"
+	@echo "  make dev-all           同源文档开发入口(不停止已有服务)"
 	@echo "  make dev-bg            SPA 后台,日志 -> $(DEV_LOG_FILE)"
 	@echo "  make docs              起统一文档站(5174;DPORT 可覆盖)"
 	@echo "  make docs-build        构建前后端统一文档站"
@@ -69,12 +69,9 @@ install:
 dev:
 	DEV_HOST=$(HOST) PORT=$(PORT) NPM=$(NPM) DEV_PID_FILE=$(DEV_PID_FILE) DEV_LOG_FILE=$(DEV_LOG_FILE) $(DEV_SERVER_SCRIPT) dev
 
-# SPA + docs 双进程同窗口运行;package.json 的 dev:all 已经写好 concurrently,
-# 这里只做端口冲突的预清理(避免上一次 Ctrl+C 没杀干净)。
+# 构建文档并启动同端口的控制台，端口冲突交由 Vite 报告。
 dev-all:
-	@pids="$$(lsof -ti tcp:$(PORT) tcp:$(DOCS_PORT) 2>/dev/null || true)"; \
-	if [ -n "$$pids" ]; then printf '%s\n' "$$pids" | xargs kill 2>/dev/null || true; fi
-	$(NPM) run dev:all
+	$(NPM) run dev:all -- --host $(HOST) --port $(PORT) --strictPort
 
 dev-bg:
 	DEV_HOST=$(HOST) PORT=$(PORT) NPM=$(NPM) DEV_PID_FILE=$(DEV_PID_FILE) DEV_LOG_FILE=$(DEV_LOG_FILE) $(DEV_SERVER_SCRIPT) start

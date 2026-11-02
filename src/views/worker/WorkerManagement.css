@@ -10,6 +10,10 @@
   flex-wrap: wrap;
 }
 
+.wk-tabs--worker-only :deep(.el-tabs__header) {
+  display: none;
+}
+
 .worker-empty-meta {
   width: 100%;
   margin-top: 4px;
@@ -89,6 +93,10 @@
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 14px;
   margin-top: 4px;
+}
+
+.wk-grid--loading {
+  min-height: 180px;
 }
 
 .wk-card {

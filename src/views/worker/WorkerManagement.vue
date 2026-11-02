@@ -1,10 +1,10 @@
 <template>
-  <PageContainer>
+  <PageContainer v-if="canReadWorkers">
     <PageHeader />
 
     <!-- 照设计 proto-workers dump:统计卡位于 tab pill 之上、常显(执行通道 tab 也可见);
          横排状态统计卡(色点 + 标签 + mono 大数),点击联动状态筛选并切回 Workers tab -->
-    <div class="wk-stats">
+    <div v-if="hasWorkerStats" class="wk-stats">
       <button
         v-for="s in statCards"
         :key="s.status"
@@ -22,7 +22,7 @@
       </button>
     </div>
     <el-alert
-      v-if="workerStats.offline > 0"
+      v-if="hasWorkerStats && workerStats.offline > 0"
       class="wk-offline-notice"
       type="warning"
       :closable="false"
@@ -37,13 +37,17 @@
 
     <!-- 还原设计:tabs 与内容直铺底色,无外层卡片壳 -->
     <div>
-      <el-tabs v-model="activeTab" class="pill-tabs">
+      <el-tabs
+        v-model="activeTab"
+        class="pill-tabs"
+        :class="{ 'wk-tabs--worker-only': !canUseWorkerChannelFallback }"
+      >
         <el-tab-pane :label="t('workerManagement.tabWorkers')" name="workers">
           <ListPageQueryBar
             :model="workerFilters"
             :filter-busy="workerQueryBusy"
             :refresh-busy="workerIsFetching"
-            :disabled="workerIsPending"
+            :disabled="!tenant.tenantId || workerIsPending"
             @search="onWorkerSearch"
             @reset="resetWorkers"
             @refresh="onRefreshWorkers"
@@ -79,12 +83,19 @@
           </ListPageQueryBar>
 
           <OpsListToolbar
+            v-if="tenant.tenantId"
             :status="live.status.value"
             :last-refreshed-at="live.lastRefreshedAt.value"
           />
 
           <EmptyState
-            v-if="!workerTableBlocking && workerLoadError"
+            v-if="!tenant.tenantId"
+            :description="t('apiError.selectTenantFirst')"
+            :image-size="96"
+          />
+
+          <EmptyState
+            v-else-if="!workerTableBlocking && workerLoadError"
             variant="error"
             :title="t('workerManagement.loadFailed')"
             :description="t('error.subtitle')"
@@ -129,7 +140,12 @@
             </template>
           </EmptyState>
 
-          <div v-else v-loading="workerTableBlocking" class="wk-grid">
+          <div
+            v-else
+            v-loading="workerTableBlocking"
+            class="wk-grid"
+            :class="{ 'wk-grid--loading': workerTableBlocking && workerTableRows.length === 0 }"
+          >
             <div
               v-for="row in workerTableRows"
               :key="row.id"
@@ -229,6 +245,7 @@
           </div>
 
           <TablePagerBar
+            v-if="tenant.tenantId"
             :page="workerPage"
             :page-size="workerPageSize"
             :total="workerTotal"
@@ -242,8 +259,18 @@
           />
         </el-tab-pane>
 
-        <el-tab-pane :label="t('workerManagement.tabChannels')" name="channels">
+        <el-tab-pane
+          v-if="canUseWorkerChannelFallback"
+          :label="t('workerManagement.tabChannels')"
+          name="channels"
+        >
+          <EmptyState
+            v-if="!tenant.tenantId"
+            :description="t('apiError.selectTenantFirst')"
+            :image-size="96"
+          />
           <ProTable
+            v-else
             :data="channelRows"
             :loading="channelTableBlocking"
             :error="channelLoadError"
@@ -467,6 +494,7 @@
   import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
   import { uniqueFieldValues } from '@/utils/queryFormOptions'
   import { useTenantStore } from '@/stores/tenant'
+  import { usePermissionStore } from '@/stores/permission'
   import { useWriteAvailability } from '@/composables/useWriteAvailability'
   import { useTenantRequestScope } from '@/composables/useTenantRequestScope'
   import { usePermission } from '@/composables/usePermission'
@@ -495,11 +523,29 @@
   const { ensureWriteAvailable } = useWriteAvailability()
   const { canMutateConfig } = usePermission()
   const auth = useAuthStore()
+  const permissionStore = usePermissionStore()
   const { isMobile } = useResponsive()
   const actionScope = useTenantRequestScope()
   const channelScope = useTenantRequestScope()
   const queryClient = useQueryClient()
   const activeTab = ref('workers')
+  const canReadWorkers = computed(
+    () =>
+      auth.isLoggedIn &&
+      auth.profileLoaded &&
+      permissionStore.canAccessRole('OPERATOR') &&
+      permissionStore.hasBackendMenuAccess('/workers/management'),
+  )
+  // 自定义菜单可能只授权 Worker；这种情况下保留渠道查询，不扩大文件配置菜单权限。
+  const canOpenFileChannels = computed(
+    () =>
+      auth.profileLoaded &&
+      (permissionStore.hasBackendMenuAccess('/files/channels') ||
+        permissionStore.hasBackendMenuAccess('/files/templates')),
+  )
+  const canUseWorkerChannelFallback = computed(
+    () => canReadWorkers.value && !canOpenFileChannels.value,
+  )
 
   // ═══════════════════════════════════════
   // Worker 列表
@@ -514,6 +560,9 @@
     error: workerLoadError,
     refetch: refetchWorkers,
   } = useWorkers()
+  const hasWorkerStats = computed(
+    () => Boolean(tenant.tenantId) && !workerLoadError.value && Array.isArray(allWorkerData.value),
+  )
   const workerErrorAt = ref(0)
   watch(
     workerLoadError,
@@ -531,7 +580,7 @@
     runSearch: runWorkerSearch,
     runReset: runWorkerReset,
     runRefresh: runWorkerRefresh,
-  } = useListFilterFeedback(workerIsPending)
+  } = useListFilterFeedback(computed(() => Boolean(tenant.tenantId) && workerIsPending.value))
 
   // 接受 ?workerCode / ?status / ?group 深链(从其他页或邮件跳入时自动过滤)
   const workerFilters = reactive({
@@ -743,6 +792,7 @@
   }
 
   function onRefreshWorkers() {
+    if (!tenant.tenantId) return
     // TanStack refetch 返回 Promise<QueryObserverResult>,runWorkerRefresh 期望 void;
     // 这里把返回值丢弃,只关心副作用刷新。
     return runWorkerRefresh(async () => {
@@ -953,6 +1003,7 @@
   }
 
   async function loadChannels() {
+    if (!canUseWorkerChannelFallback.value) return
     const scope = channelScope.begin()
     if (!scope.tenantId) return
     const isCurrent = () => channelScope.isCurrent(scope)
@@ -995,8 +1046,16 @@
   })
 
   watch(
-    () => tenant.tenantId,
+    [
+      () => tenant.tenantId,
+      () => auth.isLoggedIn,
+      () => auth.profileLoaded,
+      () => auth.userInfo?.username,
+      canUseWorkerChannelFallback,
+    ],
     () => {
+      channelScope.begin()
+      if (!canUseWorkerChannelFallback.value) activeTab.value = 'workers'
       allChannelRows.value = []
       channelRows.value = []
       channelTypeOptions.value = []
@@ -1011,9 +1070,9 @@
   )
 
   watch(
-    [activeTab, () => tenant.tenantId],
-    ([tab, tenantId]) => {
-      if (tab === 'channels' && tenantId) {
+    [activeTab, () => tenant.tenantId, canUseWorkerChannelFallback],
+    ([tab, tenantId, allowed]) => {
+      if (tab === 'channels' && tenantId && allowed) {
         void loadChannels().catch(() => {
           // 被动加载失败已由渠道表格错误态呈现，避免额外产生未处理的拒绝。
         })

@@ -149,10 +149,15 @@
               :aria-label="calendarAccessibleLabel(date)"
               @click.stop="openCalendarDay(date)"
             >
-              <span class="batch-calendar__date">{{ date.getDate() }}</span>
               <template v-for="day in [calendarDayForDate(date)]" :key="calendarDateKey(date)">
+                <span class="batch-calendar__day-heading">
+                  <span class="batch-calendar__date">{{ date.getDate() }}</span>
+                  <StatusTag v-if="day" :value="String(day.dayStatus ?? '')" category="batchDay" />
+                  <span v-if="day?.lateCount" class="batch-calendar__late">
+                    {{ t('batchDayList.calendarCellLate', { n: day.lateCount }) }}
+                  </span>
+                </span>
                 <template v-if="day">
-                  <StatusTag :value="String(day.dayStatus ?? '')" category="batchDay" />
                   <span class="batch-calendar__counts">
                     <span
                       class="batch-calendar__count batch-calendar__count--success"
@@ -175,9 +180,6 @@
                       <el-icon :size="12" aria-hidden="true"><Clock3 /></el-icon>
                       {{ day.inFlightJobCount ?? 0 }}
                     </span>
-                  </span>
-                  <span v-if="day.lateCount" class="batch-calendar__late">
-                    {{ t('batchDayList.calendarCellLate', { n: day.lateCount }) }}
                   </span>
                 </template>
               </template>
@@ -291,7 +293,7 @@
   import { ElMessage } from 'element-plus'
   import { Check, ChevronLeft, ChevronRight, Clock3, Info, X } from '@lucide/vue'
 
-  const { t, locale } = useI18n({ useScope: 'global' })
+  const { t, te, locale } = useI18n({ useScope: 'global' })
   import { queryBatchDays } from '@/api/batchDays'
   import { useMetaCalendarsQuery } from '@/composables/queries/useConsoleMeta'
   import { useTenantStore } from '@/stores/tenant'
@@ -301,6 +303,7 @@
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import ProTable from '@/components/table/ProTable.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
+  import { resolveStatusMeta } from '@/components/common/statusTagResolve'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import { businessCalendarDate } from '@/utils/datetime'
   import type { ConsoleBatchDayResponse } from '@/types/console-api'
@@ -378,8 +381,18 @@
   function calendarAccessibleLabel(date: Date): string {
     const day = calendarDay(calendarDateKey(date))
     const dateLabel = new Intl.DateTimeFormat(locale.value, { dateStyle: 'full' }).format(date)
-    if (!day) return dateLabel
-    return `${dateLabel}, ${t('batchDayList.calendarCellCounts', {
+    if (!day) return `${dateLabel}, ${t('batchDayList.calendarCellEmpty')}`
+    const status = String(day.dayStatus ?? '').trim()
+    const statusKey = `batchDayGovernance.dayStatuses.${status}`
+    const statusLabel = !status
+      ? t('batchDayGovernance.unknown')
+      : te(statusKey)
+        ? t(statusKey)
+        : resolveStatusMeta(status, 'batchDay', null, '', {
+            exists: te,
+            translate: (key) => t(key),
+          }).label
+    return `${dateLabel}, ${statusLabel}, ${t('batchDayList.calendarCellCounts', {
       success: day.successJobCount ?? 0,
       failed: day.failedJobCount ?? 0,
       running: day.inFlightJobCount ?? 0,
@@ -496,6 +509,7 @@
 
 <style scoped>
   .batch-calendar {
+    --batch-calendar-day-height: clamp(3.25rem, calc((100dvh - 25.5rem) / 6), 4rem);
     margin-top: var(--page-block-gap);
     overflow: hidden;
     border: 1px solid var(--color-border-light);
@@ -514,7 +528,7 @@
     align-items: baseline;
     justify-content: space-between;
     gap: var(--space-sm);
-    padding: var(--space-md);
+    padding: var(--space-sm) var(--space-md);
     color: var(--color-text-secondary);
     border-right: 1px solid var(--color-border-light);
   }
@@ -574,7 +588,7 @@
 
   .batch-calendar__toolbar {
     display: flex;
-    min-height: 3.5rem;
+    min-height: 3rem;
     align-items: center;
     justify-content: space-between;
     gap: var(--space-md);
@@ -605,7 +619,7 @@
   }
 
   .batch-calendar__weekdays {
-    min-height: 2.25rem;
+    min-height: 2rem;
     align-items: center;
     border-top: 1px solid var(--color-border-light);
     border-bottom: 1px solid var(--color-border-light);
@@ -619,11 +633,11 @@
     display: flex;
     width: 100%;
     min-width: 0;
-    min-height: 5.25rem;
+    min-height: var(--batch-calendar-day-height);
     flex-direction: column;
     align-items: stretch;
-    gap: 4px;
-    padding: 6px 8px;
+    gap: 2px;
+    padding: 4px 8px;
     color: var(--color-text-primary);
     text-align: left;
     border: 0;
@@ -665,6 +679,15 @@
 
   .batch-calendar__day--has-data {
     background: color-mix(in srgb, var(--el-color-primary) 5%, var(--color-bg-card));
+  }
+
+  .batch-calendar__day-heading {
+    display: flex;
+    min-width: 0;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2px 4px;
   }
 
   .batch-calendar__date {
@@ -714,8 +737,7 @@
     }
 
     .batch-calendar__day {
-      min-height: 4.75rem;
-      padding: 5px;
+      padding: 4px 5px;
     }
 
     .batch-calendar__counts {

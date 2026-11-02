@@ -97,33 +97,15 @@
 
         <DisplayTimezoneMenu />
 
-        <el-dropdown trigger="click" placement="bottom-end" @command="changeThemePreference">
-          <button
-            type="button"
-            class="icon-button header-icon"
-            :aria-label="themeToggleAriaLabel"
-            :title="themeToggleLabel"
-          >
-            <el-icon><component :is="themeToolIcon" /></el-icon>
-          </button>
-          <template #dropdown>
-            <el-dropdown-menu>
-              <el-dropdown-item disabled>{{ t('nav.switchTheme') }}</el-dropdown-item>
-              <el-dropdown-item command="system" :disabled="app.themePreference === 'system'">
-                <el-icon v-if="app.themePreference === 'system'"><Check /></el-icon>
-                <span>{{ t('nav.themeFollowSystem') }}</span>
-              </el-dropdown-item>
-              <el-dropdown-item command="light" :disabled="app.themePreference === 'light'">
-                <el-icon v-if="app.themePreference === 'light'"><Check /></el-icon>
-                <span>{{ t('nav.themeLight') }}</span>
-              </el-dropdown-item>
-              <el-dropdown-item command="dark" :disabled="app.themePreference === 'dark'">
-                <el-icon v-if="app.themePreference === 'dark'"><Check /></el-icon>
-                <span>{{ t('nav.themeDark') }}</span>
-              </el-dropdown-item>
-            </el-dropdown-menu>
-          </template>
-        </el-dropdown>
+        <button
+          type="button"
+          class="icon-button header-icon"
+          :aria-label="themeToggleLabel"
+          :title="themeToggleLabel"
+          @click="toggleTheme"
+        >
+          <el-icon><component :is="themeToolIcon" /></el-icon>
+        </button>
 
         <el-dropdown trigger="click" placement="bottom-end" @command="onUtilityCommand">
           <button
@@ -140,10 +122,6 @@
               <el-dropdown-item command="operations-toolkit">
                 <el-icon><Wrench /></el-icon>
                 {{ t('nav.operationsToolkit') }}
-              </el-dropdown-item>
-              <el-dropdown-item command="mobile">
-                <el-icon><Iphone /></el-icon>
-                {{ t('nav.mobilePreview') }}
               </el-dropdown-item>
               <el-dropdown-item command="docs">
                 <el-icon><Reading /></el-icon>
@@ -185,13 +163,6 @@
                   {{ t('nav.permissionAudit') }}
                 </el-dropdown-item>
                 <el-dropdown-item
-                  command="onboarding-center"
-                  :icon="Compass"
-                  :aria-label="t('nav.onboardingCenter')"
-                >
-                  {{ t('nav.onboardingCenter') }}
-                </el-dropdown-item>
-                <el-dropdown-item
                   command="onboarding-tour"
                   :icon="Reading"
                   :aria-label="t('nav.interfaceTour')"
@@ -218,15 +189,12 @@
 
 <script setup lang="ts">
   import { useRouter } from 'vue-router'
-  import { ElMessageBox } from 'element-plus'
+  import { ElMessage, ElMessageBox } from 'element-plus'
   // 还原设计:顶栏图标统一 Lucide 线性图标(与侧栏一致)
   import {
     ChevronDown as ArrowDown,
     ArrowLeft,
     ArrowRight,
-    Check,
-    Compass,
-    Smartphone as Iphone,
     KeyRound as Key,
     Monitor,
     Moon,
@@ -284,19 +252,28 @@
       ? `${userDisplayName.value} · ${userRoleLabel.value}`
       : userDisplayName.value,
   )
-  const themeToolIcon = computed(() => {
-    if (app.themePreference === 'system') return Monitor
-    return app.themePreference === 'light' ? Sunny : Moon
-  })
-  // 常驻主题入口展示当前偏好，展开后可直接选择三种模式。
-  const themeToggleLabel = computed(() => {
-    if (app.themePreference === 'system') {
-      const effective = app.theme === 'dark' ? t('nav.themeDark') : t('nav.themeLight')
-      return `${t('nav.themeFollowSystem')} · ${effective}`
-    }
-    return app.themePreference === 'light' ? t('nav.themeLight') : t('nav.themeDark')
-  })
-  const themeToggleAriaLabel = computed(() => t('nav.switchTheme'))
+  const themePreferenceLabel = (preference: 'system' | 'light' | 'dark') =>
+    t(
+      preference === 'system'
+        ? 'nav.themeFollowSystem'
+        : preference === 'light'
+          ? 'nav.themeLight'
+          : 'nav.themeDark',
+    )
+  const themeToolIcon = computed(() =>
+    app.themePreference === 'system' ? Monitor : app.themePreference === 'light' ? Sunny : Moon,
+  )
+  const themeToggleLabel = computed(() =>
+    t('nav.themeControlLabel', {
+      current: themePreferenceLabel(app.themePreference),
+      next: themePreferenceLabel(app.nextThemePreference),
+    }),
+  )
+
+  function toggleTheme() {
+    app.toggleTheme()
+    ElMessage.info(t('nav.themeSelected', { theme: themePreferenceLabel(app.themePreference) }))
+  }
 
   function toggleLocale() {
     setLocale(currentLocale.value === 'zh-CN' ? 'en-US' : 'zh-CN')
@@ -306,7 +283,7 @@
     (e: 'open-palette'): void
   }>()
 
-  // 文档站统一在 /docs/；开发期由 Vite 代理到构建后的单站 preview。
+  // 文档站统一在同源 /docs/。
   const docsUrl = computed(() => getDocsBase(app.theme))
 
   async function openDocs() {
@@ -324,22 +301,11 @@
     void router.push('/docs-unavailable')
   }
 
-  function openMobilePreview() {
-    window.open('/m/ops/summary', '_blank', 'noopener,noreferrer,width=430,height=860')
-  }
-
   function onUtilityCommand(command: string | number | object) {
     if (command === 'operations-toolkit') {
       toolkitMounted.value = true
       toolkitVisible.value = true
-    } else if (command === 'mobile') openMobilePreview()
-    else if (command === 'docs') void openDocs()
-  }
-
-  function changeThemePreference(preference: string | number | object) {
-    if (preference === 'system' || preference === 'light' || preference === 'dark') {
-      app.setThemePreference(preference)
-    }
+    } else if (command === 'docs') void openDocs()
   }
 
   const router = useRouter()
@@ -368,10 +334,6 @@
   async function onUserCommand(command: string) {
     if (command === 'profile') {
       void router.push('/system/users')
-      return
-    }
-    if (command === 'onboarding-center') {
-      await router.push({ path: '/ops/summary', query: { onboarding: '1' } })
       return
     }
     if (command === 'onboarding-tour') {

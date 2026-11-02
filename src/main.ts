@@ -19,15 +19,14 @@ import {
   applyThemeToDocument,
   getSystemIsDark,
   readThemePreference,
-  resolveThemeForPath,
+  resolveEffectiveTheme,
 } from '@/constants/theme'
 import { applyContentDensityToDocument, readStoredContentDensity } from '@/constants/contentDensity'
 import App from './App.vue'
 
-const pathname = window.location.pathname
 const themePreference = readThemePreference()
 const systemIsDark = getSystemIsDark()
-const initialTheme = resolveThemeForPath(pathname, themePreference, systemIsDark)
+const initialTheme = resolveEffectiveTheme(themePreference, systemIsDark)
 applyThemeToDocument(initialTheme)
 applyContentDensityToDocument(readStoredContentDensity())
 import router from './router'

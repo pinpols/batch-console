@@ -1,6 +1,6 @@
 # 租户配置包输入
 
-本页是保留输入与当前测试入口的目录说明。执行范围与准备/清理规则见[本目录总览](../README.md)和[执行说明](../EXEC-MATRIX.md)。
+本页说明前端仓库保存的租户配置包测试快照。执行范围与准备/清理规则见[本目录总览](../README.md)和[执行说明](../EXEC-MATRIX.md)。
 
 ## 保留资产
 
@@ -8,8 +8,10 @@
 - [`tb-tenant-config-package-test.xlsx`](./tb-tenant-config-package-test.xlsx)
 - [`tc-tenant-config-package-test.xlsx`](./tc-tenant-config-package-test.xlsx)
 
-## 当前入口与适用性
+## 来源与同步
 
-这些是仓库保留的配置包文件，不是自动同步的后端模板。权威来源见[配对后端测试数据](../../../file-batch-system/test-data/README.md)及模板 Schema；接口消费见 [`src/api/tenantPackageExcel.ts`](../../src/api/tenantPackageExcel.ts)。[`upload-full-chain.spec.ts`](../../e2e/upload-full-chain.spec.ts)保留了后端样本候选与本目录回退；实际选择以运行时找到的文件为准；mock 与真实后端模式的证据范围不同。
+这三份文件是[后端测试包](../../../file-batch-system/test-data/tenant-config-packages/README.md)中同名文件的逐字节快照，更新后端样本时应同时复制并核对 SHA-256；它们不会自动同步。当前快照包含 10 个数据 sheet，不含已退役的租户 Pipeline sheet。[`upload-full-chain.spec.ts`](../../e2e/upload-full-chain.spec.ts)优先使用后端 ta 样本，后端仓库不可用时回退到本目录的 ta 快照。
 
-更新样本时先确认当前 sheet、必填列、枚举与前后端导入契约；文件能被 Excel 打开不能证明可成功导入。
+更新后运行 `PYTHONDONTWRITEBYTECODE=1 python3 e2e-data/01-tenant-config-import/test_tenant_package_fixtures.py`：独立检查三份文件的 sheet 契约；配对后端目录存在时额外比对三份文件的 SHA-256，不存在时该比对明确跳过。后端还应运行其 `scripts/sim/fix-fixture-xlsx.py --check`。接口消费见 [`src/api/tenantPackageExcel.ts`](../../src/api/tenantPackageExcel.ts)。
+
+快照包含平台资源字段和测试环境端点，完整包应用需要平台管理员并核对目标租户及环境依赖。静态检查和 mock 不能证明真实上传、预览、应用或业务执行成功；真实导入必须另行在授权环境验证。

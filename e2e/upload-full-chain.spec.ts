@@ -2,9 +2,9 @@
  * D 档 upload-full-chain:租户配置包 Excel 导入 完整链路。
  *
  * Mock-mode(默认):page.route 拦截全链路,不依赖 BE。
- * Real-BE mode(E2E_REAL_BE=1):走真 BE,需要 BE 起,seed 文件在 e2e-data/。
+ * Real-BE mode(E2E_REAL_BE=1):走真 BE,需要隔离环境和目标租户。
  *
- * 链路:选文件 → upload(返回 token)→ preview(返回 summary)→ apply(返回 importId)→ audit 可见。
+ * 链路:选文件 → upload → preview → apply → 页面显示结果。
  */
 import fs from 'node:fs'
 import path from 'node:path'
@@ -22,14 +22,13 @@ const BACKEND_SEED_SUITE_DIR = path.resolve(
 const FIXTURE_DIRS = [
   BACKEND_SEED_SUITE_DIR,
   path.resolve(__dirname, '../e2e-data/01-tenant-config-import'),
-  path.resolve(__dirname, '../e2e-data/00-tenant-lifecycle'),
 ]
 
 function pickSeed(): string | null {
   for (const dir of FIXTURE_DIRS) {
     if (!fs.existsSync(dir)) continue
-    const xlsx = fs.readdirSync(dir).find((f) => f.endsWith('.xlsx') && !f.startsWith('bad-'))
-    if (xlsx) return path.join(dir, xlsx)
+    const fixture = path.join(dir, 'ta-tenant-config-package-test.xlsx')
+    if (fs.existsSync(fixture)) return fixture
   }
   return null
 }
@@ -44,8 +43,9 @@ const MOCK_UPLOAD_RESULT = {
   jobRows: 1,
   fileChannelRows: 1,
   fileTemplateRows: 1,
-  pipelineRows: 1,
-  pipelineStepRows: 1,
+  // 后端响应仍包含这两个兼容字段；退役 sheet 被拒绝，故值为零。
+  pipelineRows: 0,
+  pipelineStepRows: 0,
   workflowDefinitionRows: 1,
   workflowNodeRows: 1,
   workflowEdgeRows: 1,
@@ -54,18 +54,17 @@ const MOCK_PREVIEW = {
   uploadToken: MOCK_TOKEN,
   previewToken: 'mock-preview-token-' + Date.now(),
   fileName: MOCK_UPLOAD_RESULT.fileName,
-  totalRows: 11,
-  validRows: 11,
+  totalRows: 10,
+  validRows: 10,
   invalidRows: 0,
   sheets: [
     { sheetName: 'resource_queue', totalRows: 1, validRows: 1, invalidRows: 0 },
     { sheetName: 'business_calendar', totalRows: 1, validRows: 1, invalidRows: 0 },
     { sheetName: 'batch_window', totalRows: 1, validRows: 1, invalidRows: 0 },
     { sheetName: 'job_definition', totalRows: 1, validRows: 1, invalidRows: 0 },
+    { sheetName: 'job_monitoring_policy', totalRows: 1, validRows: 1, invalidRows: 0 },
     { sheetName: 'file_channel_config', totalRows: 1, validRows: 1, invalidRows: 0 },
     { sheetName: 'file_template_config', totalRows: 1, validRows: 1, invalidRows: 0 },
-    { sheetName: 'pipeline_definition', totalRows: 1, validRows: 1, invalidRows: 0 },
-    { sheetName: 'pipeline_step_definition', totalRows: 1, validRows: 1, invalidRows: 0 },
     { sheetName: 'workflow_definition', totalRows: 1, validRows: 1, invalidRows: 0 },
     { sheetName: 'workflow_node', totalRows: 1, validRows: 1, invalidRows: 0 },
     { sheetName: 'workflow_edge', totalRows: 1, validRows: 1, invalidRows: 0 },
@@ -87,8 +86,6 @@ const MOCK_APPLY_RESULT = {
   channelUpdated: 0,
   fileTemplateInserted: 1,
   fileTemplateUpdated: 0,
-  pipelineInserted: 1,
-  pipelineUpdated: 0,
   workflowInserted: 1,
   workflowUpdated: 0,
 }
@@ -130,30 +127,6 @@ async function installUploadMocks(page: import('@playwright/test').Page) {
       body: JSON.stringify({ code: 'SUCCESS', message: 'ok', data: MOCK_APPLY_RESULT }),
     }),
   )
-
-  // 审计查询(applied 后)
-  await page.route('**/api/console/queries/audits*', (route) =>
-    route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        code: 'SUCCESS',
-        message: 'ok',
-        data: {
-          items: [
-            {
-              id: 1,
-              eventType: 'TENANT_PACKAGE_APPLY',
-              targetId: MOCK_TOKEN,
-              createdAt: new Date().toISOString(),
-              description: `applied ${MOCK_PREVIEW.validRows} config rows`,
-            },
-          ],
-          total: 1,
-        },
-      }),
-    }),
-  )
 }
 
 test.describe('upload-full-chain · 租户配置包 Excel 导入', () => {
@@ -167,7 +140,7 @@ test.describe('upload-full-chain · 租户配置包 Excel 导入', () => {
     })
   })
 
-  test('完整链路:上传 → preview 摘要可见 → apply → 状态/审计可见', async ({ page }) => {
+  test('完整链路:上传 → preview 摘要可见 → apply → 状态可见', async ({ page }) => {
     const seed = pickSeed()
     test.skip(!seed, '无 seed 文件可用')
 

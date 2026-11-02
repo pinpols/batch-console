@@ -25,13 +25,16 @@
     flex: 0 0 auto;
     overflow: hidden;
     border-radius: 25%;
-    background: center / contain no-repeat url('/icons/batch-mark.svg');
+    background-image: url('/icons/batch-mark-foreground.svg'), var(--brand-mark-fill);
+    background-position: center;
+    background-size: contain;
+    background-repeat: no-repeat;
     box-shadow:
-      0 1px 2px color-mix(in srgb, var(--color-brand-mark-bg) 14%, transparent),
-      0 4px 12px color-mix(in srgb, var(--color-brand-mark-bg) 12%, transparent);
+      0 1px 2px color-mix(in srgb, var(--color-brand-mark-bg) 10%, transparent),
+      0 4px 10px color-mix(in srgb, var(--color-brand-mark-bg) 8%, transparent);
   }
 
   .batch-mark--tight {
-    box-shadow: 0 2px 6px color-mix(in srgb, var(--color-brand-mark-bg) 18%, transparent);
+    box-shadow: 0 2px 6px color-mix(in srgb, var(--color-brand-mark-bg) 10%, transparent);
   }
 </style>
