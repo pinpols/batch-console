@@ -1,5 +1,6 @@
 import { STORAGE_KEYS } from './storage'
 import { pageTitleKey } from '../../src/constants/pageMeta'
+import { navigationGroups } from '../../src/constants/navigation'
 import { type APIRequestContext, type Locator, type Page } from '@playwright/test'
 import { test, expect } from './fixtures'
 import {
@@ -23,6 +24,12 @@ export type RouteCheck = {
   path: string
   title?: LocalizedExpectation
 }
+
+export const adminMenus = navigationGroups.map((group) => ({
+  ...group,
+  icon: '',
+  children: group.children.map((item) => ({ ...item, icon: '' })),
+}))
 
 function pageRoute(path: string): RouteCheck {
   return { path, title: i18nKey(pageTitleKey(path)) }

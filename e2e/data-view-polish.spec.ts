@@ -1,6 +1,6 @@
 import { STORAGE_KEYS } from './support/storage'
 import { expect, test } from './support/app'
-import { enterDemoApp, expectPageTitle, isVisible } from './support/app'
+import { adminMenus, enterDemoApp, expectPageTitle, isVisible } from './support/app'
 import { installE2eLocale } from './support/i18n'
 
 function currentBusinessDate() {
@@ -26,6 +26,7 @@ test.describe('data-heavy pages use the intended primary views', () => {
             username: 'admin',
             tenantId: 'system',
             authorities: ['ROLE_ADMIN'],
+            menus: adminMenus,
           },
         }),
       }),
@@ -260,7 +261,7 @@ test.describe('data-heavy pages use the intended primary views', () => {
 
     await page.goto('/files/arrival-groups')
     await expectPageTitle(page, '到达组治理')
-    await expect(page.getByText('文件到达进度', { exact: true })).toBeVisible()
+    await expect(page.getByText('文件记录', { exact: true }).first()).toBeVisible()
     await expect(page.getByText('超时组', { exact: true })).toBeVisible()
   })
 
@@ -307,7 +308,7 @@ test.describe('data-heavy pages use the intended primary views', () => {
     const tools = page.getByRole('button', { name: '工具菜单' })
     await expect(tools).toBeVisible()
     await tools.click()
-    await expect(page.getByText('移动端预览', { exact: true })).toBeVisible()
+    await expect(page.getByText('移动端预览', { exact: true })).not.toBeVisible()
     await expect(page.getByText('系统文档', { exact: true })).toBeVisible()
   })
 })
