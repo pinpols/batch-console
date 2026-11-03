@@ -5,16 +5,6 @@
         <div class="charts-title">{{ t('opsDistPanel.title') }}</div>
         <div class="charts-subtitle">{{ t('opsDistPanel.subtitle') }}</div>
       </div>
-      <div class="charts-actions">
-        <el-button
-          size="small"
-          :icon="RefreshRight"
-          :loading="chartsLoading || refresh.loading.value"
-          @click="onRefresh"
-        >
-          {{ t('opsDistPanel.btnRefresh') }}
-        </el-button>
-      </div>
     </div>
 
     <div class="charts-grid charts-grid--dist">
@@ -102,15 +92,12 @@
 
 <script setup lang="ts">
   import '@/charts/echarts'
-  import { watch } from 'vue'
   import { useI18n } from 'vue-i18n'
-  import { RotateCw as RefreshRight } from '@lucide/vue'
   import VChart from 'vue-echarts'
-  import { useRefreshAction } from '@/composables/useRefreshAction'
 
   const { t } = useI18n({ useScope: 'global' })
 
-  const props = defineProps<{
+  defineProps<{
     active: boolean
     chartsLoading: boolean
     chartTheme: string | undefined
@@ -121,29 +108,6 @@
     alertSeverityOption: Record<string, unknown>
     outboxHealthOption: Record<string, unknown>
   }>()
-
-  const emit = defineEmits<{
-    refreshCharts: []
-  }>()
-
-  const refresh = useRefreshAction()
-
-  function onRefresh() {
-    void refresh.run(async () => {
-      emit('refreshCharts')
-      await new Promise<void>((resolve) => {
-        const stop = watch(
-          () => props.chartsLoading,
-          (v, old) => {
-            if (old && !v) {
-              stop()
-              resolve()
-            }
-          },
-        )
-      })
-    })
-  }
 </script>
 
 <style scoped>
@@ -169,7 +133,7 @@
     justify-content: space-between;
     gap: var(--space-md);
     flex-wrap: wrap;
-    margin-top: 6px;
+    margin-top: 0;
   }
 
   .charts-title {
@@ -180,7 +144,7 @@
   }
 
   .charts-subtitle {
-    margin-top: 4px;
+    margin-top: 2px;
     font-size: var(--font-size-sm);
     color: var(--color-text-tertiary);
     line-height: var(--line-height-base);
@@ -195,8 +159,8 @@
 
   .charts-grid {
     display: grid;
-    gap: var(--page-section-gap);
-    padding: 6px 0;
+    gap: 10px;
+    padding: 0;
   }
 
   .charts-grid--dist {
@@ -204,8 +168,8 @@
   }
 
   .chart-panel {
-    padding: var(--card-inner-padding);
-    min-height: 280px;
+    padding: 10px 12px;
+    min-height: 0;
     border-radius: var(--radius-content);
     border: 1px solid var(--color-border-light);
     background: var(--color-bg-card);
@@ -218,7 +182,7 @@
     font-size: var(--font-size-sm);
     font-weight: 650;
     color: var(--color-text-primary);
-    margin-bottom: var(--space-sm);
+    margin-bottom: 4px;
   }
 
   .dot {
@@ -244,10 +208,10 @@
 
   .chart {
     width: 100%;
-    height: 240px;
+    height: 150px;
   }
 
-  @media (max-width: 1400px) {
+  @media (max-width: 1100px) {
     .charts-grid--dist {
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }

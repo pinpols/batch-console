@@ -3,7 +3,6 @@ export default {
   title: 'Tenant daily plan and execution',
   date: 'Business date',
   today: 'Today',
-  refresh: 'Refresh progress',
   unavailable:
     'Progress is disconnected. Showing the last snapshot while reconnecting and reloading.',
   incomplete:

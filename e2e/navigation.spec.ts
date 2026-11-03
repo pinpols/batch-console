@@ -103,7 +103,8 @@ test.describe('navigation and tabs', () => {
   })
 
   test('业务引导中心展示可执行任务并支持稍后继续', async ({ page }) => {
-    await expect(page.getByRole('heading', { name: '完成平台首条可运行链路' })).toBeVisible()
+    await page.getByRole('tab', { name: '快速开始' }).click()
+    await expect(page.getByRole('heading', { name: '首条链路' })).toBeVisible()
     await expect(page.getByRole('heading', { name: '确定工作租户' })).toBeVisible()
     await expect(page.getByRole('heading', { name: '创建作业配置' })).toBeVisible()
     await expect(page.getByRole('heading', { name: '完成首个成功运行' })).toBeVisible()
@@ -117,6 +118,7 @@ test.describe('navigation and tabs', () => {
 
     await page.goto('/ops/summary?onboarding=1')
     await expect(page).toHaveURL(/\/ops\/summary\?onboarding=1/)
-    await expect(page.getByRole('heading', { name: '完成平台首条可运行链路' })).toBeVisible()
+    await page.getByRole('tab', { name: '快速开始' }).click()
+    await expect(page.getByRole('heading', { name: '首条链路' })).toBeVisible()
   })
 })

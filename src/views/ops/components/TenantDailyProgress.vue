@@ -15,7 +15,6 @@
         :aria-label="t('dailyProgress.date')"
       />
       <el-button @click="bizDate = todayBusinessDate()">{{ t('dailyProgress.today') }}</el-button>
-      <el-button :loading="loading" @click="refresh">{{ t('dailyProgress.refresh') }}</el-button>
     </div>
     <el-alert
       v-if="error"
@@ -66,6 +65,7 @@
           <el-table
             :data="rows"
             row-key="scope"
+            size="small"
             class="daily-progress__table"
             :aria-label="t('dailyProgress.tableCaption')"
           >
@@ -116,6 +116,8 @@
     () => tenant.tenantId,
     bizDate,
   )
+  // 供首页顶部刷新按钮刷新当前页签
+  defineExpose({ refresh, loading })
   const rows = computed(() => (progress.value ? dailyProgressRows(progress.value) : []))
   const buckets = DAILY_PROGRESS_BUCKETS
   const chartTheme = computed(() =>
@@ -131,7 +133,7 @@
   ]
   const chartOption = computed(() => ({
     animation: false,
-    grid: { left: 16, right: 24, top: 45, bottom: 24, containLabel: true },
+    grid: { left: 16, right: 24, top: 32, bottom: 16, containLabel: true },
     tooltip: { trigger: 'axis', renderMode: 'richText' },
     legend: { type: 'scroll', top: 0 },
     xAxis: { type: 'value', min: 0, max: 100, axisLabel: { formatter: '{value}%' } },
@@ -167,15 +169,25 @@
   onUnmounted(() => clearInterval(rollover))
 </script>
 <style scoped>
+  /* 首页页签密度:压缩卡片留白与图表高度,保证一屏可见 */
+  .section-card :deep(.el-card__body) {
+    padding: 12px 16px;
+  }
+
+  .section-card :deep(.el-card__header) {
+    padding: 8px 16px;
+  }
+
   .daily-progress__toolbar {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     gap: var(--space-sm);
-    margin-bottom: var(--space-md);
+    margin-bottom: var(--space-sm);
   }
+
   .daily-progress__chart {
-    height: 18rem;
+    height: 10.5rem;
     width: 100%;
   }
   .daily-progress__table-scroll {
@@ -192,6 +204,6 @@
   .daily-progress__hint {
     color: var(--color-text-secondary);
     font-size: var(--font-size-sm);
-    margin-block: var(--space-sm);
+    margin-block: 4px;
   }
 </style>
