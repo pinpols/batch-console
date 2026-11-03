@@ -5472,6 +5472,9 @@ export default {
     fieldTenant: '当前租户',
     fieldPermissionCount: '权限条目数',
     fieldRoleChain: '界面能力档',
+    roleChainHint:
+      '界面能力档决定侧栏可见的菜单范围，高亮的是当前账号所在档位；实际能否操作仍以后端授权为准。',
+    groupDeniedCount: '{n} 项不可访问',
     capabilityViewer: '只读界面',
     capabilityOperator: '操作界面',
     capabilityAdmin: '管理界面',

@@ -21,15 +21,32 @@
 
 .pipeline-workspace {
   display: grid;
-  grid-template-columns: minmax(0, 1.8fr) minmax(19rem, 1fr);
+  grid-template-columns: minmax(0, 1fr) minmax(20rem, 24rem);
   align-items: start;
   gap: var(--page-block-gap);
   min-width: 0;
 }
 
 .pipeline-workspace__master,
-.pipeline-workspace__hint {
+.pipeline-workspace__hint,
+.pipeline-workspace__detail {
   min-width: 0;
+}
+
+/* 详情列随页面滚动保持可见，选中下方行时不必回滚到顶部 */
+.pipeline-workspace__detail {
+  position: sticky;
+  top: var(--page-block-gap);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.pipeline-row-select {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
 }
 
 .pipeline-workspace__hint {
@@ -45,7 +62,7 @@
   grid-template-columns: minmax(0, 1fr);
 }
 
-@media (max-width: 1320px) {
+@media (max-width: 1100px) {
   .pipeline-workspace {
     grid-template-columns: minmax(0, 1fr);
   }

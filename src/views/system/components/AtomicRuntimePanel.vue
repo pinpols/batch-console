@@ -2,9 +2,11 @@
   <SectionCard v-if="canRead" data-testid="atomic-runtime-panel">
     <template #header
       ><span>{{ t('atomicRuntime.title') }}</span
-      ><el-button :loading="loading" @click="load">{{ t('common.refresh') }}</el-button></template
+      ><el-button size="small" :loading="loading" @click="load">{{
+        t('common.refresh')
+      }}</el-button></template
     >
-    <p>{{ t('atomicRuntime.scope') }}</p>
+    <p class="atomic-runtime__scope">{{ t('atomicRuntime.scope') }}</p>
     <DataState
       :loading="loading"
       :error="loadError"
@@ -13,7 +15,19 @@
       :on-retry="load"
     >
       <template v-if="runtime">
-        <p v-if="readAt">{{ t('atomicRuntime.readAt') }} <DatetimeText :value="readAt" /></p>
+        <div class="atomic-runtime__meta">
+          <span v-if="readAt"
+            >{{ t('atomicRuntime.readAt') }} <DatetimeText :value="readAt"
+          /></span>
+          <span v-if="runtime.available">
+            {{
+              t('atomicRuntime.worker', {
+                code: runtime.workerCode || t('atomicRuntime.unknown'),
+                type: runtime.workerType || t('atomicRuntime.unknown'),
+              })
+            }}
+          </span>
+        </div>
         <el-alert
           v-if="!runtime.available"
           :title="unavailableText"
@@ -21,15 +35,12 @@
           :closable="false"
         />
         <template v-else>
-          <p>
-            {{
-              t('atomicRuntime.worker', {
-                code: runtime.workerCode || t('atomicRuntime.unknown'),
-                type: runtime.workerType || t('atomicRuntime.unknown'),
-              })
-            }}
-          </p>
-          <el-table :data="rows" :aria-label="t('atomicRuntime.title')">
+          <el-table
+            :data="rows"
+            size="small"
+            class="console-table"
+            :aria-label="t('atomicRuntime.title')"
+          >
             <el-table-column :label="t('atomicRuntime.executor')" min-width="140"
               ><template #default="{ row }">{{
                 executorLabel(row?.executor)
@@ -55,9 +66,14 @@
             >
             <el-table-column :label="t('atomicRuntime.gates')" min-width="300"
               ><template #default="{ row }"
-                ><p v-for="detail in row.details" :key="detail.key">
-                  {{ t(`atomicRuntime.fields.${detail.key}`) }}: {{ detailText(detail) }}
-                </p></template
+                ><ul class="atomic-runtime__gates">
+                  <li v-for="detail in row.details" :key="detail.key">
+                    <span class="atomic-runtime__gate-key">{{
+                      t(`atomicRuntime.fields.${detail.key}`)
+                    }}</span>
+                    <span>{{ detailText(detail) }}</span>
+                  </li>
+                </ul></template
               ></el-table-column
             >
           </el-table>
@@ -137,3 +153,33 @@
     ++sequence
   })
 </script>
+
+<style scoped>
+  .atomic-runtime__scope {
+    margin: 0 0 10px;
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+  }
+
+  .atomic-runtime__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 24px;
+    margin-bottom: 12px;
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+  }
+
+  .atomic-runtime__gates {
+    display: grid;
+    gap: 2px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .atomic-runtime__gate-key {
+    margin-right: 8px;
+    color: var(--color-text-secondary);
+  }
+</style>

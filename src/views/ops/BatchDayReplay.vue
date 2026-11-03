@@ -23,15 +23,6 @@
             {{ t('batchDayReplay.historyUnavailableTag') }}
           </el-tag>
         </div>
-        <el-button
-          text
-          type="primary"
-          :icon="Plus"
-          :disabled="writesFrozen"
-          @click="openSubmitDrawer"
-        >
-          {{ t('batchDayReplay.submitBtn') }}
-        </el-button>
       </template>
       <el-alert
         v-if="historyUnavailable"

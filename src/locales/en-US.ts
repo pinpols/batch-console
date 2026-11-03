@@ -5482,6 +5482,9 @@ const messages: Messages = {
     fieldTenant: 'Current tenant',
     fieldPermissionCount: 'Permission count',
     fieldRoleChain: 'UI capability tier',
+    roleChainHint:
+      'The interface tier decides which menus appear in the sidebar. The highlighted tier is yours; the backend still decides what you can actually do.',
+    groupDeniedCount: '{n} not accessible',
     capabilityViewer: 'Read-only UI',
     capabilityOperator: 'Operator UI',
     capabilityAdmin: 'Admin UI',

@@ -19,6 +19,8 @@ export default {
   rules: 'Configuration candidates: rules and channels',
   webhooks: 'Configuration candidates: Webhook subscriptions',
   empty: 'No enabled configuration matched',
+  summary: 'This event matches {rules} notification rules and {webhooks} webhook subscriptions.',
+  idle: 'Choose an event and select Preview route. Results appear here.',
   ruleName: 'Rule',
   channelCode: 'Channel code',
   channelType: 'Channel type',

@@ -73,7 +73,19 @@
                 </el-form-item>
               </ListPageQueryBar>
             </template>
-            <el-table-column prop="id" :label="t('filePipelineObservability.colId')" width="88" />
+            <el-table-column prop="id" :label="t('filePipelineObservability.colId')" width="88">
+              <template #default="{ row }">
+                <button
+                  type="button"
+                  class="pipeline-row-select cell-link"
+                  :aria-pressed="selectedPipeline?.id === row.id"
+                  :aria-label="t('filePipelineObservability.selectedRun', { id: row.id })"
+                  @click.stop="selectPipeline(row as ConsoleFilePipelineResponse)"
+                >
+                  #{{ row.id }}
+                </button>
+              </template>
+            </el-table-column>
             <el-table-column
               prop="jobCode"
               :label="t('filePipelineObservability.colJob')"
@@ -100,43 +112,34 @@
             <el-table-column
               prop="currentStage"
               :label="t('filePipelineObservability.colCurrentStage')"
-              width="120"
+              width="100"
               show-overflow-tooltip
-            />
+            >
+              <template #default="{ row }">{{ stageLabel(row.currentStage) }}</template>
+            </el-table-column>
             <DatetimeColumn
               prop="startedAt"
               :label="t('filePipelineObservability.colStart')"
               width="160"
             />
-            <el-table-column :label="t('common.detail')" width="76" fixed="right">
-              <template #default="{ row }">
-                <el-button
-                  text
-                  type="primary"
-                  :icon="Eye"
-                  :aria-label="t('common.detail')"
-                  :aria-pressed="selectedPipeline?.id === row.id"
-                  @click="selectPipeline(row as ConsoleFilePipelineResponse)"
-                />
-              </template>
-            </el-table-column>
           </ProTable>
-          <el-alert
-            v-if="selectedPipelineProgress && !selectedPipelineProgress.stageGraphAvailable"
-            :title="t('filePipelineObservability.stageVersionUnavailable')"
-            type="warning"
-            :closable="false"
-          />
-          <SelectedPipelinePanel
-            v-if="selectedPipeline"
-            :pipeline="selectedPipelineDisplay!"
-            :stages="selectedStages"
-            :selected-code="selectedStageCode"
-            :loading="selectedStepsLoading"
-            :load-error="Boolean(selectedStepLoadError)"
-            @stage-click="focusStage"
-            @retry="reloadSelectedSteps"
-          />
+          <aside v-if="selectedPipeline" class="pipeline-workspace__detail">
+            <el-alert
+              v-if="selectedPipelineProgress && !selectedPipelineProgress.stageGraphAvailable"
+              :title="t('filePipelineObservability.stageVersionUnavailable')"
+              type="warning"
+              :closable="false"
+            />
+            <SelectedPipelinePanel
+              :pipeline="selectedPipelineDisplay!"
+              :stages="selectedStages"
+              :selected-code="selectedStageCode"
+              :loading="selectedStepsLoading"
+              :load-error="Boolean(selectedStepLoadError)"
+              @stage-click="focusStage"
+              @retry="reloadSelectedSteps"
+            />
+          </aside>
           <div v-else-if="pipelineRows.length" class="pipeline-workspace__hint">
             <EmptyState
               :description="t('filePipelineObservability.selectRunHint')"
@@ -503,7 +506,6 @@
   import { ref, computed, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { useRoute } from 'vue-router'
-  import { Eye } from '@lucide/vue'
   import { fetchAllPageItems } from '@/api/adapters'
   import {
     queryFileDispatchPage,
@@ -662,9 +664,7 @@
       return {
         code,
         index: index + 1,
-        label: te(`filePipelineObservability.stage${code}`)
-          ? t(`filePipelineObservability.stage${code}`)
-          : code,
+        label: stageLabel(code),
         status: status
           ? te(`workflowProgress.states.${status}`)
             ? t(`workflowProgress.states.${status}`)
@@ -711,6 +711,14 @@
     selectedStageCode.value = null
     selectedPipelineSteps.value = []
     void loadSelectedSteps(row.id)
+  }
+
+  /** 阶段编码转为用户可读名称；未登记的编码原样显示，空值显示破折号 */
+  function stageLabel(code?: string | null): string {
+    if (!code) return '—'
+    return te(`filePipelineObservability.stage${code}`)
+      ? t(`filePipelineObservability.stage${code}`)
+      : code
   }
 
   function focusStage(code: string) {

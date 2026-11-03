@@ -203,13 +203,11 @@
             v-if="isColVisible('jobType')"
             prop="jobType"
             :label="t('jobDefinitionList.colJobType')"
-            width="100"
+            width="148"
           >
             <template #default="{ row }">
-              <!-- 照设计:类型 = mono 彩底 pill(ATOMIC 紫 / PROCESS 蓝 / IMPORT 青 / EXPORT 琥珀),值为原枚举码 -->
-              <span class="jd-type-pill" :style="jobTypePillStyle(row.jobType || 'GENERAL')">
-                {{ row.jobType || 'GENERAL' }}
-              </span>
+              <!-- 类型是分类而非状态：统一中性色胶囊，列宽保证 BUNDLE_DISPATCH 等长编码完整显示 -->
+              <span class="jd-type-pill">{{ row.jobType || 'GENERAL' }}</span>
             </template>
           </el-table-column>
           <el-table-column
@@ -643,25 +641,6 @@
     if (!value) return ''
     const key = `enum.scheduleType.${value}`
     return te(key) ? t(key) : value
-  }
-
-  function jobTypePillStyle(value?: string | null): Record<string, string> {
-    const palette: Record<string, string> = {
-      ATOMIC: '#8b5cf6',
-      PROCESS: 'var(--color-primary)',
-      IMPORT: '#0891b2',
-      EXPORT: 'var(--color-warning)',
-      GENERAL: 'var(--color-text-secondary)',
-    }
-    const typeValue = value || 'GENERAL'
-    const typeText = String(typeValue)
-    const normalizedType = typeText.toUpperCase()
-    const color = palette[normalizedType] ?? palette.GENERAL
-    return {
-      color,
-      background: `color-mix(in srgb, ${color} 12%, transparent)`,
-      borderColor: `color-mix(in srgb, ${color} 32%, var(--color-border) 68%)`,
-    }
   }
 
   // 列设置:jobCode(主链)/操作列始终显示;默认可见列按 redesign 作业定义表格稿对齐。

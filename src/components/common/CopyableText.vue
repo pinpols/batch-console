@@ -206,6 +206,22 @@
     color: var(--el-color-primary);
   }
 
+  /* 表格内每行都常驻眼睛图标会形成噪点：桌面指针设备上仅在行悬停、自身获得焦点或浮层打开时显示，
+     触屏设备无悬停，保持常显 */
+  @media (hover: hover) and (pointer: fine) {
+    /* scoped 只给末段加属性，祖先 .el-table__row 可直接写 */
+    .el-table__row .copyable-text__inspect {
+      opacity: 0;
+      transition: opacity 0.12s ease;
+    }
+
+    .el-table__row:hover .copyable-text__inspect,
+    .el-table__row .copyable-text__inspect:focus-visible,
+    .el-table__row .copyable-text__inspect[aria-expanded='true'] {
+      opacity: 1;
+    }
+  }
+
   .copyable-text__inspect:focus-visible,
   .copyable-text__value:focus-visible,
   .copyable-text__full-value:focus-visible {

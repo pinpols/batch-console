@@ -1,106 +1,147 @@
 <template>
-  <el-alert :title="t('notificationRoutePreview.hint')" type="info" show-icon :closable="false" />
-  <el-form label-position="top" @submit.prevent="runPreview">
-    <el-form-item :label="t('notificationRoutePreview.eventType')" required>
-      <el-select
-        v-model="eventType"
-        filterable
-        :placeholder="t('notificationRoutePreview.selectEvent')"
+  <div class="route-sim">
+    <el-alert :title="t('notificationRoutePreview.hint')" type="info" show-icon :closable="false" />
+    <el-form class="route-sim__form" label-position="top" @submit.prevent="runPreview">
+      <el-form-item
+        class="route-sim__field route-sim__field--event"
+        :label="t('notificationRoutePreview.eventType')"
+        required
       >
-        <el-option
-          v-for="event in events"
-          :key="event.eventType"
-          :label="t(`notificationRoutePreview.eventNames.${event.eventType}`, event.description)"
-          :value="event.eventType"
-        />
-      </el-select>
-    </el-form-item>
-    <el-form-item
-      v-if="eventType === 'ALERT_ESCALATED'"
-      :label="t('notificationRoutePreview.severity')"
-      required
-    >
-      <el-select v-model="severity" :placeholder="t('notificationRoutePreview.selectSeverity')">
-        <el-option
-          v-for="option in severityOptions"
-          :key="option.value"
-          :value="option.value"
-          :label="t(`enum.severity.${option.value}`, option.label)"
-        />
-      </el-select>
-    </el-form-item>
-    <el-form-item v-if="isJobEvent" :label="t('notificationRoutePreview.jobCode')" required>
-      <el-input v-model="jobCode" maxlength="128" clearable />
-    </el-form-item>
-    <el-button
-      type="primary"
-      native-type="submit"
-      :loading="loading"
-      :disabled="
-        !eventType ||
-        !tenant.tenantId ||
-        (isJobEvent && !jobCode.trim()) ||
-        (isAlertEvent && !severity)
-      "
-    >
-      {{ t('notificationRoutePreview.run') }}
-    </el-button>
-  </el-form>
-  <el-alert
-    v-if="catalogError"
-    :title="t('notificationRoutePreview.catalogError')"
-    type="error"
-    :closable="false"
-  />
-  <el-alert
-    v-if="isAlertEvent && severityOptionsError"
-    :title="t('notificationRoutePreview.severityError')"
-    type="error"
-    :closable="false"
-  />
-  <el-alert
-    v-if="error"
-    :title="t('notificationRoutePreview.error')"
-    type="error"
-    :closable="false"
-  />
-  <section v-if="result" aria-live="polite">
-    <h3>{{ t('notificationRoutePreview.rules') }}</h3>
-    <el-empty
-      v-if="!result.rules.length"
-      :description="t('notificationRoutePreview.empty')"
-      :image-size="60"
+        <el-select
+          v-model="eventType"
+          filterable
+          :placeholder="t('notificationRoutePreview.selectEvent')"
+        >
+          <el-option
+            v-for="event in events"
+            :key="event.eventType"
+            :label="t(`notificationRoutePreview.eventNames.${event.eventType}`, event.description)"
+            :value="event.eventType"
+          />
+        </el-select>
+      </el-form-item>
+      <el-form-item
+        v-if="eventType === 'ALERT_ESCALATED'"
+        class="route-sim__field"
+        :label="t('notificationRoutePreview.severity')"
+        required
+      >
+        <el-select v-model="severity" :placeholder="t('notificationRoutePreview.selectSeverity')">
+          <el-option
+            v-for="option in severityOptions"
+            :key="option.value"
+            :value="option.value"
+            :label="t(`enum.severity.${option.value}`, option.label)"
+          />
+        </el-select>
+      </el-form-item>
+      <el-form-item
+        v-if="isJobEvent"
+        class="route-sim__field"
+        :label="t('notificationRoutePreview.jobCode')"
+        required
+      >
+        <el-input v-model="jobCode" maxlength="128" clearable />
+      </el-form-item>
+      <div class="route-sim__action">
+        <el-button
+          type="primary"
+          native-type="submit"
+          :loading="loading"
+          :disabled="
+            !eventType ||
+            !tenant.tenantId ||
+            (isJobEvent && !jobCode.trim()) ||
+            (isAlertEvent && !severity)
+          "
+        >
+          {{ t('notificationRoutePreview.run') }}
+        </el-button>
+      </div>
+    </el-form>
+    <el-alert
+      v-if="catalogError"
+      :title="t('notificationRoutePreview.catalogError')"
+      type="error"
+      :closable="false"
     />
-    <el-table v-else :data="result.rules">
-      <el-table-column prop="name" :label="t('notificationRoutePreview.ruleName')">
-        <template #default="{ row }">
-          <CopyableText v-if="row.name" :text="String(row.name)" />
-          <span v-else class="cell-empty">—</span>
-        </template>
-      </el-table-column>
-      <el-table-column prop="channelCode" :label="t('notificationRoutePreview.channelCode')">
-        <template #default="{ row }">
-          <CopyableText v-if="row.channelCode" :text="String(row.channelCode)" />
-          <span v-else class="cell-empty">—</span>
-        </template>
-      </el-table-column>
-      <el-table-column prop="channelType" :label="t('notificationRoutePreview.channelType')" />
-    </el-table>
-    <h3>{{ t('notificationRoutePreview.webhooks') }}</h3>
-    <el-empty
-      v-if="!result.webhooks.length"
-      :description="t('notificationRoutePreview.empty')"
-      :image-size="60"
+    <el-alert
+      v-if="isAlertEvent && severityOptionsError"
+      :title="t('notificationRoutePreview.severityError')"
+      type="error"
+      :closable="false"
     />
-    <el-table v-else :data="result.webhooks">
-      <el-table-column prop="name" :label="t('notificationRoutePreview.subscriptionName')">
-        <template #default="{ row }">
-          <CopyableText v-if="row.name" :text="String(row.name)" />
-          <span v-else class="cell-empty">—</span>
-        </template>
-      </el-table-column>
-    </el-table>
-  </section>
+    <el-alert
+      v-if="error"
+      :title="t('notificationRoutePreview.error')"
+      type="error"
+      :closable="false"
+    />
+    <section v-if="result" class="route-sim__result" aria-live="polite">
+      <p class="route-sim__summary">
+        {{
+          t('notificationRoutePreview.summary', {
+            rules: result.rules.length,
+            webhooks: result.webhooks.length,
+          })
+        }}
+      </p>
+      <div class="route-sim__panels">
+        <div class="route-sim__panel">
+          <header class="route-sim__panel-head">
+            <h3>{{ t('notificationRoutePreview.rules') }}</h3>
+            <span class="route-sim__count">{{ result.rules.length }}</span>
+          </header>
+          <el-empty
+            v-if="!result.rules.length"
+            :description="t('notificationRoutePreview.empty')"
+            :image-size="48"
+          />
+          <el-table v-else :data="result.rules" size="small" class="console-table">
+            <el-table-column prop="name" :label="t('notificationRoutePreview.ruleName')">
+              <template #default="{ row }">
+                <CopyableText v-if="row.name" :text="String(row.name)" />
+                <span v-else class="cell-empty">—</span>
+              </template>
+            </el-table-column>
+            <el-table-column prop="channelCode" :label="t('notificationRoutePreview.channelCode')">
+              <template #default="{ row }">
+                <CopyableText v-if="row.channelCode" :text="String(row.channelCode)" />
+                <span v-else class="cell-empty">—</span>
+              </template>
+            </el-table-column>
+            <el-table-column
+              prop="channelType"
+              :label="t('notificationRoutePreview.channelType')"
+              width="120"
+            />
+          </el-table>
+        </div>
+        <div class="route-sim__panel">
+          <header class="route-sim__panel-head">
+            <h3>{{ t('notificationRoutePreview.webhooks') }}</h3>
+            <span class="route-sim__count">{{ result.webhooks.length }}</span>
+          </header>
+          <el-empty
+            v-if="!result.webhooks.length"
+            :description="t('notificationRoutePreview.empty')"
+            :image-size="48"
+          />
+          <el-table v-else :data="result.webhooks" size="small" class="console-table">
+            <el-table-column prop="name" :label="t('notificationRoutePreview.subscriptionName')">
+              <template #default="{ row }">
+                <CopyableText v-if="row.name" :text="String(row.name)" />
+                <span v-else class="cell-empty">—</span>
+              </template>
+            </el-table-column>
+          </el-table>
+        </div>
+      </div>
+    </section>
+    <p v-else-if="!loading && !error" class="route-sim__idle">
+      {{ t('notificationRoutePreview.idle') }}
+    </p>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -194,3 +235,119 @@
     }
   }
 </script>
+
+<style scoped>
+  .route-sim {
+    display: flex;
+    flex-direction: column;
+    gap: var(--page-block-gap, 16px);
+  }
+
+  /* 条件区：字段横排，按钮与输入框底边对齐，避免整行拉满与按钮孤立 */
+  .route-sim__form {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 0 16px;
+    padding: 16px 20px 0;
+    background: var(--color-bg-card);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-content);
+  }
+
+  .route-sim__field {
+    flex: 0 1 240px;
+    min-width: 200px;
+    margin-bottom: 16px;
+  }
+
+  .route-sim__field--event {
+    flex-basis: 320px;
+  }
+
+  .route-sim__field :deep(.el-select) {
+    width: 100%;
+  }
+
+  .route-sim__action {
+    margin-bottom: 16px;
+  }
+
+  .route-sim__summary {
+    margin: 0 0 12px;
+    color: var(--color-text-primary);
+    font-size: var(--font-size-md);
+    font-weight: 600;
+  }
+
+  .route-sim__panels {
+    display: grid;
+    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+    gap: 16px;
+  }
+
+  .route-sim__panel {
+    min-width: 0;
+    padding: 14px 16px 16px;
+    background: var(--color-bg-card);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-content);
+  }
+
+  .route-sim__panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+
+  .route-sim__panel-head h3 {
+    margin: 0;
+    font-size: var(--font-size-md);
+    font-weight: 600;
+  }
+
+  .route-sim__count {
+    min-width: 24px;
+    padding: 1px 8px;
+    border-radius: 999px;
+    background: var(--color-bg-canvas);
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+  }
+
+  .route-sim__panel :deep(.el-empty) {
+    padding: 12px 0;
+  }
+
+  .route-sim__idle {
+    margin: 0;
+    padding: 28px 20px;
+    border: 1px dashed var(--color-border);
+    border-radius: var(--radius-content);
+    color: var(--color-text-tertiary);
+    font-size: var(--font-size-sm);
+    text-align: center;
+  }
+
+  @media (max-width: 960px) {
+    .route-sim__panels {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  @media (max-width: 640px) {
+    .route-sim__field,
+    .route-sim__field--event {
+      flex: 1 1 100%;
+    }
+
+    .route-sim__action,
+    .route-sim__action :deep(.el-button) {
+      width: 100%;
+    }
+  }
+</style>

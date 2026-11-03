@@ -43,6 +43,7 @@
                 {{ roleLabel(role) }}
               </el-tag>
             </div>
+            <p class="profile-hint">{{ t('userRole.roleChainHint') }}</p>
           </el-descriptions-item>
         </el-descriptions>
       </SectionCard>
@@ -95,6 +96,7 @@
           :props="accessTreeProps"
           :filter-node-method="filterAccessTreeNode"
           node-key="id"
+          :default-expanded-keys="deniedGroupKeys"
           :expand-on-click-node="false"
           class="access-tree"
         >
@@ -109,6 +111,16 @@
                   })
                 }}
               </span>
+              <el-tag
+                v-if="data.allowedCount < data.children.length"
+                size="small"
+                type="danger"
+                effect="plain"
+              >
+                {{
+                  t('userRole.groupDeniedCount', { n: data.children.length - data.allowedCount })
+                }}
+              </el-tag>
             </div>
             <div v-else class="access-tree__item">
               <div class="access-tree__item-main">
@@ -241,6 +253,13 @@
     }),
   )
 
+  /** 含不可访问菜单的分组默认展开，让用户直接看到是哪一项受限 */
+  const deniedGroupKeys = computed(() =>
+    accessTree.value
+      .filter((node) => node.kind === 'group' && node.allowedCount < node.children.length)
+      .map((node) => node.id),
+  )
+
   function filterAccessTreeNode(value: string, data: unknown) {
     if (!value) return true
     if (typeof data !== 'object' || data === null || !('label' in data)) return false
@@ -298,6 +317,13 @@
 
   .profile-panel :deep(.el-descriptions__cell) {
     overflow-wrap: anywhere;
+  }
+
+  .profile-hint {
+    margin: 6px 0 0;
+    color: var(--color-text-tertiary);
+    font-size: var(--font-size-xs);
+    line-height: 1.45;
   }
 
   .role-chain {
