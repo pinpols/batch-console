@@ -474,6 +474,7 @@
     type FileTemplateSavePayload,
   } from '@/api/system'
   import { useTenantStore } from '@/stores/tenant'
+  import { useTenantRequirement } from '@/composables/useTenantRequirement'
   import { useAuthStore } from '@/stores/auth'
   import { usePermissionStore } from '@/stores/permission'
   import { currentAuthSession, isSharedAuthRevisionCurrent } from '@/api/authSession'
@@ -496,6 +497,7 @@
   import type { ConsoleFileChannelResponse, ConsoleFileTemplateResponse } from '@/types/console-api'
 
   const tenant = useTenantStore()
+  const { ensureTenantSelected } = useTenantRequirement()
   const auth = useAuthStore()
   const permissionStore = usePermissionStore()
   const canReadFileConfig = computed(() => {
@@ -848,6 +850,7 @@
   }
 
   function openTemplateCreate() {
+    if (!ensureTenantSelected()) return
     const scope = newContextScope()
     if (!scope) return
     templateEditor = scope
@@ -954,6 +957,7 @@
   }
 
   function openChannelCreate() {
+    if (!ensureTenantSelected()) return
     const scope = newContextScope()
     if (!scope) return
     channelEditor = scope

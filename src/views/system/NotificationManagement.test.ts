@@ -4,20 +4,11 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import NotificationManagement from './NotificationManagement.vue'
 
 const state = vi.hoisted(() => ({
-  tenantId: 'ta' as string | null,
   query: {} as Record<string, string>,
   replace: vi.fn(),
-  warning: vi.fn(),
   openWebhook: vi.fn(),
 }))
 
-vi.mock('@/stores/tenant', () => ({
-  useTenantStore: () => ({
-    get tenantId() {
-      return state.tenantId
-    },
-  }),
-}))
 vi.mock('@/stores/auth', () => ({ useAuthStore: () => ({ hasPermission: () => true }) }))
 vi.mock('vue-router', () => ({
   useRoute: () => ({ query: state.query }),
@@ -27,10 +18,6 @@ vi.mock('vue-i18n', async (original) => ({
   ...(await original<typeof import('vue-i18n')>()),
   useI18n: () => ({ t: (key: string) => key }),
 }))
-vi.mock('element-plus', async () => {
-  const actual = await vi.importActual<typeof import('element-plus')>('element-plus')
-  return { ...actual, ElMessage: { warning: state.warning } }
-})
 
 const slot = { template: '<div><slot name="actions" /><slot /></div>' }
 const webhooksTab = {
@@ -65,7 +52,6 @@ function mountPage() {
 }
 
 afterEach(() => {
-  state.tenantId = 'ta'
   state.query = {}
   vi.clearAllMocks()
 })
@@ -79,17 +65,6 @@ describe('通知与投递页签与新增入口', () => {
     expect(create.text()).toBe('notificationWebhooksTab.dialogTitleCreate')
     await create.trigger('click')
     expect(state.openWebhook).toHaveBeenCalledOnce()
-  })
-
-  it('未选择租户时点击新增给出提示，而不是没有反应', async () => {
-    state.query = { tab: 'webhooks' }
-    state.tenantId = null
-    const wrapper = mountPage()
-    await flushPromises()
-    const create = wrapper.findAll('button').find((b) => b.text().includes('dialogTitleCreate'))!
-    await create.trigger('click')
-    expect(state.openWebhook).not.toHaveBeenCalled()
-    expect(state.warning).toHaveBeenCalledWith('notificationManagement.selectTenantFirst')
   })
 
   it('未知 tab 回落到通知渠道', async () => {

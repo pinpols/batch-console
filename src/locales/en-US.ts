@@ -110,6 +110,7 @@ const messages: Messages = {
     definitionNotFound: 'Workflow not found',
   },
   common: {
+    selectTenantBeforeAction: 'Select a tenant at the top before doing this.',
     datetime: {
       today: 'Today',
       yesterday: 'Yesterday',
@@ -5750,7 +5751,6 @@ const messages: Messages = {
     tabSyncLogs: 'Sync logs',
   },
   notificationManagement: {
-    selectTenantFirst: 'Select a tenant at the top before adding.',
     tabRoutePreview: 'Route preview',
     tabTerminalDeliveries: 'Terminal delivery recovery',
     eventCatalogAction: 'Event catalog',

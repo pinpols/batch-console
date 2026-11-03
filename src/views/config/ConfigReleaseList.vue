@@ -479,6 +479,7 @@
     listConfigGovernance,
   } from '@/api/configReleases'
   import { useTenantStore } from '@/stores/tenant'
+  import { useTenantRequirement } from '@/composables/useTenantRequirement'
   import { useAuthStore } from '@/stores/auth'
   import { useTenantRequestScope } from '@/composables/useTenantRequestScope'
   import { useTenantReload } from '@/composables/useTenantReload'
@@ -510,6 +511,7 @@
   const { writesFrozen } = useWriteAvailability()
 
   const tenant = useTenantStore()
+  const { ensureTenantSelected } = useTenantRequirement()
   const auth = useAuthStore()
   const listScope = useTenantRequestScope()
   const detailScope = useTenantRequestScope()
@@ -736,7 +738,7 @@
   const { focusFirst: focusCreateForm } = useFormFocus(createFormRef)
 
   function openCreate() {
-    if (!canManageSystem.value || writesFrozen.value || !tenant.tenantId) return
+    if (!canManageSystem.value || writesFrozen.value || !ensureTenantSelected()) return
     createScope.begin()
     createSaving.value = false
     resetCreateForm()

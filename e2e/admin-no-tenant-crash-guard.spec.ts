@@ -76,3 +76,57 @@ test.describe('@cross-browser admin 未选租户 · 页面不整页崩溃(组件
     })
   }
 })
+
+/**
+ * admin 未选当前租户 · 新增入口不得“点了没反应”
+ *
+ * Why:2026-11-03 用户反馈多个页面新增按钮无反应。根因是新增处理函数在无租户时静默 return。
+ *   修复后统一经 useTenantRequirement 提示“请先在顶部选择租户”；平台级资源（与租户无关）照常打开。
+ *   本组断言每个新增入口点击后至少有一种可见反馈：打开抽屉/对话框、跳转，或出现提示。
+ */
+const ADD_ENTRY_PAGES = [
+  '/system/notifications?tab=channels',
+  '/system/notifications?tab=rules',
+  '/system/notifications?tab=webhooks',
+  '/files/templates',
+  '/files/channels',
+  '/config/releases',
+  '/governance/calendars',
+  '/governance/queues',
+  '/governance/windows',
+  '/system/parameters',
+  '/system/api-keys',
+]
+
+const ADD_BUTTON_NAME = /^\s*(新增|新建)/
+
+test.describe('@cross-browser admin 未选租户 · 新增入口有可见反馈', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/ops/summary', { waitUntil: 'domcontentloaded' })
+    await expect(page.locator('.page-header, .m-page').first()).toBeVisible({ timeout: 15_000 })
+    await page.evaluate((key) => window.localStorage.removeItem(key), TENANT_STORAGE_KEY)
+  })
+
+  for (const path of ADD_ENTRY_PAGES) {
+    test(`${path} 的新增按钮点击后有反馈`, async ({ page }) => {
+      await page.goto(path, { waitUntil: 'domcontentloaded' })
+      const addButton = page
+        .locator('.page-header')
+        .getByRole('button', { name: ADD_BUTTON_NAME })
+        .first()
+      await expect(addButton).toBeVisible({ timeout: 15_000 })
+      const before = page.url()
+      await addButton.click()
+
+      const feedback = page
+        .locator('.el-drawer.open, .el-overlay-dialog .el-dialog, .el-message')
+        .first()
+      await expect
+        .poll(
+          async () => (await feedback.isVisible().catch(() => false)) || page.url() !== before,
+          { message: `${path} 点击新增后既未打开表单、未跳转，也没有提示`, timeout: 5_000 },
+        )
+        .toBe(true)
+    })
+  }
+})

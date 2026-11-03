@@ -107,6 +107,7 @@ export default {
     definitionNotFound: '工作流不存在',
   },
   common: {
+    selectTenantBeforeAction: '请先在顶部选择租户，再执行此操作。',
     datetime: {
       today: '今天',
       yesterday: '昨天',
@@ -5732,7 +5733,6 @@ export default {
     tabSyncLogs: '同步日志',
   },
   notificationManagement: {
-    selectTenantFirst: '请先在顶部选择租户，再新增。',
     tabRoutePreview: '路由模拟',
     tabTerminalDeliveries: '终态通知恢复',
     eventCatalogAction: '事件目录',
