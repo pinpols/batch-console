@@ -366,7 +366,11 @@
     color: var(--layout-sidebar-hover-text);
   }
 
+  /* 展开/收起宽度过渡期间不换行，避免组标题被挤成逐字竖排 */
   .nav__group-title {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
     font-size: 11.5px;
     font-weight: 600;
     letter-spacing: 0.02em;
@@ -446,6 +450,7 @@
 
   .nav__label {
     overflow: hidden;
+    white-space: nowrap;
     text-overflow: ellipsis;
   }
 

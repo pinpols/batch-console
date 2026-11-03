@@ -1323,13 +1323,11 @@ html.dark .dr-preset .el-radio-group {
     animation: vt-theme-root-in 0.36s cubic-bezier(0.2, 0, 0, 1) both;
   }
 
-  /* 过渡期间关掉局部 transition，避免 border/shadow 与整页快照不同步 */
-  html:active-view-transition .app-surface,
-  html:active-view-transition .page-header {
-    transition: none !important;
-  }
-
-  html:active-view-transition .pill-tabs .el-tabs__item {
+  /* 主题切换的整页快照在切类名后立即截取；任何局部 transition（侧栏底色与宽度、
+     卡片、标签等）都会被截在旧色或中间宽度，叠化结束后再跳变，所以过渡期间全部关闭 */
+  html:active-view-transition *,
+  html:active-view-transition *::before,
+  html:active-view-transition *::after {
     transition: none !important;
   }
 }
