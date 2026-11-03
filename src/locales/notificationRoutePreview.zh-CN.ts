@@ -19,6 +19,8 @@ export default {
   rules: '配置匹配候选：通知规则及渠道',
   webhooks: '配置匹配候选：Webhook 订阅',
   empty: '没有命中已启用的配置',
+  summary: '该事件会匹配 {rules} 条通知规则、{webhooks} 个 Webhook 订阅。',
+  idle: '选择事件并点击“模拟路由”，结果会显示在这里。',
   ruleName: '规则',
   channelCode: '渠道编码',
   channelType: '渠道类型',

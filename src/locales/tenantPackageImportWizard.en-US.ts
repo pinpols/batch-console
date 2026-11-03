@@ -5,6 +5,7 @@ const tenantPackageImportWizard = {
   uploadLimitHint: '.xlsx · one file up to 50 MB',
   uploadDesc:
     'Upload a full .xlsx configuration package up to 50 MB or download a focused template for selected job scenarios. Scenario templates include relevant business settings and exclude platform resource allocation. Omitted configuration is not deleted; blank optional fields keep their current values. Delete items from their configuration pages. Review validation before applying.',
+  downloadNeedsScope: 'Select at least one template scope first',
   btnDownloadTemplate: 'Download package template',
   btnExportCurrent: 'Export current package',
   btnFieldGuide: 'Field guide',

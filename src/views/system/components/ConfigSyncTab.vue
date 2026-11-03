@@ -799,10 +799,11 @@
   }
 
   /* 配置类型 checkbox 网格 */
+  /* 导出范围是勾选清单而非输入格：去掉格子边框，三列紧凑排布，只用勾选状态区分 */
   .sync__types {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(min(100%, 170px), 1fr));
-    gap: 8px;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 140px), 1fr));
+    gap: 2px 16px;
     width: 100%;
   }
 
@@ -810,19 +811,12 @@
     display: flex;
     align-items: center;
     min-width: 0;
-    min-height: 40px;
-    padding: 6px 10px;
-    border: 1px solid var(--color-border-light);
-    border-radius: var(--radius-input);
-    background: color-mix(in srgb, var(--color-bg-card) 84%, var(--color-bg-canvas) 16%);
-    transition:
-      border-color 0.15s ease,
-      background-color 0.15s ease;
+    min-height: 32px;
   }
 
-  .sync__type-option.is-checked {
-    border-color: color-mix(in srgb, var(--color-primary) 45%, var(--color-border) 55%);
-    background: color-mix(in srgb, var(--color-primary) 9%, var(--color-bg-card) 91%);
+  .sync__type-option.is-checked :deep(.el-checkbox__label) {
+    color: var(--color-text-primary);
+    font-weight: 500;
   }
 
   .sync__types :deep(.el-checkbox) {
@@ -881,13 +875,13 @@
     font-family: var(--font-family-mono, ui-monospace, Menlo, Monaco, Consolas, monospace);
     font-size: 12px;
     line-height: 1.55;
-    background: color-mix(in srgb, var(--color-bg-canvas) 60%, var(--color-bg-card) 40%);
+    background: var(--color-bg-card);
     min-height: 196px;
     height: 100%;
   }
 
   .sync__payload :deep(.json-textarea-input__bar) {
-    justify-content: center;
+    justify-content: flex-end;
     gap: 10px 18px;
   }
 
@@ -909,7 +903,7 @@
   /* 底部操作区:操作按钮成组居中 */
   .sync__footer {
     display: flex;
-    justify-content: center;
+    justify-content: flex-end;
     align-items: center;
     gap: 8px;
     flex-wrap: wrap;

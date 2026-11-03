@@ -112,9 +112,19 @@
     flex-wrap: wrap;
   }
 
+  .pipeline-focus {
+    min-width: 0;
+  }
+
+  /* 长作业编码和链接在窄列内换行，避免溢出卡片右侧被截断 */
   .pipeline-focus__links {
     margin-bottom: var(--space-md);
     color: var(--color-text-secondary);
+    overflow-wrap: anywhere;
+  }
+
+  .pipeline-focus__links > * {
+    min-width: 0;
   }
 
   .pipeline-stages {

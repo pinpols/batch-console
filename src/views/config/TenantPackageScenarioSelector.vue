@@ -44,17 +44,22 @@
         </div>
       </section>
     </div>
-    <el-button
-      class="scenario-template-control__button"
-      link
-      type="primary"
-      :icon="Download"
-      :loading="loading"
-      :disabled="model.length === 0"
-      @click="$emit('download')"
-    >
-      {{ t('tenantPackageImportWizard.btnDownloadTemplate') }}
-    </el-button>
+    <div class="scenario-template-control__download">
+      <el-button
+        class="scenario-template-control__button"
+        link
+        type="primary"
+        :icon="Download"
+        :loading="loading"
+        :disabled="model.length === 0"
+        @click="$emit('download')"
+      >
+        {{ t('tenantPackageImportWizard.btnDownloadTemplate') }}
+      </el-button>
+      <span v-if="model.length === 0" class="scenario-template-control__reason">
+        {{ t('tenantPackageImportWizard.downloadNeedsScope') }}
+      </span>
+    </div>
   </div>
 </template>
 
@@ -272,30 +277,28 @@
     white-space: normal;
   }
 
+  /* 模板范围是勾选清单：不画格子边框，选中项只加深文字，避免像一排输入框 */
   .scenario-template-control__options :deep(.el-checkbox) {
     width: 100%;
     min-height: var(--control-height-sm);
-    padding: 2px 6px;
-    background: var(--color-bg-card);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-input);
-    transition:
-      border-color 0.15s,
-      background-color 0.15s,
-      box-shadow 0.15s;
   }
 
-  .scenario-template-control__options :deep(.el-checkbox:not(.is-disabled):hover) {
-    border-color: var(--color-primary);
+  .scenario-template-control__options :deep(.el-checkbox.is-checked .el-checkbox__label) {
+    color: var(--color-text-primary);
+    font-weight: 500;
   }
 
-  .scenario-template-control__options :deep(.el-checkbox.is-checked) {
-    background: var(--color-bg-info);
-    border-color: color-mix(in srgb, var(--color-primary) 55%, var(--color-border));
+  .scenario-template-control__download {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 4px 10px;
   }
 
-  .scenario-template-control__options :deep(.el-checkbox:focus-within) {
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 22%, transparent);
+  .scenario-template-control__reason {
+    color: var(--color-text-tertiary);
+    font-size: var(--font-size-xs);
   }
 
   .scenario-template-control__options :deep(.el-checkbox.is-disabled) {
