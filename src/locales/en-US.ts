@@ -4547,6 +4547,7 @@ const messages: Messages = {
     descAdmin:
       'No tenant context. All business pages will be empty. Pick one in the top-right switcher or create a new one.',
     descUser: 'No tenant context is available. Contact your administrator to assign one.',
+    actionSelect: 'Select tenant',
     actionCreate: 'Create tenant',
   },
   tenantList: {
