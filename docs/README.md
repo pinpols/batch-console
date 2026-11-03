@@ -6,18 +6,7 @@
 
 ## 当前待办统一索引
 
-本索引只汇总仍开放的事项，不另建重复 TODO 台账。任务状态、优先级、验收条件和证据以链接原文为准；历史报告中的“待办”字样不直接视为当前任务。
-
-| 领域 | 当前开放事项与权威原文 |
-|---|---|
-| 界面与菜单验收 | Worker/权限、筛选、菜单搜索、品牌加载、页面密度和文档站的用户验收，以及移动端文件渠道目的地确认，见[界面与菜单调整台账](backlog/frontend-ui-acceptance-2026-11-02.md)。 |
-| 批量账号开户 | 真实后端 PG/Redis 并发、审计检索和安全验收，见[批量开户环境验收](backlog/bulk-user-provisioning.md#已交付能力与剩余验收)。 |
-| AI 助手 | 移动软键盘、真实模型并发、provider 限流/超时、受控试生产及后置 HITL，见[AI 待办](backlog/ai-and-usage-statistics-todo-2026-09-29.md#ai-助手)和[前端实施方案](engineering/ai-assistant-frontend.md)。 |
-| 使用率统计 | 真实业务操作到聚合的对账、版本维度、业务租户切换和生产数据证据，见[使用率待办](backlog/ai-and-usage-statistics-todo-2026-09-29.md#使用率统计)。 |
-| 维护与降级 | 真实移动设备、其它下游恢复及全部页面写按钮的穷尽验收，见[维护降级待办](backlog/ai-and-usage-statistics-todo-2026-09-29.md#维护与服务降级)和[维护与降级方案](engineering/maintenance-degradation.md#2-当前实现与缺口)。 |
-| Workflow 与能力承接 | 目标 CI/预发布/生产、G07 新增类型与凭据校验闭环，以及各矩阵明确保留的组合/容量边界，见[Workflow 实施方案](engineering/workflow-job-pipeline-unification-plan-2026-10-14.md)、[能力承接矩阵](engineering/backend-capability-alignment-plan-2026-10-25.md#关闭矩阵)和[后端唯一验收矩阵](../../file-batch-system/docs/plans/workflow-daily-integration-acceptance-matrix-2026-10-14.md)。 |
-| OIDC | 外部 IdP 登录与生产启用；本地账号绑定通过不等于外部身份联测完成，见[能力矩阵 G08](engineering/backend-capability-alignment-plan-2026-10-25.md#关闭矩阵)和[后端 OIDC 方案](../../file-batch-system/docs/plans/console-oidc-sso-integration-plan-2026-10-09.md)。 |
-| Compose CD 与发布 | staging release set、四角色/跨浏览器、故障阻断、回滚兼容和制品留存，见[Compose CD 目标环境验收](runbook/compose-cd-roadmap.md#目标环境待验收)与[上线准入清单](runbook/go-live-readiness-checklist.md)。 |
+前后端开放事项统一汇总在配对后端 [TODO Master 全部开放事项统一索引](../../file-batch-system/docs/plans/todo-master.md#2026-11-03全部开放事项统一索引)，本仓不另建重复索引。前端事项的状态、验收条件和证据仍维护在原文：[界面与菜单调整台账](backlog/frontend-ui-acceptance-2026-11-02.md)、[批量开户环境验收](backlog/bulk-user-provisioning.md)、[AI 与使用率待办](backlog/ai-and-usage-statistics-todo-2026-09-29.md)、[Workflow 实施方案](engineering/workflow-job-pipeline-unification-plan-2026-10-14.md)、[能力承接矩阵](engineering/backend-capability-alignment-plan-2026-10-25.md#关闭矩阵)、[Compose CD 目标环境验收](runbook/compose-cd-roadmap.md#目标环境待验收)和[上线准入清单](runbook/go-live-readiness-checklist.md)。
 
 ## 产品使用指南
 
