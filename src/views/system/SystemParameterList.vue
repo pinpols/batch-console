@@ -77,23 +77,25 @@
       </ProTable>
     </SectionCard>
 
-    <el-drawer
-      :append-to-body="true"
-      v-model="dialogVisible"
+    <FormDrawer
+      v-model:visible="dialogVisible"
       :title="
         editingKey
           ? t('systemParameterList.dialogEditTitle')
           : t('systemParameterList.dialogCreateTitle')
       "
-      direction="rtl"
-      size="480px"
+      :description="t('systemParameterList.formDescription')"
+      size="sm"
+      :saving="saveAction.loading.value"
+      :submit-disabled="writesFrozen"
+      @submit="save"
     >
       <el-form
         ref="paramFormRef"
         :model="form"
         :rules="formRules"
         label-position="top"
-        class="parameter-form"
+        @submit.prevent
       >
         <el-form-item :label="t('systemParameterList.fieldKey')" prop="key">
           <el-input
@@ -112,20 +114,7 @@
           />
         </el-form-item>
       </el-form>
-      <template #footer>
-        <el-button @click="dialogVisible = false">
-          {{ t('common.cancel') }}
-        </el-button>
-        <el-button
-          type="primary"
-          :loading="saveAction.loading.value"
-          :disabled="writesFrozen"
-          @click="save"
-        >
-          {{ t('common.save') }}
-        </el-button>
-      </template>
-    </el-drawer>
+    </FormDrawer>
   </PageContainer>
 </template>
 
@@ -139,6 +128,7 @@
   import type { FormRules } from 'element-plus'
   import { Plus } from '@lucide/vue'
   import RowActions, { type RowAction } from '@/components/common/RowActions.vue'
+  import FormDrawer from '@/components/common/FormDrawer.vue'
   import { useFormValidate, rules } from '@/composables/useFormValidate'
   import { useAsyncAction } from '@/composables/useAsyncAction'
   import {
@@ -302,10 +292,3 @@
 
   useTenantReload(load)
 </script>
-
-<style scoped>
-  .parameter-form :deep(.el-form-item__error) {
-    position: static;
-    width: 100%;
-  }
-</style>

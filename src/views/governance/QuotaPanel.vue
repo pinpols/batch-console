@@ -148,15 +148,14 @@
       </div>
     </div>
 
-    <el-drawer
-      :append-to-body="true"
-      v-model="dialogVisible"
+    <FormDrawer
+      v-model:visible="dialogVisible"
       :title="
         editingId == null ? t('quotaPanel.drawerCreateTitle') : t('quotaPanel.drawerEditTitle')
       "
-      direction="rtl"
-      size="640px"
       destroy-on-close
+      :saving="submitAction.loading.value"
+      @submit="submitForm"
     >
       <el-form ref="formRef" :model="form" :rules="rules" label-position="top">
         <el-form-item :label="t('quotaPanel.fieldPolicyCode')" prop="policyCode">
@@ -193,17 +192,12 @@
           />
         </el-form-item>
       </el-form>
-      <template #footer>
-        <el-button @click="dialogVisible = false">{{ t('common.cancel') }}</el-button>
-        <el-button type="primary" :loading="submitAction.loading.value" @click="submitForm">
-          {{ t('common.save') }}
-        </el-button>
-      </template>
-    </el-drawer>
+    </FormDrawer>
   </PageContainer>
 </template>
 
 <script setup lang="ts">
+  import FormDrawer from '@/components/common/FormDrawer.vue'
   import { computed, reactive, ref } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { Pencil as Edit, Plus } from '@lucide/vue'

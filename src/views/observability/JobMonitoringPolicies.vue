@@ -137,13 +137,14 @@
       />
     </div>
 
-    <el-drawer
-      v-model="drawerOpen"
+    <FormDrawer
+      v-model:visible="drawerOpen"
       class="monitoring-policy-drawer"
       :title="t('jobMonitoringPolicy.editTitle', { jobCode: editingJob?.jobCode ?? '' })"
-      direction="rtl"
-      size="min(600px, 96vw)"
       destroy-on-close
+      :saving="saving"
+      :submit-disabled="!canMutateConfig"
+      @submit="save"
     >
       <el-form
         id="job-monitoring-policy-form"
@@ -173,25 +174,12 @@
           v-model:completion-deadline-severity="form.completionDeadlineSeverity"
         />
       </el-form>
-      <template #footer>
-        <el-button native-type="button" @click="drawerOpen = false">{{
-          t('common.cancel')
-        }}</el-button>
-        <el-button
-          type="primary"
-          native-type="submit"
-          form="job-monitoring-policy-form"
-          :loading="saving"
-          :disabled="!canMutateConfig"
-        >
-          {{ t('common.save') }}
-        </el-button>
-      </template>
-    </el-drawer>
+    </FormDrawer>
   </PageContainer>
 </template>
 
 <script setup lang="ts">
+  import FormDrawer from '@/components/common/FormDrawer.vue'
   import { computed, reactive, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'

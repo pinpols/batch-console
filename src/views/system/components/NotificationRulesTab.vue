@@ -91,19 +91,17 @@
       </el-table-column>
     </ProTable>
 
-    <el-drawer
-      :append-to-body="true"
-      v-model="ruleFormVisible"
+    <FormDrawer
+      v-model:visible="ruleFormVisible"
       :title="
         ruleEditingId
           ? t('notificationRulesTab.dialogTitleEdit')
           : t('notificationRulesTab.dialogTitleCreate')
       "
-      direction="rtl"
-      size="640px"
-      :close-on-click-modal="false"
       :before-close="onRuleFormClose"
       @opened="onRuleFormOpened"
+      :saving="savingRule"
+      @submit="saveRule"
     >
       <el-form ref="ruleFormRef" :model="ruleForm" :rules="ruleFormRules" label-position="top">
         <el-form-item :label="t('notificationRulesTab.fieldName')" prop="ruleName">
@@ -155,19 +153,12 @@
           </p>
         </div>
       </el-form>
-      <template #footer>
-        <el-button @click="closeRuleForm">
-          {{ t('common.cancel') }}
-        </el-button>
-        <el-button type="primary" :loading="savingRule" @click="saveRule">
-          {{ t('common.save') }}
-        </el-button>
-      </template>
-    </el-drawer>
+    </FormDrawer>
   </div>
 </template>
 
 <script setup lang="ts">
+  import FormDrawer from '@/components/common/FormDrawer.vue'
   import CopyableText from '@/components/common/CopyableText.vue'
   import { ref, reactive, computed, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
@@ -332,15 +323,9 @@
     ]
   }
 
-  async function closeRuleForm() {
-    if (!(await ruleDirty.confirmDiscard())) return
-    ruleFormVisible.value = false
-  }
-
-  async function onRuleFormClose(done: () => void) {
-    if (savingRule.value) return
-    if (!(await ruleDirty.confirmDiscard())) return
-    done()
+  // 保存中的关闭拦截由 FormDrawer 统一处理
+  function onRuleFormClose() {
+    return ruleDirty.confirmDiscard()
   }
 
   async function saveRule() {

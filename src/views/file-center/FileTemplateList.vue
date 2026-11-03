@@ -300,17 +300,17 @@
 
     <FileTemplateDetailDrawer v-model="detailVisible" :detail="detail" />
 
-    <el-drawer
-      :append-to-body="true"
-      v-model="templateDialogVisible"
+    <FormDrawer
+      v-model:visible="templateDialogVisible"
       :title="
         templateEditingId == null
           ? t('fileTemplateList.templateCreateTitle')
           : t('fileTemplateList.templateEditTitle')
       "
-      direction="rtl"
-      size="800px"
+      size="lg"
       destroy-on-close
+      :saving="templateSaving"
+      @submit="saveTemplate"
     >
       <el-form :model="templateForm" label-position="top">
         <!-- 基本信息 -->
@@ -408,13 +408,7 @@
           </el-form-item>
         </div>
       </el-form>
-      <template #footer>
-        <el-button @click="templateDialogVisible = false">{{ t('common.cancel') }}</el-button>
-        <el-button type="primary" :loading="templateSaving" @click="saveTemplate">{{
-          t('common.save')
-        }}</el-button>
-      </template>
-    </el-drawer>
+    </FormDrawer>
 
     <FileChannelDrawers
       v-model:editor-visible="channelDialogVisible"
@@ -429,6 +423,7 @@
 </template>
 
 <script setup lang="ts">
+  import FormDrawer from '@/components/common/FormDrawer.vue'
   import { computed, onScopeDispose, reactive, ref, shallowReactive, watch } from 'vue'
   import { useRoute } from 'vue-router'
   import { useI18n } from 'vue-i18n'

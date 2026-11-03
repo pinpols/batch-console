@@ -1,13 +1,12 @@
 <template>
-  <el-drawer
-    :append-to-body="true"
-    v-model="visible"
+  <FormDrawer
+    v-model:visible="visible"
     :title="
       queueEditingId == null ? t('queueConfig.queueCreateTitle') : t('queueConfig.queueEditTitle')
     "
-    direction="rtl"
-    size="640px"
     destroy-on-close
+    :saving="saving"
+    @submit="emit('save')"
   >
     <el-form :model="queueForm" label-width="120px">
       <el-form-item :label="t('queueConfig.fieldQueueCode')" :error="errors?.queueCode" required>
@@ -57,16 +56,11 @@
         ><el-input v-model="queueForm.description" type="textarea" maxlength="512" show-word-limit
       /></el-form-item>
     </el-form>
-    <template #footer>
-      <el-button @click="visible = false">{{ t('common.cancel') }}</el-button>
-      <el-button type="primary" :loading="saving" @click="emit('save')">{{
-        t('common.save')
-      }}</el-button>
-    </template>
-  </el-drawer>
+  </FormDrawer>
 </template>
 
 <script setup lang="ts">
+  import FormDrawer from '@/components/common/FormDrawer.vue'
   import { useI18n } from 'vue-i18n'
   import MetaSelect from '@/components/common/MetaSelect.vue'
 

@@ -424,13 +424,15 @@
       <EmptyState :description="t('batchDayWindow.emptyDescription')" />
     </SectionCard>
 
-    <el-drawer
-      :append-to-body="true"
-      v-model="catchupVisible"
+    <FormDrawer
+      v-model:visible="catchupVisible"
       :title="t('batchDayWindow.dialogTitle')"
-      direction="rtl"
-      size="480px"
+      size="sm"
       @closed="resetCatchup"
+      :saving="catchupLoading"
+      :submit-disabled="writesFrozen || recoveryBlocked || Boolean(recoveryKey)"
+      :submit-text="t('batchDayWindow.dialogSubmit')"
+      @submit="submitCatchup"
     >
       <el-form label-width="88px">
         <el-form-item :label="t('batchDayWindow.fieldCalendar')">
@@ -453,18 +455,7 @@
           />
         </el-form-item>
       </el-form>
-      <template #footer>
-        <el-button @click="catchupVisible = false">{{ t('common.cancel') }}</el-button>
-        <el-button
-          type="primary"
-          :loading="catchupLoading"
-          :disabled="writesFrozen || recoveryBlocked || Boolean(recoveryKey)"
-          @click="submitCatchup"
-        >
-          {{ t('batchDayWindow.dialogSubmit') }}
-        </el-button>
-      </template>
-    </el-drawer>
+    </FormDrawer>
 
     <el-dialog
       v-model="occurrenceCatchUpVisible"
@@ -515,6 +506,7 @@
 </template>
 
 <script setup lang="ts">
+  import FormDrawer from '@/components/common/FormDrawer.vue'
   import BatchDayGovernanceDrawer from './components/BatchDayGovernanceDrawer.vue'
   import { computed, ref, watch } from 'vue'
   import { useRoute, useRouter } from 'vue-router'

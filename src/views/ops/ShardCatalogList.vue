@@ -85,12 +85,13 @@
       </ProTable>
     </SectionCard>
 
-    <el-drawer
-      v-model="dialogVisible"
+    <FormDrawer
+      v-model:visible="dialogVisible"
       :title="editing ? t('shardCatalogList.editTitle') : t('shardCatalogList.createTitle')"
-      direction="rtl"
-      size="560px"
       destroy-on-close
+      :saving="saving"
+      :submit-disabled="writesFrozen"
+      @submit="save"
     >
       <el-form :model="form" label-width="120px" class="shard-form">
         <el-form-item
@@ -139,17 +140,12 @@
           <el-input v-model="form.description" type="textarea" maxlength="512" show-word-limit />
         </el-form-item>
       </el-form>
-      <template #footer>
-        <el-button @click="dialogVisible = false">{{ t('common.cancel') }}</el-button>
-        <el-button type="primary" :loading="saving" :disabled="writesFrozen" @click="save">{{
-          t('common.save')
-        }}</el-button>
-      </template>
-    </el-drawer>
+    </FormDrawer>
   </PageContainer>
 </template>
 
 <script setup lang="ts">
+  import FormDrawer from '@/components/common/FormDrawer.vue'
   import { ref, reactive, computed } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { RefreshCw as Refresh, Plus } from '@lucide/vue'

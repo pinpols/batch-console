@@ -113,6 +113,7 @@ function setup(realJsonInput = false, realTabs = false) {
         PageContainer: { template: '<div><slot /></div>' },
         PageHeader: { template: '<div><slot name="actions" /></div>' },
         FileChannelDrawers: false,
+        FormDrawer: false,
         ElTabs: realTabs ? false : { template: '<div><slot /></div>' },
         ElTabPane: realTabs ? false : { template: '<div><slot /></div>' },
         ProTable: { props: ['data'], template: '<div data-list>{{ JSON.stringify(data) }}</div>' },

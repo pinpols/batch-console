@@ -182,14 +182,15 @@
       :writes-frozen="writesFrozen"
     />
 
-    <el-drawer
-      :append-to-body="true"
-      v-model="createVisible"
+    <FormDrawer
+      v-model:visible="createVisible"
       :title="t('userAccountList.createTitle')"
-      direction="rtl"
-      size="640px"
       :before-close="onCreateClose"
       @opened="onCreateOpened"
+      :saving="creating"
+      :submit-disabled="writesFrozen"
+      :submit-text="t('userAccountList.createSubmit')"
+      @submit="submitCreate"
     >
       <el-form
         ref="createFormRef"
@@ -246,27 +247,15 @@
           <div class="field-hint">{{ t('userAccountList.createRolesHint') }}</div>
         </el-form-item>
       </el-form>
-      <template #footer>
-        <el-button @click="closeCreate">{{ t('common.cancel') }}</el-button>
-        <el-button
-          type="primary"
-          :loading="creating"
-          :disabled="writesFrozen"
-          @click="submitCreate"
-        >
-          {{ t('userAccountList.createSubmit') }}
-        </el-button>
-      </template>
-    </el-drawer>
+    </FormDrawer>
 
-    <el-drawer
-      :append-to-body="true"
-      v-model="formVisible"
+    <FormDrawer
+      v-model:visible="formVisible"
       :title="t('userAccountList.editTitle', { name: form.username })"
-      direction="rtl"
-      size="640px"
-      :close-on-click-modal="false"
       :before-close="onEditClose"
+      :saving="submitAction.loading.value"
+      :submit-disabled="writesFrozen"
+      @submit="submitForm"
     >
       <el-form label-position="top">
         <el-form-item :label="t('userAccountList.fieldTenant')">
@@ -305,18 +294,7 @@
           <div class="field-hint">{{ t('userAccountList.rolesHint') }}</div>
         </el-form-item>
       </el-form>
-      <template #footer>
-        <el-button @click="closeEdit">{{ t('common.cancel') }}</el-button>
-        <el-button
-          type="primary"
-          :loading="submitAction.loading.value"
-          :disabled="writesFrozen"
-          @click="submitForm"
-        >
-          {{ t('common.save') }}
-        </el-button>
-      </template>
-    </el-drawer>
+    </FormDrawer>
 
     <el-dialog
       v-model="resetVisible"
@@ -351,6 +329,7 @@
 </template>
 
 <script setup lang="ts">
+  import FormDrawer from '@/components/common/FormDrawer.vue'
   import CopyableText from '@/components/common/CopyableText.vue'
   import { computed, onMounted, reactive, ref } from 'vue'
   import { useI18n } from 'vue-i18n'
@@ -595,17 +574,11 @@
     createDirty.markPristine()
   }
 
-  async function closeCreate() {
-    if (!(await createDirty.confirmDiscard())) return
-    createVisible.value = false
+  // 保存中的关闭拦截由 FormDrawer 统一处理；确认关闭后清空新建表单
+  async function onCreateClose() {
+    if (!(await createDirty.confirmDiscard())) return false
     resetCreateForm()
-  }
-
-  async function onCreateClose(done: () => void) {
-    if (creating.value) return
-    if (!(await createDirty.confirmDiscard())) return
-    done()
-    resetCreateForm()
+    return true
   }
 
   async function submitCreate() {
@@ -673,15 +646,8 @@
     editDirty.markPristine()
   }
 
-  async function closeEdit() {
-    if (!(await editDirty.confirmDiscard())) return
-    formVisible.value = false
-  }
-
-  async function onEditClose(done: () => void) {
-    if (submitAction.loading.value) return
-    if (!(await editDirty.confirmDiscard())) return
-    done()
+  function onEditClose() {
+    return editDirty.confirmDiscard()
   }
 
   // useAsyncAction:防止用户在保存请求回包前 / 弹窗关闭动画期间二次点击触发重复 update

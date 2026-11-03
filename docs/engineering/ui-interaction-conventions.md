@@ -52,6 +52,15 @@
 - 依赖租户的数据加载仍使用 `useTenantReload`，无租户时不发请求，不弹提示。
 - 回归由 `e2e/admin-no-tenant-crash-guard.spec.ts` 的“新增入口有可见反馈”用例守护：无租户时点击新增，至少要打开表单、跳转或出现提示之一。
 
+## 表单与编辑抽屉
+
+- 新增、编辑表单统一用 `src/components/common/FormDrawer.vue`：标题下可写一句说明，宽度只取 `sm`（480）、`md`（640，默认）、`lg`（880）三档；底部固定为“取消在前、主操作在后”，次要操作（预览、测试连接）放 `footer-extra` 插槽。
+- 保存中不可关闭、不可重复提交，由 `FormDrawer` 统一拦截；页面只在需要额外判断时传 `before-close`（返回 `false` 阻止关闭），不再各自写 `done()` 包装。
+- 抽屉和对话框内一律上置标签（全局样式已强制，`form-preserve-label-position` 仅留给确需左置的高密度只读区）。
+- 字段多于约 6 个或存在明显分组时用 `src/components/common/FormSection.vue` 分节：标题 + 一句说明 + 字段；抽屉内用默认 `stacked`，整页设置表单用 `layout="side"`（维护设置页为样板），`columns="2"` 时整行字段加 `.form-block__full`。
+- 只读详情继续用 `DetailDrawer`；对话框保留给短确认、触发和预演类流程，不承载对象的新增/编辑。
+- 例外（多主操作或危险主操作）：批次日回放提交/范围补跑、租户配置复制/初始化仍用原生抽屉，待批次 4 逐对象收敛时再定。
+
 ## 日历与日期视图
 
 - 周视图和月视图统一以周一为一周起点，表头顺序、日期网格和国际化标签保持一致。
@@ -90,6 +99,7 @@
 
 - 状态分段：`src/components/table/StatusSegment.vue`
 - 行操作：`src/components/common/RowActions.vue`
+- 编辑抽屉与表单分节：`src/components/common/FormDrawer.vue`、`src/components/common/FormSection.vue`
 - 列表筛选工具栏：`src/components/table/OpsFilterToolbar.vue`（若页面采用）
 - 设计变量：`src/styles/tokens-handoff.css`，规则见 `docs/engineering/design-tokens.md`
 

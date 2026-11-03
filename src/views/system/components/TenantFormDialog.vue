@@ -1,18 +1,18 @@
 <template>
-  <el-drawer
-    :append-to-body="true"
-    :model-value="modelValue"
+  <FormDrawer
+    :visible="modelValue"
     :title="
       editing
         ? t('tenantFormDialog.titleEdit', { id: form.tenantId })
         : t('tenantFormDialog.titleCreate')
     "
-    direction="rtl"
-    size="640px"
-    :close-on-click-modal="false"
     :before-close="onBeforeClose"
-    @update:model-value="onModelValueUpdate"
+    @update:visible="onModelValueUpdate"
     @opened="onFormOpened"
+    :saving="submitAction.loading.value"
+    :submit-text="editing ? t('common.save') : t('tenantFormDialog.btnCreate')"
+    :cancel-text="t('tenantConfigShared.cancel')"
+    @submit="submit"
   >
     <el-form ref="formRef" :model="form" :rules="formRules" label-position="top">
       <el-form-item :label="t('tenantFormDialog.fieldTenantId')" prop="tenantId">
@@ -77,18 +77,11 @@
         </el-form-item>
       </template>
     </el-form>
-    <template #footer>
-      <el-button @click="requestClose">
-        {{ t('tenantConfigShared.cancel') }}
-      </el-button>
-      <el-button type="primary" :loading="submitAction.loading.value" @click="submit">
-        {{ editing ? t('common.save') : t('tenantFormDialog.btnCreate') }}
-      </el-button>
-    </template>
-  </el-drawer>
+  </FormDrawer>
 </template>
 
 <script setup lang="ts">
+  import FormDrawer from '@/components/common/FormDrawer.vue'
   import { computed, reactive, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
@@ -195,15 +188,9 @@
     emit('update:modelValue', false)
   }
 
-  async function onBeforeClose(done: () => void) {
-    if (submitAction.loading.value) return
-    if (!(await dirty.confirmDiscard())) return
-    done()
-  }
-
-  async function requestClose() {
-    if (!(await dirty.confirmDiscard())) return
-    emit('update:modelValue', false)
+  // 保存中的关闭拦截由 FormDrawer 统一处理
+  function onBeforeClose() {
+    return dirty.confirmDiscard()
   }
 
   // useAsyncAction:连点抗抖,完成后 300ms 内 :loading 仍 true,防止用户在 emit

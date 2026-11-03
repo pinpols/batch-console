@@ -1,11 +1,12 @@
 <template>
-  <el-drawer
-    :append-to-body="true"
-    :model-value="modelValue"
+  <FormDrawer
+    :visible="modelValue"
     :title="t('tenantBatchCreateDialog.title')"
-    direction="rtl"
-    size="640px"
-    @update:model-value="(v: boolean) => emit('update:modelValue', v)"
+    @update:visible="(v: boolean) => emit('update:modelValue', v)"
+    :saving="submitAction.loading.value"
+    :submit-text="t('tenantBatchCreateDialog.btnSubmit')"
+    :cancel-text="t('tenantConfigShared.cancel')"
+    @submit="submit"
   >
     <el-form
       ref="batchFormRef"
@@ -78,18 +79,11 @@
         </el-radio-group>
       </el-form-item>
     </el-form>
-    <template #footer>
-      <el-button @click="emit('update:modelValue', false)">
-        {{ t('tenantConfigShared.cancel') }}
-      </el-button>
-      <el-button type="primary" :loading="submitAction.loading.value" @click="submit">
-        {{ t('tenantBatchCreateDialog.btnSubmit') }}
-      </el-button>
-    </template>
-  </el-drawer>
+  </FormDrawer>
 </template>
 
 <script setup lang="ts">
+  import FormDrawer from '@/components/common/FormDrawer.vue'
   import { computed, reactive, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'

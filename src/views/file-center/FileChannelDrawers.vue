@@ -1,15 +1,15 @@
 <template>
-  <el-drawer
-    v-model="editorVisible"
-    :append-to-body="true"
+  <FormDrawer
+    v-model:visible="editorVisible"
     :title="
       editingId == null
         ? t('fileTemplateList.channelCreateTitle')
         : t('fileTemplateList.channelEditTitle')
     "
-    direction="rtl"
-    size="800px"
+    size="lg"
     destroy-on-close
+    :saving="saving"
+    @submit="emit('save')"
   >
     <el-form :model="form" label-position="top">
       <el-form-item :label="t('fileTemplateList.fieldChannelCode')" required>
@@ -47,13 +47,7 @@
         <div class="field-hint">{{ t('fileTemplateList.configJsonSecretHint') }}</div>
       </el-form-item>
     </el-form>
-    <template #footer>
-      <el-button @click="editorVisible = false">{{ t('common.cancel') }}</el-button>
-      <el-button type="primary" :loading="saving" @click="emit('save')">
-        {{ t('common.save') }}
-      </el-button>
-    </template>
-  </el-drawer>
+  </FormDrawer>
 
   <el-drawer
     v-model="detailVisible"
@@ -91,6 +85,7 @@
 </template>
 
 <script setup lang="ts">
+  import FormDrawer from '@/components/common/FormDrawer.vue'
   import { useI18n } from 'vue-i18n'
   import { useResponsive } from '@/composables/useResponsive'
   import CodeNameBuilder from '@/components/common/CodeNameBuilder.vue'

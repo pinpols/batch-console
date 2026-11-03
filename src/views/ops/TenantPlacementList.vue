@@ -80,12 +80,13 @@
       </ProTable>
     </SectionCard>
 
-    <el-drawer
-      v-model="dialogVisible"
+    <FormDrawer
+      v-model:visible="dialogVisible"
       :title="editing ? t('tenantPlacementList.editTitle') : t('tenantPlacementList.createTitle')"
-      direction="rtl"
-      size="520px"
       destroy-on-close
+      :saving="saving"
+      :submit-disabled="writesFrozen || placementKeyInvalid"
+      @submit="save"
     >
       <el-form :model="form" label-width="120px">
         <el-form-item :label="t('tenantPlacementList.colTenant')" required>
@@ -118,22 +119,12 @@
           </el-text>
         </el-form-item>
       </el-form>
-      <template #footer>
-        <el-button @click="dialogVisible = false">{{ t('common.cancel') }}</el-button>
-        <el-button
-          type="primary"
-          :loading="saving"
-          :disabled="writesFrozen || placementKeyInvalid"
-          @click="save"
-        >
-          {{ t('common.save') }}
-        </el-button>
-      </template>
-    </el-drawer>
+    </FormDrawer>
   </PageContainer>
 </template>
 
 <script setup lang="ts">
+  import FormDrawer from '@/components/common/FormDrawer.vue'
   import { ref, reactive, computed } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { RefreshCw as Refresh, Plus } from '@lucide/vue'
