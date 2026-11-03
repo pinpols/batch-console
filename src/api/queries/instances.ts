@@ -12,6 +12,8 @@ export interface InstanceQueryParams {
   instanceStatus?: string
   /** CSV 多状态(如 "FAILED,PARTIAL_FAILED"),优先于 instanceStatus 单值 */
   instanceStatuses?: string
+  /** 业务日期（LocalDate，精确匹配） */
+  bizDate?: string
   /** 作业开始时间的ISO日期范围起点，不是业务日期 */
   startDate?: string
   /** 作业开始时间的ISO日期范围终点，不是业务日期 */
@@ -49,6 +51,7 @@ export async function queryJobInstances(
       : query.instanceStatus
         ? { instanceStatus: query.instanceStatus }
         : {}),
+    ...(query.bizDate ? { bizDate: query.bizDate } : {}),
     ...(query.startDate ? { startDate: query.startDate } : {}),
     ...(query.endDate ? { endDate: query.endDate } : {}),
     ...(query.traceId ? { traceId: query.traceId } : {}),

@@ -39,7 +39,8 @@ import {
   Timer,
   Wrench as Tools,
   TrendingUp as TrendCharts,
-  Ticket as Tickets,
+  ShieldCheck,
+  UserCog,
   TriangleAlert as WarningFilled,
   // 按设计源逐项对齐的专用图标(从 .dc.html DOM 抠出的每个 nav 项真实图标)
   Check,
@@ -451,14 +452,14 @@ const navigationGroupsByKey = {
         path: '/system/user-accounts',
         minRole: 'OPERATOR',
         authorities: ['ROLE_ADMIN', 'ROLE_TENANT_ADMIN'],
-        icon: Tickets,
+        icon: UserCog,
       },
       {
         title: pageTitle('/system/users'),
         path: '/system/users',
         minRole: 'VIEWER',
         authorities: ['ROLE_ADMIN', 'ROLE_AUDITOR', 'ROLE_TENANT_ADMIN', 'ROLE_TENANT_USER'],
-        icon: Tickets,
+        icon: ShieldCheck,
       },
       {
         title: pageTitle('/config/releases'),

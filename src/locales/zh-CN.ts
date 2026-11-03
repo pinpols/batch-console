@@ -4,6 +4,7 @@ import atomicRuntime from './atomicRuntime.zh-CN.ts'
 import batchDayGovernance from './batchDayGovernance.zh-CN.ts'
 import jobProgress from './jobProgress.zh-CN.ts'
 import dailyProgress from './dailyProgress.zh-CN.ts'
+import opsToday from './opsToday.zh-CN.ts'
 import dependencyWaits from './dependencyWaits.zh-CN.ts'
 import notificationRoutePreview from './notificationRoutePreview.zh-CN.ts'
 import fileTemplateMappingHelp from './fileTemplateMappingHelp.zh-CN.ts'
@@ -31,6 +32,7 @@ import mobile from './mobile.zh-CN.ts'
 
 export default {
   dailyProgress,
+  opsToday,
   dependencyWaits,
   notificationRoutePreview,
   fileTemplateMappingHelp,

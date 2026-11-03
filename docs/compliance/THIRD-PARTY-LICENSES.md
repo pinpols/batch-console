@@ -52,8 +52,8 @@
 | `@codemirror/search` | `^6.7.2` |
 | `@codemirror/state` | `^6.7.6` |
 | `@codemirror/view` | `^6.43.14` |
+| `@fontsource/barlow` | `^5.3.0` |
 | `@fontsource/ibm-plex-mono` | `^5.3.0` |
-| `@fontsource/ibm-plex-sans` | `^5.3.0` |
 | `@lucide/vue` | `^1.57.0` |
 | `@sentry/vue` | `^11.7.0` |
 | `@tanstack/vue-query` | `^5.104.2` |

@@ -4,6 +4,7 @@ import atomicRuntime from './atomicRuntime.en-US.ts'
 import batchDayGovernance from './batchDayGovernance.en-US.ts'
 import jobProgress from './jobProgress.en-US.ts'
 import dailyProgress from './dailyProgress.en-US.ts'
+import opsToday from './opsToday.en-US.ts'
 import dependencyWaits from './dependencyWaits.en-US.ts'
 import notificationRoutePreview from './notificationRoutePreview.en-US.ts'
 import fileTemplateMappingHelp from './fileTemplateMappingHelp.en-US.ts'
@@ -24,6 +25,7 @@ import mobile from './mobile.en-US.ts'
 
 const messages: Messages = {
   dailyProgress,
+  opsToday,
   dependencyWaits,
   notificationRoutePreview,
   fileTemplateMappingHelp,

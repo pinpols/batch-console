@@ -2,7 +2,7 @@
   <el-tag
     class="status-tag"
     :class="{ 'status-tag--enum': !showDot }"
-    :type="meta.type"
+    :type="tagType"
     :size="size"
     effect="light"
   >
@@ -12,22 +12,26 @@
 </template>
 
 <style scoped>
+  /* 时刻表方向：状态为带圆点的胶囊，分类枚举为中性方角标签；均使用正文字体 */
   .status-tag {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    font-family: var(--font-mono);
-    font-size: 11px;
+    padding: 0 9px 0 7px;
+    border-radius: 999px;
+    font-size: var(--font-size-xs);
     font-weight: 500;
   }
 
   .status-tag--enum {
     gap: 0;
+    padding: 0 7px;
+    border-radius: var(--radius-control);
   }
 
   .status-tag__dot {
-    width: 6px;
-    height: 6px;
+    width: 7px;
+    height: 7px;
     border-radius: 50%;
     background: currentColor;
     flex-shrink: 0;
@@ -65,4 +69,6 @@
   )
 
   const showDot = computed(() => !['executionMode', 'jobType'].includes(props.category))
+  // 分类枚举不表达状态，统一中性色，避免类型标签按颜色区分
+  const tagType = computed(() => (showDot.value ? meta.value.type : 'info'))
 </script>

@@ -3,7 +3,7 @@
 
 :root {
   --font-sans:
-    'IBM Plex Sans', Inter, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue',
+    Barlow, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue',
     Arial, sans-serif;
   --font-mono:
     'IBM Plex Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Monaco, monospace;
@@ -12,46 +12,46 @@
   --el-font-family: var(--font-sans);
   --el-font-family-mono: var(--font-mono);
 
-  --font-size-xs: 11px;
-  --font-size-sm: 12px;
-  --font-size-md: 13px;
+  --font-size-xs: 12px;
+  --font-size-sm: 13px;
+  --font-size-md: 14px;
   --font-size-lg: 16px;
-  --font-size-xl: 18px;
-  --font-size-2xl: 22px;
-  --el-font-size-extra-small: 11px;
-  --el-font-size-small: 12px;
-  --el-font-size-base: 13px;
-  --el-font-size-medium: 13px;
-  --el-font-size-large: 14px;
-  --el-font-size-extra-large: 18px;
+  --font-size-xl: 20px;
+  --font-size-2xl: 26px;
+  --el-font-size-extra-small: 12px;
+  --el-font-size-small: 13px;
+  --el-font-size-base: 14px;
+  --el-font-size-medium: 14px;
+  --el-font-size-large: 16px;
+  --el-font-size-extra-large: 20px;
 
-  --color-primary: #1668e3;
+  --color-primary: #1f4fd1;
 
-  --color-success: #22845a;
-  --color-warning: #b57816;
-  --color-danger: #d64543;
-  --color-info: #1668e3;
-  --color-brand-mark-bg: #1257c4;
-  --brand-mark-fill: linear-gradient(145deg, #4b87df 0%, #2d70d2 56%, #225cae 100%);
+  --color-success: #1e7a4f;
+  --color-warning: #a8670a;
+  --color-danger: #c2352e;
+  --color-info: #1f4fd1;
+  --color-brand-mark-bg: #1f4fd1;
+  --brand-mark-fill: linear-gradient(145deg, #3a68e0 0%, #1f4fd1 60%, #183fa8 100%);
   --color-on-warning: #1b1e26;
 
-  --color-text-primary: #1b1e26;
-  --color-text-secondary: #5b6270;
-  --color-text-tertiary: #5b6270;
+  --color-text-primary: #132232;
+  --color-text-secondary: #4a5a6b;
+  --color-text-tertiary: #5f6e7e;
 
-  --color-bg-page: #f5f6f8;
-  --color-bg-canvas: #eceef2;
+  --color-bg-page: #e9edf1;
+  --color-bg-canvas: #e1e6eb;
   --color-bg-card: #ffffff;
-  --color-bg-subtle: #fafbfc;
-  --color-bg-base: #fafafb;
+  --color-bg-subtle: #f5f7f9;
+  --color-bg-base: #f5f7f9;
   --color-bg-elevated: #ffffff;
 
-  --color-border: rgba(15, 23, 42, 0.1);
-  --color-border-light: rgba(15, 23, 42, 0.07);
+  --color-border: #d3dae2;
+  --color-border-light: #e4e9ee;
 
-  --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.05);
-  --shadow-surface: 0 0 0 1px rgba(15, 23, 42, 0.05);
-  --shadow-surface-hover: 0 0 0 1px rgba(15, 23, 42, 0.1);
+  --shadow-card: 0 1px 2px rgba(19, 34, 50, 0.06);
+  --shadow-surface: 0 0 0 1px #d3dae2;
+  --shadow-surface-hover: 0 0 0 1px #b9c3ce;
 
   --radius-control: 8px;
   --radius-button: var(--radius-control);
@@ -78,18 +78,21 @@
   --layout-panel-hover-safe: 14px;
   --layout-panel-inset-highlight: rgba(255, 255, 255, 0.48);
 
-  --layout-sidebar-bg: #fafafb;
-  --layout-sidebar-text: #495060;
-  --layout-sidebar-text-muted: #737b8c;
-  --layout-sidebar-brand-divider: rgba(15, 23, 42, 0.08);
+  --layout-sidebar-bg: #132232;
+  --layout-sidebar-text: #c9d3de;
+  --layout-sidebar-text-muted: #7f8ea0;
+  --layout-sidebar-brand-divider: rgba(255, 255, 255, 0.08);
   --layout-sidebar-subnav-bg: transparent;
-  --layout-sidebar-hover-bg: rgba(22, 104, 227, 0.08);
-  --layout-sidebar-hover-text: #1b1e26;
-  --layout-sidebar-active-bg: rgba(22, 104, 227, 0.12);
-  --layout-sidebar-active-text: #1668e3;
-  --layout-sidebar-active-hover-bg: rgba(22, 104, 227, 0.16);
-  --layout-header-bg: rgba(255, 255, 255, 0.86);
-  --layout-menu-popup-bg: #fafbfc;
+  --layout-sidebar-hover-bg: rgba(255, 255, 255, 0.06);
+  --layout-sidebar-hover-text: #ffffff;
+  --layout-sidebar-active-bg: #24384f;
+  --layout-sidebar-active-text: #ffffff;
+  --layout-sidebar-active-hover-bg: #2a4060;
+  /* 墨蓝侧栏上主色对比不足，选中指示用亮一档的信号蓝 */
+  --layout-sidebar-active-marker: #5b8cff;
+  --layout-sidebar-border: rgba(255, 255, 255, 0.08);
+  --layout-header-bg: #ffffff;
+  --layout-menu-popup-bg: #ffffff;
 
   /* 校正 tokens.css 里 #1677ff 旧蓝残留 → 统一到设计主色系(color-mix 跟随 --color-primary) */
   --table-row-hover-bg: color-mix(in srgb, var(--color-primary) 7%, transparent);
@@ -101,56 +104,56 @@
   --input-bg: #ffffff;
 
   /* 主按钮对齐设计 light:accent-strong #1668e3 */
-  --button-primary-bg: #1668e3;
-  --button-primary-bg-hover: #2f74e8;
-  --button-primary-bg-active: #1257c4;
-  --button-primary-border: #1668e3;
+  --button-primary-bg: #1f4fd1;
+  --button-primary-bg-hover: #3461dc;
+  --button-primary-bg-active: #183fa8;
+  --button-primary-border: #1f4fd1;
 }
 
 html.dark {
-  --color-primary: #70adff;
-  --color-brand-mark-bg: #5479a5;
-  --brand-mark-fill: linear-gradient(145deg, #4776ad 0%, #315f98 56%, #254775 100%);
+  --color-primary: #5b8cff;
+  --color-brand-mark-bg: #3a68e0;
+  --brand-mark-fill: linear-gradient(145deg, #5b8cff 0%, #3a68e0 60%, #2b52bd 100%);
 
-  --color-success: #5cb381;
-  --color-warning: #e3a94f;
-  --color-danger: #f07a78;
-  --color-info: #5c9dff;
+  --color-success: #4cc38a;
+  --color-warning: #f2b246;
+  --color-danger: #ff6b62;
+  --color-info: #5b8cff;
 
-  --color-text-primary: #e9ebf0;
-  --color-text-secondary: #9aa1ae;
-  --color-text-tertiary: #a6afbd;
+  --color-text-primary: #e6ebf2;
+  --color-text-secondary: #a9b4c3;
+  --color-text-tertiary: #93a0b1;
 
-  --color-bg-page: #141519;
-  --color-bg-canvas: #0f1013;
-  --color-bg-card: #1b1d23;
-  --color-bg-subtle: #17181d;
-  --color-bg-base: #141519;
-  --color-bg-elevated: #23262e;
+  --color-bg-page: #161c26;
+  --color-bg-canvas: #121821;
+  --color-bg-card: #1e2632;
+  --color-bg-subtle: #232c3a;
+  --color-bg-base: #161c26;
+  --color-bg-elevated: #283241;
 
-  --color-border: rgba(255, 255, 255, 0.08);
-  --color-border-light: rgba(255, 255, 255, 0.055);
+  --color-border: #2f3a4a;
+  --color-border-light: #283241;
 
-  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.25);
-  --shadow-surface: 0 0 0 1px rgba(255, 255, 255, 0.07);
-  --shadow-surface-hover: 0 0 0 1px rgba(255, 255, 255, 0.11);
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-surface: 0 0 0 1px #2f3a4a;
+  --shadow-surface-hover: 0 0 0 1px #3d4a5d;
   --surface-hover-edge-inset: inset 0 0 0 1px
     color-mix(in srgb, var(--color-primary) 34%, transparent);
 
   --layout-panel-inset-highlight: rgba(255, 255, 255, 0.075);
 
-  --layout-sidebar-bg: #17181d;
-  --layout-sidebar-text: rgba(233, 235, 240, 0.72);
-  --layout-sidebar-text-muted: #9aa1ae;
+  --layout-sidebar-bg: #11161e;
+  --layout-sidebar-text: #a9b4c3;
+  --layout-sidebar-text-muted: #7d8a9c;
   --layout-sidebar-brand-divider: rgba(255, 255, 255, 0.08);
   --layout-sidebar-subnav-bg: transparent;
-  --layout-sidebar-hover-bg: rgba(92, 157, 255, 0.06);
-  --layout-sidebar-hover-text: #e9ebf0;
-  --layout-sidebar-active-bg: rgba(92, 157, 255, 0.12);
-  --layout-sidebar-active-text: #5c9dff;
-  --layout-sidebar-active-hover-bg: rgba(92, 157, 255, 0.16);
-  --layout-header-bg: rgba(27, 29, 35, 0.9);
-  --layout-menu-popup-bg: #17181d;
+  --layout-sidebar-hover-bg: rgba(255, 255, 255, 0.05);
+  --layout-sidebar-hover-text: #ffffff;
+  --layout-sidebar-active-bg: #1e2632;
+  --layout-sidebar-active-text: #ffffff;
+  --layout-sidebar-active-hover-bg: #243041;
+  --layout-header-bg: #1e2632;
+  --layout-menu-popup-bg: #1e2632;
 
   /* 校正 tokens.css 深色里蓝味残留(表头 #1c222c / 行 #1677ff / 弹层 active #1d4ed8 /
      hero·info·fill 蓝渐变)→ 统一到设计中性表面 + 设计主色系。 */
@@ -174,11 +177,11 @@ html.dark {
   --button-neutral-text: var(--color-text-primary);
 
   /* 主按钮对齐设计:accent-strong #3d87ff(比 --color-primary 更饱和一档) */
-  --button-primary-bg: #3d87ff;
-  --button-primary-bg-hover: #5c9dff;
-  --button-primary-bg-active: #2f74e8;
-  --button-primary-border: #3d87ff;
+  --button-primary-bg: #5b8cff;
+  --button-primary-bg-hover: #7aa2ff;
+  --button-primary-bg-active: #3a68e0;
+  --button-primary-border: #5b8cff;
 
   /* 输入类控件底色(设计 --input-bg #15161b,比卡片更沉) */
-  --input-bg: #15161b;
+  --input-bg: #161c26;
 }

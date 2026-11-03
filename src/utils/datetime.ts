@@ -145,6 +145,11 @@ export function todayBusinessDate(now: Date = new Date()): string {
   return fmtDate(now, businessTimezone)
 }
 
+/** 业务日（LocalDate）在业务时区零点对应的时间戳，用于按业务日排时间轴。 */
+export function businessDayStartMs(bizDate: string): number {
+  return dayjs.tz(bizDate, readBusinessTimezone()).startOf('day').valueOf()
+}
+
 /** 将平台业务日映射为日历控件的本地日期模型，不把 LocalDate 当作 Instant 解析。 */
 export function businessCalendarDate(now: Date = new Date()): Date {
   const businessDate = todayBusinessDate(now)
@@ -215,9 +220,7 @@ export function fmtTodayOrDatetime(val: unknown, timezone?: string): string {
   const zone = safeTimezone(timezone)
   const displayedDate = fmtDate(date, zone)
   const todayDate = fmtDate(new Date(), zone)
-  return displayedDate === todayDate
-    ? fmtCompact(date, zone)
-    : fmtDatetime(date, zone)
+  return displayedDate === todayDate ? fmtCompact(date, zone) : fmtDatetime(date, zone)
 }
 
 /**

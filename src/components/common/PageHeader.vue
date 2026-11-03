@@ -180,10 +180,10 @@
 
   .title {
     margin: 0;
-    font-size: var(--font-size-xl);
-    font-weight: 650;
+    font-size: var(--font-size-2xl);
+    font-weight: 600;
     line-height: var(--line-height-tight);
-    letter-spacing: 0;
+    letter-spacing: -0.01em;
     color: var(--color-text-primary);
   }
 

@@ -236,8 +236,10 @@
     display: flex;
     flex-direction: column;
     background: var(--layout-sidebar-bg);
+    /* 侧栏为墨蓝底，文字与分隔线使用侧栏专用 token，不继承页面正文色 */
+    color: var(--layout-sidebar-text);
     border: none;
-    border-right: 1px solid var(--color-border);
+    border-right: 1px solid var(--layout-sidebar-border);
     box-shadow: none;
     overflow: hidden;
     transition:
@@ -264,7 +266,7 @@
   }
 
   .brand__title {
-    color: var(--color-text-primary);
+    color: var(--layout-sidebar-active-text);
     font-size: 14px;
     font-weight: 600;
     line-height: 1.3;
@@ -314,7 +316,7 @@
   .brand__groups-toggle:hover {
     color: var(--layout-sidebar-hover-text);
     background: var(--layout-sidebar-hover-bg);
-    border-color: var(--color-border);
+    border-color: var(--layout-sidebar-border);
   }
 
   .brand__groups-toggle .el-icon {
@@ -429,7 +431,7 @@
     bottom: 7px;
     width: 3px;
     border-radius: 999px;
-    background: var(--layout-sidebar-active-text);
+    background: var(--layout-sidebar-active-marker);
   }
 
   .nav__icon {
@@ -471,7 +473,7 @@
     flex-shrink: 0;
     height: 40px;
     padding: 0 14px;
-    border-top: 1px solid var(--color-border);
+    border-top: 1px solid var(--layout-sidebar-border);
     background: transparent;
     color: var(--layout-sidebar-text-muted);
     font-size: 12px;
