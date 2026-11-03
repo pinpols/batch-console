@@ -78,19 +78,20 @@
   --layout-panel-hover-safe: 14px;
   --layout-panel-inset-highlight: rgba(255, 255, 255, 0.48);
 
-  --layout-sidebar-bg: #132232;
-  --layout-sidebar-text: #c9d3de;
-  --layout-sidebar-text-muted: #7f8ea0;
-  --layout-sidebar-brand-divider: rgba(255, 255, 255, 0.08);
+  /* 时刻表浅色：侧栏随主题变浅，白底 + 细边框，选中用主色浅底 */
+  --layout-sidebar-bg: #ffffff;
+  --layout-sidebar-text: #4a5a6b;
+  --layout-sidebar-text-muted: #66768a;
+  --layout-sidebar-brand-divider: #e4e9ee;
   --layout-sidebar-subnav-bg: transparent;
-  --layout-sidebar-hover-bg: rgba(255, 255, 255, 0.06);
-  --layout-sidebar-hover-text: #ffffff;
-  --layout-sidebar-active-bg: #24384f;
-  --layout-sidebar-active-text: #ffffff;
-  --layout-sidebar-active-hover-bg: #2a4060;
-  /* 墨蓝侧栏上主色对比不足，选中指示用亮一档的信号蓝 */
-  --layout-sidebar-active-marker: #5b8cff;
-  --layout-sidebar-border: rgba(255, 255, 255, 0.08);
+  --layout-sidebar-hover-bg: rgba(19, 34, 50, 0.05);
+  --layout-sidebar-hover-text: #132232;
+  --layout-sidebar-active-bg: #e3eafb;
+  --layout-sidebar-active-text: #1f4fd1;
+  --layout-sidebar-active-hover-bg: #d8e2fa;
+  --layout-sidebar-active-marker: #1f4fd1;
+  --layout-sidebar-border: #d3dae2;
+  --layout-sidebar-brand-text: #132232;
   --layout-header-bg: #ffffff;
   --layout-menu-popup-bg: #ffffff;
 
@@ -152,6 +153,10 @@ html.dark {
   --layout-sidebar-active-bg: #1e2632;
   --layout-sidebar-active-text: #ffffff;
   --layout-sidebar-active-hover-bg: #243041;
+  /* 深色侧栏比页面底更沉，选中指示用信号蓝 */
+  --layout-sidebar-active-marker: #5b8cff;
+  --layout-sidebar-border: rgba(255, 255, 255, 0.08);
+  --layout-sidebar-brand-text: #ffffff;
   --layout-header-bg: #1e2632;
   --layout-menu-popup-bg: #1e2632;
 

@@ -266,7 +266,7 @@
   }
 
   .brand__title {
-    color: var(--layout-sidebar-active-text);
+    color: var(--layout-sidebar-brand-text);
     font-size: 14px;
     font-weight: 600;
     line-height: 1.3;
