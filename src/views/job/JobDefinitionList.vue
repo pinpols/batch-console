@@ -69,6 +69,7 @@
             :refresh-busy="isFetching"
             :disabled="isPending"
             :show-refresh="false"
+            :advanced-active="advancedFilterCount"
             @search="onSearch"
             @reset="reset"
             @refresh="onRefreshDefinitions"
@@ -100,57 +101,59 @@
                 <el-option :label="t('jobDefinitionList.optDisabled')" :value="false" />
               </el-select>
             </el-form-item>
-            <el-form-item>
-              <template #label>
-                <HelpLabel :tip="t('jobDefinitionList.workerGroupTip')">
-                  {{ t('jobDefinitionList.workerGroupLabel') }}
-                </HelpLabel>
-              </template>
-              <el-select
-                class="query-w-180"
-                v-model="filters.workerGroup"
-                clearable
-                filterable
-                :placeholder="t('jobDefinitionList.workerGroupPlaceholder')"
-              >
-                <el-option
-                  v-for="option in workerGroupOptions"
-                  :key="option"
-                  :label="option"
-                  :value="option"
+            <template #advanced>
+              <el-form-item>
+                <template #label>
+                  <HelpLabel :tip="t('jobDefinitionList.workerGroupTip')">
+                    {{ t('jobDefinitionList.workerGroupLabel') }}
+                  </HelpLabel>
+                </template>
+                <el-select
+                  class="query-w-180"
+                  v-model="filters.workerGroup"
+                  clearable
+                  filterable
+                  :placeholder="t('jobDefinitionList.workerGroupPlaceholder')"
+                >
+                  <el-option
+                    v-for="option in workerGroupOptions"
+                    :key="option"
+                    :label="option"
+                    :value="option"
+                  />
+                </el-select>
+              </el-form-item>
+              <el-form-item>
+                <template #label>
+                  <HelpLabel :tip="t('jobDefinitionList.queueTip')">
+                    {{ t('jobDefinitionList.queueLabel') }}
+                  </HelpLabel>
+                </template>
+                <MetaSelect
+                  class="query-w-160"
+                  v-model="filters.queueCode"
+                  clearable
+                  filterable
+                  :placeholder="t('jobDefinitionList.queuePlaceholder')"
+                  :options="queueOptions"
                 />
-              </el-select>
-            </el-form-item>
-            <el-form-item>
-              <template #label>
-                <HelpLabel :tip="t('jobDefinitionList.queueTip')">
-                  {{ t('jobDefinitionList.queueLabel') }}
-                </HelpLabel>
-              </template>
-              <MetaSelect
-                class="query-w-160"
-                v-model="filters.queueCode"
-                clearable
-                filterable
-                :placeholder="t('jobDefinitionList.queuePlaceholder')"
-                :options="queueOptions"
-              />
-            </el-form-item>
-            <el-form-item>
-              <template #label>
-                <HelpLabel :tip="t('jobDefinitionList.scheduleTypeTip')">
-                  {{ t('jobDefinitionList.scheduleTypeLabel') }}
-                </HelpLabel>
-              </template>
-              <MetaSelect
-                class="query-w-160"
-                v-model="filters.scheduleType"
-                clearable
-                enum-key="scheduleType"
-                :placeholder="t('jobDefinitionList.scheduleTypePlaceholder')"
-                :options="scheduleTypeOptions"
-              />
-            </el-form-item>
+              </el-form-item>
+              <el-form-item>
+                <template #label>
+                  <HelpLabel :tip="t('jobDefinitionList.scheduleTypeTip')">
+                    {{ t('jobDefinitionList.scheduleTypeLabel') }}
+                  </HelpLabel>
+                </template>
+                <MetaSelect
+                  class="query-w-160"
+                  v-model="filters.scheduleType"
+                  clearable
+                  enum-key="scheduleType"
+                  :placeholder="t('jobDefinitionList.scheduleTypePlaceholder')"
+                  :options="scheduleTypeOptions"
+                />
+              </el-form-item>
+            </template>
           </ListPageQueryBar>
         </template>
 
@@ -726,6 +729,10 @@
     queueCode: '',
     scheduleType: '',
   })
+  // Worker 组、队列、调度类型收在“更多筛选”里，有值时按钮显示数量
+  const advancedFilterCount = computed(
+    () => [filters.workerGroup, filters.queueCode, filters.scheduleType].filter(Boolean).length,
+  )
   watch(
     () => route.query.jobCode,
     (jobCode) => {
