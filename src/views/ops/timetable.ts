@@ -44,7 +44,8 @@ export interface Timetable {
   notStarted: number
 }
 
-function toneOf(status: string): TimetableTone {
+/** 运行状态到时刻轨道色调的映射；首页轨道与作业实例步骤条共用 */
+export function toneOf(status: string): TimetableTone {
   switch (workflowRunStatusClass(status)) {
     case 'success':
       return 'success'
