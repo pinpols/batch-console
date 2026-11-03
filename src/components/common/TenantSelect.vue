@@ -39,6 +39,7 @@
 </template>
 
 <script setup lang="ts">
+  import { rankTenantsByKeyword } from './tenantSearchRank'
   import { computed, ref, onMounted } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { listTenants, type Tenant } from '@/api/tenants'
@@ -100,7 +101,8 @@
     searching.value = true
     try {
       const res = await listTenants({ keyword, pageNo: 1, pageSize: 50 })
-      options.value = res.items.filter((t) => !HIDDEN_TENANTS.has(t.tenantId))
+      const visible = res.items.filter((t) => !HIDDEN_TENANTS.has(t.tenantId))
+      options.value = rankTenantsByKeyword(visible, keyword)
     } catch {
       options.value = []
     } finally {
