@@ -48,6 +48,7 @@ const stubs = {
   ElFormItem: slots,
   ElRadioGroup: slots,
   ElRadioButton: slots,
+  ElRadio: slots,
   ElInput: true,
   ElDatePicker: true,
   ElSwitch: {
@@ -93,5 +94,43 @@ describe('维护设置交互', () => {
     )
     expect(mocks.setMaintenance).toHaveBeenCalledOnce()
     wrapper.unmount()
+  })
+
+  it('状态头按当前表单显示正常、只读和全冻结，并给出影响说明', async () => {
+    const wrapper = mount(MaintenanceSettings, { global: { stubs } })
+    await flushPromises()
+    const status = () => wrapper.get('.mt-status')
+    expect(status().classes()).toContain('is-normal')
+    expect(status().text()).toContain('maintenanceSettings.headlineOff')
+    expect(status().text()).toContain('maintenanceSettings.normalEffect')
+
+    expect(status().text()).not.toContain('maintenanceSettings.unsavedChanges')
+
+    await wrapper.get('.maintenance-switch').trigger('click')
+    expect(status().classes()).toContain('is-readonly')
+    expect(status().text()).toContain('maintenanceSettings.headlineReadOnly')
+    expect(status().text()).toContain('maintenanceSettings.unsavedChanges')
+    wrapper.unmount()
+  })
+
+  it('已开启且有预计恢复时间才显示维护窗口条，缺结束时间不伪造', async () => {
+    const now = Date.now()
+    mocks.load.mockResolvedValueOnce({
+      ...base,
+      enabled: true,
+      active: true,
+      etaAt: new Date(now + 2 * 3_600_000).toISOString(),
+    })
+    const wrapper = mount(MaintenanceSettings, { global: { stubs } })
+    await flushPromises()
+    expect(wrapper.find('.mt-window').exists()).toBe(true)
+    expect(wrapper.text()).toContain('maintenanceSettings.windowEnd')
+    wrapper.unmount()
+
+    mocks.load.mockResolvedValueOnce({ ...base, enabled: true, active: true })
+    const withoutEta = mount(MaintenanceSettings, { global: { stubs } })
+    await flushPromises()
+    expect(withoutEta.find('.mt-window').exists()).toBe(false)
+    withoutEta.unmount()
   })
 })

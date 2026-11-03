@@ -44,4 +44,22 @@ export default {
   loadFailed: 'Unable to load maintenance status. Try again.',
   saveSuccess: 'Maintenance settings updated.',
   saveFailed: 'Unable to update maintenance settings. Check permissions and service health.',
+  headlineOff: 'Running normally, maintenance is off',
+  headlineScheduled: 'Maintenance announced, waiting to start',
+  headlineReadOnly: 'Read-only maintenance in effect',
+  headlineFullFreeze: 'Full freeze in effect',
+  normalEffect: 'All users can read and write business data as usual.',
+  sectionMode: 'Maintenance mode',
+  sectionModeDesc:
+    'When on, ordinary users are restricted by the selected mode. Administrators can still use the console.',
+  sectionWindow: 'Time window',
+  sectionWindowDesc:
+    'Leave the start time blank to take effect on save. The estimated recovery time is shown to users.',
+  sectionNotice: 'What users see',
+  sectionNoticeDesc: 'The announcement appears at the top of every user’s page.',
+  windowNow: 'Now',
+  windowStart: 'Starts {time}',
+  windowEnd: 'Back by {time}',
+  windowTitle: 'Maintenance window',
+  unsavedChanges: 'Unsaved: takes effect after you save',
 }
