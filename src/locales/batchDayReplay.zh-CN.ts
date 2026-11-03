@@ -1,4 +1,9 @@
 const batchDayReplay = {
+  sectionTarget: '重放范围',
+  sectionTargetDesc: '选择业务日和要重新执行的作业；演练只计算影响，不产生副作用。',
+  sectionPolicy: '结果与配置',
+  sectionPolicyDesc: '决定新结果如何与原结果并存，以及重放使用哪一版作业配置。',
+  sectionApproval: '原因与审批',
   submitFlowHint:
     '先填写范围和原因，再预览并核对影响；提交后在详情查看处理状态和结果。如需审批，由授权人员处理。',
   statusGuidanceUnknown: '状态由服务端返回，请结合下方明细核对。',

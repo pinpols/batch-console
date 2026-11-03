@@ -73,9 +73,11 @@
     min-width: 0;
   }
 
+  /* 两列时每项按自身高度顶部对齐，避免同行另一项较高时控件被拉伸居中而错位 */
   .form-block__body--pair {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
     column-gap: 20px;
   }
 
@@ -92,9 +94,9 @@
     margin-bottom: 16px;
   }
 
-  .form-block__body :deep(.el-select),
-  .form-block__body :deep(.el-date-editor),
-  .form-block__body :deep(.el-input-number) {
+  /* 只拉满字段的直接控件；组合控件（如编码生成器）内部的选择框保持自身宽度 */
+  .form-block__body :deep(.el-form-item__content > .el-select),
+  .form-block__body :deep(.el-form-item__content > .el-date-editor) {
     width: 100%;
   }
 

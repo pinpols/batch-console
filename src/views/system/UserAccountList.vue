@@ -198,54 +198,65 @@
         :rules="createFormRules"
         label-position="top"
       >
-        <el-form-item :label="t('userAccountList.fieldTenant')" prop="tenantId">
-          <TenantSelect
-            v-model="createForm.tenantId"
-            :disabled="!isPlatformAdmin"
-            :placeholder="t('userAccountList.createTenantPlaceholder')"
-            select-class="query-w-full"
-          />
-          <div v-if="!isPlatformAdmin" class="field-hint">
-            {{ t('userAccountList.tenantScopeLockedHint') }}
-          </div>
-        </el-form-item>
-        <el-form-item :label="t('userAccountList.fieldUsername')" prop="username">
-          <el-input
-            v-model="createForm.username"
-            :placeholder="t('userAccountList.createUsernamePlaceholder')"
-            maxlength="128"
-          />
-        </el-form-item>
-        <el-form-item :label="t('userAccountList.fieldPassword')" prop="password">
-          <StrongPasswordInput
-            v-model="createForm.password"
-            :placeholder="t('userAccountList.fieldNewPasswordPlaceholder')"
-          />
-        </el-form-item>
-        <el-form-item :label="t('userAccountList.fieldDisplayName')">
-          <el-input
-            v-model="createForm.displayName"
-            :placeholder="t('userAccountList.fieldDisplayNamePlaceholder')"
-            maxlength="256"
-          />
-        </el-form-item>
-        <el-form-item :label="t('userAccountList.fieldRoles')">
-          <el-select
-            v-model="createRolesModel"
-            multiple
-            filterable
-            class="query-w-full"
-            :placeholder="t('userAccountList.createRolesPlaceholder')"
+        <FormSection :title="t('userAccountList.sectionAccount')" :columns="2">
+          <el-form-item
+            class="form-block__full"
+            :label="t('userAccountList.fieldTenant')"
+            prop="tenantId"
           >
-            <el-option
-              v-for="opt in ROLE_OPTIONS"
-              :key="opt.value"
-              :label="opt.label"
-              :value="opt.value"
+            <TenantSelect
+              v-model="createForm.tenantId"
+              :disabled="!isPlatformAdmin"
+              :placeholder="t('userAccountList.createTenantPlaceholder')"
+              select-class="query-w-full"
             />
-          </el-select>
-          <div class="field-hint">{{ t('userAccountList.createRolesHint') }}</div>
-        </el-form-item>
+            <div v-if="!isPlatformAdmin" class="field-hint">
+              {{ t('userAccountList.tenantScopeLockedHint') }}
+            </div>
+          </el-form-item>
+          <el-form-item :label="t('userAccountList.fieldUsername')" prop="username">
+            <el-input
+              v-model="createForm.username"
+              :placeholder="t('userAccountList.createUsernamePlaceholder')"
+              maxlength="128"
+            />
+          </el-form-item>
+          <el-form-item :label="t('userAccountList.fieldDisplayName')">
+            <el-input
+              v-model="createForm.displayName"
+              :placeholder="t('userAccountList.fieldDisplayNamePlaceholder')"
+              maxlength="256"
+            />
+          </el-form-item>
+        </FormSection>
+        <FormSection
+          :title="t('userAccountList.sectionAccess')"
+          :description="t('userAccountList.sectionAccessDesc')"
+        >
+          <el-form-item :label="t('userAccountList.fieldPassword')" prop="password">
+            <StrongPasswordInput
+              v-model="createForm.password"
+              :placeholder="t('userAccountList.fieldNewPasswordPlaceholder')"
+            />
+          </el-form-item>
+          <el-form-item :label="t('userAccountList.fieldRoles')">
+            <el-select
+              v-model="createRolesModel"
+              multiple
+              filterable
+              class="query-w-full"
+              :placeholder="t('userAccountList.createRolesPlaceholder')"
+            >
+              <el-option
+                v-for="opt in ROLE_OPTIONS"
+                :key="opt.value"
+                :label="opt.label"
+                :value="opt.value"
+              />
+            </el-select>
+            <div class="field-hint">{{ t('userAccountList.createRolesHint') }}</div>
+          </el-form-item>
+        </FormSection>
       </el-form>
     </FormDrawer>
 
@@ -258,41 +269,45 @@
       @submit="submitForm"
     >
       <el-form label-position="top">
-        <el-form-item :label="t('userAccountList.fieldTenant')">
-          <TenantSelect
-            v-model="form.tenantId"
-            :disabled="true"
-            :placeholder="t('userAccountList.fieldTenantPlaceholder')"
-            select-class="query-w-full"
-          />
-        </el-form-item>
-        <el-form-item :label="t('userAccountList.fieldUsername')">
-          <el-input v-model="form.username" :disabled="true" maxlength="128" />
-        </el-form-item>
-        <el-form-item :label="t('userAccountList.fieldDisplayName')">
-          <el-input
-            v-model="form.displayName"
-            :placeholder="t('userAccountList.fieldDisplayNamePlaceholder')"
-            maxlength="256"
-          />
-        </el-form-item>
-        <el-form-item :label="t('userAccountList.fieldRoles')">
-          <el-select
-            v-model="editRolesModel"
-            multiple
-            filterable
-            class="query-w-full"
-            :placeholder="t('userAccountList.fieldRolesPlaceholder')"
-          >
-            <el-option
-              v-for="opt in ROLE_OPTIONS"
-              :key="opt.value"
-              :label="opt.label"
-              :value="opt.value"
+        <FormSection :title="t('userAccountList.sectionAccount')" :columns="2">
+          <el-form-item class="form-block__full" :label="t('userAccountList.fieldTenant')">
+            <TenantSelect
+              v-model="form.tenantId"
+              :disabled="true"
+              :placeholder="t('userAccountList.fieldTenantPlaceholder')"
+              select-class="query-w-full"
             />
-          </el-select>
-          <div class="field-hint">{{ t('userAccountList.rolesHint') }}</div>
-        </el-form-item>
+          </el-form-item>
+          <el-form-item :label="t('userAccountList.fieldUsername')">
+            <el-input v-model="form.username" :disabled="true" maxlength="128" />
+          </el-form-item>
+          <el-form-item :label="t('userAccountList.fieldDisplayName')">
+            <el-input
+              v-model="form.displayName"
+              :placeholder="t('userAccountList.fieldDisplayNamePlaceholder')"
+              maxlength="256"
+            />
+          </el-form-item>
+        </FormSection>
+        <FormSection :title="t('userAccountList.sectionAccess')">
+          <el-form-item :label="t('userAccountList.fieldRoles')">
+            <el-select
+              v-model="editRolesModel"
+              multiple
+              filterable
+              class="query-w-full"
+              :placeholder="t('userAccountList.fieldRolesPlaceholder')"
+            >
+              <el-option
+                v-for="opt in ROLE_OPTIONS"
+                :key="opt.value"
+                :label="opt.label"
+                :value="opt.value"
+              />
+            </el-select>
+            <div class="field-hint">{{ t('userAccountList.rolesHint') }}</div>
+          </el-form-item>
+        </FormSection>
       </el-form>
     </FormDrawer>
 
@@ -330,6 +345,7 @@
 
 <script setup lang="ts">
   import FormDrawer from '@/components/common/FormDrawer.vue'
+  import FormSection from '@/components/common/FormSection.vue'
   import CopyableText from '@/components/common/CopyableText.vue'
   import { computed, onMounted, reactive, ref } from 'vue'
   import { useI18n } from 'vue-i18n'

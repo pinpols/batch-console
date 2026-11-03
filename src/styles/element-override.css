@@ -941,6 +941,15 @@ html.dark .el-dialog {
   margin-left: 0;
 }
 
+/* 抽屉与对话框是承载表单的浮层，用卡片底色而不是页面灰底（--el-bg-color 映射为页面色） */
+.el-drawer {
+  --el-drawer-bg-color: var(--color-bg-card);
+}
+
+.el-dialog {
+  --el-dialog-bg-color: var(--color-bg-card);
+}
+
 .el-drawer.rtl {
   max-width: 100vw;
   border-radius: var(--radius-content) 0 0 var(--radius-content);

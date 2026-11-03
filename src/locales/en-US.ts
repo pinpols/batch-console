@@ -4686,6 +4686,7 @@ const messages: Messages = {
     tenantNamePlaceholder: 'Display name',
     fieldDescription: 'Description',
     descriptionPlaceholder: 'Optional',
+    sectionTenant: 'Tenant',
     sectionAdmin: 'First administrator account',
     adminAlert:
       'A new tenant needs an admin account to sign in. The first admin is created here; add more later from the Accounts page.',
@@ -4883,6 +4884,9 @@ const messages: Messages = {
     deleteVerb: 'Delete',
   },
   notificationChannelsTab: {
+    sectionBasic: 'Basics',
+    sectionConfig: 'Connection',
+    sectionConfigDesc: 'Fill in JSON for the channel type, such as a webhook URL or mail server.',
     emptyDescription:
       'No notification channels yet. Create one (e.g. email / webhook) so alert rules can deliver notifications.',
     kwPlaceholder: 'Search code / name',
@@ -4917,6 +4921,7 @@ const messages: Messages = {
     deleteConsequence: 'Alert rules tied to this channel will fall silent on trigger.',
   },
   notificationRulesTab: {
+    formDescription: 'When an event matches this rule, a notification is sent to the selected channel.',
     routeSummary: 'Rule configuration summary',
     routeSummaryHint:
       'This previews the entered rule and channel only; it does not mean an event matched or a notification was delivered.',

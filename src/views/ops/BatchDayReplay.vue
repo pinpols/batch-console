@@ -365,195 +365,213 @@
         ref="submitFormRef"
         :model="submitForm"
         :disabled="Boolean(submissionOutcomeUnknown)"
-        label-width="120px"
+        label-position="top"
         @submit.prevent="doSubmit"
       >
-        <el-form-item :label="t('batchDayReplay.fieldMode')" required>
-          <el-segmented
-            v-model="submitForm.executionMode"
-            :options="[
-              { label: t('batchDayReplay.modeReplay'), value: 'REPLAY' },
-              { label: t('batchDayReplay.modeDryRun'), value: 'DRY_RUN' },
-            ]"
-          />
-        </el-form-item>
-        <el-form-item
-          v-if="submitForm.executionMode === 'DRY_RUN'"
-          :label="t('batchDayReplay.fieldCandidateSource')"
-          required
+        <FormSection
+          :title="t('batchDayReplay.sectionTarget')"
+          :description="t('batchDayReplay.sectionTargetDesc')"
+          :columns="2"
         >
-          <el-radio-group v-model="submitForm.candidateSource">
-            <el-radio-button value="EXISTING_INSTANCES">
-              {{ t('batchDayReplay.sourceExisting') }}
-            </el-radio-button>
-            <el-radio-button value="SCHEDULE_PLAN">
-              {{ t('batchDayReplay.sourcePlan') }}
-            </el-radio-button>
-          </el-radio-group>
-        </el-form-item>
-        <el-form-item :label="t('batchDayReplay.fieldCalendar')" required>
-          <el-input
-            v-model="submitForm.calendarCode"
-            :placeholder="t('batchDayReplay.calendarPlaceholder')"
-          />
-        </el-form-item>
-        <el-form-item :label="t('batchDayReplay.fieldBizDate')" required>
-          <el-date-picker
-            v-model="submitForm.bizDate"
-            class="query-w-full"
-            type="date"
-            value-format="YYYY-MM-DD"
-          />
-        </el-form-item>
-        <el-form-item :label="t('batchDayReplay.fieldScope')" required>
-          <el-radio-group v-model="submitForm.scope" class="replay-scope-group">
-            <el-radio value="ALL">{{ t('batchDayReplay.scopeAll') }}</el-radio>
-            <el-radio v-if="submitForm.candidateSource !== 'SCHEDULE_PLAN'" value="ALL_FAILED">
-              {{ t('batchDayReplay.scopeAllFailed') }}
-            </el-radio>
-            <el-radio value="SUBSET_JOB_CODES">
-              {{ t('batchDayReplay.scopeSubsetJobCodes') }}
-            </el-radio>
-            <el-radio v-if="submitForm.executionMode !== 'DRY_RUN'" value="OUTPUTS_ONLY">
-              {{ t('batchDayReplay.scopeOutputsOnly') }}
-            </el-radio>
-          </el-radio-group>
-        </el-form-item>
-        <el-form-item
-          v-if="submitForm.scope === 'SUBSET_JOB_CODES'"
-          :label="t('batchDayReplay.fieldJobCodes')"
-          required
-        >
-          <el-select
-            v-model="selectedJobCodes"
-            class="query-w-full"
-            multiple
-            filterable
-            collapse-tags
-            collapse-tags-tooltip
-            :loading="loadingJobCodes"
-            :placeholder="t('batchDayReplay.jobCodePickerPlaceholder')"
-          >
-            <el-option v-for="code in jobCodeOptions" :key="code" :label="code" :value="code" />
-          </el-select>
-        </el-form-item>
-        <el-form-item
-          v-if="submitForm.scope === 'OUTPUTS_ONLY'"
-          :label="t('batchDayReplay.fieldOutputJobs')"
-          required
-        >
-          <el-select
-            v-model="selectedOutputJobCodes"
-            class="query-w-full"
-            multiple
-            filterable
-            collapse-tags
-            collapse-tags-tooltip
-            :loading="loadingJobCodes"
-            :placeholder="t('batchDayReplay.jobCodePickerPlaceholder')"
-          >
-            <el-option v-for="code in jobCodeOptions" :key="code" :label="code" :value="code" />
-          </el-select>
-          <p class="cell-mute">{{ t('batchDayReplay.outputJobsHint') }}</p>
-        </el-form-item>
-        <el-form-item
-          v-if="submitForm.scope === 'OUTPUTS_ONLY'"
-          :label="t('batchDayReplay.fieldVersionIds')"
-          required
-        >
-          <el-select
-            v-model="selectedVersionIds"
-            class="query-w-full"
-            multiple
-            filterable
-            collapse-tags
-            collapse-tags-tooltip
-            :loading="loadingOutputVersions"
-            :placeholder="t('batchDayReplay.versionPickerPlaceholder')"
-          >
-            <el-option
-              v-for="version in outputVersionOptions"
-              :key="version.id"
-              :label="version.label"
-              :value="version.id"
+          <el-form-item class="form-block__full" :label="t('batchDayReplay.fieldMode')" required>
+            <el-segmented
+              v-model="submitForm.executionMode"
+              :options="[
+                { label: t('batchDayReplay.modeReplay'), value: 'REPLAY' },
+                { label: t('batchDayReplay.modeDryRun'), value: 'DRY_RUN' },
+              ]"
             />
-          </el-select>
-          <p v-if="!selectedOutputJobCodes.length" class="cell-mute">
-            {{ t('batchDayReplay.selectOutputJobsFirst') }}
-          </p>
-          <p
-            v-else-if="!loadingOutputVersions && outputVersionOptions.length === 0"
-            class="cell-mute"
+          </el-form-item>
+          <el-form-item
+            v-if="submitForm.executionMode === 'DRY_RUN'"
+            class="form-block__full"
+            :label="t('batchDayReplay.fieldCandidateSource')"
+            required
           >
-            {{ t('batchDayReplay.noPendingVersions') }}
-          </p>
-          <el-collapse class="advanced-version-ids">
-            <el-collapse-item :title="t('batchDayReplay.advancedVersionIds')" name="version-ids">
-              <el-input
-                v-model="versionIdsText"
-                type="textarea"
-                :rows="2"
-                :placeholder="t('batchDayReplay.fieldVersionIdsPlaceholder')"
+            <el-radio-group v-model="submitForm.candidateSource">
+              <el-radio-button value="EXISTING_INSTANCES">
+                {{ t('batchDayReplay.sourceExisting') }}
+              </el-radio-button>
+              <el-radio-button value="SCHEDULE_PLAN">
+                {{ t('batchDayReplay.sourcePlan') }}
+              </el-radio-button>
+            </el-radio-group>
+          </el-form-item>
+          <el-form-item :label="t('batchDayReplay.fieldCalendar')" required>
+            <el-input
+              v-model="submitForm.calendarCode"
+              :placeholder="t('batchDayReplay.calendarPlaceholder')"
+            />
+          </el-form-item>
+          <el-form-item :label="t('batchDayReplay.fieldBizDate')" required>
+            <el-date-picker
+              v-model="submitForm.bizDate"
+              class="query-w-full"
+              type="date"
+              value-format="YYYY-MM-DD"
+            />
+          </el-form-item>
+          <el-form-item class="form-block__full" :label="t('batchDayReplay.fieldScope')" required>
+            <el-radio-group v-model="submitForm.scope" class="replay-scope-group">
+              <el-radio value="ALL">{{ t('batchDayReplay.scopeAll') }}</el-radio>
+              <el-radio v-if="submitForm.candidateSource !== 'SCHEDULE_PLAN'" value="ALL_FAILED">
+                {{ t('batchDayReplay.scopeAllFailed') }}
+              </el-radio>
+              <el-radio value="SUBSET_JOB_CODES">
+                {{ t('batchDayReplay.scopeSubsetJobCodes') }}
+              </el-radio>
+              <el-radio v-if="submitForm.executionMode !== 'DRY_RUN'" value="OUTPUTS_ONLY">
+                {{ t('batchDayReplay.scopeOutputsOnly') }}
+              </el-radio>
+            </el-radio-group>
+          </el-form-item>
+          <el-form-item
+            v-if="submitForm.scope === 'SUBSET_JOB_CODES'"
+            class="form-block__full"
+            :label="t('batchDayReplay.fieldJobCodes')"
+            required
+          >
+            <el-select
+              v-model="selectedJobCodes"
+              class="query-w-full"
+              multiple
+              filterable
+              collapse-tags
+              collapse-tags-tooltip
+              :loading="loadingJobCodes"
+              :placeholder="t('batchDayReplay.jobCodePickerPlaceholder')"
+            >
+              <el-option v-for="code in jobCodeOptions" :key="code" :label="code" :value="code" />
+            </el-select>
+          </el-form-item>
+          <el-form-item
+            v-if="submitForm.scope === 'OUTPUTS_ONLY'"
+            class="form-block__full"
+            :label="t('batchDayReplay.fieldOutputJobs')"
+            required
+          >
+            <el-select
+              v-model="selectedOutputJobCodes"
+              class="query-w-full"
+              multiple
+              filterable
+              collapse-tags
+              collapse-tags-tooltip
+              :loading="loadingJobCodes"
+              :placeholder="t('batchDayReplay.jobCodePickerPlaceholder')"
+            >
+              <el-option v-for="code in jobCodeOptions" :key="code" :label="code" :value="code" />
+            </el-select>
+            <p class="cell-mute">{{ t('batchDayReplay.outputJobsHint') }}</p>
+          </el-form-item>
+          <el-form-item
+            v-if="submitForm.scope === 'OUTPUTS_ONLY'"
+            class="form-block__full"
+            :label="t('batchDayReplay.fieldVersionIds')"
+            required
+          >
+            <el-select
+              v-model="selectedVersionIds"
+              class="query-w-full"
+              multiple
+              filterable
+              collapse-tags
+              collapse-tags-tooltip
+              :loading="loadingOutputVersions"
+              :placeholder="t('batchDayReplay.versionPickerPlaceholder')"
+            >
+              <el-option
+                v-for="version in outputVersionOptions"
+                :key="version.id"
+                :label="version.label"
+                :value="version.id"
               />
-            </el-collapse-item>
-          </el-collapse>
-        </el-form-item>
-        <el-form-item
-          v-if="submitForm.executionMode !== 'DRY_RUN'"
-          :label="t('batchDayReplay.fieldResultPolicy')"
+            </el-select>
+            <p v-if="!selectedOutputJobCodes.length" class="cell-mute">
+              {{ t('batchDayReplay.selectOutputJobsFirst') }}
+            </p>
+            <p
+              v-else-if="!loadingOutputVersions && outputVersionOptions.length === 0"
+              class="cell-mute"
+            >
+              {{ t('batchDayReplay.noPendingVersions') }}
+            </p>
+            <el-collapse class="advanced-version-ids">
+              <el-collapse-item :title="t('batchDayReplay.advancedVersionIds')" name="version-ids">
+                <el-input
+                  v-model="versionIdsText"
+                  type="textarea"
+                  :rows="2"
+                  :placeholder="t('batchDayReplay.fieldVersionIdsPlaceholder')"
+                />
+              </el-collapse-item>
+            </el-collapse>
+          </el-form-item>
+        </FormSection>
+        <FormSection
+          :title="t('batchDayReplay.sectionPolicy')"
+          :description="t('batchDayReplay.sectionPolicyDesc')"
+          :columns="2"
         >
-          <el-select v-model="submitForm.resultPolicy" class="query-w-full">
-            <el-option
-              :label="t('batchDayReplay.resultPolicyCreateNewVersion')"
-              value="CREATE_NEW_VERSION"
+          <el-form-item
+            v-if="submitForm.executionMode !== 'DRY_RUN'"
+            :label="t('batchDayReplay.fieldResultPolicy')"
+          >
+            <el-select v-model="submitForm.resultPolicy" class="query-w-full">
+              <el-option
+                :label="t('batchDayReplay.resultPolicyCreateNewVersion')"
+                value="CREATE_NEW_VERSION"
+              />
+              <el-option :label="t('batchDayReplay.resultPolicyKeepBoth')" value="KEEP_BOTH" />
+              <el-option
+                :label="t('batchDayReplay.resultPolicyManualConfirmEffective')"
+                value="MANUAL_CONFIRM_EFFECTIVE"
+              />
+            </el-select>
+          </el-form-item>
+          <el-form-item :label="t('batchDayReplay.fieldConfigPolicy')">
+            <el-select v-model="submitForm.configVersionPolicy" class="query-w-full">
+              <el-option
+                :label="t('batchDayReplay.configPolicyUseOriginal')"
+                value="USE_ORIGINAL_CONFIG"
+              />
+              <el-option
+                :label="t('batchDayReplay.configPolicyUseLatest')"
+                value="USE_LATEST_CONFIG"
+              />
+              <el-option
+                :label="t('batchDayReplay.configPolicyUseSpecified')"
+                value="USE_SPECIFIED_VERSION"
+              />
+            </el-select>
+          </el-form-item>
+          <el-form-item
+            v-if="submitForm.configVersionPolicy === 'USE_SPECIFIED_VERSION'"
+            :label="t('batchDayReplay.fieldConfigVersion')"
+          >
+            <el-input-number v-model="submitForm.configVersion" :min="1" />
+          </el-form-item>
+        </FormSection>
+        <FormSection :title="t('batchDayReplay.sectionApproval')">
+          <el-form-item :label="t('batchDayReplay.fieldReason')" required>
+            <el-input
+              v-model="submitForm.reason"
+              type="textarea"
+              :rows="2"
+              :placeholder="t('batchDayReplay.fieldReasonPlaceholder')"
             />
-            <el-option :label="t('batchDayReplay.resultPolicyKeepBoth')" value="KEEP_BOTH" />
-            <el-option
-              :label="t('batchDayReplay.resultPolicyManualConfirmEffective')"
-              value="MANUAL_CONFIRM_EFFECTIVE"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item :label="t('batchDayReplay.fieldConfigPolicy')">
-          <el-select v-model="submitForm.configVersionPolicy" class="query-w-full">
-            <el-option
-              :label="t('batchDayReplay.configPolicyUseOriginal')"
-              value="USE_ORIGINAL_CONFIG"
-            />
-            <el-option
-              :label="t('batchDayReplay.configPolicyUseLatest')"
-              value="USE_LATEST_CONFIG"
-            />
-            <el-option
-              :label="t('batchDayReplay.configPolicyUseSpecified')"
-              value="USE_SPECIFIED_VERSION"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item
-          v-if="submitForm.configVersionPolicy === 'USE_SPECIFIED_VERSION'"
-          :label="t('batchDayReplay.fieldConfigVersion')"
-        >
-          <el-input-number v-model="submitForm.configVersion" :min="1" />
-        </el-form-item>
-        <el-form-item :label="t('batchDayReplay.fieldReason')" required>
-          <el-input
-            v-model="submitForm.reason"
-            type="textarea"
-            :rows="2"
-            :placeholder="t('batchDayReplay.fieldReasonPlaceholder')"
-          />
-        </el-form-item>
-        <el-form-item :label="t('batchDayReplay.fieldAutoApprove')">
-          <el-switch v-model="submitForm.autoApprove" />
-          <span class="cell-mute">
-            {{
-              submitForm.autoApprove
-                ? t('batchDayReplay.autoApproveOnHint')
-                : t('batchDayReplay.autoApproveOffHint')
-            }}
-          </span>
-        </el-form-item>
+          </el-form-item>
+          <el-form-item :label="t('batchDayReplay.fieldAutoApprove')">
+            <el-switch v-model="submitForm.autoApprove" />
+            <span class="cell-mute">
+              {{
+                submitForm.autoApprove
+                  ? t('batchDayReplay.autoApproveOnHint')
+                  : t('batchDayReplay.autoApproveOffHint')
+              }}
+            </span>
+          </el-form-item>
+        </FormSection>
       </el-form>
 
       <div v-if="preview" class="preview-panel">
@@ -814,6 +832,7 @@
 </template>
 
 <script setup lang="ts">
+  import FormSection from '@/components/common/FormSection.vue'
   import { RefreshCw as Refresh, Plus } from '@lucide/vue'
   import { useI18n } from 'vue-i18n'
   import PageContainer from '@/components/common/PageContainer.vue'

@@ -1,4 +1,9 @@
 const batchDayReplay = {
+  sectionTarget: 'Replay scope',
+  sectionTargetDesc: 'Pick the business day and the jobs to run again. A dry run only computes the impact and has no side effects.',
+  sectionPolicy: 'Results and configuration',
+  sectionPolicyDesc: 'Decide how new results coexist with the originals and which job configuration version the replay uses.',
+  sectionApproval: 'Reason and approval',
   submitFlowHint:
     'Enter the scope and reason, preview and review the impact, then submit. Review the status and results in the details. If approval is required, an authorized user can act.',
   statusGuidanceUnknown: 'The status is returned by the server; review the details below.',

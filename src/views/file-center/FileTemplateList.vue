@@ -314,9 +314,12 @@
     >
       <el-form :model="templateForm" label-position="top">
         <!-- 基本信息 -->
-        <div class="form-section">
-          <div class="section-title">{{ t('fileTemplateList.sectionBasic') }}</div>
-          <el-form-item :label="t('fileTemplateList.fieldTemplateCode')" required>
+        <FormSection :title="t('fileTemplateList.sectionBasic')" :columns="2">
+          <el-form-item
+            class="form-block__full"
+            :label="t('fileTemplateList.fieldTemplateCode')"
+            required
+          >
             <el-input
               v-if="templateEditingId != null"
               v-model="templateForm.templateCode"
@@ -348,14 +351,14 @@
           <el-form-item :label="t('fileTemplateList.fieldVersion')"
             ><el-input-number v-model="templateForm.version" :min="1" :max="2147483647"
           /></el-form-item>
-          <el-form-item :label="t('fileTemplateList.fieldDescription')"
+          <el-form-item class="form-block__full" :label="t('fileTemplateList.fieldDescription')"
             ><el-input
               v-model="templateForm.description"
               type="textarea"
               maxlength="512"
               show-word-limit
           /></el-form-item>
-        </div>
+        </FormSection>
 
         <!-- 文件格式:按所选格式渐进披露;编码等高级项默认折叠 -->
         <FileTemplateFormatFields
@@ -424,6 +427,7 @@
 
 <script setup lang="ts">
   import FormDrawer from '@/components/common/FormDrawer.vue'
+  import FormSection from '@/components/common/FormSection.vue'
   import { computed, onScopeDispose, reactive, ref, shallowReactive, watch } from 'vue'
   import { useRoute } from 'vue-router'
   import { useI18n } from 'vue-i18n'

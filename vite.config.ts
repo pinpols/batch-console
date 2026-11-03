@@ -86,13 +86,15 @@ export default defineConfig(({ mode }) => {
         },
       },
       vue(),
+      // main.ts 已整包引入 element-plus/dist/index.css；按需再注入组件样式会排在
+      // element-override.css 之后，同优先级下覆盖掉全局主题规则（抽屉头部、底色等），故关闭。
       AutoImport({
-        resolvers: [ElementPlusResolver()],
+        resolvers: [ElementPlusResolver({ importStyle: false })],
         imports: ['vue', 'vue-router', 'pinia'],
         dts: 'src/types/auto-imports.d.ts',
       }),
       Components({
-        resolvers: [ElementPlusResolver()],
+        resolvers: [ElementPlusResolver({ importStyle: false })],
         dts: 'src/types/components.d.ts',
       }),
       /**

@@ -1,4 +1,7 @@
 export default {
+  sectionAccount: '账号',
+  sectionAccess: '登录与权限',
+  sectionAccessDesc: '初始密码只在此处设置一次；角色决定账号能看到和操作的范围。',
   metricTotal: '账户总数',
   metricEnabled: '已启用',
   metricDisabled: '已停用',
