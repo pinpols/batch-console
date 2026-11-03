@@ -159,7 +159,7 @@
 
   .charts-grid {
     display: grid;
-    gap: 10px;
+    gap: 16px;
     padding: 0;
   }
 
@@ -168,7 +168,7 @@
   }
 
   .chart-panel {
-    padding: 10px 12px;
+    padding: 16px 18px 12px;
     min-height: 0;
     border-radius: var(--radius-content);
     border: 1px solid var(--color-border-light);
@@ -182,7 +182,7 @@
     font-size: var(--font-size-sm);
     font-weight: 650;
     color: var(--color-text-primary);
-    margin-bottom: 4px;
+    margin-bottom: 8px;
   }
 
   .dot {
@@ -191,7 +191,7 @@
     border-radius: var(--radius-content);
   }
   .dot--info {
-    background: #64748b;
+    background: var(--color-text-tertiary);
   }
   .dot--success {
     background: var(--color-success);
@@ -206,9 +206,10 @@
     background: var(--color-danger);
   }
 
+  /* 图表需保留轴、刻度和图例的可读高度，不为压缩首屏而牺牲 */
   .chart {
     width: 100%;
-    height: 150px;
+    height: 260px;
   }
 
   @media (max-width: 1100px) {

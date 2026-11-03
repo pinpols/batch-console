@@ -298,14 +298,14 @@
   .extra-panels {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
+    gap: 16px;
   }
   .extra-block {
     min-width: 0;
     background: var(--color-bg-card);
     border: 1px solid var(--color-border-light);
     border-radius: var(--radius-content);
-    padding: 10px 12px;
+    padding: 16px 18px 12px;
   }
   .extra-title {
     margin: 0;
@@ -318,12 +318,13 @@
     color: var(--color-text-tertiary);
     font-size: var(--font-size-xs);
   }
+  /* 图表需保留轴、刻度和图例的可读高度 */
   .chart {
     width: 100%;
-    height: 140px;
+    height: 260px;
   }
   .chart--gauge {
-    height: 130px;
+    height: 240px;
   }
   .extra-block--gauge {
     display: flex;
@@ -342,7 +343,7 @@
   }
   .chart-loading {
     display: grid;
-    min-height: 140px;
+    min-height: 260px;
     place-items: center;
     color: var(--color-text-tertiary);
   }
