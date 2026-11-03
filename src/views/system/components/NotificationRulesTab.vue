@@ -189,6 +189,7 @@
   } from '@/api/notifications'
   import { toPageResult } from '@/api/adapters'
   import { useTenantStore } from '@/stores/tenant'
+  import { useTenantRequirement } from '@/composables/useTenantRequirement'
   import { useTenantReload } from '@/composables/useTenantReload'
   import { useTenantRequestScope } from '@/composables/useTenantRequestScope'
   import ProTable from '@/components/table/ProTable.vue'
@@ -201,6 +202,7 @@
   import { useListLoadState } from '@/composables/useListLoadState'
 
   const tenant = useTenantStore()
+  const { ensureTenantSelected } = useTenantRequirement()
   const { loading: loadingRules, error: loadRulesError, run: runLoadingRules } = useListLoadState()
   const { filterBusy, runSearch, runReset, runRefresh } = useListFilterFeedback(loadingRules)
   const savingRule = ref(false)
@@ -286,7 +288,7 @@
   }
 
   async function openRuleCreate() {
-    if (!tenant.tenantId) return
+    if (!ensureTenantSelected()) return
     const request = formScope.begin()
     openedForm = request
     ruleEditingId.value = null

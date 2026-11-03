@@ -7,6 +7,7 @@ import { createWebhook } from '@/api/webhooks'
 
 const state = vi.hoisted(() => ({
   tenant: null as unknown as { tenantId: string },
+  warning: vi.fn(),
   validate: vi.fn<() => Promise<boolean>>(),
   confirmDanger: vi.fn<() => Promise<void>>(),
   listChannels: vi.fn(),
@@ -64,7 +65,7 @@ vi.mock('vue-i18n', async (importOriginal) => ({
 }))
 vi.mock('element-plus', async () => {
   const actual = await vi.importActual<typeof import('element-plus')>('element-plus')
-  return { ...actual, ElMessage: { success: vi.fn(), error: vi.fn() } }
+  return { ...actual, ElMessage: { success: vi.fn(), error: vi.fn(), warning: state.warning } }
 })
 
 const stubs = {
@@ -116,6 +117,18 @@ describe('webhook tenant scope', () => {
     state.deleteRule.mockReset().mockResolvedValue(undefined)
     state.testRule.mockReset().mockResolvedValue(undefined)
     state.ruleRow = null
+  })
+
+  it('未选择租户时新增给出提示且不打开表单', async () => {
+    state.tenant.tenantId = ''
+    const wrapper = mount(NotificationWebhooksTab, { global: { stubs } })
+    await flushPromises()
+    ;(wrapper.vm as unknown as { openWebhookCreate: () => void }).openWebhookCreate()
+    await flushPromises()
+    expect(state.warning).toHaveBeenCalledWith('common.selectTenantBeforeAction')
+    expect(
+      wrapper.find('input[placeholder="notificationWebhooksTab.urlPlaceholder"]').exists(),
+    ).toBe(false)
   })
 
   it('exposes URL and secret request length limits', async () => {

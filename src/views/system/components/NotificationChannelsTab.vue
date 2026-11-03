@@ -186,6 +186,7 @@
   } from '@/api/notifications'
   import { toPageResult } from '@/api/adapters'
   import { useTenantStore } from '@/stores/tenant'
+  import { useTenantRequirement } from '@/composables/useTenantRequirement'
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
   import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
   import ProTable from '@/components/table/ProTable.vue'
@@ -200,6 +201,7 @@
   import { createNotificationChannelRequestFence } from './notificationChannelTenantScope'
 
   const tenant = useTenantStore()
+  const { ensureTenantSelected } = useTenantRequirement()
   const { data: metaEnums } = useConsoleMetaEnumsQuery()
   // 通知渠道用 notificationChannelType(EMAIL/FEISHU/DINGDING/SMS 等),
   // 不能用 channelType(那是文件渠道:SFTP/API/API_PUSH...)。
@@ -280,7 +282,7 @@
   }
 
   function openChannelCreate() {
-    if (!tenant.tenantId) return
+    if (!ensureTenantSelected()) return
     channelEditingCode.value = null
     channelFormTenantId.value = tenant.tenantId
     channelForm.channelCode = ''

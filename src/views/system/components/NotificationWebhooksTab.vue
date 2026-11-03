@@ -223,6 +223,7 @@
   } from '@/api/webhooks'
   import { toPageResult } from '@/api/adapters'
   import { useTenantStore } from '@/stores/tenant'
+  import { useTenantRequirement } from '@/composables/useTenantRequirement'
   import { useTenantReload } from '@/composables/useTenantReload'
   import { useTenantRequestScope } from '@/composables/useTenantRequestScope'
   import ProTable from '@/components/table/ProTable.vue'
@@ -236,6 +237,7 @@
   import { useListLoadState } from '@/composables/useListLoadState'
 
   const tenant = useTenantStore()
+  const { ensureTenantSelected } = useTenantRequirement()
   const {
     loading: loadingWebhooks,
     error: loadWebhooksError,
@@ -316,7 +318,7 @@
   }
 
   function openWebhookCreate() {
-    if (!tenant.tenantId) return
+    if (!ensureTenantSelected()) return
     openedForm = formScope.begin()
     webhookEditingId.value = null
     webhookForm.name = ''
