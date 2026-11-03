@@ -265,68 +265,19 @@ beforeEach(() => {
   mocks.listRuns.mockReset().mockResolvedValue({ records: [] })
 })
 
-describe('作业详情最近运行的响应归属', () => {
-  function detailVm(wrapper: Wrapper) {
-    return wrapper.vm as unknown as {
-      openDetail: (row: { jobCode: string; tenantId: string }) => void
-      detailRunsRows: { instanceNo: string }[]
-      detailRunsLoading: boolean
+describe('作业定义查看入口统一到详情页', () => {
+  it('列表“查看运行”跳到详情页的运行页签，不再在列表内打开查看抽屉', async () => {
+    const wrapper = shallowMount(DefinitionList, { global: { stubs } })
+    await flushPromises()
+    const vm = wrapper.vm as unknown as {
+      goDefinitionRuns: (row: { id: number; jobCode: string; tenantId: string }) => void
     }
-  }
-
-  it('A 的迟到成功不能覆盖 B，也不能提前关闭 B 的加载状态', async () => {
-    const a = pending<{ records: { instanceNo: string }[] }>()
-    const b = pending<{ records: { instanceNo: string }[] }>()
-    mocks.listRuns.mockReturnValueOnce(a.promise).mockReturnValueOnce(b.promise)
-    const wrapper = shallowMount(DefinitionList, { global: { stubs } })
-    await flushPromises()
-    const vm = detailVm(wrapper)
-    vm.openDetail({ jobCode: 'A', tenantId: 'tenant-a' })
-    vm.openDetail({ jobCode: 'B', tenantId: 'tenant-a' })
-    a.resolve({ records: [{ instanceNo: 'a' }] })
-    await flushPromises()
-    expect(vm.detailRunsRows).toEqual([])
-    expect(vm.detailRunsLoading).toBe(true)
-    b.resolve({ records: [{ instanceNo: 'b' }] })
-    await flushPromises()
-    expect(vm.detailRunsRows).toEqual([{ instanceNo: 'b' }])
-    expect(vm.detailRunsLoading).toBe(false)
-  })
-
-  it('租户切换再切回后旧响应不能覆盖当前详情', async () => {
-    const old = pending<{ records: { instanceNo: string }[] }>()
-    const current = pending<{ records: { instanceNo: string }[] }>()
-    mocks.listRuns.mockReturnValueOnce(old.promise).mockReturnValueOnce(current.promise)
-    const wrapper = shallowMount(DefinitionList, { global: { stubs } })
-    await flushPromises()
-    const vm = detailVm(wrapper)
-    vm.openDetail({ jobCode: 'A', tenantId: 'tenant-a' })
-    mocks.context.tenantId = 'tenant-b'
-    mocks.context.tenantId = 'tenant-a'
-    vm.openDetail({ jobCode: 'A', tenantId: 'tenant-a' })
-    current.resolve({ records: [{ instanceNo: 'current' }] })
-    await flushPromises()
-    old.resolve({ records: [{ instanceNo: 'old' }] })
-    await flushPromises()
-    expect(vm.detailRunsRows).toEqual([{ instanceNo: 'current' }])
-  })
-
-  it('旧请求失败不能清空新作业或结束新加载', async () => {
-    const old = pending<{ records: { instanceNo: string }[] }>()
-    const current = pending<{ records: { instanceNo: string }[] }>()
-    mocks.listRuns.mockReturnValueOnce(old.promise).mockReturnValueOnce(current.promise)
-    const wrapper = shallowMount(DefinitionList, { global: { stubs } })
-    await flushPromises()
-    const vm = detailVm(wrapper)
-    vm.openDetail({ jobCode: 'A', tenantId: 'tenant-a' })
-    vm.openDetail({ jobCode: 'B', tenantId: 'tenant-a' })
-    old.reject(new Error('late failure'))
-    await flushPromises()
-    expect(vm.detailRunsRows).toEqual([])
-    expect(vm.detailRunsLoading).toBe(true)
-    current.resolve({ records: [{ instanceNo: 'b' }] })
-    await flushPromises()
-    expect(vm.detailRunsRows).toEqual([{ instanceNo: 'b' }])
+    vm.goDefinitionRuns({ id: 7, jobCode: 'A', tenantId: 'tenant-a' })
+    expect(mocks.push).toHaveBeenCalledWith({
+      path: '/jobs/definitions/7',
+      query: { tenantId: 'tenant-a', tab: 'runs' },
+    })
+    expect(mocks.listRuns).not.toHaveBeenCalled()
   })
 })
 

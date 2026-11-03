@@ -25,12 +25,6 @@
       :can-trigger="canTriggerWorkflows"
       :targets="bulkSelection.selected.value"
     />
-    <WorkflowMonitoringPolicyDialog
-      v-model="monitoringVisible"
-      :workflow-id="monitoringTarget?.id"
-      :workflow-code="monitoringTarget?.workflowCode ?? ''"
-      :can-edit="canMutateConfig"
-    />
 
     <SectionCard>
       <ProTable
@@ -375,91 +369,6 @@
     />
 
     <el-dialog
-      v-model="scheduleVisible"
-      :title="t('workflowDefinitionList.scheduleTitle')"
-      width="min(560px, calc(100% - 32px))"
-      :close-on-click-modal="false"
-    >
-      <el-form v-loading="scheduleLoading" label-position="top">
-        <el-form-item :label="t('workflowDefinitionList.scheduleType')" required>
-          <el-select
-            v-model="scheduleForm.scheduleType"
-            class="w-full"
-            @change="onScheduleTypeChange"
-          >
-            <el-option :label="t('workflowDefinitionList.scheduleManual')" value="MANUAL" />
-            <el-option :label="t('workflowDefinitionList.scheduleCron')" value="CRON" />
-            <el-option :label="t('workflowDefinitionList.scheduleFixedRate')" value="FIXED_RATE" />
-            <el-option :label="t('workflowDefinitionList.scheduleEvent')" value="EVENT" />
-          </el-select>
-        </el-form-item>
-        <el-form-item
-          v-if="['CRON', 'FIXED_RATE'].includes(scheduleForm.scheduleType)"
-          :label="t('workflowDefinitionList.scheduleExpression')"
-          required
-        >
-          <el-input
-            v-model="scheduleForm.scheduleExpr"
-            maxlength="256"
-            :placeholder="scheduleExprPlaceholder"
-          />
-        </el-form-item>
-        <el-form-item :label="t('workflowDefinitionList.scheduleTimezone')">
-          <el-input v-model="scheduleForm.timezone" maxlength="64" placeholder="UTC" />
-        </el-form-item>
-        <el-form-item :label="t('workflowDefinitionList.scheduleTriggerMode')">
-          <el-select v-model="scheduleForm.triggerMode" class="w-full">
-            <el-option
-              v-for="mode in triggerModeOptions"
-              :key="mode"
-              :label="t(`enum.triggerMode.${mode}`, mode)"
-              :value="mode"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item :label="t('workflowDefinitionList.scheduleCalendar')">
-          <el-input v-model="scheduleForm.calendarCode" maxlength="128" clearable />
-        </el-form-item>
-        <el-form-item :label="t('workflowDefinitionList.scheduleDependency')">
-          <el-select
-            v-model="scheduleForm.dependsOnJobCode"
-            class="w-full"
-            filterable
-            allow-create
-            clearable
-            :loading="scheduleDependencyLoading"
-          >
-            <el-option
-              v-for="jobCode in scheduleDependencyOptions"
-              :key="jobCode"
-              :label="jobCode"
-              :value="jobCode"
-            />
-          </el-select>
-        </el-form-item>
-        <el-alert
-          :title="
-            t('workflowDefinitionList.scheduleVersionHint', {
-              version: scheduleForm.expectedVersion,
-            })
-          "
-          type="info"
-          :closable="false"
-        />
-      </el-form>
-      <template #footer>
-        <el-button @click="scheduleVisible = false">{{ t('common.cancel') }}</el-button>
-        <el-button
-          type="primary"
-          :loading="scheduleSaving"
-          :disabled="!canMutateConfig || isRequiredScheduleExpressionMissing()"
-          @click="saveSchedule"
-          >{{ t('common.save') }}</el-button
-        >
-      </template>
-    </el-dialog>
-
-    <el-dialog
       v-model="validateVisible"
       :title="t('workflowDefinitionList.validateTitle')"
       width="min(760px, calc(100% - 32px))"
@@ -535,7 +444,7 @@
 </template>
 
 <script setup lang="ts">
-  import { isScheduled, validateWorkflowScheduleLengths } from './workflowScheduleValidation'
+  import { isScheduled } from '@/utils/workflowScheduleValidation'
   import WorkflowTriggerDialog from './WorkflowTriggerDialog.vue'
   import { computed, reactive, ref, watch } from 'vue'
   import { useRouter } from 'vue-router'
@@ -555,11 +464,7 @@
   }
   import { confirmDanger } from '@/composables/useDangerConfirm'
   import { usePermission } from '@/composables/usePermission'
-  import {
-    workflowApi,
-    type DagValidationResult,
-    type WorkflowScheduleUpdateRequest,
-  } from '@/api/workflow'
+  import { workflowApi, type DagValidationResult } from '@/api/workflow'
   import { instanceApi } from '@/api/instance'
   import { fmtDatetime } from '@/utils/datetime'
   import { decodeBasicEntities } from '@/utils/text'
@@ -571,7 +476,6 @@
   import { useBulkSelection } from '@/composables/useBulkSelection'
   import BulkActionBar from '@/components/table/BulkActionBar.vue'
   import WorkflowBulkTriggerDialog from '@/components/workflow/WorkflowBulkTriggerDialog.vue'
-  import WorkflowMonitoringPolicyDialog from '@/components/workflow/WorkflowMonitoringPolicyDialog.vue'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
@@ -622,46 +526,6 @@
   const triggerBusy = ref(false)
   const triggerTarget = ref<ConsoleWorkflowDefinitionResponse | null>(null)
   const triggerBizDate = ref('')
-  const scheduleVisible = ref(false)
-  const scheduleLoading = ref(false)
-  const scheduleSaving = ref(false)
-  const scheduleDependencyLoading = ref(false)
-  const scheduleDependencyOptions = ref<string[]>([])
-  const { load: loadJobCodes } = useJobCodeOptions()
-  let scheduleLoadGeneration = 0
-  const scheduleTarget = ref<ConsoleWorkflowDefinitionResponse | null>(null)
-  const scheduleForm = reactive({
-    expectedVersion: 1,
-    scheduleType: 'MANUAL' as WorkflowScheduleUpdateRequest['scheduleType'],
-    scheduleExpr: '',
-    timezone: 'UTC',
-    triggerMode: 'MANUAL' as WorkflowScheduleUpdateRequest['triggerMode'],
-    calendarCode: '',
-    dependsOnJobCode: '',
-  })
-  const scheduleExprPlaceholder = computed(() =>
-    scheduleForm.scheduleType === 'CRON'
-      ? t('workflowDefinitionList.scheduleCronPlaceholder')
-      : t('workflowDefinitionList.scheduleRatePlaceholder'),
-  )
-  const triggerModeOptions = computed(() => {
-    if (['CRON', 'FIXED_RATE'].includes(scheduleForm.scheduleType)) return ['SCHEDULED', 'MIXED']
-    if (scheduleForm.scheduleType === 'EVENT') return ['EVENT', 'MIXED']
-    return ['MANUAL', 'API', 'MIXED']
-  })
-
-  function onScheduleTypeChange(type: string) {
-    if (type === 'CRON' || type === 'FIXED_RATE') scheduleForm.triggerMode = 'SCHEDULED'
-    else if (type === 'EVENT') scheduleForm.triggerMode = 'EVENT'
-    else scheduleForm.triggerMode = 'MANUAL'
-  }
-
-  function isRequiredScheduleExpressionMissing(): boolean {
-    return (
-      ['CRON', 'FIXED_RATE'].includes(scheduleForm.scheduleType) &&
-      !scheduleForm.scheduleExpr.trim()
-    )
-  }
 
   const detailVisible = ref(false)
   const detailRow = ref<WorkflowDefinitionDetailResponse | null>(null)
@@ -722,9 +586,7 @@
     void router.push(`/monitor/workflow-runs/${row.id}`)
   }
   const validateVisible = ref(false)
-  const monitoringVisible = ref(false)
-  const monitoringTarget = ref<ConsoleWorkflowDefinitionResponse | null>(null)
-  useDrawerAutoClose([detailVisible, validateVisible, monitoringVisible])
+  useDrawerAutoClose([detailVisible, validateVisible])
   const validateResult = ref<DagValidationResult | null>(null)
   const validateErrorCount = computed(
     () =>
@@ -849,21 +711,6 @@
         onClick: () => openDetail(row),
       },
       {
-        key: 'schedule-edit',
-        label: t('workflowDefinitionList.actionSchedule'),
-        disabled: !canMutateConfig.value,
-        loading: scheduleSaving.value && scheduleTarget.value?.id === row.id,
-        onClick: () => openSchedule(row),
-      },
-      {
-        key: 'monitoring-policy',
-        label: t('workflowDefinitionList.monitoring.action'),
-        onClick: () => {
-          monitoringTarget.value = row
-          monitoringVisible.value = true
-        },
-      },
-      {
         key: 'toggle',
         // VIEWER 角色看不写权限时,行内按钮通过 disabled 灰显(RowActions 已有 disabled 渲染样式),
         // label 后缀 *(无权限)* 让用户秒懂(避免 tooltip 在 dropdown 项里实现复杂)。
@@ -903,90 +750,6 @@
           ]
         : []),
     ]
-  }
-
-  async function openSchedule(row: ConsoleWorkflowDefinitionResponse) {
-    const requestGeneration = ++scheduleLoadGeneration
-    scheduleTarget.value = row
-    scheduleLoading.value = true
-    scheduleDependencyLoading.value = true
-    try {
-      const tenantId = row.tenantId ?? tenant.tenantId
-      const [detail, jobCodes] = await Promise.all([
-        workflowApi.detailById(row.id, tenantId),
-        loadJobCodes(tenantId),
-      ])
-      if (requestGeneration !== scheduleLoadGeneration) return
-      Object.assign(scheduleForm, {
-        expectedVersion: detail.version,
-        scheduleType: detail.scheduleType ?? 'MANUAL',
-        scheduleExpr: detail.scheduleExpr ?? '',
-        timezone: detail.timezone ?? 'UTC',
-        triggerMode: detail.triggerMode ?? 'MANUAL',
-        calendarCode: detail.calendarCode ?? '',
-        dependsOnJobCode: detail.dependsOnJobCode ?? '',
-      })
-      // 依赖已停用或从选项中移除时，仍保留历史配置值供用户查看。
-      if (detail.dependsOnJobCode) {
-        const configuredDependencyCode = detail.dependsOnJobCode
-        const optionsIncludingConfiguredDependency = [...jobCodes, configuredDependencyCode]
-        const uniqueDependencyOptions = new Set(optionsIncludingConfiguredDependency)
-        scheduleDependencyOptions.value = Array.from(uniqueDependencyOptions)
-      } else {
-        scheduleDependencyOptions.value = jobCodes
-      }
-      scheduleVisible.value = true
-    } catch (err: unknown) {
-      if (requestGeneration === scheduleLoadGeneration) {
-        ElMessage.error(userErrorMessage(err))
-      }
-    } finally {
-      if (requestGeneration === scheduleLoadGeneration) {
-        scheduleDependencyLoading.value = false
-        scheduleLoading.value = false
-      }
-    }
-  }
-
-  async function saveSchedule() {
-    const target = scheduleTarget.value
-    if (!target || scheduleSaving.value) return
-    const lengthError = validateWorkflowScheduleLengths(scheduleForm)
-    if (lengthError) {
-      const labelKeys = {
-        scheduleExpr: 'workflowDefinitionList.scheduleExpression',
-        timezone: 'workflowDefinitionList.scheduleTimezone',
-        calendarCode: 'workflowDefinitionList.scheduleCalendar',
-        dependsOnJobCode: 'workflowDefinitionList.scheduleDependency',
-      } as const
-      ElMessage.warning(
-        t('workflowDefinitionList.scheduleFieldTooLong', {
-          field: t(labelKeys[lengthError.field]),
-          max: lengthError.max,
-        }),
-      )
-      return
-    }
-    scheduleSaving.value = true
-    try {
-      await workflowApi.updateSchedule(target.id, {
-        tenantId: target.tenantId ?? tenant.tenantId,
-        expectedVersion: scheduleForm.expectedVersion,
-        scheduleType: scheduleForm.scheduleType,
-        scheduleExpr: scheduleForm.scheduleType === 'MANUAL' ? null : scheduleForm.scheduleExpr,
-        timezone: scheduleForm.timezone || null,
-        triggerMode: scheduleForm.triggerMode,
-        calendarCode: scheduleForm.calendarCode || null,
-        dependsOnJobCode: scheduleForm.dependsOnJobCode || null,
-      })
-      scheduleVisible.value = false
-      ElMessage.success(t('workflowDefinitionList.scheduleSaved'))
-      await load()
-    } catch (err: unknown) {
-      ElMessage.error(userErrorMessage(err))
-    } finally {
-      scheduleSaving.value = false
-    }
   }
 
   async function toggleScheduleRow(row: ConsoleWorkflowDefinitionResponse) {

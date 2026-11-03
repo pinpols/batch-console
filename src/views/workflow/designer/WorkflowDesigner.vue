@@ -49,6 +49,9 @@
     resolveAutomaticPlacement,
   } from './canvas/automaticConnection'
   import DesignerToolbar from './toolbar/DesignerToolbar.vue'
+  import { usePermission } from '@/composables/usePermission'
+  import WorkflowScheduleDialog from '@/components/workflow/WorkflowScheduleDialog.vue'
+  import WorkflowMonitoringPolicyDialog from '@/components/workflow/WorkflowMonitoringPolicyDialog.vue'
   import NodePalette from './toolbar/NodePalette.vue'
   import NodeInspector from './inspector/NodeInspector.vue'
   import QuickPalette from './palette/QuickPalette.vue'
@@ -560,6 +563,18 @@
 
   const isNewWorkflow = computed(() => workflowId.value == null)
 
+  // 调度与时限告警设置：从列表行内迁入设计器，作为该工作流唯一的编辑入口
+  const scheduleVisible = ref(false)
+  const monitoringVisible = ref(false)
+  const { canMutateConfig } = usePermission()
+  // 他人持锁时设计器只读，设置同样只读，避免与持锁人的保存交错
+  const canEditSettings = computed(() => canMutateConfig.value && store.editable)
+
+  /** 调度保存会推进工作流版本；同步到设计器，随后保存结构时不因旧版本号冲突 */
+  function onScheduleSaved(version: number) {
+    store.setMeta({ version })
+  }
+
   /**
    * P3 新建闭环:无 id 时调创建 API。
    * 设计器暂无元信息编辑面板(P5-P8 范围外),故 workflowCode / workflowName 用
@@ -760,6 +775,9 @@
       :layout-direction="layoutDirection"
       :json-panel-open="!jsonPanelCollapsed"
       :focus-mode="focusMode"
+      :settings-available="!isNewWorkflow"
+      @open-schedule="scheduleVisible = true"
+      @open-monitoring="monitoringVisible = true"
       @auto-layout="onAutoLayout"
       @undo="onUndo"
       @redo="onRedo"
@@ -772,6 +790,19 @@
       @toggle-json="toggleJsonPanel"
       @focus-node="locateNode"
       @toggle-focus-mode="toggleFocusMode"
+    />
+    <WorkflowScheduleDialog
+      v-model="scheduleVisible"
+      :workflow-id="workflowId"
+      :tenant-id="store.meta.tenantId"
+      :can-edit="canEditSettings"
+      @saved="onScheduleSaved"
+    />
+    <WorkflowMonitoringPolicyDialog
+      v-model="monitoringVisible"
+      :workflow-id="workflowId ?? undefined"
+      :workflow-code="store.meta.workflowCode"
+      :can-edit="canEditSettings"
     />
     <div
       v-if="readonlyBanner"

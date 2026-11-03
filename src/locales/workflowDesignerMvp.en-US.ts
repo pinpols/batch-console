@@ -47,6 +47,7 @@ export default {
   canvasEmptyTitle: 'Start composing with nodes',
   canvasEmptyDesc:
     'Choose START, JOB, and END in order; dependencies and layout are generated automatically.',
+  actionSettings: 'Workflow settings',
   actionValidate: 'Validate',
   validateOk: 'Validation passed, ready to save',
   errorBanner: '{count} validation errors found, click to inspect',
