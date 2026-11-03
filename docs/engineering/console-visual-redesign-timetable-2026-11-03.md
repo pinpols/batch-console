@@ -47,6 +47,23 @@
 
 后续期：其余页面按共享组件自然跟随后逐页复核；导航分组调整涉及路由与菜单契约，另行评估，不在本期改动。
 
+### 后续期候选页面
+
+2026-11-03 第一期完成后登记，用于排后续批次；登记不等于已排期或已授权实施。依据为使用频率、实页观察和源码中绕开 token 的写死颜色/字号计数（`src/views` 下页面文件 `#hex` 与数字 `font-size` 出现次数，仅作复核范围，不等于缺陷数）。每批开工前重新核对当前源码与页面。
+
+| 优先级 | 页面 / 区域 | 主要问题与证据 | 重设计方向 |
+|---|---|---|---|
+| P1 | 工作流设计器与运行拓扑：`views/workflow/designer/**`、`WorkflowMermaidViewer.vue`、`monitor/WorkflowRunDetail.vue` | 写死样式最集中（对比视图 28、快捷面板 16、JSON 同步 15、设计器 15、拓扑查看 10）；节点状态色写死在 `src/constants/workflowStatusTheme.ts`（`#3b82f6`、`#10b981` 等），与首页轨道和列表状态色不一致 | 状态色改由语义 token 推导并与 StatusTag 同源；节点、连线、检查器按新字号与层级重排 |
+| P1 | 作业定义列表 `views/job/JobDefinitionList.vue` | 类型标签截断（如 `BUNDLE_DISPA`）；编码与名称后每行眼睛图标；Worker 组列与类型列重复；筛选区两行、列设置单独占行；文件 1762 行已登记可维护性上限 | 精简列与行内图标，筛选单行化，类型用中性标签完整显示 |
+| P1 | 作业运行列表与实例详情：`monitor/JobInstanceList.vue`、`JobInstanceDetail.vue`、`PartitionView.vue` | 列表 1194 行、写死样式 9 处；分片/步骤缺少时间维度 | 详情页复用时刻轨道展示分片与步骤耗时，列表补名称与耗时口径 |
+| P2 | 批次日与业务日历：`/scheduler/batch-days`、`/governance/calendars` | 业务日开放→截止→结算本身是时间线，当前以表格和月历为主 | 以时刻表呈现业务日生命周期；后端提供可信截止时间后接入首页轨道截止线 |
+| P2 | 登录页 `views/login/Login.vue` | 16 处数字字号，仍为旧风格；为现有视觉回归基线 | 按新 token 重做首屏，同步更新视觉基线并说明意图 |
+| P2 | 告警列表与 Worker 管理：`observability/AlertList.vue`、Worker 管理页 | 告警严重度扫读性弱；Worker 状态卡片与首页待处理清单表达不一致 | 严重度分层与批量确认；状态卡片复用待处理清单的影响排序 |
+| P3 | 运行总览 `runs/RunsOverview.vue`、报表中心 `reports/ReportExportHub.vue`、我的账户 `system/MyAccount.vue`、维护页 `MaintenancePage.vue`、运维诊断 `ops/OpsDiagnostic.vue` | 各 7–14 处写死字号/颜色 | 以 token 收敛为主，不改布局 |
+| P3 | 移动端 `/m/*`（`src/layout-mobile/`、`src/views-mobile/`） | 独立样式体系，未随第一期变化 | 单独一期，按移动任务重排 |
+
+同批可穿插处理的交互问题：租户切换器输入 `ta` 时完全匹配项排在末位；已选租户后新手引导仍提示“选择租户”；顶部横幅与右上角存在两个租户搜索入口。
+
 ## 验证
 
 视觉变更按[设计 Token 治理](design-tokens.md)运行 `npm run test:e2e:visual` 并说明基线变化；浅色/深色、中英文、1440 与窄屏各取首页和运行列表核对。方向稿与审查截图仅作本次决策依据，不作为长期规范。
