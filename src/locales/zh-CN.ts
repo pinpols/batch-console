@@ -4709,6 +4709,7 @@ export default {
     tenantNamePlaceholder: '租户显示名称',
     fieldDescription: '描述',
     descriptionPlaceholder: '可选',
+    sectionTenant: '租户信息',
     sectionAdmin: '首位管理员账号',
     adminAlert:
       '新租户需要先有一个管理员账号才能登录,这里同时创建首位管理员。后续可在「登录账户」页继续添加更多账号。',
@@ -4894,6 +4895,9 @@ export default {
     deleteVerb: '删除',
   },
   notificationChannelsTab: {
+    sectionBasic: '基本信息',
+    sectionConfig: '连接配置',
+    sectionConfigDesc: '按渠道类型填写 JSON，例如 Webhook 地址或邮件服务器。',
     emptyDescription: '尚未配置通知渠道。先新增一个(如邮件 / Webhook),告警规则才能把通知发出去。',
     kwPlaceholder: '搜索编码/名称',
     trackAdd: '新增通知渠道',
@@ -4927,6 +4931,7 @@ export default {
     deleteConsequence: '关联此渠道的告警规则将无法发送通知。',
   },
   notificationRulesTab: {
+    formDescription: '事件命中规则后，通知会发送到所选渠道。',
     routeSummary: '规则配置摘要',
     routeSummaryHint: '这里只预览当前填写的规则与渠道，不代表事件已匹配或通知已送达。',
     routeEnabled: '启用',

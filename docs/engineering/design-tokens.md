@@ -15,3 +15,8 @@
 - 弹窗和抽屉优先使用组件的 `footer` 插槽，依赖全局 footer 样式处理对齐、间距和窄屏换行，不在页面重复声明按钮间距。
 - 保存、提交、取消等文字明确的表单动作默认不附加图标；图标保留给刷新、下载、复制等可稳定识别的工具动作，纯图标按钮必须提供可访问名称或 tooltip。
 - 提交按钮提供 loading 状态，执行期间禁用可能丢失输入或重复触发的次操作；表单绑定 `submit` 事件并为表单内主按钮使用原生 submit 语义，保证键盘可操作。
+
+## Element Plus 样式加载顺序
+
+`main.ts` 整包引入 `element-plus/dist/index.css`，之后加载 `src/styles/` 的覆盖规则；`vite.config.ts` 的 `ElementPlusResolver` 必须保持 `importStyle: false`。若开启按需样式，组件 CSS 会在运行时排到覆盖规则之后，同优先级下覆盖主题（2026-11-04 抽屉头部、底色失效即此原因）。
+

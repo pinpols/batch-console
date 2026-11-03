@@ -108,47 +108,54 @@
         :rules="channelFormRules"
         label-position="top"
       >
-        <el-form-item :label="t('notificationChannelsTab.fieldCode')" prop="channelCode">
-          <el-input
-            v-model="channelForm.channelCode"
-            :disabled="!!channelEditingCode"
-            :placeholder="t('notificationChannelsTab.codePlaceholder')"
-            maxlength="64"
-          />
-        </el-form-item>
-        <el-form-item :label="t('notificationChannelsTab.fieldName')" prop="channelName">
-          <el-input
-            v-model="channelForm.channelName"
-            :placeholder="t('notificationChannelsTab.namePlaceholder')"
-            maxlength="128"
-          />
-        </el-form-item>
-        <el-form-item :label="t('notificationChannelsTab.fieldType')" prop="channelType">
-          <el-select
-            v-model="channelForm.channelType"
-            :placeholder="t('notificationChannelsTab.typePlaceholder')"
-            class="query-w-full"
-          >
-            <el-option
-              v-for="opt in channelTypeOptions"
-              :key="opt.value"
-              :label="`${opt.label} (${opt.value})`"
-              :value="opt.value"
+        <FormSection :title="t('notificationChannelsTab.sectionBasic')" :columns="2">
+          <el-form-item :label="t('notificationChannelsTab.fieldCode')" prop="channelCode">
+            <el-input
+              v-model="channelForm.channelCode"
+              :disabled="!!channelEditingCode"
+              :placeholder="t('notificationChannelsTab.codePlaceholder')"
+              maxlength="64"
             />
-          </el-select>
-        </el-form-item>
-        <el-form-item :label="t('notificationChannelsTab.fieldConfig')" prop="configJson">
-          <el-input
-            v-model="channelForm.configJson"
-            type="textarea"
-            :rows="4"
-            :placeholder="t('notificationChannelsTab.configPlaceholder')"
-          />
-          <div class="field-hint">{{ t('notificationChannelsTab.configSecretHint') }}</div>
-        </el-form-item>
-        <el-form-item :label="t('notificationChannelsTab.fieldEnabled')" prop="enabled">
-          <el-switch v-model="channelForm.enabled" />
-        </el-form-item>
+          </el-form-item>
+          <el-form-item :label="t('notificationChannelsTab.fieldName')" prop="channelName">
+            <el-input
+              v-model="channelForm.channelName"
+              :placeholder="t('notificationChannelsTab.namePlaceholder')"
+              maxlength="128"
+            />
+          </el-form-item>
+          <el-form-item :label="t('notificationChannelsTab.fieldType')" prop="channelType">
+            <el-select
+              v-model="channelForm.channelType"
+              :placeholder="t('notificationChannelsTab.typePlaceholder')"
+              class="query-w-full"
+            >
+              <el-option
+                v-for="opt in channelTypeOptions"
+                :key="opt.value"
+                :label="`${opt.label} (${opt.value})`"
+                :value="opt.value"
+              />
+            </el-select>
+          </el-form-item>
+          <el-form-item :label="t('notificationChannelsTab.fieldEnabled')" prop="enabled">
+            <el-switch v-model="channelForm.enabled" />
+          </el-form-item>
+        </FormSection>
+        <FormSection
+          :title="t('notificationChannelsTab.sectionConfig')"
+          :description="t('notificationChannelsTab.sectionConfigDesc')"
+        >
+          <el-form-item :label="t('notificationChannelsTab.fieldConfig')" prop="configJson">
+            <el-input
+              v-model="channelForm.configJson"
+              type="textarea"
+              :rows="4"
+              :placeholder="t('notificationChannelsTab.configPlaceholder')"
+            />
+            <div class="field-hint">{{ t('notificationChannelsTab.configSecretHint') }}</div>
+          </el-form-item>
+        </FormSection>
       </el-form>
     </FormDrawer>
   </div>
@@ -168,6 +175,7 @@
   import { useFormValidate, rules } from '@/composables/useFormValidate'
   import { useDirtyForm } from '@/composables/useDirtyForm'
   import { useFormFocus } from '@/composables/useFormFocus'
+  import FormSection from '@/components/common/FormSection.vue'
   import {
     listNotificationChannels,
     createNotificationChannel,

@@ -92,6 +92,7 @@
     </ProTable>
 
     <FormDrawer
+      :description="t('notificationRulesTab.formDescription')"
       v-model:visible="ruleFormVisible"
       :title="
         ruleEditingId
@@ -104,38 +105,48 @@
       @submit="saveRule"
     >
       <el-form ref="ruleFormRef" :model="ruleForm" :rules="ruleFormRules" label-position="top">
-        <el-form-item :label="t('notificationRulesTab.fieldName')" prop="ruleName">
-          <el-input
-            v-model="ruleForm.ruleName"
-            :placeholder="t('notificationRulesTab.namePlaceholder')"
-            maxlength="128"
-          />
-        </el-form-item>
-        <el-form-item :label="t('notificationRulesTab.fieldEventTypes')" prop="eventTypes">
-          <el-input
-            v-model="ruleForm.eventTypes"
-            :placeholder="t('notificationRulesTab.eventTypesPlaceholder')"
-            maxlength="512"
-          />
-        </el-form-item>
-        <el-form-item :label="t('notificationRulesTab.fieldChannelId')" prop="channelCode">
-          <el-select
-            v-model="ruleForm.channelCode"
-            class="query-w-full"
-            filterable
-            :placeholder="t('notificationRulesTab.channelIdPlaceholder')"
+        <FormSection :columns="2">
+          <el-form-item
+            class="form-block__full"
+            :label="t('notificationRulesTab.fieldName')"
+            prop="ruleName"
           >
-            <el-option
-              v-for="c in channelOptions"
-              :key="c.code"
-              :label="`${c.code}${c.name ? ' / ' + c.name : ''}`"
-              :value="c.code"
+            <el-input
+              v-model="ruleForm.ruleName"
+              :placeholder="t('notificationRulesTab.namePlaceholder')"
+              maxlength="128"
             />
-          </el-select>
-        </el-form-item>
-        <el-form-item :label="t('notificationCommon.enabledLabel')" prop="enabled">
-          <el-switch v-model="ruleForm.enabled" />
-        </el-form-item>
+          </el-form-item>
+          <el-form-item
+            class="form-block__full"
+            :label="t('notificationRulesTab.fieldEventTypes')"
+            prop="eventTypes"
+          >
+            <el-input
+              v-model="ruleForm.eventTypes"
+              :placeholder="t('notificationRulesTab.eventTypesPlaceholder')"
+              maxlength="512"
+            />
+          </el-form-item>
+          <el-form-item :label="t('notificationRulesTab.fieldChannelId')" prop="channelCode">
+            <el-select
+              v-model="ruleForm.channelCode"
+              class="query-w-full"
+              filterable
+              :placeholder="t('notificationRulesTab.channelIdPlaceholder')"
+            >
+              <el-option
+                v-for="c in channelOptions"
+                :key="c.code"
+                :label="`${c.code}${c.name ? ' / ' + c.name : ''}`"
+                :value="c.code"
+              />
+            </el-select>
+          </el-form-item>
+          <el-form-item :label="t('notificationCommon.enabledLabel')" prop="enabled">
+            <el-switch v-model="ruleForm.enabled" />
+          </el-form-item>
+        </FormSection>
         <div class="rule-preview">
           <strong>{{ t('notificationRulesTab.routeSummary') }}</strong>
           <p>{{ t('notificationRulesTab.routeSummaryHint') }}</p>
@@ -158,6 +169,7 @@
 </template>
 
 <script setup lang="ts">
+  import FormSection from '@/components/common/FormSection.vue'
   import FormDrawer from '@/components/common/FormDrawer.vue'
   import CopyableText from '@/components/common/CopyableText.vue'
   import { ref, reactive, computed, watch } from 'vue'

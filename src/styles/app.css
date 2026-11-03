@@ -674,6 +674,24 @@ html.dark .cell-code {
   margin-top: var(--page-block-gap);
 }
 
+/* 抽屉/对话框里的 .form-section 是表单分节，不限宽；相邻分节用分隔线，与 FormSection 一致 */
+.el-drawer__body .form-section,
+.el-dialog__body .form-section {
+  max-width: none;
+  margin-top: 0;
+}
+
+.el-drawer__body .form-section + .form-section,
+.el-dialog__body .form-section + .form-section,
+.el-drawer__body .form-block + .form-section,
+.el-drawer__body .form-section + .form-block,
+.el-dialog__body .form-block + .form-section,
+.el-dialog__body .form-section + .form-block {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--color-border-light);
+}
+
 /**
  * pill-tabs 内未包 form-panel 的 form-section 自动应用面板样式：
  * 避免每个页面都要手动套 form-panel 容器。

@@ -1,4 +1,7 @@
 export default {
+  sectionAccount: 'Account',
+  sectionAccess: 'Sign-in and access',
+  sectionAccessDesc: 'The initial password is set only here. Roles decide what the account can see and do.',
   metricTotal: 'Total accounts',
   metricEnabled: 'Enabled',
   metricDisabled: 'Disabled',

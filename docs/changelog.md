@@ -8,6 +8,7 @@
 
 ### 2026-11-04
 
+- **Element Plus 样式顺序**：设计 Token 文档新增“Element Plus 样式加载顺序”，规定 `ElementPlusResolver` 保持 `importStyle: false`，避免按需样式覆盖全局主题。
 - **编辑入口收敛**：交互约定补“一个对象一个编辑入口”细则：有详情页的对象列表不再开查看抽屉；工作流调度与时限告警只在“工作流设置”编辑。
 - **次要筛选入口**：共享实现入口登记 `ListPageQueryBar` 的 `advanced` 插槽，主筛选超过一行时把次要条件收进“更多筛选”。
 - **表单与编辑抽屉**：交互约定新增“表单与编辑抽屉”一节，新增/编辑统一使用 `FormDrawer`（三档宽度、保存中禁止关闭）与 `FormSection` 分节，对话框只承载短确认/触发；`frontend-ui-ia-review` UI-05 检查项同步。

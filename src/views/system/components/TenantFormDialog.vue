@@ -15,52 +15,48 @@
     @submit="submit"
   >
     <el-form ref="formRef" :model="form" :rules="formRules" label-position="top">
-      <el-form-item :label="t('tenantFormDialog.fieldTenantId')" prop="tenantId">
-        <!-- 编辑态走只读 input(主键不可改);创建态走 TenantIdInput 带实时校验 + 保留前缀提示 -->
-        <el-input
-          v-if="editing"
-          v-model="form.tenantId"
-          disabled
-          :placeholder="t('tenantFormDialog.tenantIdPlaceholder')"
-        />
-        <TenantIdInput
-          v-else
-          v-model="form.tenantId"
-          :placeholder="t('tenantFormDialog.tenantIdPlaceholder')"
-        />
-        <div v-if="editing" class="field-hint">
-          {{ t('tenantFormDialog.tenantIdHintLocked') }}
-        </div>
-      </el-form-item>
-      <el-form-item :label="t('tenantFormDialog.fieldTenantName')" prop="tenantName">
-        <el-input
-          v-model="form.tenantName"
-          :placeholder="t('tenantFormDialog.tenantNamePlaceholder')"
-          maxlength="256"
-        />
-      </el-form-item>
-      <el-form-item :label="t('tenantFormDialog.fieldDescription')" prop="description">
-        <el-input
-          v-model="form.description"
-          type="textarea"
-          :autosize="{ minRows: 2, maxRows: 4 }"
-          :placeholder="t('tenantFormDialog.descriptionPlaceholder')"
-          maxlength="512"
-          show-word-limit
-        />
-      </el-form-item>
+      <FormSection :title="t('tenantFormDialog.sectionTenant')">
+        <el-form-item :label="t('tenantFormDialog.fieldTenantId')" prop="tenantId">
+          <!-- 编辑态走只读 input(主键不可改);创建态走 TenantIdInput 带实时校验 + 保留前缀提示 -->
+          <el-input
+            v-if="editing"
+            v-model="form.tenantId"
+            disabled
+            :placeholder="t('tenantFormDialog.tenantIdPlaceholder')"
+          />
+          <TenantIdInput
+            v-else
+            v-model="form.tenantId"
+            :placeholder="t('tenantFormDialog.tenantIdPlaceholder')"
+          />
+          <div v-if="editing" class="field-hint">
+            {{ t('tenantFormDialog.tenantIdHintLocked') }}
+          </div>
+        </el-form-item>
+        <el-form-item :label="t('tenantFormDialog.fieldTenantName')" prop="tenantName">
+          <el-input
+            v-model="form.tenantName"
+            :placeholder="t('tenantFormDialog.tenantNamePlaceholder')"
+            maxlength="256"
+          />
+        </el-form-item>
+        <el-form-item :label="t('tenantFormDialog.fieldDescription')" prop="description">
+          <el-input
+            v-model="form.description"
+            type="textarea"
+            :autosize="{ minRows: 2, maxRows: 4 }"
+            :placeholder="t('tenantFormDialog.descriptionPlaceholder')"
+            maxlength="512"
+            show-word-limit
+          />
+        </el-form-item>
+      </FormSection>
 
-      <template v-if="!editing">
-        <el-divider content-position="left">
-          <span class="section-divider__text">{{ t('tenantFormDialog.sectionAdmin') }}</span>
-        </el-divider>
-        <el-alert
-          type="info"
-          :closable="false"
-          show-icon
-          class="form-alert"
-          :title="t('tenantFormDialog.adminAlert')"
-        />
+      <FormSection
+        v-if="!editing"
+        :title="t('tenantFormDialog.sectionAdmin')"
+        :description="t('tenantFormDialog.adminAlert')"
+      >
         <el-form-item :label="t('tenantFormDialog.fieldUsername')" prop="username">
           <el-input
             v-model="form.username"
@@ -75,12 +71,13 @@
           />
           <div class="field-hint">{{ t('tenantFormDialog.passwordHint') }}</div>
         </el-form-item>
-      </template>
+      </FormSection>
     </el-form>
   </FormDrawer>
 </template>
 
 <script setup lang="ts">
+  import FormSection from '@/components/common/FormSection.vue'
   import FormDrawer from '@/components/common/FormDrawer.vue'
   import { computed, reactive, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
@@ -227,17 +224,3 @@
     await submitAction.run()
   }
 </script>
-
-<style scoped>
-  .section-divider__text {
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--color-text-secondary, #606266);
-    letter-spacing: 0.3px;
-  }
-
-  .form-alert {
-    margin-bottom: 16px;
-    font-size: 12px;
-  }
-</style>
