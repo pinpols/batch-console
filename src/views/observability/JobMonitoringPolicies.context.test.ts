@@ -12,6 +12,7 @@ const state = vi.hoisted(() => ({
   list: vi.fn(),
   update: vi.fn(),
 }))
+vi.mock('vue-router', () => ({ useRoute: () => ({ query: {} }) }))
 vi.mock('@/stores/tenant', () => ({ useTenantStore: () => state.tenant }))
 vi.mock('@/stores/auth', () => ({ useAuthStore: () => state.auth }))
 vi.mock('@/composables/usePermission', () => ({

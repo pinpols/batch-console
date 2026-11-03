@@ -5,6 +5,12 @@
         <el-button v-if="!runId" :icon="DocumentCopy" :disabled="!mermaidText" @click="copyText">
           {{ t('workflowMermaidViewer.btnCopyMermaid') }}
         </el-button>
+        <WorkflowSettingsMenu
+          v-if="!runId && detail?.singleJobDefinitionId != null"
+          :workflow-id="id"
+          :workflow-code="detail.workflowCode"
+          @saved="reload"
+        />
       </template>
     </PageHeader>
 
@@ -376,6 +382,7 @@
   import { queryWorkflowNodeRuns } from '@/api/workflowQueries'
   import { instanceApi } from '@/api/instance'
   import { useTenantStore } from '@/stores/tenant'
+  import WorkflowSettingsMenu from '@/components/workflow/WorkflowSettingsMenu.vue'
   import { loadMermaid } from '@/utils/mermaid'
   import { userErrorMessage } from '@/utils/userErrorMessage'
   import {

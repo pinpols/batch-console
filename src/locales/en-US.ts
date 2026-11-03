@@ -3408,6 +3408,9 @@ const messages: Messages = {
     submitSuccess: 'Submitted approval for {key}',
   },
   jobDefinitionDetail: {
+    monitoringTitle: 'Monitoring rules',
+    monitoringEdit: 'Edit on the monitoring policies page',
+    monitoringSeconds: '{n} s',
     loadFailed: 'Failed to load job details. Please retry.',
     switchTenantForDetails: 'Switch to tenant {tenant} in the header before viewing details.',
     pageTitle: 'Job details',
@@ -3486,6 +3489,10 @@ const messages: Messages = {
       'Job definitions are the scheduling unit. The common way is bulk import via a tenant config package. Admins can also create them manually.',
     emptyGoImport: 'Open bulk import',
     headerNew: 'New job',
+    headerNewTip:
+      'Step-by-step wizard for basics, schedule, execution and triggers; it can also create related file channels, templates, workflows and alert routes. Best for first-time setup.',
+    headerQuickCreateTip:
+      'Fill in only the job itself on this page, without creating related objects. Best when channels and workflows already exist.',
     headerQuickCreate: 'Quick form',
     headerBundle: 'Bundle import',
     headerBundleTip: 'Bulk import job definitions via a config bundle',

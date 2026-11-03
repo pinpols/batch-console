@@ -179,6 +179,7 @@
 </template>
 
 <script setup lang="ts">
+  import { useRoute } from 'vue-router'
   import FormDrawer from '@/components/common/FormDrawer.vue'
   import { computed, reactive, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
@@ -237,11 +238,17 @@
   let loadSequence = 0
   let editContext: ReturnType<typeof editScope.begin> | null = null
   let editOperator: string | number | undefined
+  const route = useRoute()
   const filters = reactive<{
     jobCode: string
     enabled: boolean
     monitoringCategory: '' | MonitoringCategory
-  }>({ jobCode: '', enabled: true, monitoringCategory: '' })
+  }>({
+    // 作业详情“去修改监控规则”带 jobCode 进入，直接定位到该作业
+    jobCode: typeof route.query.jobCode === 'string' ? route.query.jobCode : '',
+    enabled: true,
+    monitoringCategory: '',
+  })
   const monitoringCategories = computed(() => [
     {
       value: 'DEPENDENCY' as const,

@@ -80,6 +80,10 @@
               :execution-mode-label="resolveEnumLabel('executionMode', job.executionMode)"
               overview-only
             />
+            <section class="detail-pipeline">
+              <h3>{{ t('jobDefinitionList.systemPipelineTitle') }}</h3>
+              <SystemPipelineStages :code="systemPipelineCode" :stages="systemPipelineStages" />
+            </section>
           </el-tab-pane>
 
           <el-tab-pane :label="t('jobDefinitionDetail.tabSchedule')" name="schedule">
@@ -309,6 +313,27 @@
 
           <el-tab-pane :label="t('jobDefinitionDetail.tabAlerts')" name="alerts" lazy>
             <div class="tab-panel">
+              <!-- 监控规则只在监控策略页编辑，这里只读展示并给出修改入口 -->
+              <section class="monitoring-summary">
+                <header>
+                  <h3>{{ t('jobDefinitionDetail.monitoringTitle') }}</h3>
+                  <router-link
+                    class="cell-link"
+                    :to="{
+                      path: '/observability/job-monitoring-policies',
+                      query: { jobCode: job.jobCode },
+                    }"
+                  >
+                    {{ t('jobDefinitionDetail.monitoringEdit') }}
+                  </router-link>
+                </header>
+                <dl>
+                  <div v-for="item in monitoringSummary" :key="item.label">
+                    <dt>{{ item.label }}</dt>
+                    <dd>{{ item.value }}</dd>
+                  </div>
+                </dl>
+              </section>
               <div class="panel-toolbar">
                 <span>{{ t('jobDefinitionDetail.alertsToolbarHint') }}</span>
                 <el-button :loading="alertsLoading" @click="loadAlerts">
@@ -509,6 +534,8 @@
   import StatusTag from '@/components/common/StatusTag.vue'
   import JobConfigBasicSection from './components/JobConfigBasicSection.vue'
   import JobRelatedFilesTab from './components/JobRelatedFilesTab.vue'
+  import SystemPipelineStages from './components/SystemPipelineStages.vue'
+  import { fetchPipelineStages } from '@/api/pipelineMeta'
   import CalendarMiniCreateDrawer from './components/CalendarMiniCreateDrawer.vue'
   import WindowMiniCreateDrawer from './components/WindowMiniCreateDrawer.vue'
   import type {
@@ -578,6 +605,45 @@
   const triggering = ref(false)
   const dryRunVisible = ref(false)
   const job = ref<JobDefinitionDetailModel | null>(null)
+
+  /** 监控规则只读摘要：0 或未设置表示已关闭 */
+  const monitoringSummary = computed(() => {
+    const current = job.value
+    if (!current) return []
+    const off = t('jobMonitoringPolicy.disabled')
+    const seconds = (value?: number | null) =>
+      value && value > 0 ? t('jobDefinitionDetail.monitoringSeconds', { n: value }) : off
+    const deadline = current.completionDeadlineLocalTime
+      ? String(current.completionDeadlineLocalTime)
+      : current.dependencyCompletionWindowSeconds
+        ? seconds(current.dependencyCompletionWindowSeconds)
+        : off
+    return [
+      { label: t('jobMonitoringPolicy.softRuntime'), value: seconds(current.softRuntimeSeconds) },
+      { label: t('jobMonitoringPolicy.startGrace'), value: seconds(current.startGraceSeconds) },
+      { label: t('jobMonitoringPolicy.completionDeadline'), value: deadline },
+    ]
+  })
+
+  // 系统流水线阶段：原列表查看抽屉的内容，查看统一到详情页后放在基本信息页签
+  const pipelineStagesByType = ref<Record<string, string[]>>({})
+  const systemPipelineCode = computed(() => {
+    const type = job.value?.jobType?.toUpperCase() || ''
+    if (type === 'BUNDLE_IMPORT') return 'IMPORT'
+    if (type === 'BUNDLE_EXPORT') return 'EXPORT'
+    if (type === 'BUNDLE_DISPATCH') return 'DISPATCH'
+    return type
+  })
+  const systemPipelineStages = computed(
+    () => pipelineStagesByType.value[systemPipelineCode.value] ?? [],
+  )
+  void fetchPipelineStages()
+    .then((stages) => {
+      pipelineStagesByType.value = stages
+    })
+    .catch(() => {
+      /* 阶段说明为辅助信息，加载失败时不显示即可 */
+    })
   let contextRevision = 0
   let loadRevision = 0
   let runsRevision = 0
@@ -920,6 +986,54 @@
 </script>
 
 <style scoped>
+  .monitoring-summary {
+    margin-bottom: 16px;
+    padding: 12px 16px;
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-content);
+  }
+
+  .monitoring-summary header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+
+  .monitoring-summary h3 {
+    margin: 0;
+    font-size: var(--font-size-md);
+    font-weight: 600;
+  }
+
+  .monitoring-summary dl {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 8px 24px;
+    margin: 0;
+  }
+
+  .monitoring-summary dt {
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+  }
+
+  .monitoring-summary dd {
+    margin: 2px 0 0;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .detail-pipeline {
+    margin-top: 16px;
+  }
+
+  .detail-pipeline h3 {
+    margin: 0 0 8px;
+    font-size: var(--font-size-md);
+    font-weight: 600;
+  }
+
   .long-link-cell {
     display: flex;
     align-items: center;

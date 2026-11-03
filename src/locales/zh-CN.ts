@@ -392,6 +392,7 @@ export default {
     ...workflowDesignerDependency,
     canvasEmptyTitle: '从节点开始编排',
     canvasEmptyDesc: '依次点击 START、JOB、END，系统会自动生成依赖和布局。',
+    actionSettings: '工作流设置',
     actionValidate: '校验',
     validateOk: '校验通过,可保存',
     errorBanner: '当前有 {count} 条校验错误,点击查看',
@@ -3431,6 +3432,9 @@ export default {
     submitSuccess: '已提交审批 {key}',
   },
   jobDefinitionDetail: {
+    monitoringTitle: '监控规则',
+    monitoringEdit: '去监控策略页修改',
+    monitoringSeconds: '{n} 秒',
     loadFailed: '作业详情加载失败，请重试。',
     switchTenantForDetails: '请先在顶部切换到租户 {tenant}，再查看详情。',
     pageTitle: '作业详情',
@@ -3507,6 +3511,10 @@ export default {
       '作业定义是调度的最小单位,通常通过"配置批量导入"批量创建。也可以由管理员手工新增。',
     emptyGoImport: '去批量导入配置包',
     headerNew: '新建作业',
+    headerNewTip:
+      '分步向导：填写基础信息、调度、执行策略和触发，可一并创建关联的文件渠道、模板、工作流与告警路由。适合首次配置。',
+    headerQuickCreateTip:
+      '在当前页只填写作业本身的字段，不创建关联对象。适合已有渠道、工作流时快速新增。',
     headerQuickCreate: '快速表单',
     headerBundle: '配置包导入',
     headerBundleTip: '通过配置包批量导入作业定义',
