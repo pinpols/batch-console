@@ -10,6 +10,8 @@
     @submit.prevent="emit('search')"
   >
     <slot />
+    <!-- 次要筛选：默认收在“更多筛选”后，有生效条件时自动展开，主筛选保持一行 -->
+    <slot v-if="$slots.advanced && advancedOpen" name="advanced" />
     <el-form-item v-if="showTrailing || collapsible" class="query-actions">
       <!-- prepend(已保存筛选等辅助控件)与操作按钮同行,不再占字段格(label 上置布局下孤格突兀) -->
       <slot name="prepend" />
@@ -30,6 +32,22 @@
       <span v-if="collapsible && collapsed" class="query-collapsed-hint" role="status">
         {{ t('proTable.filtersHidden') }}
       </span>
+      <el-button
+        v-if="$slots.advanced && !(collapsible && collapsed)"
+        text
+        native-type="button"
+        class="query-advanced-toggle"
+        :aria-expanded="advancedOpen"
+        @click="advancedOpen = !advancedOpen"
+      >
+        {{
+          advancedOpen
+            ? t('proTable.lessFilters')
+            : advancedActive > 0
+              ? t('proTable.moreFiltersActive', { n: advancedActive })
+              : t('proTable.moreFilters')
+        }}
+      </el-button>
       <el-button
         v-if="showSearch && !(collapsible && collapsed)"
         type="primary"
@@ -91,6 +109,8 @@
        * label 默认上置；需要紧凑布局时显式使用 'left'。'auto' 兼容为上置。
        */
       labelPosition?: 'auto' | 'top' | 'left'
+      /** `advanced` 插槽内已生效的筛选数；大于 0 时默认展开并在按钮上提示数量 */
+      advancedActive?: number
     }>(),
     {
       filterBusy: false,
@@ -102,8 +122,11 @@
       cols: 3,
       collapsible: true,
       labelPosition: 'auto',
+      advancedActive: 0,
     },
   )
+
+  const advancedOpen = ref(props.advancedActive > 0)
 
   // 收起状态按路由持久化:同一页记住用户的收起/展开偏好。
   const route = useRoute()

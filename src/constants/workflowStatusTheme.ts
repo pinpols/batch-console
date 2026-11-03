@@ -1,33 +1,48 @@
 export type WorkflowRunVisualClass = 'running' | 'success' | 'failed' | 'waiting' | 'cancelled'
 
-interface WorkflowRunVisualToken {
-  fill: string
-  stroke: string
-  text: string
+/**
+ * 工作流运行状态色与全站语义 token 同源（StatusTag、首页时刻轨道使用同一组 token），
+ * 不再单独写死一套色值。CSS 场景直接引用 token，随明暗主题变化；
+ * Mermaid 需要具体色值，渲染时读取当前主题的 token 实际值。
+ */
+interface WorkflowRunVisualSource {
+  token: string
+  /** 读取不到 token（单测、SSR）时的回落值，取浅色主题色板 */
+  fallback: string
 }
 
-export const workflowRunVisualTheme: Record<WorkflowRunVisualClass, WorkflowRunVisualToken> = {
-  running: { fill: '#3b82f6', stroke: '#1d4ed8', text: '#ffffff' },
-  success: { fill: '#10b981', stroke: '#047857', text: '#ffffff' },
-  failed: { fill: '#ef4444', stroke: '#b91c1c', text: '#ffffff' },
-  waiting: { fill: '#f59e0b', stroke: '#b45309', text: '#ffffff' },
-  cancelled: { fill: '#6b7280', stroke: '#374151', text: '#ffffff' },
+const workflowRunVisualSources: Record<WorkflowRunVisualClass, WorkflowRunVisualSource> = {
+  running: { token: '--color-primary', fallback: '#1f4fd1' },
+  success: { token: '--color-success', fallback: '#1e7a4f' },
+  failed: { token: '--color-danger', fallback: '#c2352e' },
+  waiting: { token: '--color-warning', fallback: '#a8670a' },
+  cancelled: { token: '--color-text-tertiary', fallback: '#5f6e7e' },
 }
+
+/** 描边比填充略深，节点在浅底和深底上都有清晰边界 */
+const STROKE_DARKEN = 'color-mix(in srgb, {fill} 78%, #000)'
+const NODE_TEXT = '#ffffff'
 
 export const workflowRunVisualClasses = Object.keys(
-  workflowRunVisualTheme,
+  workflowRunVisualSources,
 ) as WorkflowRunVisualClass[]
 
 export const workflowRunVisualCssVars = Object.fromEntries(
   workflowRunVisualClasses.flatMap((klass) => {
-    const token = workflowRunVisualTheme[klass]
+    const fill = `var(${workflowRunVisualSources[klass].token})`
     return [
-      [`--workflow-run-${klass}-fill`, token.fill],
-      [`--workflow-run-${klass}-stroke`, token.stroke],
-      [`--workflow-run-${klass}-text`, token.text],
+      [`--workflow-run-${klass}-fill`, fill],
+      [`--workflow-run-${klass}-stroke`, STROKE_DARKEN.replace('{fill}', fill)],
+      [`--workflow-run-${klass}-text`, NODE_TEXT],
     ]
   }),
 ) as Record<string, string>
+
+function resolveTokenColor(source: WorkflowRunVisualSource): string {
+  if (typeof document === 'undefined') return source.fallback
+  const value = getComputedStyle(document.documentElement).getPropertyValue(source.token).trim()
+  return value || source.fallback
+}
 
 export function workflowRunStatusClass(status?: string | null): WorkflowRunVisualClass | null {
   if (!status) return null
@@ -52,8 +67,9 @@ export function workflowRunStatusClass(status?: string | null): WorkflowRunVisua
 export function workflowRunMermaidClassDefs(): string {
   return workflowRunVisualClasses
     .map((klass) => {
-      const token = workflowRunVisualTheme[klass]
-      return `  classDef ${klass} fill:${token.fill},stroke:${token.stroke},color:${token.text}`
+      const fill = resolveTokenColor(workflowRunVisualSources[klass])
+      // Mermaid 的 classDef 不支持 color-mix，描边与填充同色，靠白字与圆角区分层次
+      return `  classDef ${klass} fill:${fill},stroke:${fill},color:${NODE_TEXT}`
     })
     .join('\n')
 }

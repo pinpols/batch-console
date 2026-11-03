@@ -101,6 +101,7 @@
 - 行操作：`src/components/common/RowActions.vue`
 - 编辑抽屉与表单分节：`src/components/common/FormDrawer.vue`、`src/components/common/FormSection.vue`
 - 列表筛选工具栏：`src/components/table/OpsFilterToolbar.vue`（若页面采用）
+- 次要筛选：`ListPageQueryBar` 的 `advanced` 插槽，配合 `advanced-active` 传入已生效数；主筛选超过一行时使用
 - 设计变量：`src/styles/tokens-handoff.css`，规则见 `docs/engineering/design-tokens.md`
 
 如果共享组件的能力或实际目录发生变化，应先更新实现并同步修订本节引用，避免文档指向过期入口。

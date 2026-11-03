@@ -252,39 +252,42 @@
             </template>
           </el-alert>
           <div v-else-if="showInitialStepsLoading" v-loading="true" class="steps-loading" />
-          <el-timeline v-else-if="!stepsTableView && orderedSteps.length" class="steps-timeline">
-            <el-timeline-item
-              v-for="step in orderedSteps"
-              :key="step.id"
-              :type="stepTimelineTone(step.stepStatus)"
-              :timestamp="fmtDatetime(step.startedAt)"
-              :hollow="!step.finishedAt"
-            >
-              <div class="step-event">
-                <div class="step-event__heading">
-                  <strong>{{ step.stepCode }}</strong>
-                  <StatusTag :value="String(step.stepStatus ?? '')" category="partition" />
+          <template v-else-if="!stepsTableView && orderedSteps.length">
+            <StepTimelineStrip :steps="orderedSteps" :now-ms="stepsNowMs" />
+            <el-timeline class="steps-timeline">
+              <el-timeline-item
+                v-for="step in orderedSteps"
+                :key="step.id"
+                :type="stepTimelineTone(step.stepStatus)"
+                :timestamp="fmtDatetime(step.startedAt)"
+                :hollow="!step.finishedAt"
+              >
+                <div class="step-event">
+                  <div class="step-event__heading">
+                    <strong>{{ step.stepCode }}</strong>
+                    <StatusTag :value="String(step.stepStatus ?? '')" category="partition" />
+                  </div>
+                  <div class="step-event__meta">
+                    <span>{{ step.stepType }}</span>
+                    <span>{{ t('monitor.stepColRetry') }}: {{ step.retryCount ?? 0 }}</span>
+                    <span v-if="stepDuration(step)">{{ stepDuration(step) }}</span>
+                    <span v-if="step.finishedAt">{{ fmtDatetime(step.finishedAt) }}</span>
+                  </div>
+                  <div v-if="step.errorCode || step.errorMessage" class="step-event__error">
+                    <code v-if="step.errorCode">{{ step.errorCode }}</code>
+                    <span v-if="step.errorMessage">{{ step.errorMessage }}</span>
+                  </div>
+                  <router-link
+                    v-if="step.relatedPipelineInstanceId"
+                    class="cell-link"
+                    :to="`/files/pipeline-obs?pipelineInstanceId=${step.relatedPipelineInstanceId}`"
+                  >
+                    {{ t('monitor.stepViewPipelineProgress') }}
+                  </router-link>
                 </div>
-                <div class="step-event__meta">
-                  <span>{{ step.stepType }}</span>
-                  <span>{{ t('monitor.stepColRetry') }}: {{ step.retryCount ?? 0 }}</span>
-                  <span v-if="stepDuration(step)">{{ stepDuration(step) }}</span>
-                  <span v-if="step.finishedAt">{{ fmtDatetime(step.finishedAt) }}</span>
-                </div>
-                <div v-if="step.errorCode || step.errorMessage" class="step-event__error">
-                  <code v-if="step.errorCode">{{ step.errorCode }}</code>
-                  <span v-if="step.errorMessage">{{ step.errorMessage }}</span>
-                </div>
-                <router-link
-                  v-if="step.relatedPipelineInstanceId"
-                  class="cell-link"
-                  :to="`/files/pipeline-obs?pipelineInstanceId=${step.relatedPipelineInstanceId}`"
-                >
-                  {{ t('monitor.stepViewPipelineProgress') }}
-                </router-link>
-              </div>
-            </el-timeline-item>
-          </el-timeline>
+              </el-timeline-item>
+            </el-timeline>
+          </template>
           <EmptyState
             v-else-if="!stepsTableView && !stepsLoading"
             :description="t('common.noData')"
@@ -462,6 +465,7 @@
 </template>
 
 <script setup lang="ts">
+  import StepTimelineStrip from './components/StepTimelineStrip.vue'
   import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { fmtDatetime, fmtDuration } from '@/utils/datetime'
@@ -552,6 +556,11 @@
   const stepsLoadError = ref(false)
   const stepsRows = ref<ConsoleJobStepInstanceResponse[]>([])
   const stepsTableView = ref(false)
+  // 步骤条右端“当前时间”随步骤列表刷新更新，不单独起定时器
+  const stepsNowMs = computed(() => {
+    void stepsRows.value
+    return Date.now()
+  })
   const orderedSteps = computed(() =>
     [...stepsRows.value].sort((a, b) => {
       const aStart = Date.parse(a.startedAt)
