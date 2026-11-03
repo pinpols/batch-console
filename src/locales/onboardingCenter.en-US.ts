@@ -14,7 +14,7 @@ const onboardingCenter = {
   viewGuide: 'View guide',
   role: {
     admin: {
-      title: 'Complete the first runnable platform flow',
+      title: 'First runnable flow',
       description: 'Set up a tenant, job, configuration, worker, and successful run in order.',
     },
     auditor: {

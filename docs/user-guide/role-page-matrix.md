@@ -42,7 +42,7 @@
 | --------------- | ------------------------------- | ----- | ------- | ------------ | ----------- |
 | 告警            | `/observability/alerts`         | 管理  | 只读    | 管理         | 只读        |
 | 告警路由        | `/observability/alert-routings` | 管理  | —       | 管理         | —           |
-| 通知与投递      | `/system/notifications`         | 管理  | —       | 管理         | —           |
+| 通知投递（页面：通知与投递） | `/system/notifications`         | 管理  | —       | 管理         | —           |
 | Outbox          | `/observability/outbox`         | 管理  | —       | 管理         | —           |
 | 作业定义        | `/jobs/definitions`             | 管理  | 只读    | 管理         | 只读        |
 | 新建作业向导    | `/jobs/definitions/new`         | 管理  | —       | —            | —           |

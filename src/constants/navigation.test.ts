@@ -16,9 +16,9 @@ describe('navigation role authorities', () => {
       '工作台',
       '准备作业',
       '文件管理',
-      '调度与资源',
+      '调度资源',
       '运行监控',
-      '告警与投递',
+      '告警投递',
       '平台管理',
     ])
     expect(item('/jobs/definitions').path).toBe('/jobs/definitions')
@@ -26,6 +26,13 @@ describe('navigation role authorities', () => {
     expect(item('/files/list').path).toBe('/files/list')
     expect(item('/system/users').hidden).not.toBe(true)
     expect(item('/observability/audits').path).toBe('/observability/audits')
+  })
+
+  it('长菜单使用简洁标题并保留原页面标题作为定位依据', () => {
+    expect(item('/observability/job-monitoring-policies').titleKey).toBe('nav.menuJobMonitoring')
+    expect(item('/system/notifications').titleKey).toBe('nav.menuNotificationDelivery')
+    expect(item('/config/tenant-package').titleKey).toBe('nav.menuConfigurationImport')
+    expect(item('/ops/asset-freshness').titleKey).toBe('nav.menuFreshnessPolicies')
   })
 
   it('导航分组 key 全部唯一', () => {

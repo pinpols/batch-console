@@ -1,10 +1,9 @@
-import { computed, ref, watch } from 'vue'
+import { computed, onScopeDispose, ref, watch } from 'vue'
 import { defineStore } from 'pinia'
 import { STORAGE_KEYS } from '@/constants/storageKeys'
 import {
   applyThemeToDocument,
   getSystemIsDark,
-  markThemeRedesignDefaultApplied,
   readThemePreference,
   resolveEffectiveTheme,
   THEME_STORAGE_KEY,
@@ -40,8 +39,7 @@ export const useAppStore = defineStore('app', () => {
   function bindSystemColorSchemeListener() {
     systemMqCleanup?.()
     systemMqCleanup = null
-    if (typeof window === 'undefined') return
-    if (themePreference.value !== 'system') return
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return
     const mq = window.matchMedia('(prefers-color-scheme: dark)')
     const onSchemeChange = () => {
       systemIsDark.value = mq.matches
@@ -49,6 +47,8 @@ export const useAppStore = defineStore('app', () => {
     mq.addEventListener('change', onSchemeChange)
     systemMqCleanup = () => mq.removeEventListener('change', onSchemeChange)
   }
+
+  onScopeDispose(() => systemMqCleanup?.())
 
   const focusMode = ref(localStorage.getItem(focusModeKey) === '1')
 
@@ -75,11 +75,15 @@ export const useAppStore = defineStore('app', () => {
     themePreference.value = value
   }
 
-  /** 跟随系统 → 浅色 → 深色 → … 循环 */
+  // 从系统模式优先切到相反明暗，再经过另一固定模式，最后回到系统模式。
+  const nextThemePreference = computed<ThemePreference>(() => {
+    const cycle: ThemePreference[] = systemIsDark.value
+      ? ['system', 'light', 'dark']
+      : ['system', 'dark', 'light']
+    return cycle[(cycle.indexOf(themePreference.value) + 1) % cycle.length]
+  })
   function toggleTheme() {
-    const cycle: ThemePreference[] = ['system', 'light', 'dark']
-    const i = cycle.indexOf(themePreference.value)
-    themePreference.value = cycle[(i + 1) % cycle.length]
+    themePreference.value = nextThemePreference.value
   }
 
   function setFocusMode(value: boolean) {
@@ -107,7 +111,6 @@ export const useAppStore = defineStore('app', () => {
     themePreference,
     (p) => {
       localStorage.setItem(THEME_STORAGE_KEY, p)
-      markThemeRedesignDefaultApplied()
       if (p === 'system') {
         systemIsDark.value = getSystemIsDark()
       }
@@ -232,6 +235,7 @@ export const useAppStore = defineStore('app', () => {
     contentDensity,
     theme,
     themePreference,
+    nextThemePreference,
     focusMode,
     contentPadding,
     toggleSidebar,

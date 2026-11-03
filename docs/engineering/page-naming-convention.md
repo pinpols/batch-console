@@ -42,11 +42,13 @@
 | `files`       | 文件         | 模板 / 渠道 / 实时文件 / 到达组 / 管道观测               | FileList, FileTemplate, FileChannel, ArrivalGroup      |
 | `scheduling`  | 调度         | Worker / 触发器 / 调度快照 / 批次日 / 配额               | WorkerManagement, TriggerList, SchedulerSnapshot       |
 | `admin`       | 配置与系统   | 租户 / 账户 / API Key / 参数 / 发布 / 变更 / 标签 / 审计 | TenantList, UserAccountList, ConfigReleaseList         |
-| `alerting`    | 告警与投递   | 告警 / 告警路由 / 通知 / Outbox                          | AlertList, AlertRouting, NotificationManagement        |
+| `alerting`    | 告警投递     | 告警 / 告警路由 / 通知 / Outbox                          | AlertList, AlertRouting, NotificationManagement        |
 
 ### 当前导航映射
 
-原领域表用于新页面职责选择；实际分组以 `navigationGroupOrder` 和中英文 `nav.group` 为准：`workspace→workspace`、`runs→monitor`、`jobs→definitions`、`files→files`、`scheduling→scheduling`、`admin→system`、`alerting→alerting`。这些 key 分别显示为工作台、运行监控、准备作业、文件管理、调度与资源、平台管理、告警与投递，不据名称推断权限。
+原领域表用于新页面职责选择；实际分组以 `navigationGroupOrder` 和中英文 `nav.group` 为准：`workspace→workspace`、`runs→monitor`、`jobs→definitions`、`files→files`、`scheduling→scheduling`、`admin→system`、`alerting→alerting`。这些 key 分别显示为工作台、运行监控、准备作业、文件管理、调度资源、平台管理、告警投递，不据名称推断权限。
+
+侧栏与搜索菜单需要更精简的名称时，可通过 `NavigationItem.titleKey` 设置菜单文案；页面标题保持业务全称，命令搜索同时匹配简称和页面全称。
 
 ### 命名规则
 
@@ -54,7 +56,7 @@
 | ---------- | -------------------------------------- | ---------------------------------- |
 | URL        | `/{一级域}/{二级 slug}` 或 `/{一级域}` | `/alerting/alerts`、`/runs`        |
 | 代码目录   | `src/views/{一级域}/`                  | `src/views/alerting/AlertList.vue` |
-| 侧边栏分组 | `nav.group.{一级域}` 的 i18n key       | `nav.group.alerting: '告警与投递'` |
+| 侧边栏分组 | `nav.group.{一级域}` 的 i18n key       | `nav.group.alerting: '告警投递'` |
 
 新增路径和模块应清楚表达同一业务域，导航用上表映射保持产品分组一致。存量 URL、模块与导航有已知历史映射；移动入口或兼容重定向不能据此机械改名。
 

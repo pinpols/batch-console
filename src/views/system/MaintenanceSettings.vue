@@ -2,20 +2,32 @@
   <PageContainer>
     <PageHeader />
 
-    <SectionCard>
+    <SectionCard class="maintenance-settings__card">
       <template #header>
-        <div class="maintenance-settings__section-heading">
-          <span>{{ t('maintenanceSettings.currentState') }}</span>
-          <el-tag :type="statusTagType" effect="plain">
-            {{ statusLabel }}
-          </el-tag>
+        <div class="maintenance-settings__summary">
+          <div class="maintenance-settings__section-heading">
+            <span>{{ t('maintenanceSettings.currentState') }}</span>
+            <el-tag :type="statusTagType" effect="plain">
+              {{ statusLabel }}
+            </el-tag>
+          </div>
+          <dl v-if="state" class="maintenance-settings__metadata">
+            <div>
+              <dt>{{ t('maintenanceSettings.versionLabel') }}</dt>
+              <dd>{{ state.version ?? '—' }}</dd>
+            </div>
+            <div>
+              <dt>{{ t('maintenanceSettings.updatedAtLabel') }}</dt>
+              <dd>{{ formatTimestamp(state.updatedAt) }}</dd>
+            </div>
+          </dl>
         </div>
       </template>
 
       <el-alert
         v-if="form.enabled"
-        :title="statusLabel"
-        :description="
+        class="maintenance-settings__alert"
+        :title="
           isScheduled
             ? t('maintenanceSettings.scheduledEffect')
             : form.readOnly
@@ -50,17 +62,6 @@
           </div>
         </el-form-item>
 
-        <el-form-item :label="t('maintenanceSettings.messageLabel')">
-          <el-input
-            v-model="form.message"
-            type="textarea"
-            :rows="3"
-            maxlength="2048"
-            show-word-limit
-            :placeholder="t('maintenanceSettings.messagePlaceholder')"
-          />
-        </el-form-item>
-
         <el-form-item :label="t('maintenanceSettings.etaLabel')">
           <el-date-picker
             v-model="form.etaAt"
@@ -84,6 +85,17 @@
           <div class="maintenance-settings__hint">{{ t('maintenanceSettings.startsAtHint') }}</div>
         </el-form-item>
 
+        <el-form-item :label="t('maintenanceSettings.messageLabel')">
+          <el-input
+            v-model="form.message"
+            type="textarea"
+            :rows="3"
+            maxlength="2048"
+            show-word-limit
+            :placeholder="t('maintenanceSettings.messagePlaceholder')"
+          />
+        </el-form-item>
+
         <el-form-item :label="t('maintenanceSettings.affectedServicesLabel')">
           <el-input
             v-model="form.affectedServicesText"
@@ -105,15 +117,6 @@
           {{ t('maintenanceSettings.save') }}
         </el-button>
       </div>
-
-      <el-descriptions v-if="state" :column="2" border class="maintenance-settings__metadata">
-        <el-descriptions-item :label="t('maintenanceSettings.versionLabel')">
-          {{ state.version ?? '—' }}
-        </el-descriptions-item>
-        <el-descriptions-item :label="t('maintenanceSettings.updatedAtLabel')">
-          {{ formatTimestamp(state.updatedAt) }}
-        </el-descriptions-item>
-      </el-descriptions>
     </SectionCard>
   </PageContainer>
 </template>
@@ -284,17 +287,78 @@
 </script>
 
 <style scoped>
-  .maintenance-settings__section-heading,
-  .maintenance-settings__actions {
+  .maintenance-settings__card :deep(.el-card__header) {
+    padding-block: calc(var(--space-sm) + var(--space-xs));
+  }
+
+  .maintenance-settings__card :deep(.el-card__body) {
+    padding-block: var(--space-md);
+  }
+
+  .maintenance-settings__summary,
+  .maintenance-settings__section-heading {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: var(--space-sm);
   }
 
+  .maintenance-settings__summary {
+    width: 100%;
+    flex-wrap: wrap;
+    gap: var(--space-sm) var(--space-lg);
+  }
+
+  .maintenance-settings__section-heading {
+    justify-content: flex-start;
+    font-weight: 600;
+  }
+
+  .maintenance-settings__metadata {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-xs) var(--space-lg);
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+  }
+
+  .maintenance-settings__metadata div {
+    display: flex;
+    gap: var(--space-xs);
+    align-items: baseline;
+  }
+
+  .maintenance-settings__metadata dd {
+    margin: 0;
+    color: var(--color-text-primary);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .maintenance-settings__alert {
+    margin-top: var(--space-sm);
+  }
+
   .maintenance-settings__form {
-    max-width: 760px;
-    margin-top: var(--space-md);
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: var(--space-xl);
+    margin-top: var(--space-sm);
+  }
+
+  .maintenance-settings__form :deep(.el-form-item) {
+    min-width: 0;
+    margin-bottom: var(--space-sm);
+  }
+
+  .maintenance-settings__form :deep(.el-form-item__label) {
+    margin-bottom: var(--space-xs);
+  }
+
+  .maintenance-settings__form :deep(.el-radio-group) {
+    max-width: 100%;
+    flex-wrap: wrap;
   }
 
   .maintenance-settings__form :deep(.el-date-editor) {
@@ -302,26 +366,33 @@
   }
 
   .maintenance-settings__hint {
+    flex-basis: 100%;
     margin-top: var(--space-xs);
     color: var(--color-text-secondary);
     font-size: var(--font-size-sm);
     line-height: 1.5;
   }
 
-  .maintenance-settings__metadata {
-    margin-top: var(--space-lg);
+  .maintenance-settings__actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: var(--space-sm);
+    padding-top: var(--space-sm);
+    border-top: 1px solid var(--color-border-light);
+  }
+
+  .maintenance-settings__actions :deep(.el-button + .el-button) {
+    margin-left: 0;
   }
 
   @media (max-width: 640px) {
-    .maintenance-settings__section-heading,
-    .maintenance-settings__actions {
-      align-items: flex-start;
-      flex-direction: column;
+    .maintenance-settings__form {
+      grid-template-columns: minmax(0, 1fr);
     }
 
     .maintenance-settings__actions :deep(.el-button) {
-      width: 100%;
-      margin-left: 0;
+      flex: 1 1 auto;
     }
   }
 </style>

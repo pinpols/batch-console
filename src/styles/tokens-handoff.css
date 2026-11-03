@@ -32,6 +32,7 @@
   --color-danger: #d64543;
   --color-info: #1668e3;
   --color-brand-mark-bg: #1257c4;
+  --brand-mark-fill: linear-gradient(145deg, #4b87df 0%, #2d70d2 56%, #225cae 100%);
   --color-on-warning: #1b1e26;
 
   --color-text-primary: #1b1e26;
@@ -108,6 +109,8 @@
 
 html.dark {
   --color-primary: #70adff;
+  --color-brand-mark-bg: #5479a5;
+  --brand-mark-fill: linear-gradient(145deg, #4776ad 0%, #315f98 56%, #254775 100%);
 
   --color-success: #5cb381;
   --color-warning: #e3a94f;

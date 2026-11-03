@@ -1,9 +1,12 @@
 /* 首屏样式在应用CSS之前加载，系统色作为主题token就绪前的回退。 */
 html {
   color-scheme: light;
+  /* Vue 挂载前的回退需与运行时 token 一致。 */
+  --brand-mark-fill: linear-gradient(145deg, #4b87df 0%, #2d70d2 56%, #225cae 100%);
 }
 html.dark {
   color-scheme: dark;
+  --brand-mark-fill: linear-gradient(145deg, #4776ad 0%, #315f98 56%, #254775 100%);
 }
 .app-startup {
   position: fixed;
@@ -15,8 +18,14 @@ html.dark {
   background: var(--color-bg-page, Canvas);
 }
 .app-startup__mark {
+  display: block;
   width: 64px;
   height: 64px;
+  border-radius: 25%;
+  background-image: url('/icons/batch-mark-foreground.svg'), var(--brand-mark-fill);
+  background-position: center;
+  background-size: contain;
+  background-repeat: no-repeat;
 }
 .app-startup__track {
   width: 64px;
@@ -32,7 +41,7 @@ html.dark {
   height: 100%;
   border-radius: inherit;
   background: var(--color-primary, #2165ec);
-  animation: app-startup-travel 1.4s ease-in-out infinite;
+  animation: app-startup-travel 1.8s ease-in-out infinite;
 }
 @keyframes app-startup-travel {
   0% {

@@ -30,13 +30,37 @@ describe('route inventory', () => {
     inventory.flatMap((item) => [item.path, item.path.replace(/\/:\w+\?$/, '')]),
   )
 
+  it('暴露有权限的资源治理入口并保留各自权限', () => {
+    const items = navigationGroups.flatMap((group) => group.children)
+    for (const path of ['/governance/queues', '/governance/windows', '/governance/calendars']) {
+      expect(items.find((item) => item.path === path)?.hidden).not.toBe(true)
+    }
+    expect(items.find((item) => item.path === '/governance/queues')?.minRole).toBe('ADMIN')
+    expect(items.find((item) => item.path === '/governance/windows')?.minRole).toBe('ADMIN')
+    expect(items.find((item) => item.path === '/governance/calendars')?.authorities).toEqual([
+      'ROLE_ADMIN',
+      'ROLE_TENANT_ADMIN',
+    ])
+  })
+
+  it('旧同步链接保留查询参数并打开同步面板', () => {
+    const redirect = inventory.find((item) => item.path === '/config/sync')?.route.redirect
+    expect(typeof redirect).toBe('function')
+    expect(
+      (redirect as (to: unknown) => unknown)({ query: { tenantId: 'tenant-a', tab: 'logs' } }),
+    ).toEqual({
+      path: '/config/management',
+      query: { tenantId: 'tenant-a', tab: 'sync' },
+    })
+  })
+
   it('keeps every backend-menu path backed by a frontend route', () => {
     const navigationItems = navigationGroups.flatMap((group) => group.children)
     const navigationPaths = navigationItems.map((item) => item.path)
 
     expect(navigationPaths).toHaveLength(56)
-    expect(navigationItems.filter((item) => !item.hidden)).toHaveLength(28)
-    expect(navigationItems.filter((item) => item.hidden)).toHaveLength(28)
+    expect(navigationItems.filter((item) => !item.hidden)).toHaveLength(31)
+    expect(navigationItems.filter((item) => item.hidden)).toHaveLength(25)
     expect(navigationPaths.filter((path) => !routePaths.has(path))).toEqual([])
     expect(navigationPaths).not.toContain('/jobs/pipelines')
     expect(inventory.find((item) => item.path === '/jobs/pipelines')).toBeUndefined()

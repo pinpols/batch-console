@@ -10,8 +10,14 @@ const mocks = vi.hoisted(() => ({
   workflows: vi.fn(),
   files: vi.fn(),
   push: vi.fn(),
+  translations: {} as Record<string, string>,
 }))
-vi.mock('vue-i18n', () => ({ useI18n: () => ({ t: (key: string) => key, te: () => false }) }))
+vi.mock('vue-i18n', () => ({
+  useI18n: () => ({
+    t: (key: string) => mocks.translations[key] ?? key,
+    te: (key: string) => key in mocks.translations,
+  }),
+}))
 vi.mock('@/stores/tenant', () => ({ useTenantStore: () => mocks.tenant }))
 vi.mock('@/stores/permission', () => ({
   usePermissionStore: () => ({ canAccessRole: () => true, canAccessPermissions: () => true }),
@@ -60,6 +66,7 @@ describe('CommandPalette', () => {
   beforeEach(() => {
     vi.useFakeTimers()
     mocks.tenant = reactive({ tenantId: 'A' })
+    mocks.translations = {}
     mocks.jobs.mockReset()
     mocks.workflows.mockReset()
     mocks.files.mockReset()
@@ -68,6 +75,35 @@ describe('CommandPalette', () => {
     mocks.files.mockResolvedValue({ records: [] })
   })
   afterEach(() => vi.useRealTimers())
+
+  it('旧页面全称和新的菜单名均可搜索到同一入口', async () => {
+    mocks.translations = {
+      'nav.menuConfigurationImport': '配置导入',
+      'page.configTenantPackage.title': '配置批量导入',
+    }
+    const wrapper = render()
+    await wrapper.setProps({
+      groups: [
+        {
+          key: 'definitions',
+          title: '准备作业',
+          icon: { render: () => null },
+          children: [
+            {
+              path: '/config/tenant-package',
+              title: '配置批量导入',
+              titleKey: 'nav.menuConfigurationImport',
+            },
+          ],
+        },
+      ],
+    })
+    await wrapper.get('input').setValue('配置批量导入')
+    expect(wrapper.text()).toContain('配置导入')
+    await wrapper.get('input').setValue('配置导入')
+    expect(wrapper.text()).toContain('配置导入')
+    wrapper.unmount()
+  })
 
   it('discards an in-flight result when the term and tenant change', async () => {
     let resolve!: (value: unknown) => void
@@ -149,6 +185,48 @@ describe('CommandPalette', () => {
     expect(wrapper.text()).toContain('Assistant')
     expect(wrapper.text()).toContain('Job detail')
     expect(wrapper.text()).toContain('Channel')
+    wrapper.unmount()
+  })
+
+  it('filters only permitted sidebar-hidden pages and keeps keyboard selection', async () => {
+    const wrapper = render([
+      { key: 'private', path: '/system/tenants', title: 'Private', lastAccessAt: 2 },
+      { key: 'channel', path: '/files/channels', title: 'Channel', lastAccessAt: 1 },
+    ])
+    await wrapper.setProps({
+      groups: [
+        ...groups,
+        {
+          key: 'files',
+          title: 'Files',
+          icon: { render: () => null },
+          children: [
+            { path: '/files/templates', title: 'Templates' },
+            { path: '/files/channels', title: 'Channel', hidden: true },
+          ],
+        },
+      ],
+    })
+    const filter = wrapper.get('.cp-filter')
+    expect(filter.attributes('aria-label')).toBe('palette.sidebarHiddenOnly')
+    expect(filter.attributes('title')).toBe('palette.sidebarHiddenOnly')
+    expect(filter.element.parentElement?.classList.contains('cp-header')).toBe(true)
+    expect(filter.element.nextElementSibling?.classList.contains('cp-kbd--close')).toBe(true)
+    expect(wrapper.find('.cp-filters').exists()).toBe(false)
+    expect(filter.attributes('aria-pressed')).toBe('false')
+    expect(wrapper.find('[role="img"][aria-label="palette.sidebarHidden"]').exists()).toBe(true)
+    await filter.trigger('click')
+    expect(filter.attributes('aria-pressed')).toBe('true')
+    expect(wrapper.findAll('[role="option"]')).toHaveLength(1)
+    expect(wrapper.text()).toContain('Channel')
+    expect(wrapper.text()).not.toContain('Private')
+    await wrapper.get('input').setValue('Chan')
+    await vi.advanceTimersByTimeAsync(300)
+    expect(mocks.jobs).not.toHaveBeenCalled()
+    await wrapper.get('input').trigger('keydown.enter')
+    expect(mocks.push).toHaveBeenCalledWith('/files/channels')
+    await filter.trigger('click')
+    expect(filter.attributes('aria-pressed')).toBe('false')
     wrapper.unmount()
   })
 })

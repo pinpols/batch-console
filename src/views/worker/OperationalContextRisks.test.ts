@@ -2,6 +2,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { computed, reactive, ref } from 'vue'
 import { enableAutoUnmount, flushPromises, shallowMount } from '@vue/test-utils'
+import { createI18n } from 'vue-i18n'
+import zhCN from '@/locales/zh-CN'
+import enUS from '@/locales/en-US'
 import Workers from './WorkerManagement.vue'
 import Snapshot from '../scheduler/SchedulerSnapshot.vue'
 const mocks = vi.hoisted(() => ({
@@ -10,6 +13,16 @@ const mocks = vi.hoisted(() => ({
     writer: boolean
     writesFrozen: boolean
     workerStatus: string
+    workerPending: boolean
+    workerError: Error | null
+    workerRowsPresent: boolean
+    workerDataAvailable: boolean
+    workerDataTenant: string
+    fileMenu: string[]
+    loggedIn: boolean
+    profileLoaded: boolean
+    workerMenu: boolean
+    username: string
   },
   confirm: vi.fn(),
   drain: vi.fn(),
@@ -21,6 +34,7 @@ const mocks = vi.hoisted(() => ({
   history: vi.fn(),
   invalidate: vi.fn(),
   workerMeta: [] as { value: string; label: string }[],
+  translate: vi.fn(),
 }))
 vi.mock('vue-router', () => ({
   useRoute: () => ({ query: {} }),
@@ -29,16 +43,30 @@ vi.mock('vue-router', () => ({
 vi.mock('vue-i18n', async (original) => ({
   ...(await original<typeof import('vue-i18n')>()),
   useI18n: () => ({
-    t: (key: string, params?: { id?: string }) => (params?.id ? key + ':' + params.id : key),
+    t: mocks.translate,
     te: (key: string) => key === 'enum.workerStatus.DECOMMISSIONED',
   }),
 }))
 vi.mock('@/stores/tenant', () => ({ useTenantStore: () => mocks.state }))
+vi.mock('@/stores/permission', () => ({
+  usePermissionStore: () => ({
+    hasBackendMenuAccess: (path: string) =>
+      path === '/workers/management' ? mocks.state.workerMenu : mocks.state.fileMenu.includes(path),
+    canAccessRole: () => mocks.state.workerMenu,
+  }),
+}))
 vi.mock('@/stores/app', () => ({ useAppStore: () => mocks.state }))
 vi.mock('@/stores/auth', () => ({
   useAuthStore: () => ({
-    profileLoaded: true,
-    userInfo: { username: 'operator' },
+    get profileLoaded() {
+      return mocks.state.profileLoaded
+    },
+    get isLoggedIn() {
+      return mocks.state.loggedIn
+    },
+    get userInfo() {
+      return { username: mocks.state.username }
+    },
     hasPermission: (role: string) => mocks.state.writer && role === 'ROLE_ADMIN',
   }),
 }))
@@ -48,12 +76,16 @@ vi.mock('@tanstack/vue-query', () => ({
 }))
 vi.mock('@/composables/queries/useWorkers', () => ({
   useWorkers: () => ({
-    data: computed(() => [
-      { workerCode: 'worker-a', status: mocks.state.workerStatus, capabilities: [] },
-    ]),
-    isPending: ref(false),
+    data: computed(() =>
+      !mocks.state.workerDataAvailable || mocks.state.workerDataTenant !== mocks.state.tenantId
+        ? undefined
+        : mocks.state.workerRowsPresent
+          ? [{ workerCode: 'worker-a', status: mocks.state.workerStatus, capabilities: [] }]
+          : [],
+    ),
+    isPending: computed(() => mocks.state.workerPending),
     isFetching: ref(false),
-    error: ref(null),
+    error: computed(() => mocks.state.workerError),
     refetch: vi.fn().mockResolvedValue({}),
   }),
 }))
@@ -100,7 +132,7 @@ const stubs = {
   SectionCard: pass,
   ListPageQueryBar: pass,
   ElTabs: { name: 'ElTabs', props: ['modelValue'], template: '<div><slot /></div>' },
-  ElTabPane: pass,
+  ElTabPane: { name: 'ElTabPane', ...pass },
   ElFormItem: pass,
   StatusSegment: { name: 'StatusSegment', props: ['items'], template: '<div />' },
   ElButton: { name: 'ElButton', props: ['loading'], template: '<button><slot /></button>' },
@@ -115,8 +147,10 @@ function pending<T>() {
 function snapshot(tenantId: string) {
   return { tenantId, generatedAt: '2026-10-26T12:00:00Z', policies: [], queues: [], workers: [] }
 }
-function renderWorkers() {
-  return shallowMount(Workers, { global: { stubs } })
+function renderWorkers(realTabs = false) {
+  return shallowMount(Workers, {
+    global: { stubs: realTabs ? { ...stubs, ElTabs: false, ElTabPane: false } : stubs },
+  })
 }
 function renderSnapshot() {
   return shallowMount(Snapshot, { global: { stubs } })
@@ -128,12 +162,27 @@ async function click(wrapper: ReturnType<typeof renderWorkers>, label: string) {
     .trigger('click')
 }
 beforeEach(() => {
+  mocks.translate
+    .mockReset()
+    .mockImplementation((key: string, params?: { id?: string }) =>
+      params?.id ? key + ':' + params.id : key,
+    )
   mocks.workerMeta = []
   mocks.state = reactive({
     tenantId: 'tenant-a',
     writer: true,
     writesFrozen: false,
     workerStatus: 'ONLINE',
+    workerPending: false,
+    workerError: null,
+    workerRowsPresent: true,
+    workerDataAvailable: true,
+    workerDataTenant: 'tenant-a',
+    fileMenu: [],
+    loggedIn: true,
+    profileLoaded: true,
+    workerMenu: true,
+    username: 'operator',
   })
   mocks.confirm.mockReset().mockResolvedValue(undefined)
   for (const fn of [mocks.drain, mocks.offline, mocks.takeover, mocks.warmup, mocks.invalidate])
@@ -143,6 +192,135 @@ beforeEach(() => {
   mocks.history.mockReset().mockResolvedValue([])
 })
 describe('Worker 操作的租户身份', () => {
+  it('身份失效时隐藏渠道查询并丢弃迟到响应', async () => {
+    const old = pending<unknown>()
+    mocks.channels.mockReturnValueOnce(old.promise)
+    const wrapper = renderWorkers()
+    wrapper.findComponent({ name: 'ElTabs' }).vm.$emit('update:modelValue', 'channels')
+    await flushPromises()
+    expect(mocks.channels).toHaveBeenCalledTimes(1)
+    mocks.state.profileLoaded = false
+    await flushPromises()
+    expect(wrapper.findAllComponents({ name: 'ElTabPane' })).toHaveLength(0)
+    old.resolve([{ id: 41, channelCode: 'old-channel' }])
+    await flushPromises()
+    mocks.state.workerMenu = false
+    mocks.state.profileLoaded = true
+    await flushPromises()
+    expect(wrapper.findAllComponents({ name: 'ElTabPane' })).toHaveLength(0)
+    expect(wrapper.text()).not.toContain('old-channel')
+    mocks.state.workerMenu = true
+    await flushPromises()
+    wrapper.findComponent({ name: 'ElTabs' }).vm.$emit('update:modelValue', 'channels')
+    await flushPromises()
+    expect(wrapper.findComponent({ name: 'ProTable' }).props('data')).toEqual([])
+  })
+
+  it('文件中心有权访问时隐藏重复渠道入口；仅有 Worker 权限时保留只读渠道', async () => {
+    const wrapper = renderWorkers()
+    expect(wrapper.findAllComponents({ name: 'ElTabPane' })).toHaveLength(2)
+    wrapper.findComponent({ name: 'ElTabs' }).vm.$emit('update:modelValue', 'channels')
+    mocks.state.fileMenu = ['/files/templates']
+    await flushPromises()
+    expect(wrapper.findAllComponents({ name: 'ElTabPane' })).toHaveLength(1)
+    expect(wrapper.findComponent({ name: 'ElTabs' }).props('modelValue')).toBe('workers')
+    mocks.state.fileMenu = ['/files/channels']
+    await flushPromises()
+    expect(wrapper.findAllComponents({ name: 'ElTabPane' })).toHaveLength(1)
+    mocks.state.fileMenu = []
+    await flushPromises()
+    expect(wrapper.findAllComponents({ name: 'ElTabPane' })).toHaveLength(2)
+  })
+
+  it('实际标签组件在菜单权限变化时切回 Worker 并保留查询回退', async () => {
+    const wrapper = renderWorkers(true)
+    await flushPromises()
+    wrapper.findComponent({ name: 'ElTabs' }).vm.$emit('update:modelValue', 'channels')
+    await flushPromises()
+    expect(wrapper.get('#pane-channels').attributes('aria-hidden')).toBe('false')
+    mocks.state.fileMenu = ['/files/templates']
+    await flushPromises()
+    expect(wrapper.find('#pane-channels').exists()).toBe(false)
+    expect(wrapper.get('#pane-workers').attributes('aria-hidden')).toBe('false')
+    mocks.state.fileMenu = []
+    await flushPromises()
+    expect(wrapper.find('#pane-channels').exists()).toBe(true)
+  })
+  it('未选择租户时提示先选择租户，不显示永久加载和实时连接状态', () => {
+    mocks.state.tenantId = ''
+    // TanStack Query 禁用时仍为 pending，不能当作请求正在进行。
+    mocks.state.workerPending = true
+    const wrapper = renderWorkers()
+
+    expect(wrapper.find('.wk-grid').exists()).toBe(false)
+    expect(wrapper.findComponent({ name: 'OpsListToolbar' }).exists()).toBe(false)
+    expect(wrapper.findComponent({ name: 'EmptyState' }).props('description')).toBe(
+      'apiError.selectTenantFirst',
+    )
+  })
+
+  it.each([
+    ['zh-CN', '请选择顶部租户后查看数据'],
+    ['en-US', 'Select a tenant at the top to view data'],
+  ])('未选择租户时两个标签页均展示实际 %s 提示', (locale, expected) => {
+    const i18n = createI18n({
+      legacy: false,
+      locale,
+      fallbackLocale: false,
+      messages: { 'zh-CN': zhCN, 'en-US': enUS },
+      missingWarn: false,
+    })
+    mocks.translate.mockImplementation((key: string) => i18n.global.t(key))
+    mocks.state.tenantId = ''
+    mocks.state.workerPending = true
+    const wrapper = renderWorkers()
+
+    const descriptions = wrapper
+      .findAllComponents({ name: 'EmptyState' })
+      .map((item) => item.props('description'))
+    expect(descriptions).toEqual([expected, expected])
+  })
+
+  it('选中租户后恢复加载反馈，请求失败时显示错误态', async () => {
+    mocks.state.tenantId = ''
+    mocks.state.workerPending = true
+    mocks.state.workerRowsPresent = false
+    mocks.state.workerDataAvailable = false
+    const wrapper = renderWorkers()
+
+    mocks.state.tenantId = 'tenant-a'
+    await flushPromises()
+    expect(wrapper.find('.wk-grid').exists()).toBe(true)
+    expect(wrapper.find('.wk-grid').classes()).toContain('wk-grid--loading')
+    expect(wrapper.findComponent({ name: 'OpsListToolbar' }).exists()).toBe(true)
+    expect(wrapper.find('.wk-stats').exists()).toBe(false)
+
+    mocks.state.workerPending = false
+    mocks.state.workerError = new Error('请求失败')
+    await flushPromises()
+    expect(wrapper.find('.wk-grid').exists()).toBe(false)
+    expect(wrapper.find('.wk-stats').exists()).toBe(false)
+    expect(wrapper.findComponent({ name: 'EmptyState' }).props('title')).toBe(
+      'workerManagement.loadFailed',
+    )
+  })
+
+  it('切换租户时不展示旧租户数字，成功空列表才显示零', async () => {
+    const wrapper = renderWorkers()
+    expect(wrapper.findAll('.wk-stat__num').map((item) => item.text())).toEqual(['1', '0', '0'])
+
+    mocks.state.tenantId = 'tenant-b'
+    mocks.state.workerPending = true
+    await flushPromises()
+    expect(wrapper.find('.wk-stats').exists()).toBe(false)
+
+    mocks.state.workerDataTenant = 'tenant-b'
+    mocks.state.workerRowsPresent = false
+    mocks.state.workerPending = false
+    await flushPromises()
+    expect(wrapper.findAll('.wk-stat__num').map((item) => item.text())).toEqual(['0', '0', '0'])
+  })
+
   it('状态筛选优先使用已翻译的名称，未知状态使用元数据名称', () => {
     mocks.workerMeta = [
       { value: 'DECOMMISSIONED', label: '已下线' },

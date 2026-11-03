@@ -404,22 +404,6 @@ export default withMermaid({
       ],
     },
 
-    editLink: {
-      pattern: ({ relativePath }) => {
-        if (relativePath.startsWith('frontend/')) {
-          return `https://github.com/pinpols/batch-console/edit/main/docs/${relativePath.slice('frontend/'.length)}`
-        }
-        if (relativePath === 'README.md') {
-          return 'https://github.com/pinpols/batch-console/edit/main/docs/README.md'
-        }
-        const path = relativePath.startsWith('backend/')
-          ? relativePath.slice('backend/'.length)
-          : relativePath
-        return `https://github.com/pinpols/file-batch-system/edit/main/docs/${path}`
-      },
-      text: '在 GitHub 上编辑此页',
-    },
-
     // GitHub 图标隐藏 — 内部文档站,无需对外引流
     // socialLinks: [
     //   { icon: 'github', link: 'https://github.com/pinpols/file-batch-system' },
@@ -463,6 +447,7 @@ export default withMermaid({
           // 产品指南、系统设计、API及运维入口继续保留全文索引。
           if (
             path === 'backend/changelog.md' ||
+            path.startsWith('architecture-diagrams/') ||
             path.startsWith('backend/architecture/adr/') ||
             path.startsWith('backend/standards/')
           ) {

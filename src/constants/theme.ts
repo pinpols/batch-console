@@ -1,7 +1,6 @@
 import { STORAGE_KEYS } from './storageKeys'
 
 export const THEME_STORAGE_KEY = STORAGE_KEYS.theme
-export const THEME_REDESIGN_DEFAULT_STORAGE_KEY = STORAGE_KEYS.themeRedesignDefault
 
 /** 实际应用到页面的明暗值 */
 export type ThemeMode = 'light' | 'dark'
@@ -18,21 +17,14 @@ export type ApplyThemeOptions = {
 
 export function getSystemIsDark(): boolean {
   if (typeof window === 'undefined') return false
-  return window.matchMedia('(prefers-color-scheme: dark)').matches
+  return window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false
 }
 
-/** 读本地存储；无记录时按 redesign 默认深色 */
+/** 保留用户已保存的偏好；没有有效设置时跟随系统。 */
 export function readThemePreference(): ThemePreference {
   const v = localStorage.getItem(THEME_STORAGE_KEY)
-  if (v === 'system' && localStorage.getItem(THEME_REDESIGN_DEFAULT_STORAGE_KEY) !== '1') {
-    return 'dark'
-  }
   if (v === 'dark' || v === 'light' || v === 'system') return v
-  return 'dark'
-}
-
-export function markThemeRedesignDefaultApplied(): void {
-  localStorage.setItem(THEME_REDESIGN_DEFAULT_STORAGE_KEY, '1')
+  return 'system'
 }
 
 export function resolveEffectiveTheme(
@@ -42,16 +34,6 @@ export function resolveEffectiveTheme(
   if (preference === 'light') return 'light'
   if (preference === 'dark') return 'dark'
   return systemIsDark ? 'dark' : 'light'
-}
-
-/** 登录入口固定使用深色视觉，进入控制台后仍按用户偏好解析主题。 */
-export function resolveThemeForPath(
-  pathname: string,
-  preference: ThemePreference,
-  systemIsDark: boolean,
-): ThemeMode {
-  if (pathname === '/login' || pathname.startsWith('/login/')) return 'dark'
-  return resolveEffectiveTheme(preference, systemIsDark)
 }
 
 function prefersReducedMotion(): boolean {

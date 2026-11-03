@@ -15,6 +15,8 @@ const mocks = vi.hoisted(() => ({
   prompt: vi.fn(),
   warning: vi.fn(),
   permission: { value: true },
+  admin: { value: true },
+  menuPaths: [] as string[],
   workflows: vi.fn(),
   alerts: vi.fn(),
   audits: vi.fn(),
@@ -30,9 +32,18 @@ vi.mock('vue-i18n', async (original) => ({
     t: (key: string, args?: unknown) => `${key}${args ? JSON.stringify(args) : ''}`,
   }),
 }))
+vi.mock('@/stores/permission', () => ({
+  usePermissionStore: () => ({
+    hasBackendMenuAccess: (path: string) => mocks.menuPaths.includes(path),
+  }),
+}))
 vi.mock('@/stores/tenant', () => ({ useTenantStore: () => mocks.tenant }))
 vi.mock('@/composables/usePermission', () => ({
-  usePermission: () => ({ canMutateConfig: computed(() => mocks.permission.value) }),
+  usePermission: () => ({
+    canMutateConfig: computed(() => mocks.permission.value),
+    canWriteSystem: computed(() => mocks.admin.value),
+    canManageSystem: computed(() => mocks.admin.value),
+  }),
 }))
 vi.mock('@/composables/useResponsive', () => ({ useResponsive: () => ({ isMobile: ref(false) }) }))
 vi.mock('@/composables/useTenantReload', () => ({ useTenantReload: (fn: () => void) => fn() }))
@@ -81,6 +92,13 @@ describe('作业详情上下文', () => {
     mocks.tenant = reactive({ tenantId: 'tenant-a' })
     mocks.route = reactive({ params: { id: '7' }, query: { tenantId: 'tenant-a' } })
     mocks.permission.value = true
+    mocks.admin.value = true
+    mocks.menuPaths = [
+      '/governance/calendars',
+      '/governance/windows',
+      '/governance/queues',
+      '/governance/quota',
+    ]
     mocks.push.mockReset()
     mocks.replace.mockReset()
     mocks.trigger.mockReset()
@@ -99,6 +117,40 @@ describe('作业详情上下文', () => {
     })
     mocks.list.mockReset().mockResolvedValue({ records: [], total: 0 })
   })
+  it('租户管理员仅看到有权限的治理入口', async () => {
+    mocks.admin.value = false
+    const wrapper = render()
+    await flushPromises()
+    expect(button(wrapper, 'jobDefinitionDetail.maintainCalendar')).toBeDefined()
+    for (const key of ['btnNewCalendar', 'btnNewWindow', 'maintainWindow', 'maintainQueue']) {
+      expect(button(wrapper, `jobDefinitionDetail.${key}`)).toBeUndefined()
+    }
+    expect(button(wrapper, 'jobDefinitionDetail.maintainQuota')).toBeDefined()
+  })
+
+  it('后端菜单未授权时不显示目标入口', async () => {
+    mocks.menuPaths = []
+    const wrapper = render()
+    await flushPromises()
+    for (const key of ['maintainCalendar', 'maintainWindow', 'maintainQueue', 'maintainQuota']) {
+      expect(button(wrapper, `jobDefinitionDetail.${key}`)).toBeUndefined()
+    }
+  })
+
+  it('平台管理员可以使用治理快捷入口', async () => {
+    const wrapper = render()
+    await flushPromises()
+    for (const key of [
+      'btnNewCalendar',
+      'btnNewWindow',
+      'maintainCalendar',
+      'maintainWindow',
+      'maintainQueue',
+    ]) {
+      expect(button(wrapper, `jobDefinitionDetail.${key}`)).toBeDefined()
+    }
+  })
+
   it('同租户查看全部使用精确作业编码', async () => {
     const wrapper = render()
     await flushPromises()

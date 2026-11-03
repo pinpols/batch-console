@@ -1,5 +1,5 @@
 <template>
-  <PageContainer>
+  <PageContainer v-if="canReadFileConfig">
     <PageHeader>
       <template #actions>
         <el-button
@@ -19,12 +19,7 @@
       class="pill-tabs file-config-tabs"
       :class="{ 'single-mode': mode !== 'all' }"
     >
-      <!-- el-tab-pane 不能用 v-if(EP unmount bug panes.indexOf undefined);用 v-show 防崩 -->
-      <el-tab-pane
-        v-show="showTemplatesTab"
-        :label="t('fileTemplateList.tabTemplates')"
-        name="templates"
-      >
+      <el-tab-pane :label="t('fileTemplateList.tabTemplates')" name="templates">
         <div class="panel-head">
           <div class="panel-title">
             <span class="dot dot--primary" />
@@ -153,11 +148,7 @@
         </ProTable>
       </el-tab-pane>
 
-      <el-tab-pane
-        v-show="showChannelsTab"
-        :label="t('fileTemplateList.tabChannels')"
-        name="channels"
-      >
+      <el-tab-pane :label="t('fileTemplateList.tabChannels')" name="channels">
         <div class="panel-head">
           <div class="panel-title">
             <span class="dot dot--success" />
@@ -179,6 +170,17 @@
               class="query__search query-w-280"
               clearable
               :placeholder="t('fileTemplateList.channelKeywordPlaceholder')"
+            />
+          </el-form-item>
+          <el-form-item :label="t('workerManagement.channelTypeLabel')">
+            <MetaSelect
+              v-model="channelType"
+              class="query-w-160"
+              clearable
+              filterable
+              enum-key="channelType"
+              :options="channelTypeOptions"
+              :placeholder="t('workerManagement.channelTypePlaceholder')"
             />
           </el-form-item>
           <el-form-item :label="t('fileTemplateList.enabledLabel')">
@@ -224,6 +226,11 @@
             width="130"
           />
           <el-table-column
+            prop="timeoutSeconds"
+            :label="t('workerManagement.channelColTimeout')"
+            width="100"
+          />
+          <el-table-column
             prop="targetEndpoint"
             :label="t('fileTemplateList.colTargetEndpoint')"
             min-width="320"
@@ -264,14 +271,19 @@
             :label="t('fileTemplateList.colUpdatedAt')"
             width="180"
           />
-          <el-table-column
-            v-if="canMutateConfig"
-            :label="t('fileTemplateList.colActions')"
-            width="120"
-            fixed="right"
-          >
+          <el-table-column :label="t('fileTemplateList.colActions')" width="180" fixed="right">
             <template #default="{ row }">
               <el-button
+                size="small"
+                plain
+                type="primary"
+                :icon="View"
+                @click="openChannelDetail(row)"
+              >
+                {{ t('workerManagement.channelActionDetail') }}
+              </el-button>
+              <el-button
+                v-if="canMutateConfig"
                 type="primary"
                 plain
                 size="small"
@@ -404,73 +416,15 @@
       </template>
     </el-drawer>
 
-    <el-drawer
-      :append-to-body="true"
-      v-model="channelDialogVisible"
-      :title="
-        channelEditingId == null
-          ? t('fileTemplateList.channelCreateTitle')
-          : t('fileTemplateList.channelEditTitle')
-      "
-      direction="rtl"
-      size="800px"
-      destroy-on-close
-    >
-      <el-form :model="channelForm" label-position="top">
-        <el-form-item :label="t('fileTemplateList.fieldChannelCode')" required>
-          <el-input
-            v-if="channelEditingId != null"
-            v-model="channelForm.channelCode"
-            disabled
-            maxlength="128"
-          />
-          <!-- 文件渠道多用于 DISPATCH(也可 IMPORT/EXPORT),默认 DISPATCH 兼容性最好 -->
-          <CodeNameBuilder v-else v-model="channelForm.channelCode" default-domain="DISPATCH" />
-        </el-form-item>
-        <el-form-item :label="t('fileTemplateList.fieldChannelName')"
-          ><el-input v-model="channelForm.channelName" maxlength="256"
-        /></el-form-item>
-        <el-form-item :label="t('fileTemplateList.fieldChannelType')" required
-          ><MetaSelect
-            v-model="channelForm.channelType"
-            enum-key="channelType"
-            class="query-w-full"
-        /></el-form-item>
-        <el-form-item :label="t('fileTemplateList.fieldTargetEndpoint')"
-          ><el-input v-model="channelForm.targetEndpoint" maxlength="512"
-        /></el-form-item>
-        <el-form-item :label="t('fileTemplateList.fieldAuthType')"
-          ><MetaSelect
-            v-model="channelForm.authType"
-            enum-key="authType"
-            class="query-w-full"
-            clearable
-        /></el-form-item>
-        <el-form-item :label="t('fileTemplateList.fieldReceiptPolicy')"
-          ><MetaSelect
-            v-model="channelForm.receiptPolicy"
-            enum-key="receiptPolicy"
-            class="query-w-full"
-            clearable
-        /></el-form-item>
-        <el-form-item :label="t('fileTemplateList.fieldTimeoutSeconds')"
-          ><el-input-number v-model="channelForm.timeoutSeconds" :min="0" :max="2147483647"
-        /></el-form-item>
-        <el-form-item :label="t('fileTemplateList.fieldEnabled')"
-          ><el-switch v-model="channelForm.enabled"
-        /></el-form-item>
-        <el-form-item :label="t('fileTemplateList.fieldConfigJson')">
-          <JsonTextareaInput v-model="channelForm.configJson" :rows="5" expect="object" />
-          <div class="field-hint">{{ t('fileTemplateList.configJsonSecretHint') }}</div>
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="channelDialogVisible = false">{{ t('common.cancel') }}</el-button>
-        <el-button type="primary" :loading="channelSaving" @click="saveChannel">{{
-          t('common.save')
-        }}</el-button>
-      </template>
-    </el-drawer>
+    <FileChannelDrawers
+      v-model:editor-visible="channelDialogVisible"
+      v-model:detail-visible="channelDetailVisible"
+      :form="channelForm"
+      :editing-id="channelEditingId"
+      :saving="channelSaving"
+      :detail-row="channelDetailRow"
+      @save="saveChannel"
+    />
   </PageContainer>
 </template>
 
@@ -494,9 +448,6 @@
   const mode = computed<'templates' | 'channels' | 'all'>(
     () => (route.meta?.mode as 'templates' | 'channels' | undefined) ?? 'all',
   )
-  const showTemplatesTab = computed(() => mode.value === 'all' || mode.value === 'templates')
-  const showChannelsTab = computed(() => mode.value === 'all' || mode.value === 'channels')
-
   function resolveEnumLabel(group: string, value?: string | null): string {
     if (!value) return ''
     const key = `enum.${group}.${value}`
@@ -524,6 +475,7 @@
   } from '@/api/system'
   import { useTenantStore } from '@/stores/tenant'
   import { useAuthStore } from '@/stores/auth'
+  import { usePermissionStore } from '@/stores/permission'
   import { currentAuthSession, isSharedAuthRevisionCurrent } from '@/api/authSession'
   import { useTenantReload } from '@/composables/useTenantReload'
   import { useTenantRequestScope } from '@/composables/useTenantRequestScope'
@@ -534,6 +486,7 @@
   import ProTable from '@/components/table/ProTable.vue'
   import StatusSegment, { type StatusSegmentItem } from '@/components/table/StatusSegment.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
+  import FileChannelDrawers from './FileChannelDrawers.vue'
   import FileTemplateDetailDrawer from './FileTemplateDetailDrawer.vue'
   import FileTemplateFormatFields from './FileTemplateFormatFields.vue'
   import JsonTextareaInput from '@/components/common/JsonTextareaInput.vue'
@@ -544,6 +497,18 @@
 
   const tenant = useTenantStore()
   const auth = useAuthStore()
+  const permissionStore = usePermissionStore()
+  const canReadFileConfig = computed(() => {
+    if (!auth.isLoggedIn || !auth.profileLoaded) return false
+    if (
+      !['ROLE_ADMIN', 'ROLE_TENANT_ADMIN', 'ROLE_AUDITOR'].some((role) => auth.hasPermission(role))
+    )
+      return false
+    return (
+      permissionStore.hasBackendMenuAccess('/files/templates') ||
+      (mode.value === 'channels' && permissionStore.hasBackendMenuAccess('/files/channels'))
+    )
+  })
   const templatesScope = useTenantRequestScope()
   const channelsScope = useTenantRequestScope()
   const bizTypesScope = useTenantRequestScope()
@@ -578,6 +543,7 @@
       !username ||
       !auth.isLoggedIn ||
       !auth.profileLoaded ||
+      !canReadFileConfig.value ||
       !canMutateConfig.value ||
       !isSharedAuthRevisionCurrent()
     )
@@ -591,6 +557,7 @@
       scope.session === currentAuthSession() &&
       auth.isLoggedIn &&
       auth.profileLoaded &&
+      canReadFileConfig.value &&
       canMutateConfig.value &&
       isSharedAuthRevisionCurrent()
     )
@@ -612,6 +579,7 @@
       scope.username === auth.userInfo?.username &&
       auth.isLoggedIn &&
       auth.profileLoaded &&
+      canReadFileConfig.value &&
       isSharedAuthRevisionCurrent()
     )
   }
@@ -622,6 +590,10 @@
   const activeTab = ref<'templates' | 'channels'>(
     mode.value === 'channels' ? 'channels' : 'templates',
   )
+  // 不在 el-tab-pane 根节点叠加 v-show，显隐由 Element Plus 按当前 tab 管理。
+  watch(mode, (value) => {
+    activeTab.value = value === 'channels' ? 'channels' : 'templates'
+  })
 
   // PageHeader 右上"新建"按钮按当前 tab 切换文案与动作
   const activeCreateLabel = computed(() =>
@@ -647,6 +619,9 @@
   const bizType = ref('')
   const enabled = ref<boolean | undefined>()
   const channelKeyword = ref('')
+  const channelType = ref('')
+  const channelDetailVisible = ref(false)
+  const channelDetailRow = ref<ConsoleFileChannelResponse | null>(null)
   const channelEnabled = ref<boolean | undefined>()
   const enabledStatusSegmentItems = computed<StatusSegmentItem[]>(() => [
     { value: 'ALL', label: t('dateRangePicker.all'), tone: 'neutral' },
@@ -716,6 +691,7 @@
   }
   // templateType 走后端 enum(完整候选);未到达时 fallback 到 rows 派生
   const { data: metaEnums } = useConsoleMetaEnumsQuery()
+  const channelTypeOptions = computed(() => pickMetaEnumGroup(metaEnums.value, 'channelType'))
   const templateTypeOptions = computed(() => {
     const fromEnum = pickMetaEnumGroup(metaEnums.value, 'fileTemplateType')
     if (fromEnum.length > 0) return fromEnum
@@ -728,6 +704,7 @@
   // bizType 是租户级业务字典(独立 API),进页面 + 切租户时拉
   const bizTypeOptions = ref<MetaOption[]>([])
   async function loadBizTypes() {
+    if (!canReadFileConfig.value) return
     const scope = bizTypesScope.begin()
     const session = captureReadSession()
     if (!scope.tenantId) return
@@ -769,6 +746,7 @@
   }
 
   async function load() {
+    if (!canReadFileConfig.value) return
     const scope = templatesScope.begin()
     const session = captureReadSession()
     if (!scope.tenantId) return
@@ -800,11 +778,20 @@
         if (!searchableChannelText.includes(k)) return false
       }
       if (channelEnabled.value != null && row.enabled !== channelEnabled.value) return false
+      if (channelType.value && !String(row.channelType ?? '').includes(channelType.value))
+        return false
       return true
     })
   }
 
+  function openChannelDetail(row: ConsoleFileChannelResponse) {
+    if (!canReadFileConfig.value || (row.tenantId && row.tenantId !== tenant.tenantId)) return
+    channelDetailRow.value = row
+    channelDetailVisible.value = true
+  }
+
   async function loadChannels() {
+    if (!canReadFileConfig.value) return
     const scope = channelsScope.begin()
     const session = captureReadSession()
     if (!scope.tenantId) return
@@ -824,6 +811,7 @@
   }
 
   async function openDetail(row: ConsoleFileTemplateResponse) {
+    if (!canReadFileConfig.value) return
     // 防御:BE 返回的 row 字段可能全为 null(数据坏 / schema drift / 权限过滤);
     // 不带 templateCode 直接 fetch 会 GET /file-templates/undefined → 404 报错
     if (!row?.templateCode) {
@@ -1079,6 +1067,7 @@
   function resetChannels() {
     return runReset(() => {
       channelKeyword.value = ''
+      channelType.value = ''
       channelEnabled.value = undefined
       syncChannelRows()
     })
@@ -1121,6 +1110,7 @@
       () => auth.isLoggedIn,
       () => auth.profileLoaded,
       canMutateConfig,
+      canReadFileConfig,
     ],
     invalidateEditors,
     { flush: 'sync' },
@@ -1152,6 +1142,7 @@
       () => auth.userInfo?.username,
       () => auth.isLoggedIn,
       () => auth.profileLoaded,
+      canReadFileConfig,
     ],
     ([tenantId, username, loggedIn, profileLoaded], [oldTenantId]) => {
       templatesScope.begin()
@@ -1163,6 +1154,8 @@
       bizTypeOptions.value = []
       detail.value = null
       detailVisible.value = false
+      channelDetailRow.value = null
+      channelDetailVisible.value = false
       loadingTemplates.value = false
       loadingChannels.value = false
       loadError.value = null

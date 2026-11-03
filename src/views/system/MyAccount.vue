@@ -266,8 +266,8 @@
     display: flex;
     flex-direction: column;
     gap: var(--page-section-gap);
-    width: min(100%, 75rem);
-    margin-inline: auto;
+    width: 100%;
+    min-width: 0;
   }
 
   .me-notice {
@@ -325,9 +325,9 @@
 
   .me-layout {
     display: grid;
-    grid-template-columns: minmax(15rem, 0.62fr) minmax(0, 1.38fr);
+    grid-template-columns: minmax(15rem, 1fr) minmax(0, 2fr);
     gap: var(--space-lg);
-    align-items: stretch;
+    align-items: start;
   }
 
   .me-panel {
@@ -472,6 +472,16 @@
 
   .me-perm-tag {
     max-width: 100%;
+    height: auto;
+    min-height: var(--control-height-sm);
+    white-space: normal;
+  }
+
+  .me-perm-tag :deep(.el-tag__content) {
+    min-width: 0;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+    white-space: normal;
   }
 
   .me-permissions__more {
@@ -487,7 +497,24 @@
   }
 
   .me-form {
-    max-width: 40rem;
+    width: 100%;
+    min-width: 0;
+  }
+
+  /* 生成和复制按钮保留在表单宽度内，宽屏和窄屏都不溢出面板。 */
+  .me-form :deep(.strong-password-input--actions-outside) {
+    width: 100%;
+    flex-wrap: nowrap;
+  }
+
+  .me-form :deep(.strong-password-input--actions-outside .el-input) {
+    flex: 1 1 0;
+    width: 0;
+    min-width: 0;
+  }
+
+  .me-form :deep(.strong-password-input--actions-outside .pwd-actions) {
+    width: auto;
   }
 
   .me-form :deep(.el-form-item__label) {

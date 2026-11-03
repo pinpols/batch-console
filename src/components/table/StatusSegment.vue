@@ -48,8 +48,12 @@
   .status-segment {
     display: inline-flex;
     align-items: center;
+    flex-wrap: wrap;
     gap: 4px;
+    box-sizing: border-box;
     min-width: 0;
+    max-width: 100%;
+    min-height: var(--control-height-md);
     padding: 3px;
     border: 1px solid var(--color-border-light);
     border-radius: var(--radius-input);
@@ -61,7 +65,7 @@
     align-items: center;
     justify-content: center;
     gap: 6px;
-    min-height: 30px;
+    min-height: 24px;
     padding: 0 10px;
     border: 1px solid transparent;
     border-radius: calc(var(--radius-input) - 2px);
@@ -69,6 +73,7 @@
     color: var(--color-text-secondary);
     font: inherit;
     font-size: var(--font-size-sm);
+    line-height: 1.2;
     white-space: nowrap;
     cursor: pointer;
     transition:

@@ -43,6 +43,7 @@
     "smoke:endpoints": "node scripts/local/fe-endpoint-smoke.mjs",
     "build": "npm run typecheck && node --experimental-strip-types scripts/check-i18n-messages.mjs && vite build",
     "build:fast": "vite build",
+    "prepreview": "npm run docs:build",
     "preview": "vite preview",
     "lint": "eslint . --ext .vue,.ts,.tsx --fix",
     "lint:check": "eslint . --ext .vue,.ts,.tsx",
@@ -65,7 +66,7 @@
     "docs:preview": "vitepress preview tools/docs-bridge/frontend --host 127.0.0.1 --port 5174",
     "docs:serve": "bash scripts/docs-serve.sh",
     "//docs:dev:disabled": "统一站点使用生成的跨仓文档源目录；本地请用 npm run docs:serve(build + preview)",
-    "dev:all": "concurrently -k -n SPA,DOCS -c blue,green \"npm:dev\" \"npm:docs:serve\"",
+    "dev:all": "npm run docs:build && npm run dev",
     "docker:build": "docker build --build-context backend-docs=../file-batch-system/docs -t batch-console:latest .",
     "docker:run": "docker run --rm -p 8080:8080 -e BACKEND_UPSTREAM_HOST=host.docker.internal:18080 --add-host=host.docker.internal:host-gateway batch-console:latest",
     "docker:up": "docker compose up -d --build",
@@ -94,7 +95,7 @@
     "test:e2e:whole-workflow-replay:real": "E2E_WHOLE_WORKFLOW_REPLAY_REAL=1 node scripts/run-playwright.mjs test e2e/workflow-whole-replay-real.spec.ts --project=chromium --workers=1 --retries=0",
     "test:e2e:process-worker-progress:real": "E2E_PROCESS_WORKER_PROGRESS_REAL=1 node scripts/run-playwright.mjs test e2e/process-worker-pipeline-progress-real.spec.ts --project=chromium --workers=1 --retries=0",
     "test:e2e:dispatch-worker-progress:real": "E2E_DISPATCH_WORKER_PROGRESS_REAL=1 node scripts/run-playwright.mjs test e2e/dispatch-worker-pipeline-progress-real.spec.ts --project=chromium --workers=1 --retries=0",
-    "test:docs-publication": "node --test scripts/tests/docs-publication.test.mjs"
+    "test:docs-publication": "node --test scripts/tests/docs-publication.test.mjs scripts/tests/docs-static.test.mjs"
   },
   "dependencies": {
     "@antv/x6": "^3.1.8",

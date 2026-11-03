@@ -16,6 +16,7 @@ import { i18n } from '@/locales'
 import type { Role } from '@/types'
 import { permissionFallback } from './permissionFallback'
 import { mobileMenuAccess } from './mobileMenuAccess'
+import { installRouterErrorHandler } from './errorHandler'
 
 /**
  * 移动端兜底首页：没有对应移动页时的最终回退目标。
@@ -778,8 +779,20 @@ export const routes: RouteRecordRaw[] = [
           permissions: ['ROLE_ADMIN', 'ROLE_TENANT_ADMIN', 'ROLE_AUDITOR'],
         },
       },
-      { path: 'config/change-logs', redirect: '/config/management' },
-      { path: 'config/sync', redirect: '/config/management' },
+      {
+        path: 'config/change-logs',
+        redirect: (to: RouteLocationNormalized) => ({
+          path: '/config/management',
+          query: { ...to.query, tab: 'logs' },
+        }),
+      } as RouteRecordRaw,
+      {
+        path: 'config/sync',
+        redirect: (to: RouteLocationNormalized) => ({
+          path: '/config/management',
+          query: { ...to.query, tab: 'sync' },
+        }),
+      } as RouteRecordRaw,
       {
         path: 'ops/diagnostic',
         name: 'ops-diagnostic',
@@ -1088,7 +1101,10 @@ router.beforeEach(async (to, from) => {
   // 业务页空态自行提示。检测带内存缓存(系统级状态变化频率极低),向导创建后
   // 主动 invalidate。
   const administratorNeedsInitialTenantSetup =
-    auth.profileLoaded && auth.hasPermission('ROLE_ADMIN') && to.path !== '/setup/initial-tenant' && to.name !== 'login'
+    auth.profileLoaded &&
+    auth.hasPermission('ROLE_ADMIN') &&
+    to.path !== '/setup/initial-tenant' &&
+    to.name !== 'login'
   if (administratorNeedsInitialTenantSetup) {
     try {
       const { systemHasTenants } = await import('@/api/setup')
@@ -1106,11 +1122,12 @@ router.beforeEach(async (to, from) => {
   }
 
   const minRole = to.meta.minRole as string | undefined
-  const deniedLanding = () => permissionFallback(
-    auth.profileLoaded,
-    permission.hasBackendMenuAccess('/ops/summary'),
-    permission.canAccessRole('VIEWER'),
-  )
+  const deniedLanding = () =>
+    permissionFallback(
+      auth.profileLoaded,
+      permission.hasBackendMenuAccess('/ops/summary'),
+      permission.canAccessRole('VIEWER'),
+    )
   if (minRole && !permission.canAccessRole(minRole as Role)) {
     return { path: deniedLanding() }
   }
@@ -1130,7 +1147,9 @@ router.beforeEach(async (to, from) => {
   // 后端 /auth/me 下发的菜单是当前租户+authorities 的最终可见性来源。
   // 静态 minRole 只表示前端粗粒度等级；当后端菜单存在时，路由也必须按菜单 allowlist 收口，
   // 避免用户通过 URL、历史标签或命令面板进入已被后端隐藏的页面。
-  const activeMenu = (to.meta.activeMenu as string | undefined) ?? (typeof to.name === 'string' ? mobileMenuAccess[to.name] : undefined)
+  const activeMenu =
+    (to.meta.activeMenu as string | undefined) ??
+    (typeof to.name === 'string' ? mobileMenuAccess[to.name] : undefined)
   const menuCandidates = [
     activeMenu || to.path,
     ...((to.meta.menuAccessFallbacks as string[] | undefined) ?? []),
@@ -1139,7 +1158,9 @@ router.beforeEach(async (to, from) => {
     to.path === '/system/me' ||
     (to.path === '/system/users' && auth.profileLoaded) ||
     to.name === 'm-desktop-only' ||
-    (to.name === 'initial-tenant-setup' && auth.profileLoaded && auth.hasPermission('ROLE_ADMIN')) ||
+    (to.name === 'initial-tenant-setup' &&
+      auth.profileLoaded &&
+      auth.hasPermission('ROLE_ADMIN')) ||
     (to.path === '/system/ai-chat' && auth.profileLoaded && auth.hasCapability('AI_ASSISTANT_USE'))
   const menuAccessDenied =
     !allowWithoutMenu && !menuCandidates.some((path) => permission.hasBackendMenuAccess(path))
@@ -1161,33 +1182,6 @@ router.afterEach((to, from) => {
   })
 })
 
-router.onError((err, to) => {
-  useRouteProgressStore().finish()
-
-  const message = err instanceof Error ? err.message : String(err)
-  logError(`路由错误:${message}`, {
-    kind: 'router',
-    message,
-    path: to?.fullPath,
-  })
-
-  // 典型线上场景：发布后用户缓存了旧 chunk，点击菜单会报 “Loading chunk failed”
-  // 这里做一次性自动恢复（避免卡在空白页/进度条不消失）。
-  const isChunkLoadError =
-    /Loading chunk \d+ failed/i.test(message) ||
-    /Loading CSS chunk \d+ failed/i.test(message) ||
-    /Failed to fetch dynamically imported module/i.test(message) ||
-    /Importing a module script failed/i.test(message)
-
-  if (isChunkLoadError) {
-    const key = '__router_chunk_reload_once__'
-    const alreadyReloaded = sessionStorage.getItem(key) === '1'
-    if (!alreadyReloaded) {
-      sessionStorage.setItem(key, '1')
-      // 保留当前路径（含 query/hash），避免刷新后回到首页。
-      window.location.replace(to?.fullPath || window.location.href)
-    }
-  }
-})
+installRouterErrorHandler(router)
 
 export default router

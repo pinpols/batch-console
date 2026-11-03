@@ -12,7 +12,7 @@ const onboardingCenter = {
   viewGuide: '查看指南',
   role: {
     admin: {
-      title: '完成平台首条可运行链路',
+      title: '首条链路',
       description: '按租户、作业、配置、Worker 和成功运行的顺序完成基础接入。',
     },
     auditor: {

@@ -12,7 +12,10 @@ const mocks = vi.hoisted(() => ({
     loggedIn: boolean
     profileLoaded: boolean
     session: number
+    reader: boolean
+    fileMenu: boolean
   },
+  route: null as unknown as { meta: { mode: 'all' | 'templates' | 'channels' } },
   createTemplate: vi.fn(),
   updateTemplate: vi.fn(),
   createChannel: vi.fn(),
@@ -36,7 +39,11 @@ vi.mock('@/stores/auth', () => ({
     get profileLoaded() {
       return mocks.context.profileLoaded
     },
+    hasPermission: () => mocks.context.reader,
   }),
+}))
+vi.mock('@/stores/permission', () => ({
+  usePermissionStore: () => ({ hasBackendMenuAccess: () => mocks.context.fileMenu }),
 }))
 vi.mock('@/api/authSession', () => ({
   currentAuthSession: () => mocks.context.session,
@@ -60,7 +67,7 @@ vi.mock('@/api/meta', () => ({ getMetaBizTypes: vi.fn().mockResolvedValue([]) })
 vi.mock('@/composables/queries/useConsoleMeta', () => ({
   useConsoleMetaEnumsQuery: () => ({ data: ref({}) }),
 }))
-vi.mock('vue-router', () => ({ useRoute: () => ({ meta: {} }) }))
+vi.mock('vue-router', () => ({ useRoute: () => mocks.route }))
 vi.mock('vue-i18n', async (original) => ({
   ...(await original<typeof import('vue-i18n')>()),
   useI18n: () => ({
@@ -70,7 +77,7 @@ vi.mock('vue-i18n', async (original) => ({
 }))
 vi.mock('element-plus', async (original) => ({
   ...(await original<typeof import('element-plus')>()),
-  ElMessage: { success: mocks.success, warning: mocks.warning },
+  ElMessage: Object.assign(vi.fn(), { success: mocks.success, warning: mocks.warning }),
 }))
 
 enableAutoUnmount(afterEach)
@@ -82,7 +89,10 @@ beforeEach(() => {
     loggedIn: true,
     profileLoaded: true,
     session: 1,
+    reader: true,
+    fileMenu: true,
   })
+  mocks.route = reactive({ meta: { mode: 'all' } })
   mocks.createTemplate.mockReset().mockResolvedValue({})
   mocks.updateTemplate.mockReset().mockResolvedValue({})
   mocks.createChannel.mockReset().mockResolvedValue({})
@@ -95,19 +105,23 @@ beforeEach(() => {
   mocks.warning.mockReset()
 })
 
-function setup(realJsonInput = false) {
+function setup(realJsonInput = false, realTabs = false) {
   return shallowMount(FileTemplateList, {
+    attachTo: realTabs ? document.body : undefined,
     global: {
       stubs: {
         PageContainer: { template: '<div><slot /></div>' },
         PageHeader: { template: '<div><slot name="actions" /></div>' },
-        ElTabs: { template: '<div><slot /></div>' },
-        ElTabPane: { template: '<div><slot /></div>' },
+        FileChannelDrawers: false,
+        ElTabs: realTabs ? false : { template: '<div><slot /></div>' },
+        ElTabPane: realTabs ? false : { template: '<div><slot /></div>' },
         ProTable: { props: ['data'], template: '<div data-list>{{ JSON.stringify(data) }}</div>' },
         ElDrawer: {
           props: ['modelValue'],
           template: '<section v-if="modelValue"><slot /><slot name="footer" /></section>',
         },
+        ElDescriptions: { template: '<div><slot /></div>' },
+        ElDescriptionsItem: { template: '<div><slot /></div>' },
         ElForm: { template: '<div><slot /></div>' },
         ElFormItem: {
           props: ['label'],
@@ -164,6 +178,10 @@ function state(wrapper: ReturnType<typeof setup>) {
         toggleChannel: (row: Record<string, unknown>) => Promise<void>
         togglingTemplateIds: Map<number, unknown>
         togglingChannelIds: Map<number, unknown>
+        channelType: string
+        channelRows: Array<Record<string, unknown>>
+        onChannelSearch: () => Promise<void>
+        openChannelDetail: (row: Record<string, unknown>) => void
       }
     }
   ).setupState
@@ -179,6 +197,102 @@ async function clickSave(wrapper: ReturnType<typeof setup>) {
 }
 
 describe('file configuration editor context', () => {
+  it('同账号权限降级后不再展示文件配置详情', async () => {
+    const wrapper = setup()
+    state(wrapper).openChannelDetail({ id: 1, channelCode: 'private-channel' })
+    await flushPromises()
+    expect(wrapper.findComponent({ name: 'JsonPreview' }).exists()).toBe(true)
+    mocks.context.reader = false
+    await flushPromises()
+    expect(wrapper.findComponent({ name: 'JsonPreview' }).exists()).toBe(false)
+    expect(state(wrapper).channelRows).toEqual([])
+  })
+
+  it('同租户撤销文件菜单时立即隐藏详情并忽略迟到渠道响应', async () => {
+    let resolveOld!: (value: object[]) => void
+    mocks.listChannels
+      .mockReturnValueOnce(
+        new Promise((resolve) => {
+          resolveOld = resolve
+        }),
+      )
+      .mockResolvedValue([])
+    const wrapper = setup()
+    state(wrapper).openChannelDetail({ id: 1, channelCode: 'private-channel' })
+    await flushPromises()
+    expect(wrapper.findComponent({ name: 'JsonPreview' }).exists()).toBe(true)
+    mocks.context.fileMenu = false
+    await flushPromises()
+    expect(wrapper.findComponent({ name: 'JsonPreview' }).exists()).toBe(false)
+    resolveOld([{ id: 2, channelCode: 'late-channel' }])
+    await flushPromises()
+    expect(wrapper.text()).not.toContain('late-channel')
+    expect(state(wrapper).channelRows).toEqual([])
+    mocks.context.fileMenu = true
+    await flushPromises()
+    expect(state(wrapper).channelRows).toEqual([])
+  })
+
+  it('keeps channel type filtering and read-only details in the file center', async () => {
+    mocks.context.writer = false
+    mocks.route.meta.mode = 'channels'
+    mocks.listChannels.mockResolvedValue([
+      { id: 1, channelCode: 'one', channelType: 'SFTP', timeoutSeconds: 30 },
+      { id: 2, channelCode: 'two', channelType: 'NAS', timeoutSeconds: 60 },
+    ])
+    const wrapper = setup()
+    await flushPromises()
+    state(wrapper).channelType = 'NAS'
+    await state(wrapper).onChannelSearch()
+    expect(state(wrapper).channelRows.map((row) => row.channelCode)).toEqual(['two'])
+    state(wrapper).openChannelDetail(state(wrapper).channelRows[0]!)
+    await flushPromises()
+    expect(wrapper.findComponent({ name: 'JsonPreview' }).props('data')).toMatchObject({
+      channelCode: 'two',
+      timeoutSeconds: 60,
+    })
+    mocks.context.tenantId = 'tenant-b'
+    await flushPromises()
+    expect(wrapper.findComponent({ name: 'JsonPreview' }).exists()).toBe(false)
+  })
+
+  it('shows only the active tab and follows navigation to the channel-only route', async () => {
+    const wrapper = setup(false, true)
+    await flushPromises()
+    const templates = () => wrapper.get('#pane-templates')
+    const channels = () => wrapper.get('#pane-channels')
+    expect(templates().isVisible()).toBe(true)
+    expect(channels().isVisible()).toBe(false)
+    expect(wrapper.text()).toContain('fileTemplateList.actionCreateTemplate')
+
+    wrapper.findComponent({ name: 'ElTabs' }).vm.$emit('update:modelValue', 'channels')
+    await flushPromises()
+    expect(templates().isVisible()).toBe(false)
+    expect(channels().isVisible()).toBe(true)
+    expect(wrapper.text()).toContain('fileTemplateList.actionCreateChannel')
+
+    mocks.route.meta.mode = 'templates'
+    await flushPromises()
+    expect(templates().isVisible()).toBe(true)
+    expect(channels().isVisible()).toBe(false)
+    mocks.route.meta.mode = 'channels'
+    await flushPromises()
+    expect(templates().isVisible()).toBe(false)
+    expect(channels().isVisible()).toBe(true)
+    mocks.route.meta.mode = 'all'
+    await flushPromises()
+    expect(templates().isVisible()).toBe(true)
+    expect(channels().isVisible()).toBe(false)
+  })
+
+  it('opens the channel-only route with the channel pane selected', async () => {
+    mocks.route.meta.mode = 'channels'
+    const wrapper = setup(false, true)
+    await flushPromises()
+    expect(wrapper.get('#pane-templates').isVisible()).toBe(false)
+    expect(wrapper.get('#pane-channels').isVisible()).toBe(true)
+    expect(wrapper.text()).toContain('fileTemplateList.actionCreateChannel')
+  })
   it('allows a mapping draft for a new template until JSON is entered', async () => {
     const wrapper = setup(true)
     await flushPromises()

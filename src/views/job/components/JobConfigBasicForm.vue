@@ -1,13 +1,13 @@
 <template>
   <div class="job-config-basic-form">
     <CalendarMiniCreateDrawer
-      v-if="tenantId"
+      v-if="tenantId && canWriteSystem"
       v-model:visible="calendarMiniVisible"
       :tenant-id="tenantId"
       @created="onCalendarCreated"
     />
     <WindowMiniCreateDrawer
-      v-if="tenantId"
+      v-if="tenantId && canWriteSystem"
       v-model:visible="windowMiniVisible"
       :tenant-id="tenantId"
       @created="onWindowCreated"
@@ -120,7 +120,7 @@
               />
             </el-select>
             <el-button
-              v-if="tenantId"
+              v-if="tenantId && canWriteSystem"
               :icon="Plus"
               link
               type="primary"
@@ -149,7 +149,7 @@
               />
             </el-select>
             <el-button
-              v-if="tenantId"
+              v-if="tenantId && canWriteSystem"
               :icon="Plus"
               link
               type="primary"
@@ -329,6 +329,7 @@
    */
   import { computed, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
+  import { usePermission } from '@/composables/usePermission'
   import { Plus } from '@lucide/vue'
   import MetaSelect from '@/components/common/MetaSelect.vue'
   import CodeNameBuilder from '@/components/common/CodeNameBuilder.vue'
@@ -366,6 +367,7 @@
     }>(),
     { readonlyIdentity: true, canConfigureRouting: false },
   )
+  const { canWriteSystem } = usePermission()
   const model = props.model
   const readonlyIdentity = computed(() => props.readonlyIdentity)
   const canConfigureRouting = computed(() => props.canConfigureRouting)

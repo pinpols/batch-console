@@ -177,6 +177,7 @@
   import type { FormInstance } from 'element-plus'
   import { ElMessage } from 'element-plus'
   import { useAuthStore } from '@/stores/auth'
+  import { useAppStore } from '@/stores/app'
   import { useLocale } from '@/composables/useLocale'
   import { getCaptchaConfig } from '@/api/captcha'
   import type { CaptchaConfig } from '@/api/captcha'
@@ -186,30 +187,19 @@
   import type { AxiosRequestConfig } from 'axios'
   import { lastApiMeta } from '@/utils/lastApiMeta'
   import { isConsoleServiceUnavailable } from '@/utils/serviceAvailability'
-  import {
-    applyThemeToDocument,
-    getSystemIsDark,
-    readThemePreference,
-    resolveEffectiveTheme,
-  } from '@/constants/theme'
 
   const router = useRouter()
   const route = useRoute()
   const auth = useAuthStore()
+  useAppStore()
   const { current: currentLocale, setLocale } = useLocale()
   const localeToggleTooltip = computed(() =>
     currentLocale.value === 'zh-CN' ? t('layoutHeader.switchToEn') : t('layoutHeader.switchToZh'),
   )
 
-  // 登录入口始终采用深色视觉；离开后恢复用户在控制台内保存的主题偏好。
-  applyThemeToDocument('dark')
   let active = true
   onBeforeUnmount(() => {
     active = false
-    const themePreference = readThemePreference()
-    const systemIsDark = getSystemIsDark()
-    const restoredTheme = resolveEffectiveTheme(themePreference, systemIsDark)
-    applyThemeToDocument(restoredTheme)
   })
 
   const formRef = ref<FormInstance>()
@@ -479,7 +469,7 @@
   }
 
   .login-brand__logo {
-    box-shadow: 0 4px 12px color-mix(in srgb, var(--color-brand-mark-bg) 20%, transparent);
+    box-shadow: 0 3px 10px color-mix(in srgb, var(--color-brand-mark-bg) 8%, transparent);
   }
 
   .login-brand__name {

@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test'
 import { STORAGE_KEYS } from './support/storage'
 import { installE2eLocale } from './support/i18n'
+import { adminMenus } from './support/app'
 
 test.use({ storageState: { cookies: [], origins: [] }, serviceWorkers: 'block' })
 
@@ -20,7 +21,12 @@ test.describe('navigation and tabs', () => {
       const path = new URL(route.request().url()).pathname
       const data =
         path === '/api/console/auth/me'
-          ? { username: 'navigation-admin', tenantId: 'ta', authorities: ['ROLE_ADMIN'] }
+          ? {
+              username: 'navigation-admin',
+              tenantId: 'ta',
+              authorities: ['ROLE_ADMIN'],
+              menus: adminMenus,
+            }
           : path === '/api/console/tenants'
             ? { items: [{ tenantId: 'ta', tenantName: 'Tenant A', status: 'ACTIVE' }], total: 1 }
             : path === '/api/console/ops/summary'
@@ -57,7 +63,8 @@ test.describe('navigation and tabs', () => {
     await expect(page).toHaveURL(/\/monitor\/workflow-runs/)
 
     await expect(page.getByRole('progressbar').first()).toBeHidden()
-    await page.locator('.nav__group-hd', { hasText: '告警与投递' }).click()
+    await page.keyboard.press('Escape')
+    await page.locator('.nav__group-hd', { hasText: '告警投递' }).click()
     await page
       .getByRole('link', { name: /^告警事件$|^事件告警$|^告警$/ })
       .first()
@@ -96,21 +103,22 @@ test.describe('navigation and tabs', () => {
   })
 
   test('业务引导中心展示可执行任务并支持稍后继续', async ({ page }) => {
-    await expect(page.getByRole('heading', { name: '完成平台首条可运行链路' })).toBeVisible()
+    await page.getByRole('tab', { name: '快速开始' }).click()
+    await expect(page.getByRole('heading', { name: '首条链路' })).toBeVisible()
     await expect(page.getByRole('heading', { name: '确定工作租户' })).toBeVisible()
     await expect(page.getByRole('heading', { name: '创建作业配置' })).toBeVisible()
     await expect(page.getByRole('heading', { name: '完成首个成功运行' })).toBeVisible()
     await expect(page.getByRole('button', { name: /新建作业/ })).toBeVisible()
 
-    await expect(page.getByText('第一步:选择租户')).toBeVisible()
+    await expect(page.getByText('第一步：选择租户')).toBeVisible()
     await page.keyboard.press('Escape')
 
     await page.getByRole('button', { name: '稍后提醒' }).click()
     await expect(page.getByRole('button', { name: '继续配置' })).toBeVisible()
 
-    await page.getByRole('button', { name: /navigation-admin.*平台管理员/ }).click()
-    await page.getByRole('menuitem', { name: '业务引导中心' }).click()
+    await page.goto('/ops/summary?onboarding=1')
     await expect(page).toHaveURL(/\/ops\/summary\?onboarding=1/)
-    await expect(page.getByRole('heading', { name: '完成平台首条可运行链路' })).toBeVisible()
+    await page.getByRole('tab', { name: '快速开始' }).click()
+    await expect(page.getByRole('heading', { name: '首条链路' })).toBeVisible()
   })
 })

@@ -10,6 +10,6 @@
 
 ## 当前入口与适用性
 
-测试路径见 [`excel-import.spec.ts`](../../e2e/excel-import.spec.ts)与 [`import-business-ui.spec.ts`](../../e2e/import-business-ui.spec.ts)。缺列、枚举和大小约束以当前后端模板与校验器为准；不把旧文件的行数或生成器注释当作当前服务上限。
+这些历史工作簿都含已退役的租户 Pipeline sheet，当前上传会先因退役 sheet 被拒绝，不能用来验证缺列、枚举或大小错误的独立分支。当前 [`excel-import.spec.ts`](../../e2e/excel-import.spec.ts)与 [`import-business-ui.spec.ts`](../../e2e/import-business-ui.spec.ts)不使用这些文件；缺列、枚举和大小约束以当前后端模板与校验器为准，不把旧行数或生成器注释当作服务上限。
 
 原始 [`generate.py`](../archive/02-excel-edge-cases/generate.py)已归档，仅用于追溯样本的派生方法。重新生成前先核对模板结构，不能直接覆盖本目录受版本控制的输入。

@@ -25,7 +25,7 @@
           @reset="reset"
           @refresh="() => runRefresh(load)"
         >
-          <el-form-item :label="t('approvals.statusLabel')">
+          <el-form-item class="approval-status-field" :label="t('approvals.statusLabel')">
             <div class="approval-status-filter">
               <StatusSegment
                 :model-value="approvalStatusSegmentValue"
@@ -38,6 +38,8 @@
                 class="approval-status-filter__advanced"
                 clearable
                 filterable
+                :fit-input-width="false"
+                :popper-style="{ minWidth: 'min(240px, calc(100vw - 24px))' }"
                 :placeholder="t('approvals.moreStatuses')"
                 :options="approvalAdvancedStatusOptions"
               />
@@ -768,16 +770,28 @@
 </script>
 
 <style scoped>
+  .approval-status-field {
+    --query-field-width: 520px;
+  }
+
   .approval-status-filter {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
+    flex-wrap: wrap;
     gap: var(--space-xs);
     min-width: 0;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .approval-status-filter :deep(.status-segment) {
+    flex: 1 1 260px;
   }
 
   .approval-status-filter__advanced {
     width: 160px;
-    flex: 0 1 160px;
+    max-width: 100%;
+    flex: 0 0 160px;
   }
 
   @media (max-width: 720px) {
@@ -793,6 +807,7 @@
 
     .approval-status-filter :deep(.status-segment) {
       display: grid;
+      flex-basis: auto;
       grid-template-columns: repeat(2, minmax(0, 1fr));
       overflow: visible;
     }

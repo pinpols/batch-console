@@ -206,7 +206,7 @@ const navigationGroupsByKey = {
   },
   alerting: {
     key: 'alerting',
-    title: '告警与投递',
+    title: '告警投递',
     icon: Bell,
     minRole: 'VIEWER',
     children: [
@@ -219,6 +219,7 @@ const navigationGroupsByKey = {
       {
         title: pageTitle('/observability/job-monitoring-policies'),
         path: '/observability/job-monitoring-policies',
+        titleKey: 'nav.menuJobMonitoring',
         minRole: 'OPERATOR',
         authorities: ['ROLE_ADMIN', 'ROLE_TENANT_ADMIN'],
         icon: Timer,
@@ -233,6 +234,7 @@ const navigationGroupsByKey = {
       {
         title: pageTitle('/system/notifications'),
         path: '/system/notifications',
+        titleKey: 'nav.menuNotificationDelivery',
         minRole: 'OPERATOR',
         icon: Bell,
       },
@@ -272,6 +274,7 @@ const navigationGroupsByKey = {
       {
         title: pageTitle('/config/tenant-package'),
         path: '/config/tenant-package',
+        titleKey: 'nav.menuConfigurationImport',
         minRole: 'OPERATOR',
         icon: Box,
         hidden: true,
@@ -323,7 +326,7 @@ const navigationGroupsByKey = {
   },
   scheduling: {
     key: 'scheduling',
-    title: '调度与资源',
+    title: '调度资源',
     icon: DataAnalysis,
     minRole: 'VIEWER',
     children: [
@@ -368,6 +371,7 @@ const navigationGroupsByKey = {
       {
         title: pageTitle('/ops/asset-freshness'),
         path: '/ops/asset-freshness',
+        titleKey: 'nav.menuFreshnessPolicies',
         minRole: 'OPERATOR',
         icon: Timer,
         hidden: true,
@@ -380,14 +384,12 @@ const navigationGroupsByKey = {
         minRole: 'OPERATOR',
         authorities: ['ROLE_ADMIN', 'ROLE_TENANT_ADMIN'],
         icon: Calendar,
-        hidden: true,
       },
       {
         title: pageTitle('/governance/windows'),
         path: '/governance/windows',
         minRole: 'ADMIN',
         icon: Clock,
-        hidden: true,
       },
       {
         title: pageTitle('/governance/quota'),
@@ -401,7 +403,6 @@ const navigationGroupsByKey = {
         path: '/governance/queues',
         minRole: 'ADMIN',
         icon: Tools,
-        hidden: true,
       },
       {
         title: pageTitle('/ops/custom-task-types'),

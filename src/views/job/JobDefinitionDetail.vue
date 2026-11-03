@@ -38,13 +38,13 @@
     />
 
     <CalendarMiniCreateDrawer
-      v-if="job && canActOnJob"
+      v-if="job && canActOnJob && canWriteSystem"
       v-model:visible="calendarMiniVisible"
       :tenant-id="job.tenantId"
       @created="onCalendarCreated"
     />
     <WindowMiniCreateDrawer
-      v-if="job && canActOnJob"
+      v-if="job && canActOnJob && canWriteSystem"
       v-model:visible="windowMiniVisible"
       :tenant-id="job.tenantId"
       @created="onWindowCreated"
@@ -117,16 +117,22 @@
                 <el-button type="primary" @click="router.push('/workflow/definitions')">
                   {{ t('jobDefinitionDetail.maintainWorkflowDefinition') }}
                 </el-button>
-                <el-button @click="calendarMiniVisible = true">
+                <el-button v-if="canWriteSystem" @click="calendarMiniVisible = true">
                   {{ t('jobDefinitionDetail.btnNewCalendar') }}
                 </el-button>
-                <el-button @click="windowMiniVisible = true">
+                <el-button v-if="canWriteSystem" @click="windowMiniVisible = true">
                   {{ t('jobDefinitionDetail.btnNewWindow') }}
                 </el-button>
-                <el-button @click="router.push('/governance/calendars')">
+                <el-button
+                  v-if="canOpenGovernance('/governance/calendars')"
+                  @click="router.push('/governance/calendars')"
+                >
                   {{ t('jobDefinitionDetail.maintainCalendar') }}
                 </el-button>
-                <el-button @click="router.push('/governance/windows')">
+                <el-button
+                  v-if="canManageSystem && canOpenGovernance('/governance/windows')"
+                  @click="router.push('/governance/windows')"
+                >
                   {{ t('jobDefinitionDetail.maintainWindow') }}
                 </el-button>
               </div>
@@ -156,10 +162,16 @@
                 </el-descriptions-item>
               </el-descriptions>
               <div v-if="canActOnJob" class="panel-actions">
-                <el-button @click="router.push('/governance/queues')">
+                <el-button
+                  v-if="canManageSystem && canOpenGovernance('/governance/queues')"
+                  @click="router.push('/governance/queues')"
+                >
                   {{ t('jobDefinitionDetail.maintainQueue') }}
                 </el-button>
-                <el-button @click="router.push('/governance/quota')">
+                <el-button
+                  v-if="canOpenGovernance('/governance/quota')"
+                  @click="router.push('/governance/quota')"
+                >
                   {{ t('jobDefinitionDetail.maintainQuota') }}
                 </el-button>
               </div>
@@ -481,6 +493,7 @@
   import { useTenantStore } from '@/stores/tenant'
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
   import { usePermission } from '@/composables/usePermission'
+  import { usePermissionStore } from '@/stores/permission'
   import { useTenantReload } from '@/composables/useTenantReload'
   import { useTenantRequestScope } from '@/composables/useTenantRequestScope'
   import { currentAuthSession, isSharedAuthRevisionCurrent } from '@/api/authSession'
@@ -532,7 +545,16 @@
   const tenant = useTenantStore()
   const { t } = useI18n({ useScope: 'global' })
   const { data: metaEnumsData } = useConsoleMetaEnumsQuery()
-  const { canMutateConfig } = usePermission()
+  const { canMutateConfig, canManageSystem, canWriteSystem } = usePermission()
+  const permissionStore = usePermissionStore()
+  function canOpenGovernance(path: string) {
+    return (
+      permissionStore.hasBackendMenuAccess(path) ||
+      (path !== '/governance/queues' &&
+        path !== '/governance/quota' &&
+        permissionStore.hasBackendMenuAccess('/governance/queues'))
+    )
+  }
   const { isMobile } = useResponsive()
 
   type JobDefinitionDetailModel = ConsoleJobDefinitionResponse &

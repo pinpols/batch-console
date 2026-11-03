@@ -37,6 +37,17 @@
         }}</span>
         <button
           type="button"
+          class="cp-filter"
+          :class="{ 'is-active': hiddenOnly }"
+          :aria-label="t('palette.sidebarHiddenOnly')"
+          :title="t('palette.sidebarHiddenOnly')"
+          :aria-pressed="hiddenOnly"
+          @click="hiddenOnly = !hiddenOnly"
+        >
+          <el-icon aria-hidden="true"><Hide /></el-icon>
+        </button>
+        <button
+          type="button"
           class="cp-kbd cp-kbd--close"
           :aria-label="t('palette.footClose')"
           @click="open = false"
@@ -65,9 +76,14 @@
         >
           <span class="cp-item__dot" aria-hidden="true" />
           <span class="cp-item__title">{{ it.title }}</span>
-          <span v-if="it.sidebarHidden" class="cp-item__badge">{{
-            t('palette.sidebarHidden')
-          }}</span>
+          <span
+            v-if="it.sidebarHidden"
+            class="cp-item__hidden"
+            role="img"
+            :aria-label="t('palette.sidebarHidden')"
+            :title="t('palette.sidebarHidden')"
+            ><el-icon aria-hidden="true"><Hide /></el-icon
+          ></span>
           <span class="cp-item__meta">{{ it.subtitle || it.meta }}</span>
         </button>
       </div>
@@ -88,6 +104,7 @@
   import { useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
   import type { Component } from 'vue'
+  import { Hide } from '@element-plus/icons-vue'
   import {
     navigationGroups,
     navigationItemTitleKey,
@@ -143,6 +160,7 @@
     key: string
     title: string
     subtitle?: string
+    searchText?: string
     meta: string
     path: string
     icon?: Component
@@ -264,6 +282,7 @@
   const inputRef = ref<{ focus: () => void } | null>(null)
   const resultsRef = ref<HTMLElement | null>(null)
   const q = ref('')
+  const hiddenOnly = ref(false)
   const activeIndex = ref(0)
 
   const recentItems = computed((): Omit<PaletteItem, 'globalIndex'>[] => {
@@ -295,6 +314,7 @@
         out.push({
           key: `menu:${c.path}`,
           title: te(titleKey) ? t(titleKey) : c.title,
+          searchText: `${c.title} ${resolvePageTitle(c.path, c.title)}`,
           subtitle: te(groupKey) ? t(groupKey) : g.title,
           meta: t('palette.metaMenu'),
           path: c.path,
@@ -381,16 +401,18 @@
       base.push(...entityItems.value, ...recentItems.value, ...menuItems.value)
     }
 
+    const scoped = hiddenOnly.value ? base.filter((it) => it.sidebarHidden) : base
     const filtered = term
-      ? base.filter((it) => {
+      ? scoped.filter((it) => {
           if (isJump && it.source === 'jump') return true
           // 实体匹配项来自服务端搜索结果,本身就是命中,不再用 hay 二次过滤
           // (避免如 "wf-001" 因 path 不含全部字符被错杀)
           if (it.source === 'entity') return true
-          const hay = `${it.title} ${it.subtitle ?? ''} ${it.path}`.toLowerCase()
+          const hay =
+            `${it.title} ${it.subtitle ?? ''} ${it.searchText ?? ''} ${it.path}`.toLowerCase()
           return hay.includes(term)
         })
-      : base
+      : scoped
 
     const seen = new Set<string>()
     const deduped = filtered.filter((it) => {
@@ -446,6 +468,7 @@
   function onClosed() {
     if (open.value) return
     q.value = ''
+    hiddenOnly.value = false
     activeIndex.value = 0
     invalidateSearch()
   }
@@ -454,14 +477,15 @@
     [
       open,
       q,
+      hiddenOnly,
       () => tenant.tenantId,
       () => [...permittedPaths.value].sort().join('|'),
       () => auth.userInfo,
     ],
-    ([isOpen, term, tenantId]) => {
+    ([isOpen, term, onlyHidden, tenantId]) => {
       activeIndex.value = 0
       invalidateSearch()
-      if (!isOpen || !tenantId || !shouldSearchEntity(term.trim())) return
+      if (!isOpen || onlyHidden || !tenantId || !shouldSearchEntity(term.trim())) return
       const generation = activeSearchGen
       debounceTimer = setTimeout(() => {
         debounceTimer = null
@@ -513,6 +537,34 @@
     color: var(--color-text-tertiary);
   }
 
+  .cp-filter {
+    display: inline-flex;
+    width: 28px;
+    height: 28px;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    padding: 0;
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--color-text-secondary);
+    font: inherit;
+    font-size: 16px;
+    cursor: pointer;
+  }
+
+  .cp-filter.is-active {
+    border-color: var(--color-primary);
+    background: color-mix(in srgb, var(--color-primary) 10%, transparent);
+    color: var(--color-primary);
+  }
+
+  .cp-filter:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+
   .cp-kbd {
     flex-shrink: 0;
     padding: 4px 10px;
@@ -529,7 +581,17 @@
   }
 
   .cp-kbd--loading {
+    max-width: 30%;
+    overflow: hidden;
     color: var(--color-primary);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  @media (max-width: 420px) {
+    .cp-header {
+      gap: 8px;
+    }
   }
 
   .cp-body {
@@ -584,14 +646,12 @@
     text-overflow: ellipsis;
   }
 
-  .cp-item__badge {
+  .cp-item__hidden {
+    display: inline-flex;
+    align-items: center;
     flex-shrink: 0;
-    padding: 2px 6px;
-    border: 1px solid var(--color-border);
-    border-radius: 4px;
     color: var(--color-text-secondary);
-    font-size: 11px;
-    line-height: 1.4;
+    font-size: 15px;
   }
 
   .cp-item__meta {

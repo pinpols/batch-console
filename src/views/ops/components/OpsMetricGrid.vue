@@ -166,8 +166,31 @@
 <style scoped>
   .metric-grid {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 14px;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  /* 首页页签密度:仅覆盖本页指标卡,不影响其他页面的 MetricCard */
+  .metric-hit :deep(.metric-card) {
+    min-height: 88px;
+  }
+
+  .metric-hit :deep(.metric-card .el-card__body) {
+    padding: 10px 12px;
+  }
+
+  .metric-hit :deep(.metric-card__label) {
+    margin-bottom: 4px;
+    font-size: var(--font-size-sm);
+  }
+
+  .metric-hit :deep(.metric-card__value) {
+    font-size: 24px;
+  }
+
+  .metric-hit :deep(.metric-card__description) {
+    margin-top: 4px;
+    font-size: var(--font-size-xs);
   }
 
   .metric-hit {
@@ -212,7 +235,7 @@
 
   @media (max-width: 1160px) {
     .metric-grid {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-columns: repeat(3, minmax(0, 1fr));
     }
   }
 

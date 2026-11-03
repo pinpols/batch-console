@@ -12,72 +12,61 @@
       </template>
     </PageHeader>
 
-    <div class="metrics">
-      <MetricCard :label="t('userRole.metricCurrentRole')" :value="formalRoleLabel" />
-      <MetricCard :label="t('userRole.metricPermissionCount')" :value="permissionList.length" />
-      <MetricCard
-        :label="t('userRole.metricVisibleMenu')"
-        :value="visibleMenuCount"
-        :description="t('userRole.metricVisibleMenuDesc')"
-      />
-      <MetricCard :label="t('userRole.metricCurrentTenant')" :value="tenant.tenantId" />
-    </div>
+    <div class="access-overview">
+      <SectionCard class="access-overview__card">
+        <template #header>
+          <span>{{ t('userRole.sectionLoginStatus') }}</span>
+        </template>
 
-    <SectionCard>
-      <template #header>
-        <span>{{ t('userRole.sectionLoginStatus') }}</span>
-      </template>
+        <el-descriptions :column="isMobile ? 1 : 2" :label-width="104" border class="profile-panel">
+          <el-descriptions-item :label="t('userRole.fieldUsername')">
+            {{ currentUser?.username || '—' }}
+          </el-descriptions-item>
+          <el-descriptions-item :label="t('userRole.fieldUserId')">
+            {{ currentUser?.userId || '—' }}
+          </el-descriptions-item>
+          <el-descriptions-item :label="t('userRole.fieldRole')">
+            <el-tag size="small" type="primary">{{ formalRoleLabel }}</el-tag>
+          </el-descriptions-item>
+          <el-descriptions-item :label="t('userRole.fieldTenant')">
+            {{ tenant.tenantId }}
+          </el-descriptions-item>
+          <el-descriptions-item :label="t('userRole.fieldRoleChain')">
+            <div class="role-chain">
+              <el-tag
+                v-for="role in roleOrder"
+                :key="role"
+                size="small"
+                :type="role === currentRole ? 'success' : 'info'"
+                effect="plain"
+              >
+                {{ roleLabel(role) }}
+              </el-tag>
+            </div>
+          </el-descriptions-item>
+        </el-descriptions>
+      </SectionCard>
 
-      <el-alert :title="modeMessage" type="info" :closable="false" show-icon />
-
-      <el-descriptions :column="isMobile ? 1 : 2" border class="profile-panel">
-        <el-descriptions-item :label="t('userRole.fieldUsername')">
-          {{ currentUser?.username || '—' }}
-        </el-descriptions-item>
-        <el-descriptions-item :label="t('userRole.fieldUserId')">
-          {{ currentUser?.userId || '—' }}
-        </el-descriptions-item>
-        <el-descriptions-item :label="t('userRole.fieldRole')">
-          <el-tag size="small" type="primary">{{ formalRoleLabel }}</el-tag>
-        </el-descriptions-item>
-        <el-descriptions-item :label="t('userRole.fieldTenant')">
-          {{ tenant.tenantId }}
-        </el-descriptions-item>
-        <el-descriptions-item :label="t('userRole.fieldPermissionCount')">
-          {{ permissionList.length }}
-        </el-descriptions-item>
-        <el-descriptions-item :label="t('userRole.fieldRoleChain')">
-          <div class="role-chain">
-            <el-tag
-              v-for="role in roleOrder"
-              :key="role"
-              size="small"
-              :type="role === currentRole ? 'success' : 'info'"
-              effect="plain"
-            >
-              {{ roleLabel(role) }}
-            </el-tag>
+      <SectionCard class="access-overview__card">
+        <template #header>
+          <div class="permission-header">
+            <span>{{ t('userRole.sectionPermissionList') }}</span>
+            <el-tag size="small" effect="plain" type="info">{{ permissionList.length }}</el-tag>
           </div>
-        </el-descriptions-item>
-      </el-descriptions>
-    </SectionCard>
+        </template>
 
-    <SectionCard>
-      <template #header>
-        <span>{{ t('userRole.sectionPermissionList') }}</span>
-      </template>
+        <EmptyState
+          v-if="permissionList.length === 0"
+          :description="t('userRole.emptyPermissions')"
+        />
 
-      <EmptyState
-        v-if="permissionList.length === 0"
-        :description="t('userRole.emptyPermissions')"
-      />
-
-      <div v-else class="permission-list">
-        <el-tag v-for="permissionName in permissionList" :key="permissionName" effect="plain">
-          {{ permissionName }}
-        </el-tag>
-      </div>
-    </SectionCard>
+        <div v-else class="permission-list">
+          <el-tag v-for="permissionName in permissionList" :key="permissionName" effect="plain">
+            {{ permissionName }}
+          </el-tag>
+        </div>
+      </SectionCard>
+    </div>
 
     <div class="access-tree-anchor">
       <SectionCard class="access-tree-card">
@@ -174,7 +163,6 @@
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
-  import MetricCard from '@/components/common/MetricCard.vue'
 
   interface AccessTreeBaseNode {
     id: string
@@ -217,13 +205,6 @@
     const role = resolveAuthorityRole(permissionList.value)
     return role ? `${t(authorityRoleLabelKeyMap[role])} (${role})` : t('userRole.roleUnset')
   })
-  const visibleMenuCount = computed(() =>
-    permission.visibleGroups.reduce((total, group) => {
-      const visibleItems = group.children.filter((item) => !item.hidden)
-      return total + visibleItems.length
-    }, 0),
-  )
-  const modeMessage = computed(() => t('userRole.modeMessage'))
   const visibleAccessPaths = computed(() => {
     const paths = permission.visibleGroups.flatMap((group) =>
       group.children.map((item) => item.path),
@@ -292,14 +273,31 @@
 </script>
 
 <style scoped>
-  .metrics {
+  .access-overview {
     display: grid;
+    grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+    align-items: start;
     gap: var(--space-md);
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    min-width: 0;
   }
 
-  .profile-panel {
-    margin-top: var(--space-md);
+  .access-overview__card {
+    min-width: 0;
+  }
+
+  .permission-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-sm);
+  }
+
+  .profile-panel :deep(.el-descriptions__table) {
+    table-layout: fixed;
+  }
+
+  .profile-panel :deep(.el-descriptions__cell) {
+    overflow-wrap: anywhere;
   }
 
   .role-chain {
@@ -312,6 +310,21 @@
     display: flex;
     flex-wrap: wrap;
     gap: var(--space-sm);
+  }
+
+  .permission-list :deep(.el-tag) {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    white-space: normal;
+    height: auto;
+    min-height: var(--control-height-sm);
+  }
+
+  .permission-list :deep(.el-tag__content) {
+    min-width: 0;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+    white-space: normal;
   }
 
   .access-tree-anchor {
@@ -386,8 +399,14 @@
   }
 
   .access-tree :deep(.el-tree-node__content) {
-    min-height: 42px;
+    min-height: 32px;
     height: auto;
+  }
+
+  @media (max-width: 1100px) {
+    .access-overview {
+      grid-template-columns: minmax(0, 1fr);
+    }
   }
 
   @media (max-width: 720px) {

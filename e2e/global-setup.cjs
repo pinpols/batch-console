@@ -395,9 +395,8 @@ async function seedTenant(authHeaders, tenantId, filePath) {
   }
 
   // ── ② 预览校验 ──────────────────────────────────────────────────
-  // 当前 11-sheet 权威样本包含 pipeline_step_definition；如果本地只启动 console-api、
-  // 未启动 worker 注册 step_registry，后端会判定 impl_code 未注册。此时继续 apply
-  // 只会得到 400，且污染 e2e 日志。先 preview，发现漂移就显式跳过。
+  // 当前样本不含已退役的租户 Pipeline sheet。先检查预览和一次性令牌，
+  // 避免缺少依赖或出现无效行时继续应用。
   let previewToken
   try {
     const previewRes = await fetchWithTimeout(
@@ -502,10 +501,9 @@ async function exportTenantPackageFixture(authHeaders) {
 }
 
 /**
- * 租户配置包 seed xlsx 的源在后端仓库下，前端仅引用不再保存副本，
- * 防止两份文件漂移（权威源：
- * file-batch-system/test-data/tenant-config-packages/README.md）。
- * 相对路径规则：batch-console 与 file-batch-system 同级目录。
+ * 全局 setup 从同级后端仓库读取权威 seed，不回退到前端快照。
+ * 前端 e2e-data/01-tenant-config-import 保存手动同步的测试快照，
+ * 来源和 SHA 核对方法见该目录 README。
  */
 const SEED_SUITE_DIR = path.resolve(
   __dirname,

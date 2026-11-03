@@ -1,12 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import {
-  readThemePreference,
-  resolveEffectiveTheme,
-  resolveThemeForPath,
-  THEME_REDESIGN_DEFAULT_STORAGE_KEY,
-  THEME_STORAGE_KEY,
-} from './theme'
+import { readThemePreference, resolveEffectiveTheme, THEME_STORAGE_KEY } from './theme'
 import { stubLocalStorage } from '@/test-utils/localStorage'
+import { STORAGE_KEYS } from './storageKeys'
 
 const storage = stubLocalStorage()
 
@@ -15,25 +10,24 @@ describe('theme', () => {
     storage.clear()
   })
 
-  it('defaults to dark when no user preference is stored', () => {
-    expect(readThemePreference()).toBe('dark')
+  it('defaults to system when no user preference is stored', () => {
+    expect(readThemePreference()).toBe('system')
   })
 
-  it('preserves stored user preference', () => {
-    storage.set(THEME_STORAGE_KEY, 'light')
-
-    expect(readThemePreference()).toBe('light')
+  it.each(['light', 'dark', 'system'] as const)('preserves stored %s preference', (value) => {
+    storage.set(THEME_STORAGE_KEY, value)
+    expect(readThemePreference()).toBe(value)
   })
 
-  it('returns dark for an unmarked legacy system preference', () => {
+  it('ignores the legacy redesign marker when preserving system preference', () => {
     storage.set(THEME_STORAGE_KEY, 'system')
-
-    expect(readThemePreference()).toBe('dark')
+    storage.set(STORAGE_KEYS.themeRedesignDefault, '0')
+    expect(readThemePreference()).toBe('system')
   })
 
   it('preserves explicit system preference after redesign marker exists', () => {
     storage.set(THEME_STORAGE_KEY, 'system')
-    storage.set(THEME_REDESIGN_DEFAULT_STORAGE_KEY, '1')
+    storage.set(STORAGE_KEYS.themeRedesignDefault, '1')
 
     expect(readThemePreference()).toBe('system')
   })
@@ -41,12 +35,5 @@ describe('theme', () => {
   it('resolves system preference from current color scheme', () => {
     expect(resolveEffectiveTheme('system', true)).toBe('dark')
     expect(resolveEffectiveTheme('system', false)).toBe('light')
-  })
-
-  it('keeps the login entry dark without changing other route preferences', () => {
-    expect(resolveThemeForPath('/login', 'light', false)).toBe('dark')
-    expect(resolveThemeForPath('/login/', 'system', false)).toBe('dark')
-    expect(resolveThemeForPath('/ops/summary', 'light', true)).toBe('light')
-    expect(resolveThemeForPath('/ops/summary', 'system', true)).toBe('dark')
   })
 })
