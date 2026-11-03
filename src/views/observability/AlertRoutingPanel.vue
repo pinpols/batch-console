@@ -154,19 +154,17 @@
       />
     </SectionCard>
 
-    <el-drawer
-      :append-to-body="true"
-      v-model="dialogVisible"
+    <FormDrawer
+      v-model:visible="dialogVisible"
       :title="
         editingId == null
           ? t('alertRoutingPanel.drawerCreateTitle')
           : t('alertRoutingPanel.drawerEditTitle')
       "
-      direction="rtl"
-      size="640px"
       destroy-on-close
-      :close-on-click-modal="false"
       :before-close="onDialogClose"
+      :saving="submitAction.loading.value"
+      @submit="submitForm"
     >
       <el-form ref="formRef" :model="form" :rules="rules" label-width="120px">
         <el-form-item :label="t('alertRoutingPanel.fieldRouteCode')" prop="routeCode">
@@ -216,17 +214,12 @@
           />
         </el-form-item>
       </el-form>
-      <template #footer>
-        <el-button @click="cancelDialog">{{ t('common.cancel') }}</el-button>
-        <el-button type="primary" :loading="submitAction.loading.value" @click="submitForm">
-          {{ t('common.save') }}
-        </el-button>
-      </template>
-    </el-drawer>
+    </FormDrawer>
   </PageContainer>
 </template>
 
 <script setup lang="ts">
+  import FormDrawer from '@/components/common/FormDrawer.vue'
   import { reactive, ref } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { Pencil as Edit, Plus } from '@lucide/vue'
@@ -420,15 +413,9 @@
     dirty.markPristine()
   }
 
-  async function cancelDialog() {
-    if (!(await dirty.confirmDiscard())) return
-    dialogVisible.value = false
-  }
-
-  async function onDialogClose(done: () => void) {
-    if (submitAction.loading.value) return
-    if (!(await dirty.confirmDiscard())) return
-    done()
+  // 保存中的关闭拦截由 FormDrawer 统一处理
+  function onDialogClose() {
+    return dirty.confirmDiscard()
   }
 
   // useAsyncAction:连点抗抖,300ms cooldown 防关弹窗动画期间二次提交

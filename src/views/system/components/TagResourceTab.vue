@@ -92,12 +92,12 @@
       </el-table>
     </DataState>
 
-    <el-drawer
-      :append-to-body="true"
-      v-model="newDialogVisible"
+    <FormDrawer
+      v-model:visible="newDialogVisible"
       :title="t('tagResourceTab.dialogTitle')"
-      direction="rtl"
-      size="480px"
+      size="sm"
+      :saving="savingNew"
+      @submit="saveNewTag"
     >
       <el-form label-position="top" class="new-dialog-form">
         <el-form-item :label="t('tagResourceTab.fieldTagKey')" required>
@@ -114,21 +114,12 @@
           />
         </el-form-item>
       </el-form>
-      <template #footer>
-        <div class="dialog-footer">
-          <el-button @click="newDialogVisible = false">
-            {{ t('common.cancel') }}
-          </el-button>
-          <el-button type="primary" :loading="savingNew" @click="saveNewTag">
-            {{ t('common.save') }}
-          </el-button>
-        </div>
-      </template>
-    </el-drawer>
+    </FormDrawer>
   </div>
 </template>
 
 <script setup lang="ts">
+  import FormDrawer from '@/components/common/FormDrawer.vue'
   import CopyableText from '@/components/common/CopyableText.vue'
   import { Save, Trash2 } from '@lucide/vue'
   import { ref, reactive, computed, watch } from 'vue'

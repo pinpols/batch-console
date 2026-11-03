@@ -95,64 +95,64 @@
       </el-table-column>
     </ProTable>
 
-    <el-drawer
-      :append-to-body="true"
-      v-model="webhookFormVisible"
+    <FormDrawer
+      v-model:visible="webhookFormVisible"
       :title="
         webhookEditingId
           ? t('notificationWebhooksTab.dialogTitleEdit')
           : t('notificationWebhooksTab.dialogTitleCreate')
       "
-      direction="rtl"
-      size="640px"
+      :description="t('notificationWebhooksTab.formDescription')"
+      :saving="savingWebhook"
+      @submit="saveWebhook"
     >
       <el-form
         ref="webhookFormRef"
         :model="webhookForm"
         :rules="webhookFormRules"
         label-position="top"
+        @submit.prevent
       >
-        <el-form-item :label="t('notificationWebhooksTab.fieldName')" prop="name">
-          <el-input
-            v-model="webhookForm.name"
-            :placeholder="t('notificationWebhooksTab.namePlaceholder')"
-            :disabled="webhookEditingId !== null"
-            maxlength="128"
-          />
-        </el-form-item>
-        <el-form-item :label="t('notificationWebhooksTab.fieldUrl')" prop="callbackUrl">
-          <el-input
-            v-model="webhookForm.callbackUrl"
-            :placeholder="t('notificationWebhooksTab.urlPlaceholder')"
-            maxlength="1024"
-          />
-        </el-form-item>
-        <el-form-item :label="t('notificationWebhooksTab.fieldEventTypes')" prop="eventTypes">
-          <el-input
-            v-model="webhookForm.eventTypes"
-            :placeholder="t('notificationWebhooksTab.eventTypesPlaceholder')"
-          />
-        </el-form-item>
-        <el-form-item :label="t('notificationWebhooksTab.fieldSecret')" prop="secret">
-          <el-input
-            v-model="webhookForm.secret"
-            :placeholder="t('notificationWebhooksTab.secretPlaceholder')"
-            maxlength="256"
-          />
-        </el-form-item>
-        <el-form-item :label="t('notificationCommon.enabledLabel')" prop="enabled">
-          <el-switch v-model="webhookForm.enabled" />
-        </el-form-item>
+        <FormSection :title="t('notificationWebhooksTab.sectionEndpoint')">
+          <el-form-item :label="t('notificationWebhooksTab.fieldName')" prop="name">
+            <el-input
+              v-model="webhookForm.name"
+              :placeholder="t('notificationWebhooksTab.namePlaceholder')"
+              :disabled="webhookEditingId !== null"
+              maxlength="128"
+            />
+          </el-form-item>
+          <el-form-item :label="t('notificationWebhooksTab.fieldUrl')" prop="callbackUrl">
+            <el-input
+              v-model="webhookForm.callbackUrl"
+              :placeholder="t('notificationWebhooksTab.urlPlaceholder')"
+              maxlength="1024"
+            />
+          </el-form-item>
+        </FormSection>
+        <FormSection
+          :title="t('notificationWebhooksTab.sectionDelivery')"
+          :description="t('notificationWebhooksTab.sectionDeliveryDesc')"
+        >
+          <el-form-item :label="t('notificationWebhooksTab.fieldEventTypes')" prop="eventTypes">
+            <el-input
+              v-model="webhookForm.eventTypes"
+              :placeholder="t('notificationWebhooksTab.eventTypesPlaceholder')"
+            />
+          </el-form-item>
+          <el-form-item :label="t('notificationWebhooksTab.fieldSecret')" prop="secret">
+            <el-input
+              v-model="webhookForm.secret"
+              :placeholder="t('notificationWebhooksTab.secretPlaceholder')"
+              maxlength="256"
+            />
+          </el-form-item>
+          <el-form-item :label="t('notificationCommon.enabledLabel')" prop="enabled">
+            <el-switch v-model="webhookForm.enabled" />
+          </el-form-item>
+        </FormSection>
       </el-form>
-      <template #footer>
-        <el-button @click="webhookFormVisible = false">
-          {{ t('common.cancel') }}
-        </el-button>
-        <el-button type="primary" :loading="savingWebhook" @click="saveWebhook">
-          {{ t('common.save') }}
-        </el-button>
-      </template>
-    </el-drawer>
+    </FormDrawer>
 
     <el-dialog
       v-model="webhookLogVisible"
@@ -227,6 +227,8 @@
   import { useTenantReload } from '@/composables/useTenantReload'
   import { useTenantRequestScope } from '@/composables/useTenantRequestScope'
   import ProTable from '@/components/table/ProTable.vue'
+  import FormDrawer from '@/components/common/FormDrawer.vue'
+  import FormSection from '@/components/common/FormSection.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
   import RowActions, { type RowAction } from '@/components/common/RowActions.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'

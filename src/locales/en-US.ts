@@ -2898,6 +2898,8 @@ const messages: Messages = {
     actionDelete: 'Delete',
     dialogCreateTitle: 'New parameter',
     dialogEditTitle: 'Edit parameter',
+    formDescription:
+      'Keys are unique. Running tasks pick up the new value after their next cache refresh.',
     fieldKey: 'Key',
     fieldKeyPlaceholder: 'Parameter key',
     fieldValue: 'Value',
@@ -3142,6 +3144,7 @@ const messages: Messages = {
     scopeWorkerExecute: 'Worker execute',
     scopeEmptyHint:
       'Leaving this empty grants the wildcard scope (*), which matches all required scopes.',
+    formDescription: 'The key is shown only once after creation. Copy and store it right away.',
     headerCreate: 'New API Key',
     keywordLabel: 'Keyword',
     keywordPlaceholder: 'Search by name (fuzzy)',
@@ -4939,6 +4942,11 @@ const messages: Messages = {
     btnDeliveryLogs: 'Delivery logs',
     dialogTitleCreate: 'New Webhook',
     dialogTitleEdit: 'Edit Webhook',
+    formDescription: 'The platform sends subscribed events to this URL as HTTP POST requests.',
+    sectionEndpoint: 'Endpoint',
+    sectionDelivery: 'Subscription and signing',
+    sectionDeliveryDesc:
+      'Only the listed event types are sent. With a secret, each request is signed so the receiver can verify its origin.',
     fieldName: 'Name',
     namePlaceholder: 'Webhook name',
     fieldUrl: 'URL',

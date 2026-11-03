@@ -26,6 +26,7 @@ describe('批次窗口编辑预览', () => {
         stubs: {
           PageContainer: slot,
           ElDrawer: slot,
+          FormDrawer: slot,
           ElForm: slot,
           ElFormItem: slot,
           WindowSchedulePreview: false,

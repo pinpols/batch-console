@@ -93,19 +93,22 @@
       </ProTable>
     </SectionCard>
 
-    <el-drawer
-      :append-to-body="true"
-      v-model="createVisible"
+    <FormDrawer
+      v-model:visible="createVisible"
       :title="t('apiKeyList.dialogCreateTitle')"
-      direction="rtl"
-      size="480px"
+      :description="t('apiKeyList.formDescription')"
+      size="sm"
+      :saving="saveAction.loading.value"
+      :submit-disabled="writesFrozen"
+      :submit-text="t('apiKeyList.dialogCreate')"
+      @submit="save"
     >
       <el-form
         ref="apiKeyFormRef"
         :model="form"
         :rules="apiKeyFormRules"
         label-position="top"
-        class="api-key-form"
+        @submit.prevent
       >
         <el-form-item :label="t('apiKeyList.fieldName')" prop="keyName">
           <el-input
@@ -140,18 +143,7 @@
           />
         </el-form-item>
       </el-form>
-      <template #footer>
-        <el-button @click="createVisible = false">{{ t('common.cancel') }}</el-button>
-        <el-button
-          type="primary"
-          :loading="saveAction.loading.value"
-          :disabled="writesFrozen"
-          @click="save"
-        >
-          {{ t('apiKeyList.dialogCreate') }}
-        </el-button>
-      </template>
-    </el-drawer>
+    </FormDrawer>
 
     <el-dialog
       v-model="rawKeyVisible"
@@ -229,6 +221,7 @@
 </template>
 
 <script setup lang="ts">
+  import FormDrawer from '@/components/common/FormDrawer.vue'
   import CopyableText from '@/components/common/CopyableText.vue'
   import { ref, reactive, computed } from 'vue'
   import { useI18n } from 'vue-i18n'
@@ -472,11 +465,6 @@
 </script>
 
 <style scoped>
-  .api-key-form :deep(.el-form-item__error) {
-    position: static;
-    width: 100%;
-  }
-
   .raw-key-alert {
     margin-bottom: 16px;
   }

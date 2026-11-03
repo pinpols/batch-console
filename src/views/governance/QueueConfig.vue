@@ -453,17 +453,16 @@
       @save="saveQueue"
     />
 
-    <el-drawer
-      :append-to-body="true"
-      v-model="windowDialogVisible"
+    <FormDrawer
+      v-model:visible="windowDialogVisible"
       :title="
         windowEditingId == null
           ? t('queueConfig.windowCreateTitle')
           : t('queueConfig.windowEditTitle')
       "
-      direction="rtl"
-      size="640px"
       destroy-on-close
+      :saving="saving"
+      @submit="saveWindow"
     >
       <el-form :model="windowForm" label-width="120px">
         <el-form-item :label="t('queueConfig.fieldWindowCode')" required>
@@ -527,13 +526,7 @@
             show-word-limit
         /></el-form-item>
       </el-form>
-      <template #footer>
-        <el-button @click="windowDialogVisible = false">{{ t('common.cancel') }}</el-button>
-        <el-button type="primary" :loading="saving" @click="saveWindow">{{
-          t('common.save')
-        }}</el-button>
-      </template>
-    </el-drawer>
+    </FormDrawer>
 
     <GovernanceCalendarEditor
       v-model="calendarDialogVisible"
@@ -543,17 +536,17 @@
       @save="saveCalendar"
     />
 
-    <el-drawer
-      :append-to-body="true"
-      v-model="holidayDialogVisible"
+    <FormDrawer
+      v-model:visible="holidayDialogVisible"
       :title="
         holidayEditingId == null
           ? t('queueConfig.holidayCreateTitle')
           : t('queueConfig.holidayEditTitle')
       "
-      direction="rtl"
-      size="480px"
+      size="sm"
       destroy-on-close
+      :saving="saving"
+      @submit="saveHoliday"
     >
       <el-form :model="holidayForm" label-width="120px">
         <el-form-item :label="t('queueConfig.fieldBizDate')" required
@@ -577,17 +570,12 @@
             show-word-limit
         /></el-form-item>
       </el-form>
-      <template #footer>
-        <el-button @click="holidayDialogVisible = false">{{ t('common.cancel') }}</el-button>
-        <el-button type="primary" :loading="saving" @click="saveHoliday">{{
-          t('common.save')
-        }}</el-button>
-      </template>
-    </el-drawer>
+    </FormDrawer>
   </PageContainer>
 </template>
 
 <script setup lang="ts">
+  import FormDrawer from '@/components/common/FormDrawer.vue'
   import {
     filterGovernanceQueues,
     filterGovernanceWindows,

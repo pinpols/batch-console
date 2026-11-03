@@ -90,19 +90,17 @@
       </el-table-column>
     </ProTable>
 
-    <el-drawer
-      :append-to-body="true"
-      v-model="channelFormVisible"
+    <FormDrawer
+      v-model:visible="channelFormVisible"
       :title="
         channelEditingCode
           ? t('notificationChannelsTab.dialogTitleEdit')
           : t('notificationChannelsTab.dialogTitleCreate')
       "
-      direction="rtl"
-      size="640px"
-      :close-on-click-modal="false"
       :before-close="onChannelFormClose"
       @opened="onChannelFormOpened"
+      :saving="savingChannel"
+      @submit="saveChannel"
     >
       <el-form
         ref="channelFormRef"
@@ -152,19 +150,12 @@
           <el-switch v-model="channelForm.enabled" />
         </el-form-item>
       </el-form>
-      <template #footer>
-        <el-button @click="closeChannelForm">
-          {{ t('common.cancel') }}
-        </el-button>
-        <el-button type="primary" :loading="savingChannel" @click="saveChannel">
-          {{ t('common.save') }}
-        </el-button>
-      </template>
-    </el-drawer>
+    </FormDrawer>
   </div>
 </template>
 
 <script setup lang="ts">
+  import FormDrawer from '@/components/common/FormDrawer.vue'
   import CopyableText from '@/components/common/CopyableText.vue'
   import { ref, reactive, computed, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
@@ -340,15 +331,9 @@
     ]
   }
 
-  async function closeChannelForm() {
-    if (!(await channelDirty.confirmDiscard())) return
-    channelFormVisible.value = false
-  }
-
-  async function onChannelFormClose(done: () => void) {
-    if (savingChannel.value) return
-    if (!(await channelDirty.confirmDiscard())) return
-    done()
+  // 保存中的关闭拦截由 FormDrawer 统一处理
+  function onChannelFormClose() {
+    return channelDirty.confirmDiscard()
   }
 
   async function saveChannel() {

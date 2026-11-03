@@ -124,11 +124,12 @@
       />
     </div>
 
-    <el-drawer
-      v-model="drawerOpen"
+    <FormDrawer
+      v-model:visible="drawerOpen"
       :title="editingId ? t('assetFreshness.editTitle') : t('assetFreshness.createTitle')"
-      direction="rtl"
-      size="520px"
+      :saving="saving"
+      :submit-disabled="writesFrozen"
+      @submit="save"
     >
       <el-form id="asset-freshness-form" label-position="top" :model="form" @submit.prevent="save">
         <el-form-item :label="t('assetFreshness.assetCode')" required>
@@ -176,25 +177,12 @@
           />
         </el-form-item>
       </el-form>
-      <template #footer>
-        <el-button native-type="button" @click="drawerOpen = false">{{
-          t('common.cancel')
-        }}</el-button>
-        <el-button
-          type="primary"
-          native-type="submit"
-          form="asset-freshness-form"
-          :loading="saving"
-          :disabled="writesFrozen"
-        >
-          {{ t('common.save') }}
-        </el-button>
-      </template>
-    </el-drawer>
+    </FormDrawer>
   </PageContainer>
 </template>
 
 <script setup lang="ts">
+  import FormDrawer from '@/components/common/FormDrawer.vue'
   import { reactive, ref } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { useWriteAvailability } from '@/composables/useWriteAvailability'
