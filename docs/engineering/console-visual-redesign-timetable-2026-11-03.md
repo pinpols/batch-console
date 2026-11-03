@@ -62,6 +62,8 @@
 | P3 | 运行总览 `runs/RunsOverview.vue`、报表中心 `reports/ReportExportHub.vue`、我的账户 `system/MyAccount.vue`、维护页 `MaintenancePage.vue`、运维诊断 `ops/OpsDiagnostic.vue` | 各 7–14 处写死字号/颜色 | 以 token 收敛为主，不改布局 |
 | P3 | 移动端 `/m/*`（`src/layout-mobile/`、`src/views-mobile/`） | 独立样式体系，未随第一期变化 | 单独一期，按移动任务重排 |
 
+2026-11-03 用户逐页反馈的待美化页面与功能缺陷统一登记在[前端界面与菜单调整台账](../backlog/frontend-ui-acceptance-2026-11-02.md#2026-11-03-用户反馈登记时刻表重设计分支)，本表不重复维护。
+
 同批可穿插处理的交互问题：租户切换器输入 `ta` 时完全匹配项排在末位；已选租户后新手引导仍提示“选择租户”；顶部横幅与右上角存在两个租户搜索入口。
 
 ## 验证
