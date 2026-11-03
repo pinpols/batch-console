@@ -3,7 +3,6 @@ export default {
   title: '租户今日计划与执行',
   date: '业务日期',
   today: '今日',
-  refresh: '刷新进度',
   unavailable: '进度连接暂不可用，保留最后快照；正在重连并补查。',
   incomplete:
     '计划投影覆盖不完整：{missing} / {total} 个日程尚未覆盖批次截止时间，计划结束比例暂不计算。',

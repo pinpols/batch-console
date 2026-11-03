@@ -19,9 +19,6 @@
           <p>{{ description }}</p>
         </div>
         <div class="onboarding-center__header-actions">
-          <el-button :loading="loading" @click="load">
-            {{ t('common.refresh') }}
-          </el-button>
           <el-button @click="setCollapsed(true)">
             {{ t('onboardingCenter.remindLater') }}
           </el-button>
@@ -98,7 +95,11 @@
                   {{ t('onboardingCenter.blockers', { count: step.blockingItems.length }) }}
                 </strong>
                 <ul>
-                  <li v-for="item in step.blockingItems.slice(0, 3)" :key="blockerKey(item)">
+                  <li
+                    v-for="item in step.blockingItems.slice(0, 3)"
+                    :key="blockerKey(item)"
+                    :title="`${item.ref || item.item} ${item.hint || item.reason}`"
+                  >
                     <span>{{ item.ref || item.item }}</span>
                     <span>{{ item.hint || item.reason }}</span>
                   </li>
@@ -174,6 +175,8 @@
   } = useOnboardingChecklist()
   const docsOpen = ref(false)
   const activeDocKey = ref('first-tenant-config-quickstart')
+  // 供首页顶部刷新按钮刷新当前页签
+  defineExpose({ load, loading })
 
   const roleKey = computed(() => {
     if (role.value === 'ROLE_ADMIN') return 'admin'
@@ -235,8 +238,13 @@
 
 <style scoped>
   .onboarding-center {
-    margin-bottom: var(--space-lg);
+    margin-bottom: 0;
     border: 1px solid color-mix(in srgb, var(--color-primary) 18%, var(--color-border-light));
+  }
+
+  /* 首页页签密度:压缩留白,五步清单一屏可见 */
+  .onboarding-center :deep(.el-card__body) {
+    padding: 12px 16px;
   }
 
   .onboarding-center__header,
@@ -290,7 +298,7 @@
   }
 
   .onboarding-center__progress {
-    margin-top: var(--space-lg);
+    margin-top: var(--space-sm);
   }
 
   .onboarding-center__progress-copy {
@@ -301,14 +309,14 @@
 
   .onboarding-center__partial,
   .onboarding-center__success {
-    margin-top: var(--space-md);
+    margin-top: var(--space-sm);
   }
 
   .onboarding-center__success {
     display: flex;
     align-items: flex-start;
     gap: var(--space-sm);
-    padding: var(--space-md);
+    padding: var(--space-sm);
     border-radius: var(--radius-content);
     color: var(--color-success);
     background: color-mix(in srgb, var(--color-success) 8%, transparent);
@@ -321,7 +329,7 @@
   .onboarding-center__steps {
     display: grid;
     gap: 0;
-    margin: var(--space-lg) 0 0;
+    margin: var(--space-sm) 0 0;
     padding: 0;
     list-style: none;
   }
@@ -330,7 +338,7 @@
     display: grid;
     grid-template-columns: 32px minmax(0, 1fr);
     gap: var(--space-md);
-    padding: var(--space-md) 0;
+    padding: var(--space-sm) 0;
     border-top: 1px solid var(--color-border-light);
   }
 
@@ -386,8 +394,8 @@
   }
 
   .onboarding-step__blockers {
-    margin-top: var(--space-sm);
-    padding: var(--space-sm) var(--space-md);
+    margin-top: var(--space-xs);
+    padding: var(--space-xs) var(--space-sm);
     border-left: 3px solid var(--color-warning);
     border-radius: var(--radius-button);
     background: color-mix(in srgb, var(--color-warning) 7%, transparent);
@@ -400,6 +408,12 @@
     gap: var(--space-xs);
     margin: var(--space-xs) 0 0;
     padding-left: var(--space-lg);
+  }
+
+  .onboarding-step__blockers li {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
   }
 
   .onboarding-step__blockers li span:first-child {

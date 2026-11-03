@@ -291,17 +291,21 @@
 </script>
 
 <style scoped>
+  .extra-panel-card :deep(.el-card__body) {
+    padding: 12px 16px;
+  }
+
   .extra-panels {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: var(--space-md);
+    gap: 10px;
   }
   .extra-block {
     min-width: 0;
     background: var(--color-bg-card);
     border: 1px solid var(--color-border-light);
     border-radius: var(--radius-content);
-    padding: var(--card-inner-padding);
+    padding: 10px 12px;
   }
   .extra-title {
     margin: 0;
@@ -310,16 +314,16 @@
     color: var(--color-text-primary);
   }
   .extra-subtitle {
-    margin: var(--space-xs) 0 0;
+    margin: 2px 0 0;
     color: var(--color-text-tertiary);
     font-size: var(--font-size-xs);
   }
   .chart {
     width: 100%;
-    height: 260px;
+    height: 140px;
   }
   .chart--gauge {
-    height: 220px;
+    height: 130px;
   }
   .extra-block--gauge {
     display: flex;
@@ -338,7 +342,7 @@
   }
   .chart-loading {
     display: grid;
-    min-height: 260px;
+    min-height: 140px;
     place-items: center;
     color: var(--color-text-tertiary);
   }

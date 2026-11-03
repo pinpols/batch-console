@@ -451,8 +451,9 @@ test('新租户可从工作台直接进入配置包导入', async ({ page }) => 
     }
   })
   await page.goto('/ops/summary')
+  await page.getByRole('tab', { name: '快速开始' }).click()
   const onboarding = page.locator('[data-onboarding="onboarding-center"]')
-  await expect(onboarding.getByRole('heading', { name: '完成平台首条可运行链路' })).toBeVisible()
+  await expect(onboarding.getByRole('heading', { name: '首条链路' })).toBeVisible()
   await onboarding.getByRole('button', { name: '导入配置包', exact: true }).click()
   await expect(page).toHaveURL(/\/config\/tenant-package/)
   await expect(page.getByRole('heading', { name: '配置批量导入' })).toBeVisible()

@@ -35,7 +35,7 @@ export function useOpsSummary() {
   const summary = ref<ConsoleOpsSummaryResponse | null>(null)
 
   // ---- 页签与时间范围 ----
-  const opsTab = ref<'kpis' | 'trend' | 'dist' | 'extra'>('kpis')
+  const opsTab = ref<'daily' | 'onboarding' | 'kpis' | 'trend' | 'dist' | 'extra'>('kpis')
   const rangeKey = ref<'1h' | '6h' | '24h'>('6h')
 
   // ---- 图表配置 ----

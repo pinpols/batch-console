@@ -4,8 +4,8 @@
       <template #actions>
         <el-button
           :icon="Refresh"
-          :loading="loading || refresh.loading.value"
-          @click="refresh.run(load)"
+          :loading="loading || refresh.loading.value || activeTabLoading"
+          @click="refreshCurrentTab"
         >
           {{ t('opsSummary.btnRefresh') }}
         </el-button>
@@ -13,30 +13,23 @@
       </template>
     </PageHeader>
 
-    <TenantDailyProgress />
-    <OnboardingCenter />
-
     <div v-if="summary" class="ops-tabs-card">
       <!-- 扩展面板的刷新钮上提到 tabs 同行右侧(用户反馈:原独占一行造成空带) -->
       <div class="ops-tabs-row">
         <el-tabs v-model="opsTab" class="pill-tabs ops-tabs">
+          <el-tab-pane :label="t('opsSummary.tabDaily')" name="daily" />
+          <el-tab-pane :label="t('opsSummary.tabOnboarding')" name="onboarding" />
           <el-tab-pane :label="t('opsSummary.tabKpis')" name="kpis" />
           <el-tab-pane :label="t('opsSummary.tabTrend')" name="trend" />
           <el-tab-pane :label="t('opsSummary.tabDist')" name="dist" />
           <el-tab-pane :label="t('opsSummary.tabExtra')" name="extra" />
         </el-tabs>
-        <el-button
-          v-if="opsTab === 'extra'"
-          class="ops-tabs-row__refresh"
-          :icon="Refresh"
-          :loading="extraLoading"
-          @click="loadExtraPanels"
-        >
-          {{ t('opsExtraPanel.btnRefresh') }}
-        </el-button>
       </div>
 
       <div v-show="opsTab !== 'extra'" class="ops-panels">
+        <TenantDailyProgress v-if="opsTab === 'daily'" ref="dailyProgressRef" />
+        <OnboardingCenter v-if="opsTab === 'onboarding'" ref="onboardingRef" />
+
         <OpsMetricGrid
           :summary="summary"
           :active="opsTab === 'kpis'"
@@ -54,7 +47,6 @@
           :alerts-trend-option="alertsTrendOption"
           :sla-trend-option="slaTrendOption"
           :fail-rate-trend-option="failRateTrendOption"
-          @refresh-charts="loadCharts"
         />
 
         <OpsDistPanel
@@ -68,7 +60,6 @@
           :worker-status-option="workerStatusOption"
           :alert-severity-option="alertSeverityOption"
           :outbox-health-option="outboxHealthOption"
-          @refresh-charts="loadCharts"
         />
       </div>
     </div>
@@ -92,7 +83,7 @@
 </template>
 
 <script setup lang="ts">
-  import { defineAsyncComponent } from 'vue'
+  import { computed, defineAsyncComponent, ref } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { RefreshCw as Refresh } from '@lucide/vue'
   import { useRefreshAction } from '@/composables/useRefreshAction'
@@ -138,20 +129,45 @@
     slaReportError,
     tenantUsageError,
     load,
-    loadCharts,
     loadExtraPanels,
     go,
     goFailedJobs,
   } = useOpsSummary()
+
+  const dailyProgressRef = ref<InstanceType<typeof TenantDailyProgress> | null>(null)
+  const onboardingRef = ref<InstanceType<typeof OnboardingCenter> | null>(null)
+
+  // 顶部刷新按钮按当前页签分发,只刷新当前页签内容
+  const activeTabLoading = computed(() => {
+    if (opsTab.value === 'daily') return dailyProgressRef.value?.loading ?? false
+    if (opsTab.value === 'onboarding') return onboardingRef.value?.loading ?? false
+    if (opsTab.value === 'extra') return extraLoading.value
+    return false
+  })
+
+  function refreshCurrentTab() {
+    if (opsTab.value === 'daily') {
+      dailyProgressRef.value?.refresh()
+      return
+    }
+    if (opsTab.value === 'onboarding') {
+      void onboardingRef.value?.load()
+      return
+    }
+    if (opsTab.value === 'extra') {
+      void loadExtraPanels()
+      return
+    }
+    refresh.run(load)
+  }
 </script>
 
 <style scoped>
   .ops-tabs-card {
     margin-top: 0;
   }
-  /* 还原设计纵向节奏:副标题→Tab ≈ 32px、Tab→卡片 ≈ 28px */
   .ops-tabs-card {
-    margin-top: 12px;
+    margin-top: 8px;
   }
 
   .ops-tabs-row {
@@ -175,7 +191,7 @@
 
   .ops-panels {
     position: relative;
-    margin-top: 12px;
+    margin-top: 8px;
     overflow: visible;
   }
 </style>

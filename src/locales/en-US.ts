@@ -5248,7 +5248,6 @@ const messages: Messages = {
   opsDistPanel: {
     title: 'Distribution',
     subtitle: 'Spot the main exception type / impact surface',
-    btnRefresh: 'Refresh',
     triggerType: 'Trigger-type distribution',
     workerGroup: 'Worker group / status distribution',
     jobStatus: 'Job status distribution',
@@ -5257,7 +5256,6 @@ const messages: Messages = {
     outboxHealth: 'Outbox health',
   },
   opsExtraPanel: {
-    btnRefresh: 'Refresh',
     slaReport: 'SLA report',
     slaReportSummary: 'Job SLA attainment for the last {days} days (on-time / SLA samples)',
     attainment: 'Attainment',
@@ -5289,7 +5287,6 @@ const messages: Messages = {
   opsTrendPanel: {
     title: 'Trend',
     subtitle: 'Tells you whether things are getting worse (supports 1h/6h/24h)',
-    btnRefresh: 'Refresh',
     runFailTrend: 'Running / failed task trend',
     alertTrend: 'Alert trend (by status)',
     slaTrend: 'SLA met / breach trend',
@@ -5297,6 +5294,8 @@ const messages: Messages = {
   },
   opsSummary: {
     btnRefresh: 'Refresh',
+    tabDaily: 'Daily progress',
+    tabOnboarding: 'Get started',
     tabKpis: 'KPI cards',
     tabTrend: 'Trend',
     tabDist: 'Distribution',

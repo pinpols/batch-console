@@ -5243,7 +5243,6 @@ export default {
   opsDistPanel: {
     title: '分布',
     subtitle: '用于定位"主要异常类型/主要影响面"',
-    btnRefresh: '刷新',
     triggerType: '触发类型分布',
     workerGroup: 'Worker 组 / 状态分布',
     jobStatus: 'Job 状态分布',
@@ -5252,7 +5251,6 @@ export default {
     outboxHealth: 'Outbox 健康',
   },
   opsExtraPanel: {
-    btnRefresh: '刷新',
     slaReport: 'SLA 报告',
     slaReportSummary: '近 {days} 天各作业 SLA 达标率（按时完成数 / SLA 样本数）',
     attainment: '达标率',
@@ -5284,7 +5282,6 @@ export default {
   opsTrendPanel: {
     title: '趋势',
     subtitle: '用于快速判断是否"在变差"(支持 1h/6h/24h 切换)',
-    btnRefresh: '刷新',
     runFailTrend: '运行中 / 失败任务趋势',
     alertTrend: '告警趋势(按状态)',
     slaTrend: 'SLA 达标 / 违约趋势',
@@ -5292,6 +5289,8 @@ export default {
   },
   opsSummary: {
     btnRefresh: '刷新',
+    tabDaily: '今日进度',
+    tabOnboarding: '快速开始',
     tabKpis: '卡片指标',
     tabTrend: '趋势',
     tabDist: '分布',
