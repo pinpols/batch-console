@@ -59,6 +59,7 @@
 - 抽屉和对话框内一律上置标签（全局样式已强制，`form-preserve-label-position` 仅留给确需左置的高密度只读区）。
 - 字段多于约 6 个或存在明显分组时用 `src/components/common/FormSection.vue` 分节：标题 + 一句说明 + 字段；抽屉内用默认 `stacked`，整页设置表单用 `layout="side"`（维护设置页为样板），`columns="2"` 时整行字段加 `.form-block__full`。
 - 只读详情继续用 `DetailDrawer`；对话框保留给短确认、触发和预演类流程，不承载对象的新增/编辑。
+- 一个对象一个编辑入口：有独立详情页的对象，列表不再另开查看抽屉；工作流的调度与时限告警只在设计器（单作业工作流在查看页）的“工作流设置”中编辑，列表只保留启停类开关。
 - 例外（多主操作或危险主操作）：批次日回放提交/范围补跑、租户配置复制/初始化仍用原生抽屉，待批次 4 逐对象收敛时再定。
 
 ## 日历与日期视图
@@ -101,6 +102,7 @@
 - 行操作：`src/components/common/RowActions.vue`
 - 编辑抽屉与表单分节：`src/components/common/FormDrawer.vue`、`src/components/common/FormSection.vue`
 - 列表筛选工具栏：`src/components/table/OpsFilterToolbar.vue`（若页面采用）
+- 次要筛选：`ListPageQueryBar` 的 `advanced` 插槽，配合 `advanced-active` 传入已生效数；主筛选超过一行时使用
 - 设计变量：`src/styles/tokens-handoff.css`，规则见 `docs/engineering/design-tokens.md`
 
 如果共享组件的能力或实际目录发生变化，应先更新实现并同步修订本节引用，避免文档指向过期入口。

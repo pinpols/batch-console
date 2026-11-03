@@ -28,31 +28,12 @@
           <slot />
         </div>
 
-        <!-- 底部操作:查看态=关闭/导出/编辑;编辑/新建态=取消/保存 -->
-        <div class="jdd__foot" :class="{ 'jdd__foot--edit': mode !== 'view' }">
-          <template v-if="mode === 'view'">
-            <el-button @click="emit('close')">{{ t('common.close') }}</el-button>
-            <span class="jdd__spacer" />
-            <el-button :loading="exporting" @click="emit('export')">
-              {{ t('jobDefinitionList.actionExportBundle') }}
-            </el-button>
-            <el-tooltip
-              :content="canEdit ? t('jobDefinitionList.actionEdit') : t('common.permissionDenied')"
-              placement="top"
-            >
-              <span>
-                <el-button type="primary" :disabled="!canEdit" @click="emit('edit')">
-                  {{ t('jobDefinitionList.actionEdit') }}
-                </el-button>
-              </span>
-            </el-tooltip>
-          </template>
-          <template v-else>
-            <el-button @click="emit('cancel')">{{ t('jobDefinitionList.drawerCancel') }}</el-button>
-            <el-button type="primary" :loading="saving" @click="emit('save')">
-              {{ saveLabel }}
-            </el-button>
-          </template>
+        <!-- 底部操作:取消/保存（查看统一到详情页，抽屉只用于新建与编辑） -->
+        <div class="jdd__foot jdd__foot--edit">
+          <el-button @click="emit('cancel')">{{ t('jobDefinitionList.drawerCancel') }}</el-button>
+          <el-button type="primary" :loading="saving" @click="emit('save')">
+            {{ saveLabel }}
+          </el-button>
         </div>
       </aside>
     </Transition>
@@ -61,7 +42,7 @@
 
 <script setup lang="ts">
   /**
-   * 作业定义右侧 560px 抽屉(三态:view / edit / create)。
+   * 作业定义右侧 560px 抽屉(两态:edit / create)；查看统一到详情页。
    *
    * 纯 chrome 组件:头部 / 滚动主体 / 底部操作照
    * docs/redesign/proto-jobs_view.html|_edit.html|_create.html 的 OVERLAY dump;
@@ -73,16 +54,14 @@
 
   const props = defineProps<{
     visible: boolean
-    mode: 'view' | 'edit' | 'create'
+    mode: 'edit' | 'create'
     /** 头部小 label(dump: 「作业定义」) */
     headLabel: string
-    /** mono 大标题:view/edit = jobCode;create = 「新建 · 作业定义」 */
+    /** mono 大标题:edit = jobCode;create = 「新建 · 作业定义」 */
     title: string
     /** 状态 pill(启用/停用);create 态传 null 不显示 */
     pill?: { text: string; on: boolean } | null
     saving?: boolean
-    exporting?: boolean
-    canEdit?: boolean
     saveLabel?: string
   }>()
 
@@ -90,8 +69,6 @@
     close: []
     cancel: []
     save: []
-    edit: []
-    export: []
   }>()
 
   const { t } = useI18n({ useScope: 'global' })

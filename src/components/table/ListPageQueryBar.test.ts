@@ -57,4 +57,26 @@ describe('列表筛选工具栏', () => {
     expect(list.emitted('search')).toHaveLength(1)
     expect(ops.emitted('search')).toHaveLength(1)
   })
+
+  it('次要筛选默认收起，有生效条件时默认展开并提示数量', async () => {
+    const mountBar = (advancedActive: number) =>
+      mount(ListPageQueryBar, {
+        props: { collapsible: false, showReset: false, showRefresh: false, advancedActive },
+        slots: { default: '<div class="primary">主</div>', advanced: '<div class="adv">次</div>' },
+        global: {
+          stubs: { ...stubs, ElButton: { template: '<button v-bind="$attrs"><slot /></button>' } },
+        },
+      })
+
+    const idle = mountBar(0)
+    expect(idle.find('.adv').exists()).toBe(false)
+    const toggle = idle.find('.query-advanced-toggle')
+    expect(toggle.text()).toBe('proTable.moreFilters')
+    await toggle.trigger('click')
+    expect(idle.find('.adv').exists()).toBe(true)
+    expect(idle.find('.query-advanced-toggle').text()).toBe('proTable.lessFilters')
+
+    const active = mountBar(2)
+    expect(active.find('.adv').exists()).toBe(true)
+  })
 })

@@ -679,6 +679,9 @@ const messages: Messages = {
     filteredEmpty: 'No matching data — adjust the filters and try again',
     loadFailed: 'Failed to load. Please retry.',
     filterCollapse: 'Collapse',
+    moreFilters: 'More filters',
+    moreFiltersActive: 'More filters ({n})',
+    lessFilters: 'Fewer filters',
     filterExpand: 'Filters',
     filtersHidden: 'Filters hidden',
     loadingMore: 'Loading…',
@@ -3405,6 +3408,9 @@ const messages: Messages = {
     submitSuccess: 'Submitted approval for {key}',
   },
   jobDefinitionDetail: {
+    monitoringTitle: 'Monitoring rules',
+    monitoringEdit: 'Edit on the monitoring policies page',
+    monitoringSeconds: '{n} s',
     loadFailed: 'Failed to load job details. Please retry.',
     switchTenantForDetails: 'Switch to tenant {tenant} in the header before viewing details.',
     pageTitle: 'Job details',
@@ -3483,6 +3489,10 @@ const messages: Messages = {
       'Job definitions are the scheduling unit. The common way is bulk import via a tenant config package. Admins can also create them manually.',
     emptyGoImport: 'Open bulk import',
     headerNew: 'New job',
+    headerNewTip:
+      'Step-by-step wizard for basics, schedule, execution and triggers; it can also create related file channels, templates, workflows and alert routes. Best for first-time setup.',
+    headerQuickCreateTip:
+      'Fill in only the job itself on this page, without creating related objects. Best when channels and workflows already exist.',
     headerQuickCreate: 'Quick form',
     headerBundle: 'Bundle import',
     headerBundleTip: 'Bulk import job definitions via a config bundle',
@@ -4124,6 +4134,9 @@ const messages: Messages = {
       'Task status and the latest heartbeat are still available. To view progress details, confirm reporting is enabled and the SDK version is supported.',
   },
   jobInstanceDetail: {
+    stepStripTitle: 'Step durations',
+    stepStripSpan: '{duration} from first step start to last step end',
+    stepStripNotStarted: '{n} steps not started',
     opsDiagnosticAction: 'Operations diagnostic',
     metricStatusDescription: 'Current instance state',
     metricBizDateDescription: 'Business date for this run',

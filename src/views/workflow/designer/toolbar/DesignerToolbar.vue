@@ -17,6 +17,7 @@
     Check as Select,
     Maximize2,
     Minimize2,
+    Settings,
   } from '@lucide/vue'
   import { useDesignerStore } from '../store/useDesignerStore'
   import ShortcutHelpButton from './ShortcutHelpButton.vue'
@@ -41,6 +42,8 @@
       jsonPanelOpen?: boolean
       /** 隐藏左右辅助面板,让画布占满工作区。 */
       focusMode?: boolean
+      /** 已保存的工作流才有调度与时限告警设置 */
+      settingsAvailable?: boolean
     }>(),
     {
       saving: false,
@@ -64,7 +67,14 @@
     (e: 'toggleJson'): void
     (e: 'focusNode', nodeId: string): void
     (e: 'toggleFocusMode'): void
+    (e: 'openSchedule'): void
+    (e: 'openMonitoring'): void
   }>()
+
+  function onSettingsCommand(command: string) {
+    if (command === 'schedule') emit('openSchedule')
+    if (command === 'monitoring') emit('openMonitoring')
+  }
 
   function onMoreCommand(command: string) {
     if (command === 'templates') emit('openTemplateLibrary')
@@ -188,6 +198,30 @@
         </template>
       </el-dropdown>
     </div>
+
+    <!-- 工作流设置:调度与时限告警只在设计器编辑（列表仅保留启停开关）；新建未保存时不可用 -->
+    <el-dropdown
+      v-if="settingsAvailable"
+      trigger="click"
+      class="designer-toolbar__group"
+      @command="onSettingsCommand"
+    >
+      <el-button size="small" :icon="Settings" :title="t('workflowDesignerMvp.actionSettings')">
+        <span class="designer-toolbar__btn-text">{{
+          t('workflowDesignerMvp.actionSettings')
+        }}</span>
+      </el-button>
+      <template #dropdown>
+        <el-dropdown-menu>
+          <el-dropdown-item command="schedule">
+            {{ t('workflowDefinitionList.actionSchedule') }}
+          </el-dropdown-item>
+          <el-dropdown-item command="monitoring">
+            {{ t('workflowDefinitionList.monitoring.action') }}
+          </el-dropdown-item>
+        </el-dropdown-menu>
+      </template>
+    </el-dropdown>
 
     <el-divider direction="vertical" />
 
