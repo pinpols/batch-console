@@ -103,9 +103,23 @@
         </el-table-column>
         <el-table-column
           prop="workflowDefinitionId"
-          :label="t('monitor.runColDefId')"
-          width="120"
-        />
+          :label="t('monitor.runColWorkflow')"
+          min-width="200"
+        >
+          <template #default="{ row }">
+            <div class="wf-cell">
+              <span class="wf-cell__name">{{
+                definitionById.get(row.workflowDefinitionId)?.workflowName ??
+                `#${row.workflowDefinitionId}`
+              }}</span>
+              <span v-if="definitionById.get(row.workflowDefinitionId)" class="wf-cell__code"
+                >{{ definitionById.get(row.workflowDefinitionId)?.workflowCode }} · #{{
+                  row.workflowDefinitionId
+                }}</span
+              >
+            </div>
+          </template>
+        </el-table-column>
         <el-table-column prop="runStatus" :label="t('monitor.runColStatus')" width="120">
           <template #default="{ row }">
             <StatusTag :value="String(row.runStatus ?? '')" category="workflow" />
@@ -134,6 +148,11 @@
         </el-table-column>
         <DatetimeColumn prop="startedAt" :label="t('monitor.runColStarted')" width="160" />
         <DatetimeColumn prop="finishedAt" :label="t('monitor.runColFinished')" width="160" />
+        <el-table-column :label="t('monitor.runColDuration')" width="100">
+          <template #default="{ row }">{{
+            runDuration(row as ConsoleWorkflowRunResponse)
+          }}</template>
+        </el-table-column>
         <el-table-column
           prop="relatedJobInstanceId"
           :label="t('monitor.runColRelated')"
@@ -182,6 +201,7 @@
   import { useSseAutoReload } from '@/composables/useSseAutoReload'
   import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
   import { useTenantStore } from '@/stores/tenant'
+  import { fmtDuration } from '@/utils/datetime'
   import { useTenantReload } from '@/composables/useTenantReload'
   import { useTenantRequestScope } from '@/composables/useTenantRequestScope'
   import PageContainer from '@/components/common/PageContainer.vue'
@@ -280,6 +300,17 @@
     return request
   }
 
+  /** 运行响应只有定义 ID；用已缓存的定义补出名称和编码，缺失时回落显示 ID */
+  const definitionById = computed(
+    () => new Map(cachedDefs.value.map((definition) => [definition.id, definition])),
+  )
+
+  function runDuration(row: ConsoleWorkflowRunResponse) {
+    if (!row.startedAt) return '—'
+    if (!row.finishedAt) return t('monitor.runDurationRunning')
+    return fmtDuration(Date.parse(row.finishedAt) - Date.parse(row.startedAt))
+  }
+
   function resolveDefId(): number | undefined {
     const code = workflowCode.value.trim()
     if (!code) return undefined
@@ -295,6 +326,8 @@
     loadError.value = null
     try {
       if (workflowCode.value.trim()) await loadWorkflowCodes()
+      // 名称列只依赖缓存，失败不影响列表本身
+      else void loadWorkflowCodes().catch(() => undefined)
       if (!listScope.isCurrent(scope)) return
       const defId = resolveDefId()
       const code = workflowCode.value.trim()
@@ -384,6 +417,29 @@
 </script>
 
 <style scoped>
+  .wf-cell {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    line-height: 1.35;
+  }
+
+  .wf-cell__name {
+    overflow: hidden;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .wf-cell__code {
+    overflow: hidden;
+    color: var(--color-text-tertiary);
+    font-family: var(--font-mono);
+    font-size: var(--font-size-xs);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
   .trace-cell {
     display: flex;
     align-items: center;

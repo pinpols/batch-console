@@ -13,6 +13,12 @@
       </template>
     </PageHeader>
 
+    <!-- 时刻表方向：先回答“今天跑到哪了、该处理什么”，指标与图表保留在下方页签 -->
+    <div v-if="tenant.tenantId" class="ops-today">
+      <BusinessDayTimetable ref="timetableRef" />
+      <AttentionQueue v-if="summary" :summary="summary" @open="openAttention" />
+    </div>
+
     <div v-if="summary" class="ops-tabs-card">
       <!-- 扩展面板的刷新钮上提到 tabs 同行右侧(用户反馈:原独占一行造成空带) -->
       <div class="ops-tabs-row">
@@ -99,7 +105,11 @@
   import TenantDailyProgress from './components/TenantDailyProgress.vue'
   import OnboardingCenter from '@/components/onboarding/OnboardingCenter.vue'
   import OpsMetricGrid from './components/OpsMetricGrid.vue'
+  import BusinessDayTimetable from './components/BusinessDayTimetable.vue'
+  import AttentionQueue from './components/AttentionQueue.vue'
   import { useOpsSummary } from './composables/useOpsSummary'
+  import { useTenantStore } from '@/stores/tenant'
+  import type { AttentionAction } from './attention'
 
   const OpsTrendPanel = defineAsyncComponent(() => import('./components/OpsTrendPanel.vue'))
   const OpsDistPanel = defineAsyncComponent(() => import('./components/OpsDistPanel.vue'))
@@ -134,6 +144,8 @@
     goFailedJobs,
   } = useOpsSummary()
 
+  const tenant = useTenantStore()
+  const timetableRef = ref<InstanceType<typeof BusinessDayTimetable> | null>(null)
   const dailyProgressRef = ref<InstanceType<typeof TenantDailyProgress> | null>(null)
   const onboardingRef = ref<InstanceType<typeof OnboardingCenter> | null>(null)
 
@@ -145,7 +157,14 @@
     return false
   })
 
+  function openAttention(action: AttentionAction) {
+    if (action.kind === 'failedJobs') goFailedJobs()
+    else go(action.path)
+  }
+
   function refreshCurrentTab() {
+    // 时刻轨道常驻页签区之上，随顶部刷新一起刷新
+    void timetableRef.value?.refresh()
     if (opsTab.value === 'daily') {
       dailyProgressRef.value?.refresh()
       return
@@ -163,9 +182,13 @@
 </script>
 
 <style scoped>
-  .ops-tabs-card {
-    margin-top: 0;
+  .ops-today {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-bottom: 16px;
   }
+
   .ops-tabs-card {
     margin-top: 8px;
   }

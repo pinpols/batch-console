@@ -145,8 +145,8 @@ html.dark {
 .el-descriptions .el-descriptions__label.el-descriptions__cell {
   background: transparent;
   color: var(--color-text-tertiary);
-  font-size: 11px;
-  font-weight: 600;
+  font-size: var(--font-size-xs);
+  font-weight: 500;
   letter-spacing: 0.05em;
   text-transform: uppercase;
   vertical-align: middle;
@@ -219,10 +219,10 @@ html.dark {
   border-color: color-mix(in srgb, var(--color-border) 72%, var(--color-primary) 28%);
 }
 
-/* 还原设计(editctrl 样张):表头 = 大写小字宽字距的次级灰 label(JOB CODE 风格) */
+/* 时刻表方向：表头为次级灰、中等字重，与正文仅差一档字号 */
 .el-table .el-table__header-wrapper th.el-table__cell {
-  font-weight: 600;
-  font-size: 11.5px;
+  font-weight: 500;
+  font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -241,8 +241,8 @@ html.dark {
 }
 
 .console-table {
-  /* 更紧凑：默认一屏可容纳更多行 */
-  font-size: 11px;
+  /* 数据密集表格比正文小一档，保证扫读 */
+  font-size: var(--font-size-sm);
   /* 固定表格布局：更可控的列宽、避免宽屏时出现”某列被拉得很空” */
   table-layout: fixed;
   /* SectionCard 内表格统一圆角，视觉与卡片风格一致 */
@@ -380,7 +380,7 @@ html.dark {
 }
 
 .el-table .table-actions .el-button.el-button--small:not(.is-link):not(.is-text) {
-  font-size: 11px;
+  font-size: var(--font-size-sm);
   font-weight: 600;
   letter-spacing: 0;
   border-radius: var(--radius-button);
@@ -390,7 +390,7 @@ html.dark {
 
 .el-table .table-actions .el-button.is-link,
 .el-table .table-actions .el-button.is-text {
-  font-size: 11px;
+  font-size: var(--font-size-sm);
   font-weight: 600;
   letter-spacing: 0;
   padding-left: 5px;
@@ -490,7 +490,7 @@ html.dark {
 .el-button--small {
   min-height: var(--control-height-sm);
   padding: 0 10px;
-  font-size: 12px;
+  font-size: var(--font-size-sm);
 }
 
 .el-button--large {
@@ -1335,7 +1335,7 @@ a:focus-visible,
   margin-bottom: 6px;
   padding: 0;
   line-height: 1.2;
-  font-size: 12px;
+  font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
   text-align: left;
   width: auto !important;
@@ -1515,4 +1515,58 @@ a:focus-visible,
 .el-message .el-message__content {
   font-size: 13px;
   color: var(--color-text-primary) !important;
+}
+
+/* Element Plus 派生色（标签、提示、浅底按钮）由语义 token 推导，避免回落 EP 默认色；
+   EP 的 info 在控制台表示中性分类，因此取次级文字色而非信息蓝；
+   html.dark 同名声明覆盖 EP 深色 css-vars 里写死的派生值。 */
+:root,
+html.dark {
+  --el-color-primary: var(--color-primary);
+  --el-color-primary-light-3: color-mix(in srgb, var(--color-primary) 70%, var(--color-bg-card));
+  --el-color-primary-light-5: color-mix(in srgb, var(--color-primary) 50%, var(--color-bg-card));
+  --el-color-primary-light-7: color-mix(in srgb, var(--color-primary) 30%, var(--color-bg-card));
+  --el-color-primary-light-8: color-mix(in srgb, var(--color-primary) 20%, var(--color-bg-card));
+  --el-color-primary-light-9: color-mix(in srgb, var(--color-primary) 10%, var(--color-bg-card));
+  --el-color-primary-dark-2: color-mix(in srgb, var(--color-primary) 80%, var(--color-text-primary));
+  --el-color-success: var(--color-success);
+  --el-color-success-light-3: color-mix(in srgb, var(--color-success) 70%, var(--color-bg-card));
+  --el-color-success-light-5: color-mix(in srgb, var(--color-success) 50%, var(--color-bg-card));
+  --el-color-success-light-7: color-mix(in srgb, var(--color-success) 30%, var(--color-bg-card));
+  --el-color-success-light-8: color-mix(in srgb, var(--color-success) 20%, var(--color-bg-card));
+  --el-color-success-light-9: color-mix(in srgb, var(--color-success) 10%, var(--color-bg-card));
+  --el-color-success-dark-2: color-mix(in srgb, var(--color-success) 80%, var(--color-text-primary));
+  --el-color-warning: var(--color-warning);
+  --el-color-warning-light-3: color-mix(in srgb, var(--color-warning) 70%, var(--color-bg-card));
+  --el-color-warning-light-5: color-mix(in srgb, var(--color-warning) 50%, var(--color-bg-card));
+  --el-color-warning-light-7: color-mix(in srgb, var(--color-warning) 30%, var(--color-bg-card));
+  --el-color-warning-light-8: color-mix(in srgb, var(--color-warning) 20%, var(--color-bg-card));
+  --el-color-warning-light-9: color-mix(in srgb, var(--color-warning) 10%, var(--color-bg-card));
+  --el-color-warning-dark-2: color-mix(in srgb, var(--color-warning) 80%, var(--color-text-primary));
+  --el-color-danger: var(--color-danger);
+  --el-color-danger-light-3: color-mix(in srgb, var(--color-danger) 70%, var(--color-bg-card));
+  --el-color-danger-light-5: color-mix(in srgb, var(--color-danger) 50%, var(--color-bg-card));
+  --el-color-danger-light-7: color-mix(in srgb, var(--color-danger) 30%, var(--color-bg-card));
+  --el-color-danger-light-8: color-mix(in srgb, var(--color-danger) 20%, var(--color-bg-card));
+  --el-color-danger-light-9: color-mix(in srgb, var(--color-danger) 10%, var(--color-bg-card));
+  --el-color-danger-dark-2: color-mix(in srgb, var(--color-danger) 80%, var(--color-text-primary));
+  --el-color-error: var(--color-danger);
+  --el-color-error-light-3: color-mix(in srgb, var(--color-danger) 70%, var(--color-bg-card));
+  --el-color-error-light-5: color-mix(in srgb, var(--color-danger) 50%, var(--color-bg-card));
+  --el-color-error-light-7: color-mix(in srgb, var(--color-danger) 30%, var(--color-bg-card));
+  --el-color-error-light-8: color-mix(in srgb, var(--color-danger) 20%, var(--color-bg-card));
+  --el-color-error-light-9: color-mix(in srgb, var(--color-danger) 10%, var(--color-bg-card));
+  --el-color-error-dark-2: color-mix(in srgb, var(--color-danger) 80%, var(--color-text-primary));
+  --el-color-info: var(--color-text-tertiary);
+  --el-color-info-light-3: color-mix(in srgb, var(--color-text-tertiary) 70%, var(--color-bg-card));
+  --el-color-info-light-5: color-mix(in srgb, var(--color-text-tertiary) 50%, var(--color-bg-card));
+  --el-color-info-light-7: color-mix(in srgb, var(--color-text-tertiary) 30%, var(--color-bg-card));
+  --el-color-info-light-8: color-mix(in srgb, var(--color-text-tertiary) 20%, var(--color-bg-card));
+  --el-color-info-light-9: color-mix(in srgb, var(--color-text-tertiary) 10%, var(--color-bg-card));
+  --el-color-info-dark-2: color-mix(in srgb, var(--color-text-tertiary) 80%, var(--color-text-primary));
+}
+
+/* EP small 表格写死 12px；控制台表格统一比正文小一档 */
+.el-table--small {
+  font-size: var(--font-size-sm);
 }

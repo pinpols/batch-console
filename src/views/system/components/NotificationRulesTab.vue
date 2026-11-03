@@ -288,9 +288,6 @@
   async function openRuleCreate() {
     if (!tenant.tenantId) return
     const request = formScope.begin()
-    // 通道可在相邻标签页创建；打开选择器前刷新列表，确保新建通道能立即用于规则。
-    await loadChannelOptions()
-    if (!formScope.isCurrent(request)) return
     openedForm = request
     ruleEditingId.value = null
     ruleForm.ruleName = ''
@@ -299,6 +296,8 @@
     ruleForm.enabled = true
     ruleFormVisible.value = true
     ruleDirty.markPristine()
+    // 先打开抽屉再刷新通道列表（相邻页签可能刚新建通道），避免等待请求时点击像没反应
+    await loadChannelOptions()
   }
 
   function openRuleEdit(row: Record<string, unknown>) {

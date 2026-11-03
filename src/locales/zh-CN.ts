@@ -4,6 +4,7 @@ import atomicRuntime from './atomicRuntime.zh-CN.ts'
 import batchDayGovernance from './batchDayGovernance.zh-CN.ts'
 import jobProgress from './jobProgress.zh-CN.ts'
 import dailyProgress from './dailyProgress.zh-CN.ts'
+import opsToday from './opsToday.zh-CN.ts'
 import dependencyWaits from './dependencyWaits.zh-CN.ts'
 import notificationRoutePreview from './notificationRoutePreview.zh-CN.ts'
 import fileTemplateMappingHelp from './fileTemplateMappingHelp.zh-CN.ts'
@@ -31,6 +32,7 @@ import mobile from './mobile.zh-CN.ts'
 
 export default {
   dailyProgress,
+  opsToday,
   dependencyWaits,
   notificationRoutePreview,
   fileTemplateMappingHelp,
@@ -5730,6 +5732,7 @@ export default {
     tabSyncLogs: '同步日志',
   },
   notificationManagement: {
+    selectTenantFirst: '请先在顶部选择租户，再新增。',
     tabRoutePreview: '路由模拟',
     tabTerminalDeliveries: '终态通知恢复',
     eventCatalogAction: '事件目录',

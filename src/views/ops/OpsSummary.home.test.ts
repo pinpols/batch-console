@@ -8,10 +8,14 @@ import OpsSummary from './OpsSummary.vue'
 
 const tenantState = vi.hoisted(() => ({ tenantId: 'tenant-a' as string | null }))
 const tabState = vi.hoisted(() => ({ tab: 'kpis' }))
+const summaryState = vi.hoisted(() => ({ value: {} as Record<string, number> }))
 const refreshSpies = vi.hoisted(() => ({
   daily: vi.fn(),
   onboarding: vi.fn(),
   summary: vi.fn(),
+  timetable: vi.fn(),
+  failedJobs: vi.fn(),
+  go: vi.fn(),
 }))
 vi.mock('@/stores/tenant', () => ({
   useTenantStore: () => ({
@@ -47,7 +51,7 @@ vi.mock('vue-router', () => ({ useRouter: () => ({ push: vi.fn() }) }))
 vi.mock('./composables/useOpsSummary', () => ({
   useOpsSummary: () => ({
     loading: ref(false),
-    summary: ref({}),
+    summary: ref(summaryState.value),
     opsTab: ref(tabState.tab),
     rangeKey: ref('7d'),
     chartsLoading: ref(false),
@@ -71,8 +75,8 @@ vi.mock('./composables/useOpsSummary', () => ({
     load: refreshSpies.summary,
     loadCharts: vi.fn(),
     loadExtraPanels: vi.fn(),
-    go: vi.fn(),
-    goFailedJobs: vi.fn(),
+    go: refreshSpies.go,
+    goFailedJobs: refreshSpies.failedJobs,
   }),
 }))
 
@@ -80,10 +84,17 @@ enableAutoUnmount(afterEach)
 afterEach(() => {
   tenantState.tenantId = 'tenant-a'
   tabState.tab = 'kpis'
+  summaryState.value = {}
   vi.clearAllMocks()
 })
 
 const slotStub = { template: '<div><slot /></div>' }
+const timetableStub = {
+  setup(_: unknown, { expose }: { expose: (exposed: Record<string, unknown>) => void }) {
+    expose({ refresh: refreshSpies.timetable, loading: false })
+  },
+  template: '<div class="timetable-stub" />',
+}
 
 function mountHome() {
   return mount(OpsSummary, {
@@ -94,6 +105,7 @@ function mountHome() {
         PageHeader: { template: '<div><slot name="actions" /><slot /></div>' },
         PrintButton: true,
         OpsMetricGrid: true,
+        BusinessDayTimetable: timetableStub,
         DocsDrawer: true,
         LiveStatusBadge: true,
         DataState: slotStub,
@@ -162,5 +174,44 @@ describe('首页今日进度与快速开始页签', () => {
     await topRefresh!.trigger('click')
     expect(refreshSpies.onboarding).toHaveBeenCalledTimes(1)
     expect(refreshSpies.summary).not.toHaveBeenCalled()
+  })
+})
+
+describe('首页业务日时刻轨道与待处理清单', () => {
+  it('选定租户时在页签区之前显示时刻轨道和待处理清单', () => {
+    const wrapper = mountHome()
+    expect(wrapper.find('.timetable-stub').exists()).toBe(true)
+    expect(wrapper.text()).toContain('需要你处理')
+    expect(wrapper.text()).toContain('没有需要处理的事项')
+  })
+
+  it('无租户时不显示时刻轨道和待处理清单', () => {
+    tenantState.tenantId = null
+    const wrapper = mountHome()
+    expect(wrapper.find('.timetable-stub').exists()).toBe(false)
+    expect(wrapper.text()).not.toContain('需要你处理')
+  })
+
+  it('顶部刷新同时刷新时刻轨道，页签分发不变', async () => {
+    tabState.tab = 'daily'
+    const wrapper = mountHome()
+    const topRefresh = wrapper.findAll('button').find((button) => button.text() === '刷新')
+    await topRefresh!.trigger('click')
+    expect(refreshSpies.timetable).toHaveBeenCalledTimes(1)
+    expect(refreshSpies.daily).toHaveBeenCalledTimes(1)
+  })
+
+  it('待处理项按影响排序，点击失败运行与路由项分别跳转', async () => {
+    summaryState.value = { failedJobs: 2, pendingApprovals: 1 }
+    const wrapper = mountHome()
+    const items = wrapper.findAll('.attention__item')
+    expect(items.map((item) => item.text())).toEqual([
+      '2 个作业运行失败查看失败运行',
+      '1 项待审批去审批',
+    ])
+    await items[0].trigger('click')
+    expect(refreshSpies.failedJobs).toHaveBeenCalledTimes(1)
+    await items[1].trigger('click')
+    expect(refreshSpies.go).toHaveBeenCalledWith('/approvals?status=PENDING')
   })
 })
