@@ -2,11 +2,11 @@
 html {
   color-scheme: light;
   /* Vue 挂载前的回退需与运行时 token 一致。 */
-  --brand-mark-fill: linear-gradient(145deg, #4b87df 0%, #2d70d2 56%, #225cae 100%);
+  --brand-mark-fill: linear-gradient(#1f4fd1, #1f4fd1);
 }
 html.dark {
   color-scheme: dark;
-  --brand-mark-fill: linear-gradient(145deg, #4776ad 0%, #315f98 56%, #254775 100%);
+  --brand-mark-fill: linear-gradient(#3a68e0, #3a68e0);
 }
 .app-startup {
   position: fixed;
@@ -17,43 +17,86 @@ html.dark {
   gap: 22px;
   background: var(--color-bg-page, Canvas);
 }
+/* 启动页：品牌底色方块里三条泳道依次铺满，几何与 batch-mark.svg 一致（64 栅格，条高 6、圆头） */
 .app-startup__mark {
+  --lane-fill: linear-gradient(#fff, #fff);
+
+  position: relative;
   display: block;
   width: 64px;
   height: 64px;
   border-radius: 25%;
-  background-image: url('/icons/batch-mark-foreground.svg'), var(--brand-mark-fill);
-  background-position: center;
-  background-size: contain;
-  background-repeat: no-repeat;
+  background-image: var(--brand-mark-fill);
 }
-.app-startup__track {
-  width: 64px;
-  height: 3px;
-  overflow: hidden;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--color-primary, #2165ec) 12%, transparent);
-}
-.app-startup__track::after {
+.app-startup__mark::after {
   content: '';
-  display: block;
-  width: 50%;
-  height: 100%;
-  border-radius: inherit;
-  background: var(--color-primary, #2165ec);
-  animation: app-startup-travel 1.8s ease-in-out infinite;
+  position: absolute;
+  inset: 0;
+  background-image: var(--lane-fill), var(--lane-fill), var(--lane-fill), var(--lane-fill);
+  background-repeat: no-repeat;
+  background-position:
+    13px 19px,
+    21px 29px,
+    13px 39px,
+    31px 39px;
+  background-size:
+    26px 6px,
+    30px 6px,
+    16px 6px,
+    16px 6px;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cg stroke='%23000' stroke-width='6' stroke-linecap='round'%3E%3Cpath d='M16 22h20M24 32h24M16 42h10M34 42h10'/%3E%3C/g%3E%3C/svg%3E")
+    center / 100% 100% no-repeat;
+  animation: app-startup-lanes 1.8s ease-in-out infinite;
 }
-@keyframes app-startup-travel {
+@keyframes app-startup-lanes {
   0% {
-    transform: translateX(-110%);
+    background-size:
+      0 6px,
+      0 6px,
+      0 6px,
+      0 6px;
+    opacity: 1;
+  }
+  28% {
+    background-size:
+      26px 6px,
+      0 6px,
+      0 6px,
+      0 6px;
+  }
+  55% {
+    background-size:
+      26px 6px,
+      30px 6px,
+      0 6px,
+      0 6px;
+  }
+  70% {
+    background-size:
+      26px 6px,
+      30px 6px,
+      16px 6px,
+      0 6px;
+  }
+  84% {
+    background-size:
+      26px 6px,
+      30px 6px,
+      16px 6px,
+      16px 6px;
+    opacity: 1;
   }
   100% {
-    transform: translateX(210%);
+    background-size:
+      26px 6px,
+      30px 6px,
+      16px 6px,
+      16px 6px;
+    opacity: 0.35;
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .app-startup__track::after {
+  .app-startup__mark::after {
     animation: none;
-    width: 100%;
   }
 }
