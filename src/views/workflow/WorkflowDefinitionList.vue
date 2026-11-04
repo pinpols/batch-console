@@ -41,6 +41,8 @@
         :has-active-filters="hasActiveFilters"
         table-layout="fixed"
         row-key="id"
+        column-config-id="workflow-definitions"
+        :column-defs="columnDefs"
         @selection-change="bulkSelection.onSelectionChange"
       >
         <template #toolbar>
@@ -129,103 +131,126 @@
           </ListPageQueryBar>
         </template>
 
-        <el-table-column
-          v-if="canTriggerWorkflows"
-          type="selection"
-          width="48"
-          :selectable="
-            (row: ConsoleWorkflowDefinitionResponse) =>
-              row.enabled === true && row.tenantId === tenant.tenantId
-          "
-        />
-        <el-table-column
-          prop="workflowCode"
-          :label="t('workflowDefinitionList.colCode')"
-          width="220"
-        >
-          <template #default="{ row }">
-            <CopyableText v-if="row.workflowCode" :text="String(row.workflowCode)" />
-            <span v-else>—</span>
-          </template>
-        </el-table-column>
-        <el-table-column
-          prop="workflowName"
-          :label="t('workflowDefinitionList.colName')"
-          min-width="240"
-        >
-          <template #default="{ row }">
-            <CopyableText v-if="row.workflowName" :text="String(row.workflowName)" />
-            <span v-else>—</span>
-          </template>
-        </el-table-column>
-        <el-table-column
-          prop="workflowType"
-          :label="t('workflowDefinitionList.colType')"
-          width="120"
-        >
-          <template #default="{ row }">
-            {{ resolveEnumLabel('workflowType', row.workflowType) }}
-          </template>
-        </el-table-column>
-        <el-table-column :label="t('workflowDefinitionList.colRelation')" width="140">
-          <template #default="{ row }">
-            <el-tag size="small" :type="row.singleJobDefinitionId ? 'primary' : 'success'">
-              {{
-                row.singleJobDefinitionId
-                  ? t('workflowDefinitionList.singleJobWorkflow')
-                  : t('workflowDefinitionList.composedWorkflow')
-              }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column
-          prop="version"
-          :label="t('workflowDefinitionList.colVersion')"
-          width="80"
-          align="right"
-        />
-        <el-table-column
-          prop="description"
-          :label="t('workflowDefinitionList.colDescription')"
-          min-width="200"
-        >
-          <template #default="{ row }">
-            <CopyableText
-              v-if="row.description"
-              :text="decodeBasicEntities(row.description)"
-              :copyable="false"
-            />
-            <span v-else>—</span>
-          </template>
-        </el-table-column>
-        <el-table-column prop="enabled" :label="t('workflowDefinitionList.colEnabled')" width="80">
-          <template #default="{ row }">
-            <StatusTag :value="String(row.enabled)" category="yn" />
-          </template>
-        </el-table-column>
-        <el-table-column :label="t('workflowDefinitionList.colSchedule')" width="110">
-          <template #default="{ row }">
-            <StatusTag
-              v-if="isScheduled(row as ConsoleWorkflowDefinitionResponse)"
-              :value="String(row.scheduleEnabled !== false)"
-              category="yn"
-            />
-            <span v-else class="muted">—</span>
-          </template>
-        </el-table-column>
-        <DatetimeColumn
-          prop="updatedAt"
-          :label="t('workflowDefinitionList.colUpdatedAt')"
-          width="180"
-        />
-        <el-table-column :label="t('workflowDefinitionList.colActions')" width="240" fixed="right">
-          <template #default="{ row }">
-            <RowActions
-              :actions="rowActions(row as ConsoleWorkflowDefinitionResponse)"
-              :inline-limit="2"
-            />
-          </template>
-        </el-table-column>
+        <template #default="{ isColVisible }">
+          <el-table-column
+            v-if="canTriggerWorkflows"
+            type="selection"
+            width="48"
+            :selectable="
+              (row: ConsoleWorkflowDefinitionResponse) =>
+                row.enabled === true && row.tenantId === tenant.tenantId
+            "
+          />
+          <el-table-column
+            prop="workflowCode"
+            :label="t('workflowDefinitionList.colCode')"
+            width="150"
+          >
+            <template #default="{ row }">
+              <CopyableText v-if="row.workflowCode" :text="String(row.workflowCode)" />
+              <span v-else>—</span>
+            </template>
+          </el-table-column>
+          <el-table-column
+            prop="workflowName"
+            :label="t('workflowDefinitionList.colName')"
+            min-width="200"
+          >
+            <template #default="{ row }">
+              <CopyableText v-if="row.workflowName" :text="String(row.workflowName)" />
+              <span v-else>—</span>
+            </template>
+          </el-table-column>
+          <el-table-column
+            v-if="isColVisible('workflowType')"
+            prop="workflowType"
+            :label="t('workflowDefinitionList.colType')"
+            width="90"
+          >
+            <template #default="{ row }">
+              {{ resolveEnumLabel('workflowType', row.workflowType) }}
+            </template>
+          </el-table-column>
+          <el-table-column
+            v-if="isColVisible('relation')"
+            :label="t('workflowDefinitionList.colRelation')"
+            width="110"
+          >
+            <template #default="{ row }">
+              <el-tag size="small" :type="row.singleJobDefinitionId ? 'primary' : 'success'">
+                {{
+                  row.singleJobDefinitionId
+                    ? t('workflowDefinitionList.singleJobWorkflow')
+                    : t('workflowDefinitionList.composedWorkflow')
+                }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column
+            v-if="isColVisible('version')"
+            prop="version"
+            :label="t('workflowDefinitionList.colVersion')"
+            width="64"
+            align="right"
+          />
+          <el-table-column
+            v-if="isColVisible('description')"
+            prop="description"
+            :label="t('workflowDefinitionList.colDescription')"
+            min-width="160"
+          >
+            <template #default="{ row }">
+              <CopyableText
+                v-if="row.description"
+                :text="decodeBasicEntities(row.description)"
+                :copyable="false"
+              />
+              <span v-else>—</span>
+            </template>
+          </el-table-column>
+          <el-table-column
+            v-if="isColVisible('enabled')"
+            prop="enabled"
+            :label="t('workflowDefinitionList.colEnabled')"
+            width="72"
+          >
+            <template #default="{ row }">
+              <StatusTag :value="String(row.enabled)" category="yn" />
+            </template>
+          </el-table-column>
+          <el-table-column
+            v-if="isColVisible('schedule')"
+            :label="t('workflowDefinitionList.colSchedule')"
+            width="96"
+          >
+            <template #default="{ row }">
+              <StatusTag
+                v-if="isScheduled(row as ConsoleWorkflowDefinitionResponse)"
+                :value="String(row.scheduleEnabled !== false)"
+                category="yn"
+              />
+              <span v-else class="muted">—</span>
+            </template>
+          </el-table-column>
+          <DatetimeColumn
+            v-if="isColVisible('updatedAt')"
+            prop="updatedAt"
+            :label="t('workflowDefinitionList.colUpdatedAt')"
+            width="160"
+          />
+          <el-table-column
+            :label="t('workflowDefinitionList.colActions')"
+            width="240"
+            fixed="right"
+          >
+            <template #default="{ row }">
+              <RowActions
+                :actions="rowActions(row as ConsoleWorkflowDefinitionResponse)"
+                :inline-limit="2"
+              />
+            </template>
+          </el-table-column>
+        </template>
       </ProTable>
     </SectionCard>
 
@@ -456,6 +481,17 @@
   import RowActions, { type RowAction } from '@/components/common/RowActions.vue'
 
   const { t, te } = useI18n({ useScope: 'global' })
+
+  // 列设置：可视区放不下全部列，类型（多为 DAG）与更新时间默认隐藏，可在“列设置”中打开
+  const columnDefs = computed(() => [
+    { key: 'workflowType', label: t('workflowDefinitionList.colType'), defaultHidden: true },
+    { key: 'relation', label: t('workflowDefinitionList.colRelation') },
+    { key: 'version', label: t('workflowDefinitionList.colVersion') },
+    { key: 'description', label: t('workflowDefinitionList.colDescription') },
+    { key: 'enabled', label: t('workflowDefinitionList.colEnabled') },
+    { key: 'schedule', label: t('workflowDefinitionList.colSchedule') },
+    { key: 'updatedAt', label: t('workflowDefinitionList.colUpdatedAt'), defaultHidden: true },
+  ])
 
   function resolveEnumLabel(group: string, value?: string | null): string {
     if (!value) return ''
