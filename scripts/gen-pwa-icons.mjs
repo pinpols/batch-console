@@ -15,7 +15,7 @@ const out = join(root, 'public', 'icons')
 if (!existsSync(out)) mkdirSync(out, { recursive: true })
 
 const mark = readFileSync(join(out, 'batch-mark.svg'))
-const brandBackground = '#1257c4'
+const brandBackground = '#1f4fd1'
 
 async function genIcon(size, file) {
   await sharp(mark).resize(size, size).png().toFile(join(out, file))
