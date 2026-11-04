@@ -9,6 +9,7 @@ const tenantPackageImportWizard = {
   btnDownloadTemplate: '下载配置包模板',
   btnExportCurrent: '导出当前配置包',
   btnFieldGuide: '字段填写说明',
+  guideScenarioPlaceholder: '选择业务场景',
   templateScopeTitle: '模板范围',
   templateScopeHint: '按文件类型和作业场景选择模板内容',
   scenarioPlaceholder: '选择作业场景及文件格式',

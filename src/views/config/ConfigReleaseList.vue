@@ -698,7 +698,7 @@
       },
       {
         label: t('configReleaseList.applyConfirmationStatus'),
-        value: r.applyConfirmationStatus || '—',
+        value: enumLabel('applyConfirmationEnum', r.applyConfirmationStatus),
       },
       { label: t('configReleaseList.colPublishedAt'), value: fmtDatetime(r.publishedAt) },
       { label: t('configReleaseList.colEffectiveFrom'), value: fmtDatetime(r.effectiveFromAt) },

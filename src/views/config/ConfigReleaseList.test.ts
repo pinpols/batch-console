@@ -29,7 +29,11 @@ vi.mock('@/composables/useWriteAvailability', () => ({
 }))
 vi.mock('vue-i18n', async (original) => ({
   ...(await original<typeof import('vue-i18n')>()),
-  useI18n: () => ({ t: (key: string) => key, te: () => false }),
+  // 只有实例确认状态的词条视为已存在，其余枚举回落原值，便于断言映射路径
+  useI18n: () => ({
+    t: (key: string) => key,
+    te: (key: string) => key.startsWith('configReleaseList.applyConfirmationEnum.'),
+  }),
 }))
 vi.mock('@/composables/queries/useConsoleMeta', () => ({
   useConsoleMetaEnumsQuery: () => ({ data: ref({}) }),
@@ -163,6 +167,15 @@ it('accepts config names and creation notes up to the backend limits', async () 
 })
 
 describe('配置发布的租户与异步操作边界', () => {
+  it('侧栏实例确认状态显示词条而不是后端原值', async () => {
+    mocks.list.mockResolvedValue([{ ...row(), applyConfirmationStatus: 'CONFIRMATION_REQUIRED' }])
+    const wrapper = render()
+    await flushPromises()
+    await wrapper.get('.cr-card').trigger('click')
+    const panel = wrapper.get('.cr-panel').text()
+    expect(panel).toContain('configReleaseList.applyConfirmationEnum.CONFIRMATION_REQUIRED')
+  })
+
   it('列表加载失败时只显示错误提示，不显示“暂无记录”空态', async () => {
     mocks.list.mockRejectedValue(new Error('boom'))
     const wrapper = render()

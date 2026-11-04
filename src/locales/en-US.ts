@@ -3406,6 +3406,11 @@ const messages: Messages = {
       PUBLIC: 'Public',
       SECRET: 'Sensitive',
     },
+    applyConfirmationEnum: {
+      CONFIRMATION_REQUIRED: 'Awaiting instance confirmation',
+      ROLLED_BACK: 'Rolled back',
+      NOT_RELEASED: 'Not released',
+    },
     depsTitle: 'Config dependencies',
     depsEmpty: 'No data',
     diffTitle: 'Release diff',
