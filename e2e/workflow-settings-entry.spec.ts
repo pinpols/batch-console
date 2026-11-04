@@ -25,7 +25,7 @@ async function loadWorkflowRows(page: Page): Promise<WorkflowRow[]> {
 async function openBothSettings(page: Page, settings: Locator) {
   await settings.click()
   await page.getByRole('menuitem', { name: '调度设置' }).click()
-  const scheduleDialog = page.getByRole('dialog', { name: 'Workflow 调度设置' })
+  const scheduleDialog = page.getByRole('dialog', { name: '工作流调度设置' })
   await expect(scheduleDialog).toBeVisible()
   await scheduleDialog.getByRole('button', { name: '取消' }).click()
   await expect(scheduleDialog).toBeHidden()

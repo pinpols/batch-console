@@ -151,10 +151,10 @@ test.describe('Workflow 定义 — 筛选查询', () => {
     await expectPageTitle(page, '工作流定义')
   })
 
-  test('Workflow Code 搜索', async ({ page }) => {
+  test('工作流编码搜索', async ({ page }) => {
     const input = page
       .locator('.el-form-item')
-      .filter({ hasText: 'Workflow Code' })
+      .filter({ hasText: '工作流编码' })
       .getByRole('textbox')
     await input.fill('test')
     await page.getByRole('button', { name: '搜索' }).click()
@@ -166,7 +166,7 @@ test.describe('Workflow 定义 — 筛选查询', () => {
   test('重置清空筛选', async ({ page }) => {
     const input = page
       .locator('.el-form-item')
-      .filter({ hasText: 'Workflow Code' })
+      .filter({ hasText: '工作流编码' })
       .getByRole('textbox')
     await input.fill('abc')
     await page.getByRole('button', { name: '重置' }).click()
