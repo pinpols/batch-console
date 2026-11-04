@@ -495,7 +495,7 @@
     margin: 4px 0 8px;
     padding: 8px 12px;
     border-radius: 10px;
-    background: var(--color-warning-light, rgba(245, 158, 11, 0.12));
+    background: var(--color-warning-light);
     color: var(--color-warning, #b45309);
     font-size: 13px;
     line-height: 1.4;

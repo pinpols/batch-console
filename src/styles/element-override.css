@@ -917,6 +917,23 @@ html.dark .el-dialog {
   color: var(--color-text-secondary);
 }
 
+/* 对话框正文中的提示块与说明文字：与下方表单拉开间距，避免贴在一起 */
+.el-dialog__body > .el-alert:not(:last-child),
+.el-dialog__body > .el-form > .el-alert:not(:last-child) {
+  margin-bottom: 16px;
+}
+
+.el-dialog__body .el-form > .el-alert:last-child {
+  margin-top: 4px;
+}
+
+.el-dialog__body .dialog-help {
+  margin: 0 0 14px;
+  font-size: var(--font-size-sm);
+  line-height: 1.6;
+  color: var(--color-text-secondary);
+}
+
 .el-dialog__footer {
   display: flex;
   flex-wrap: wrap;

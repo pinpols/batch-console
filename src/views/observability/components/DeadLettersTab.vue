@@ -123,20 +123,34 @@
       :raw="detailRow"
       :meta-rows="detailMetaRows"
     />
-    <el-dialog v-model="replayDialogVisible" :title="t('observability.dlqReplay')" width="520px">
-      <p>{{ t('observability.dlqExternalOutcomeHelp') }}</p>
-      <el-checkbox v-model="externalActionVerifiedNotExecuted">
-        {{ t('observability.dlqExternalOutcomeVerified') }}
-      </el-checkbox>
-      <el-form-item :label="t('observability.dlqReplayReason')">
-        <el-input v-model="replayReason" type="textarea" maxlength="512" show-word-limit />
-      </el-form-item>
-      <el-form-item
-        v-if="externalActionVerifiedNotExecuted"
-        :label="t('observability.dlqEvidenceReference')"
-      >
-        <el-input v-model="externalOutcomeEvidenceReference" maxlength="512" show-word-limit />
-      </el-form-item>
+    <el-dialog
+      v-model="replayDialogVisible"
+      :title="t('observability.dlqReplay')"
+      width="min(520px, calc(100vw - 32px))"
+    >
+      <el-form label-position="top" @submit.prevent>
+        <p class="dialog-help">{{ t('observability.dlqExternalOutcomeHelp') }}</p>
+        <el-form-item>
+          <el-checkbox v-model="externalActionVerifiedNotExecuted">
+            {{ t('observability.dlqExternalOutcomeVerified') }}
+          </el-checkbox>
+        </el-form-item>
+        <el-form-item :label="t('observability.dlqReplayReason')">
+          <el-input
+            v-model="replayReason"
+            type="textarea"
+            :rows="3"
+            maxlength="512"
+            show-word-limit
+          />
+        </el-form-item>
+        <el-form-item
+          v-if="externalActionVerifiedNotExecuted"
+          :label="t('observability.dlqEvidenceReference')"
+        >
+          <el-input v-model="externalOutcomeEvidenceReference" maxlength="512" show-word-limit />
+        </el-form-item>
+      </el-form>
       <template #footer>
         <el-button @click="replayDialogVisible = false">{{ t('common.cancel') }}</el-button>
         <el-button

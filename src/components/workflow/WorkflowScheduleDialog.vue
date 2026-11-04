@@ -2,58 +2,60 @@
   <el-dialog
     v-model="visible"
     :title="t('workflowDefinitionList.scheduleTitle')"
-    width="min(560px, calc(100% - 32px))"
+    width="min(640px, calc(100% - 32px))"
     :close-on-click-modal="false"
   >
     <el-form v-loading="loading" label-position="top" @submit.prevent>
-      <el-form-item :label="t('workflowDefinitionList.scheduleType')" required>
-        <el-select v-model="form.scheduleType" class="w-full" @change="onScheduleTypeChange">
-          <el-option :label="t('workflowDefinitionList.scheduleManual')" value="MANUAL" />
-          <el-option :label="t('workflowDefinitionList.scheduleCron')" value="CRON" />
-          <el-option :label="t('workflowDefinitionList.scheduleFixedRate')" value="FIXED_RATE" />
-          <el-option :label="t('workflowDefinitionList.scheduleEvent')" value="EVENT" />
-        </el-select>
-      </el-form-item>
-      <el-form-item
-        v-if="needsExpression"
-        :label="t('workflowDefinitionList.scheduleExpression')"
-        required
-      >
-        <el-input v-model="form.scheduleExpr" maxlength="256" :placeholder="exprPlaceholder" />
-      </el-form-item>
-      <el-form-item :label="t('workflowDefinitionList.scheduleTimezone')">
-        <el-input v-model="form.timezone" maxlength="64" placeholder="UTC" />
-      </el-form-item>
-      <el-form-item :label="t('workflowDefinitionList.scheduleTriggerMode')">
-        <el-select v-model="form.triggerMode" class="w-full">
-          <el-option
-            v-for="mode in triggerModeOptions"
-            :key="mode"
-            :label="t(`enum.triggerMode.${mode}`, mode)"
-            :value="mode"
-          />
-        </el-select>
-      </el-form-item>
-      <el-form-item :label="t('workflowDefinitionList.scheduleCalendar')">
-        <el-input v-model="form.calendarCode" maxlength="128" clearable />
-      </el-form-item>
-      <el-form-item :label="t('workflowDefinitionList.scheduleDependency')">
-        <el-select
-          v-model="form.dependsOnJobCode"
-          class="w-full"
-          filterable
-          allow-create
-          clearable
-          :loading="loading"
+      <FormSection :columns="2">
+        <el-form-item :label="t('workflowDefinitionList.scheduleType')" required>
+          <el-select v-model="form.scheduleType" class="w-full" @change="onScheduleTypeChange">
+            <el-option :label="t('workflowDefinitionList.scheduleManual')" value="MANUAL" />
+            <el-option :label="t('workflowDefinitionList.scheduleCron')" value="CRON" />
+            <el-option :label="t('workflowDefinitionList.scheduleFixedRate')" value="FIXED_RATE" />
+            <el-option :label="t('workflowDefinitionList.scheduleEvent')" value="EVENT" />
+          </el-select>
+        </el-form-item>
+        <el-form-item :label="t('workflowDefinitionList.scheduleTriggerMode')">
+          <el-select v-model="form.triggerMode" class="w-full">
+            <el-option
+              v-for="mode in triggerModeOptions"
+              :key="mode"
+              :label="t(`enum.triggerMode.${mode}`, mode)"
+              :value="mode"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item
+          v-if="needsExpression"
+          :label="t('workflowDefinitionList.scheduleExpression')"
+          required
         >
-          <el-option
-            v-for="jobCode in dependencyOptions"
-            :key="jobCode"
-            :label="jobCode"
-            :value="jobCode"
-          />
-        </el-select>
-      </el-form-item>
+          <el-input v-model="form.scheduleExpr" maxlength="256" :placeholder="exprPlaceholder" />
+        </el-form-item>
+        <el-form-item :label="t('workflowDefinitionList.scheduleTimezone')">
+          <el-input v-model="form.timezone" maxlength="64" placeholder="UTC" />
+        </el-form-item>
+        <el-form-item :label="t('workflowDefinitionList.scheduleCalendar')">
+          <el-input v-model="form.calendarCode" maxlength="128" clearable />
+        </el-form-item>
+        <el-form-item :label="t('workflowDefinitionList.scheduleDependency')">
+          <el-select
+            v-model="form.dependsOnJobCode"
+            class="w-full"
+            filterable
+            allow-create
+            clearable
+            :loading="loading"
+          >
+            <el-option
+              v-for="jobCode in dependencyOptions"
+              :key="jobCode"
+              :label="jobCode"
+              :value="jobCode"
+            />
+          </el-select>
+        </el-form-item>
+      </FormSection>
       <el-alert
         :title="t('workflowDefinitionList.scheduleVersionHint', { version: form.expectedVersion })"
         type="info"
@@ -82,6 +84,7 @@
   import { useJobCodeOptions } from '@/composables/useJobCodeOptions'
   import { userErrorMessage } from '@/utils/userErrorMessage'
   import { validateWorkflowScheduleLengths } from '@/utils/workflowScheduleValidation'
+  import FormSection from '@/components/common/FormSection.vue'
 
   /**
    * 工作流调度设置：从列表行内迁到设计器后的唯一编辑入口。

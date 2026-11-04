@@ -345,7 +345,7 @@
   }
   .json-textarea-input--dragover {
     border-color: var(--color-primary);
-    background: var(--color-primary-light-9, rgba(64, 158, 255, 0.06));
+    background: var(--color-primary-light-9);
   }
   .json-textarea-input--loaded {
     border-style: solid;

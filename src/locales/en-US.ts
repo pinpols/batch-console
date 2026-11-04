@@ -2019,13 +2019,16 @@ const messages: Messages = {
   },
   queueConfig: {
     sectionCalendarRules: 'Holidays and catch-up',
-    sectionCalendarRulesDesc: 'How business days roll over holidays, and whether missed business days are caught up and for how many days.',
+    sectionCalendarRulesDesc:
+      'How business days roll over holidays, and whether missed business days are caught up and for how many days.',
     sectionWindowTime: 'Open hours',
-    sectionWindowTimeDesc: 'Opens daily in the given time zone. Turn on cross-day when the end is earlier than the start.',
+    sectionWindowTimeDesc:
+      'Opens daily in the given time zone. Turn on cross-day when the end is earlier than the start.',
     sectionWindowBehavior: 'At close and outside the window',
     sectionBasic: 'Basics',
     sectionCapacity: 'Capacity and rate limits',
-    sectionCapacityDesc: 'Caps on concurrent jobs, partitions and requests per second for this queue, plus priority and weight when queues compete.',
+    sectionCapacityDesc:
+      'Caps on concurrent jobs, partitions and requests per second for this queue, plus priority and weight when queues compete.',
     sectionRouting: 'Routing and notes',
     holidayLoadError: 'Could not load holiday records. Try again.',
     holidayMonthTitle: 'Holiday month view',
@@ -2149,7 +2152,8 @@ const messages: Messages = {
   quotaPanel: {
     sectionBasic: 'Basics',
     sectionLimits: 'Per-tenant limits',
-    sectionLimitsDesc: 'Caps on concurrent jobs, partitions and requests per second for one tenant. Fair-share weight splits resources when tenants compete.',
+    sectionLimitsDesc:
+      'Caps on concurrent jobs, partitions and requests per second for one tenant. Fair-share weight splits resources when tenants compete.',
     loadError: 'Could not load quota policies. Try again.',
     sectionTitle: 'Policies',
     enabledLabel: 'Enabled',
@@ -2193,7 +2197,8 @@ const messages: Messages = {
     sectionMatch: 'Match conditions',
     sectionMatchDesc: 'Team, alert group and severity select which alerts use this route.',
     sectionDelivery: 'Receiver and grouping',
-    sectionDeliveryDesc: 'Alerts in the same group are combined before being sent to the receiver. Waits and intervals are in seconds.',
+    sectionDeliveryDesc:
+      'Alerts in the same group are combined before being sent to the receiver. Waits and intervals are in seconds.',
     reservedTitle: 'Reserved configuration; not active',
     reservedDescription:
       'Existing records are read-only for audit. Runtime alerts currently use static Prometheus / Alertmanager templates and the escalation webhook path; this page is not consumed.',
@@ -2412,7 +2417,8 @@ const messages: Messages = {
   },
   assetFreshness: {
     sectionTarget: 'Asset and deadline',
-    sectionTargetDesc: 'The asset should be produced by this time in the given time zone; past the grace period it counts as stale.',
+    sectionTargetDesc:
+      'The asset should be produced by this time in the given time zone; past the grace period it counts as stale.',
     sectionAlert: 'Evaluation and alerting',
     refresh: 'Refresh',
     create: 'New policy',
@@ -3335,6 +3341,8 @@ const messages: Messages = {
     statusLabel: 'Status',
     statusPlaceholder: 'All statuses',
     listEmpty: 'No config releases',
+    loadError: 'Failed to load config releases. Try again.',
+    listEmptyHint: 'A new release is saved as a draft and takes effect only after approval.',
     colKey: 'Key',
     colName: 'Name',
     colType: 'Type',
@@ -3362,6 +3370,12 @@ const messages: Messages = {
     actionDiff: 'Diff',
     actionSubmit: 'Submit',
     createTitle: 'New config release',
+    createDescription: 'Saved as a draft; it takes effect only after approval.',
+    createSectionIdentity: 'Identity',
+    createSectionIdentityHint: 'Each release of the same config key creates a new version.',
+    createSectionContent: 'Content',
+    createSectionContentHint:
+      'Content is validated against the config type; the note is kept in the release history.',
     createKeyLabel: 'Config key',
     createKeyPlaceholder: 'e.g. job.daily_settlement',
     createTypeLabel: 'Config type',
@@ -4942,7 +4956,8 @@ const messages: Messages = {
     deleteConsequence: 'Alert rules tied to this channel will fall silent on trigger.',
   },
   notificationRulesTab: {
-    formDescription: 'When an event matches this rule, a notification is sent to the selected channel.',
+    formDescription:
+      'When an event matches this rule, a notification is sent to the selected channel.',
     routeSummary: 'Rule configuration summary',
     routeSummaryHint:
       'This previews the entered rule and channel only; it does not mean an event matched or a notification was delivered.',

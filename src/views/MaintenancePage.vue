@@ -178,7 +178,7 @@
     overflow-wrap: anywhere;
     padding: 2px 10px;
     border-radius: 12px;
-    background: var(--color-danger-light, #fee2e2);
+    background: var(--color-danger-light);
     color: var(--color-danger, #b91c1c);
     font-size: 12px;
     font-weight: 600;

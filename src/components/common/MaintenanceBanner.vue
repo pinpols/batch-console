@@ -105,22 +105,22 @@
     border-bottom: 1px solid transparent;
   }
   .maintenance-banner--blocked {
-    background: var(--color-danger-light, #fee2e2);
+    background: var(--color-danger-light);
     color: var(--color-danger, #b91c1c);
     border-bottom-color: rgb(185 28 28 / 18%);
   }
   .maintenance-banner--readonly {
-    background: var(--color-warning-light, #fef3c7);
+    background: var(--color-warning-light);
     color: var(--color-warning, #b45309);
     border-bottom-color: rgb(180 83 9 / 18%);
   }
   .maintenance-banner--admin {
-    background: var(--color-info-light, #e0e7ff);
+    background: var(--color-info-light);
     color: var(--color-info, #1e40af);
     border-bottom-color: rgb(30 64 175 / 18%);
   }
   .maintenance-banner--scheduled {
-    background: var(--color-info-light, #e0e7ff);
+    background: var(--color-info-light);
     color: var(--color-info, #1e40af);
     border-bottom-color: rgb(30 64 175 / 18%);
   }

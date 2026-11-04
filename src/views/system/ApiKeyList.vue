@@ -148,7 +148,7 @@
     <el-dialog
       v-model="rawKeyVisible"
       :title="t('apiKeyList.rawKeyTitle')"
-      width="640px"
+      width="min(640px, calc(100vw - 32px))"
       :close-on-click-modal="false"
       :close-on-press-escape="false"
       :show-close="false"

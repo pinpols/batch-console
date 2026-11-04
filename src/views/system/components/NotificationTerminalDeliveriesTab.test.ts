@@ -47,8 +47,8 @@ describe('terminal notification recovery dialog', () => {
     await wrapper.findAll('button').find(b => b.text() === 'terminalNotifications.reconcileRetry')!.trigger('click')
     const submit = () => wrapper.findAll('button').find(b => b.text() === 'terminalNotifications.queueRetry')!
     expect(submit().attributes('disabled')).toBeDefined()
-    await wrapper.findAll('input:not([type=checkbox])')[0]!.setValue('verified receiver')
-    await wrapper.findAll('input:not([type=checkbox])')[1]!.setValue('ticket-123')
+    await wrapper.findAll('input:not([type=checkbox]):not([disabled])')[0]!.setValue('verified receiver')
+    await wrapper.findAll('input:not([type=checkbox]):not([disabled])')[1]!.setValue('ticket-123')
     await wrapper.find('input[type=checkbox]').setValue(true)
     vi.mocked(retryTerminalDelivery).mockRejectedValueOnce(new Error('response lost'))
     await submit().trigger('click'); await flushPromises()

@@ -89,15 +89,19 @@
     :show-close="!submitting"
   >
     <el-alert type="warning" :closable="false" :title="t('terminalNotifications.reconcileHint')" />
-    <p>{{ selected?.row.terminalEventKey }}</p>
     <el-form label-position="top" @submit.prevent="submit">
+      <el-form-item :label="t('terminalNotifications.eventKey')">
+        <el-input :model-value="selected?.row.terminalEventKey" disabled />
+      </el-form-item>
       <el-form-item :label="t('terminalNotifications.reason')" required>
         <el-input v-model="reason" type="textarea" :maxlength="500" show-word-limit />
       </el-form-item>
       <el-form-item :label="t('terminalNotifications.reference')" required>
         <el-input v-model="reference" :maxlength="500" />
       </el-form-item>
-      <el-checkbox v-model="confirmed">{{ t('terminalNotifications.confirmed') }}</el-checkbox>
+      <el-form-item>
+        <el-checkbox v-model="confirmed">{{ t('terminalNotifications.confirmed') }}</el-checkbox>
+      </el-form-item>
     </el-form>
     <template #footer>
       <el-button :disabled="submitting" @click="visible = false">{{
