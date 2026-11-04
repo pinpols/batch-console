@@ -3425,6 +3425,11 @@ export default {
       PUBLIC: '普通',
       SECRET: '敏感',
     },
+    applyConfirmationEnum: {
+      CONFIRMATION_REQUIRED: '待实例确认',
+      ROLLED_BACK: '已回滚',
+      NOT_RELEASED: '未发布',
+    },
     depsTitle: '配置依赖关系',
     depsEmpty: '暂无数据',
     diffTitle: '配置版本对比',
