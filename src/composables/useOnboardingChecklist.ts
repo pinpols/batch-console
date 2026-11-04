@@ -120,6 +120,11 @@ export function useOnboardingChecklist() {
       return
     }
 
+    // 切到新租户时先换成该租户的空证据：“选择租户”一步立即完成，
+    // 其他步骤也不会在加载期间沿用上一个租户的结果
+    if (evidence.value.tenantId !== requestedTenantId) {
+      evidence.value = emptyEvidence(requestedTenantId)
+    }
     loading.value = true
     try {
       const next = await getOnboardingEvidence(requestedTenantId, {

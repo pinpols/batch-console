@@ -4599,6 +4599,7 @@ export default {
     title: '当前未选择租户',
     descAdmin: '租户选择为空,所有业务页将无数据。请在右上角切换器选择一个租户,或前往创建。',
     descUser: '没有可用的租户上下文,请联系管理员为你分配租户。',
+    actionSelect: '选择租户',
     actionCreate: '前往创建',
   },
   tenantList: {

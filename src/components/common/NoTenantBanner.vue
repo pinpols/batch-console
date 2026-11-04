@@ -5,14 +5,17 @@
       <strong>{{ title }}</strong>
       <span>{{ description }}</span>
     </div>
-    <!-- 有可选租户时可直接选择,不必去顶栏切换器查找。 -->
-    <TenantSelect
+    <!-- 只保留顶栏一个租户搜索框：横幅按钮直接展开顶栏切换器，仍是一步到位 -->
+    <el-button
       v-if="canSwitch && !autoSelecting"
-      :model-value="''"
+      type="warning"
+      size="small"
       :disabled="tenant.tenantSwitchPending"
       class="no-tenant-banner__select"
-      @update:model-value="onPick"
-    />
+      @click="openHeaderTenantPicker"
+    >
+      {{ t('noTenantBanner.actionSelect') }}
+    </el-button>
     <el-button
       v-if="canCreate"
       link
@@ -39,7 +42,6 @@
   import { canSwitchTenant as checkCanSwitchTenant } from '@/utils/tenantAccess'
   import { listTenants } from '@/api/tenants'
   import { currentAuthSession } from '@/api/authSession'
-  import TenantSelect from '@/components/common/TenantSelect.vue'
 
   const { t } = useI18n({ useScope: 'global' })
   const router = useRouter()
@@ -80,8 +82,12 @@
     return true
   }
 
-  function onPick(id: string) {
-    void applyTenant(id)
+  /** 展开顶栏租户切换器（LayoutHeader 中 data-onboarding="tenant" 的选择框） */
+  function openHeaderTenantPicker() {
+    const trigger = document.querySelector<HTMLElement>(
+      '[data-onboarding="tenant"] .el-select__wrapper',
+    )
+    trigger?.click()
   }
 
   // 冷启动自愈:仅一个可选租户时自动选中,用户无需任何操作即可进入业务页,
