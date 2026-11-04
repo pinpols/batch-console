@@ -2194,6 +2194,9 @@ export default {
     fieldHolidayName: '节假日名称',
   },
   quotaPanel: {
+    sectionBasic: '基本信息',
+    sectionLimits: '租户配额上限',
+    sectionLimitsDesc: '限制单个租户同时运行的作业数、分片数和每秒请求数；公平权重用于多租户争用时分配资源。',
     loadError: '配额策略加载失败，请重试。',
     sectionTitle: '策略列表',
     enabledLabel: '启用状态',
@@ -2451,6 +2454,9 @@ export default {
     emptyHint: '暂无容量画像数据。请调整时间窗口或聚合维度后刷新。',
   },
   assetFreshness: {
+    sectionTarget: '资产与应完成时间',
+    sectionTargetDesc: '资产应在所填时区的这个时间前产出；超过宽限仍未产出即视为过期。',
+    sectionAlert: '判定与告警',
     refresh: '刷新',
     create: '新增策略',
     createTitle: '新增新鲜度策略',
