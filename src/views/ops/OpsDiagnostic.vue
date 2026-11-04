@@ -549,20 +549,57 @@
     }) as DiagCard
   }
 
-  // 渲染助手:summary + JsonPreview
+  // 键值网格最多展示的行数，其余留在原始数据里
+  const KV_ROW_LIMIT = 16
+
+  /** 把诊断结果展开为“字段 → 值”行：标量直接展示，嵌套对象展开一层，数组只显示条数 */
+  function toKeyValueRows(data: unknown): Array<{ key: string; value: string }> {
+    if (!data || typeof data !== 'object' || Array.isArray(data)) return []
+    const rows: Array<{ key: string; value: string }> = []
+    const describe = (value: unknown): string | null => {
+      if (value === null || value === undefined) return '—'
+      if (Array.isArray(value)) return t('opsDiagnostic.itemCount', { n: value.length })
+      if (typeof value === 'object') return null
+      return String(value)
+    }
+    for (const [key, value] of Object.entries(data as Record<string, unknown>)) {
+      const scalar = describe(value)
+      if (scalar !== null) {
+        rows.push({ key, value: scalar })
+        continue
+      }
+      for (const [childKey, childValue] of Object.entries(value as Record<string, unknown>)) {
+        rows.push({ key: `${key}.${childKey}`, value: describe(childValue) ?? '{…}' })
+      }
+    }
+    return rows.slice(0, KV_ROW_LIMIT)
+  }
+
+  // 渲染助手:摘要 + 键值网格 + 可展开的原始 JSON(原始数据默认收起,避免卡片里铺满 JSON)
   function renderJsonWithSummary(summarizer: (data: unknown) => string) {
-    return (data: unknown) =>
-      h(
-        JsonPreview,
-        { data },
-        {
-          summary: ({ data: d }: { data: unknown }) => {
-            const summary = summarizer(d)
-            const safeSummary = purifyHtml(summary)
-            return h('span', { innerHTML: safeSummary })
-          },
-        },
-      )
+    return (data: unknown) => {
+      const safeSummary = purifyHtml(summarizer(data))
+      const rows = toKeyValueRows(data)
+      const grid = rows.length
+        ? h(
+            'dl',
+            { class: 'diag-kv' },
+            rows.flatMap((row) => [
+              h('dt', { key: `k-${row.key}` }, row.key),
+              h('dd', { key: `v-${row.key}` }, row.value),
+            ]),
+          )
+        : null
+      const raw = h('details', { class: 'diag-raw' }, [
+        h('summary', null, t('opsDiagnostic.rawData')),
+        h(JsonPreview, { data }),
+      ])
+      return h('div', { class: 'diag-structured' }, [
+        h('p', { class: 'diag-summary', innerHTML: safeSummary }),
+        grid ?? h(JsonPreview, { data }),
+        grid ? raw : null,
+      ])
+    }
   }
 
   // Kafka lag 用专属表格
@@ -847,6 +884,53 @@
 </script>
 
 <style scoped>
+  /* 结果区由 h() 渲染，节点不带 scoped 属性，统一挂在 .diag-card__result 下用 :deep */
+  .diag-card__result :deep(.diag-structured) {
+    display: grid;
+    gap: 10px;
+  }
+
+  .diag-card__result :deep(.diag-summary) {
+    margin: 0;
+    color: var(--color-text-primary);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+  }
+
+  .diag-card__result :deep(.diag-kv) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 4px 12px;
+    margin: 0;
+    font-size: var(--font-size-xs);
+  }
+
+  .diag-card__result :deep(.diag-kv dt) {
+    overflow: hidden;
+    color: var(--color-text-secondary);
+    font-family: var(--font-mono);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .diag-card__result :deep(.diag-kv dd) {
+    margin: 0;
+    color: var(--color-text-primary);
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+  }
+
+  .diag-card__result :deep(.diag-raw summary) {
+    color: var(--color-primary);
+    font-size: var(--font-size-xs);
+    cursor: pointer;
+  }
+
+  .diag-card__result :deep(.diag-raw[open] summary) {
+    margin-bottom: 6px;
+  }
+
   .diag-catalog {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));

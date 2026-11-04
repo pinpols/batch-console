@@ -87,6 +87,8 @@
 
 <style scoped>
   .ops-filter-toolbar {
+    /* 按工具栏自身宽度换行：带侧栏时内容区远窄于视口，按视口判断会把筛选项挤成一窄列 */
+    container-type: inline-size;
     display: grid;
     min-width: 0;
     margin: 2px 0 6px;
@@ -159,7 +161,7 @@
     max-width: 100%;
   }
 
-  @media (max-width: 1320px) {
+  @container (max-width: 1280px) {
     .ops-filter-toolbar__main {
       align-items: flex-start;
       flex-wrap: wrap;

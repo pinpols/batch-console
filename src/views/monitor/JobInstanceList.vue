@@ -1085,8 +1085,9 @@
     color: var(--color-text-tertiary);
   }
 
+  /* 预设、日期区间与时区提示同排需约 530px，过窄时预设会折到区间上方 */
   .jr-date {
-    width: min(440px, 38vw);
+    width: min(530px, 100%);
   }
 
   .jr-jobcode {
@@ -1094,7 +1095,7 @@
   }
 
   .jr-trace {
-    width: min(320px, 100%);
+    width: min(260px, 100%);
   }
 
   .jr-sla {

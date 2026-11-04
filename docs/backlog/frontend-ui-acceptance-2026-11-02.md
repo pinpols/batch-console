@@ -49,10 +49,10 @@
 
 | 页面 | 问题 | 状态 |
 | --- | --- | --- |
-| 作业运行 `/monitor/job-instances` | 筛选区布局失衡：状态分段占左侧，日期、作业编码、Trace ID、SLA 开关被挤成中间一窄列逐行堆叠，左侧大片空白。关闭 EP 按需样式前后一致，为既有问题 | 待做 |
-| 工作流定义 `/workflow/definitions` | 操作列放不下“DAG / 打开作业定义 / 更多”三个按钮而折成两行，每行变高；“说明”列被压到只剩几个字母 | 待做 |
-| 运维诊断 `/ops/diagnostic` | 卡片直接展示原始 JSON（集群概览、Worker 一致性），不像运维视图；“Outbox 统计”加载失败并弹出“无法连接控制台服务” | 待做；加载失败需先查接口 |
-| Outbox `/observability/outbox`、操作审计 `/observability/operation-audits` | 页面显示加载失败或弹出请求失败提示，属于接口问题而非排版 | 待查接口 |
+| 作业运行 `/monitor/job-instances` | 筛选区布局失衡：状态分段占左侧，日期、作业编码、Trace ID、SLA 开关被挤成中间一窄列逐行堆叠，左侧大片空白。关闭 EP 按需样式前后一致，为既有问题 | 已修复待验收：`OpsFilterToolbar` 的换行规则从视口宽度改为按工具栏自身宽度（容器查询），带侧栏时状态与按钮一行、筛选项整行；日期筛选加宽以免预设折行。告警列表同样受益 |
+| 工作流定义 `/workflow/definitions` | 操作列放不下“DAG / 打开作业定义 / 更多”三个按钮而折成两行，每行变高；“说明”列被压到只剩几个字母 | 已修复待验收：`RowActions` 去掉 EP 相邻按钮的 12px 额外外边距（全站操作列同步收紧），按钮文案缩为“设计器 / 作业定义”，说明列最小宽度 320→200。表格总列宽仍超过可视区，需横向滚动 |
+| 运维诊断 `/ops/diagnostic` | 卡片直接展示原始 JSON（集群概览、Worker 一致性），不像运维视图；“Outbox 统计”加载失败并弹出“无法连接控制台服务” | 已修复待验收：结果改为摘要 + 字段/值列表，原始 JSON 收进“原始数据”折叠。加载失败为后端 bug，见下行 |
+| Outbox `/observability/outbox`、操作审计 `/observability/operation-audits` | 页面显示加载失败或弹出请求失败提示，属于接口问题而非排版 | 已定位：`GET /api/console/ops/outbox/stats` 恒 500，Mapper 构造参数 `javaType="long"`（即 Long）与 record 原始类型不匹配；后端 pinpols/file-batch-system#1312 修复，合入并重启 console-api 后生效。操作审计复查时未再复现 |
 
 其余 50 页布局与新设计一致，未见明显排版问题（未覆盖深色、窄屏与需要数据才出现的状态）。
 

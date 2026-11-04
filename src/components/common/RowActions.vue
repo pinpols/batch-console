@@ -224,6 +224,11 @@
     max-width: 100%;
   }
 
+  /* 间距统一由 gap 提供；EP 默认相邻按钮再加 12px 左外边距，会让三枚按钮在常规操作列里折行 */
+  .row-actions :deep(.el-button + .el-button) {
+    margin-left: 0;
+  }
+
   .row-actions--nowrap {
     flex-wrap: nowrap;
     width: max-content;

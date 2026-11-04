@@ -5209,6 +5209,8 @@ export default {
     remediationPrereq: '操作受角色和数据状态限制，可悬停按钮查看执行条件。',
     cleanupTip: '清理超过保留期的已发布或已放弃 Outbox 事件，执行前需要确认。',
     republishTip: '按事件 ID 重投失败或已放弃的事件。',
+    rawData: '原始数据',
+    itemCount: '{n} 项',
     needAdmin: '需要 ADMIN 角色才能执行高危补救操作。',
     needOutboxStats: '请先在「Outbox 统计」加载数据后再操作。',
     needOutboxHealth: '请先在「Outbox 健康」加载数据后再操作。',
