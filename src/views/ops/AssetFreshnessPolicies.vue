@@ -132,56 +132,65 @@
       @submit="save"
     >
       <el-form id="asset-freshness-form" label-position="top" :model="form" @submit.prevent="save">
-        <el-form-item :label="t('assetFreshness.assetCode')" required>
-          <el-input
-            v-model="form.assetCode"
-            :placeholder="t('assetFreshness.assetCodePlaceholder')"
-          />
-        </el-form-item>
-        <el-form-item :label="t('assetFreshness.expectedBy')" required>
-          <el-time-picker
-            v-model="form.expectedByLocalTime"
-            value-format="HH:mm:ss"
-            :placeholder="t('assetFreshness.expectedByPlaceholder')"
-          />
-        </el-form-item>
-        <el-form-item :label="t('assetFreshness.timezone')">
-          <el-input
-            v-model="form.timezone"
-            :placeholder="t('assetFreshness.timezonePlaceholder')"
-          />
-        </el-form-item>
-        <el-form-item :label="t('assetFreshness.staleAfterSeconds')">
-          <el-input-number v-model="form.staleAfterSeconds" :min="0" controls-position="right" />
-        </el-form-item>
-        <el-form-item :label="t('assetFreshness.lookbackDays')">
-          <el-input-number
-            v-model="form.lookbackDays"
-            :min="1"
-            :max="31"
-            controls-position="right"
-          />
-        </el-form-item>
-        <el-form-item :label="t('assetFreshness.severity')">
-          <el-select v-model="form.severity">
-            <el-option :label="t('enum.severity.INFO')" value="INFO" />
-            <el-option :label="t('enum.severity.WARN')" value="WARN" />
-            <el-option :label="t('enum.severity.ERROR')" value="ERROR" />
-            <el-option :label="t('enum.severity.CRITICAL')" value="CRITICAL" />
-          </el-select>
-        </el-form-item>
-        <el-form-item :label="t('assetFreshness.enabled')">
-          <el-switch
-            :model-value="form.enabled ?? false"
-            @update:model-value="(value: unknown) => (form.enabled = value === true)"
-          />
-        </el-form-item>
+        <FormSection
+          :title="t('assetFreshness.sectionTarget')"
+          :description="t('assetFreshness.sectionTargetDesc')"
+          :columns="2"
+        >
+          <el-form-item class="form-block__full" :label="t('assetFreshness.assetCode')" required>
+            <el-input
+              v-model="form.assetCode"
+              :placeholder="t('assetFreshness.assetCodePlaceholder')"
+            />
+          </el-form-item>
+          <el-form-item :label="t('assetFreshness.expectedBy')" required>
+            <el-time-picker
+              v-model="form.expectedByLocalTime"
+              value-format="HH:mm:ss"
+              :placeholder="t('assetFreshness.expectedByPlaceholder')"
+            />
+          </el-form-item>
+          <el-form-item :label="t('assetFreshness.timezone')">
+            <el-input
+              v-model="form.timezone"
+              :placeholder="t('assetFreshness.timezonePlaceholder')"
+            />
+          </el-form-item>
+        </FormSection>
+        <FormSection :title="t('assetFreshness.sectionAlert')" :columns="2">
+          <el-form-item :label="t('assetFreshness.staleAfterSeconds')">
+            <el-input-number v-model="form.staleAfterSeconds" :min="0" controls-position="right" />
+          </el-form-item>
+          <el-form-item :label="t('assetFreshness.lookbackDays')">
+            <el-input-number
+              v-model="form.lookbackDays"
+              :min="1"
+              :max="31"
+              controls-position="right"
+            />
+          </el-form-item>
+          <el-form-item :label="t('assetFreshness.severity')">
+            <el-select v-model="form.severity">
+              <el-option :label="t('enum.severity.INFO')" value="INFO" />
+              <el-option :label="t('enum.severity.WARN')" value="WARN" />
+              <el-option :label="t('enum.severity.ERROR')" value="ERROR" />
+              <el-option :label="t('enum.severity.CRITICAL')" value="CRITICAL" />
+            </el-select>
+          </el-form-item>
+          <el-form-item :label="t('assetFreshness.enabled')">
+            <el-switch
+              :model-value="form.enabled ?? false"
+              @update:model-value="(value: unknown) => (form.enabled = value === true)"
+            />
+          </el-form-item>
+        </FormSection>
       </el-form>
     </FormDrawer>
   </PageContainer>
 </template>
 
 <script setup lang="ts">
+  import FormSection from '@/components/common/FormSection.vue'
   import FormDrawer from '@/components/common/FormDrawer.vue'
   import { reactive, ref } from 'vue'
   import { useI18n } from 'vue-i18n'

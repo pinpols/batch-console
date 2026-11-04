@@ -158,45 +158,54 @@
       @submit="submitForm"
     >
       <el-form ref="formRef" :model="form" :rules="rules" label-position="top">
-        <el-form-item :label="t('quotaPanel.fieldPolicyCode')" prop="policyCode">
-          <el-input v-model="form.policyCode" :disabled="editingId != null" maxlength="128" />
-        </el-form-item>
-        <el-form-item
-          :label="t('quotaPanel.fieldMaxRunningJobsPerTenant')"
-          prop="maxRunningJobsPerTenant"
+        <FormSection :title="t('quotaPanel.sectionBasic')" :columns="2">
+          <el-form-item :label="t('quotaPanel.fieldPolicyCode')" prop="policyCode">
+            <el-input v-model="form.policyCode" :disabled="editingId != null" maxlength="128" />
+          </el-form-item>
+          <el-form-item :label="t('quotaPanel.fieldEnabled')">
+            <el-switch v-model="form.enabled" />
+          </el-form-item>
+          <el-form-item class="form-block__full" :label="t('quotaPanel.descriptionLabel')">
+            <el-input
+              v-model="form.description"
+              type="textarea"
+              :rows="3"
+              maxlength="512"
+              show-word-limit
+            />
+          </el-form-item>
+        </FormSection>
+        <FormSection
+          :title="t('quotaPanel.sectionLimits')"
+          :description="t('quotaPanel.sectionLimitsDesc')"
+          :columns="2"
         >
-          <el-input-number v-model="form.maxRunningJobsPerTenant" :min="0" :max="INT32_MAX" />
-        </el-form-item>
-        <el-form-item
-          :label="t('quotaPanel.fieldMaxPartitionsPerTenant')"
-          prop="maxPartitionsPerTenant"
-        >
-          <el-input-number v-model="form.maxPartitionsPerTenant" :min="0" :max="INT32_MAX" />
-        </el-form-item>
-        <el-form-item :label="t('quotaPanel.fieldMaxQpsPerTenant')" prop="maxQpsPerTenant">
-          <el-input-number v-model="form.maxQpsPerTenant" :min="0" :max="INT32_MAX" />
-        </el-form-item>
-        <el-form-item :label="t('quotaPanel.fieldFairShareWeight')" prop="fairShareWeight">
-          <el-input-number v-model="form.fairShareWeight" :min="1" :max="INT32_MAX" />
-        </el-form-item>
-        <el-form-item :label="t('quotaPanel.fieldEnabled')">
-          <el-switch v-model="form.enabled" />
-        </el-form-item>
-        <el-form-item :label="t('quotaPanel.descriptionLabel')">
-          <el-input
-            v-model="form.description"
-            type="textarea"
-            :rows="3"
-            maxlength="512"
-            show-word-limit
-          />
-        </el-form-item>
+          <el-form-item
+            :label="t('quotaPanel.fieldMaxRunningJobsPerTenant')"
+            prop="maxRunningJobsPerTenant"
+          >
+            <el-input-number v-model="form.maxRunningJobsPerTenant" :min="0" :max="INT32_MAX" />
+          </el-form-item>
+          <el-form-item
+            :label="t('quotaPanel.fieldMaxPartitionsPerTenant')"
+            prop="maxPartitionsPerTenant"
+          >
+            <el-input-number v-model="form.maxPartitionsPerTenant" :min="0" :max="INT32_MAX" />
+          </el-form-item>
+          <el-form-item :label="t('quotaPanel.fieldMaxQpsPerTenant')" prop="maxQpsPerTenant">
+            <el-input-number v-model="form.maxQpsPerTenant" :min="0" :max="INT32_MAX" />
+          </el-form-item>
+          <el-form-item :label="t('quotaPanel.fieldFairShareWeight')" prop="fairShareWeight">
+            <el-input-number v-model="form.fairShareWeight" :min="1" :max="INT32_MAX" />
+          </el-form-item>
+        </FormSection>
       </el-form>
     </FormDrawer>
   </PageContainer>
 </template>
 
 <script setup lang="ts">
+  import FormSection from '@/components/common/FormSection.vue'
   import FormDrawer from '@/components/common/FormDrawer.vue'
   import { computed, reactive, ref } from 'vue'
   import { useI18n } from 'vue-i18n'

@@ -2147,6 +2147,9 @@ const messages: Messages = {
     fieldHolidayName: 'Holiday name',
   },
   quotaPanel: {
+    sectionBasic: 'Basics',
+    sectionLimits: 'Per-tenant limits',
+    sectionLimitsDesc: 'Caps on concurrent jobs, partitions and requests per second for one tenant. Fair-share weight splits resources when tenants compete.',
     loadError: 'Could not load quota policies. Try again.',
     sectionTitle: 'Policies',
     enabledLabel: 'Enabled',
@@ -2408,6 +2411,9 @@ const messages: Messages = {
     emptyHint: 'No capacity profile data yet. Adjust the time window or grouping, then refresh.',
   },
   assetFreshness: {
+    sectionTarget: 'Asset and deadline',
+    sectionTargetDesc: 'The asset should be produced by this time in the given time zone; past the grace period it counts as stale.',
+    sectionAlert: 'Evaluation and alerting',
     refresh: 'Refresh',
     create: 'New policy',
     createTitle: 'New freshness policy',
