@@ -1,4 +1,7 @@
 export default {
+  sectionChannelTarget: 'Delivery target',
+  sectionChannelTargetDesc: 'Where files are sent, how to authenticate, and whether to wait for a receipt.',
+  sectionChannelAdvanced: 'Advanced',
   mappingAssistant: 'Field mapping assistant',
   mappingAssistantHint:
     'Generate a draft from common fields and apply it to empty settings after review. Use advanced JSON for existing settings and fixed-width files.',

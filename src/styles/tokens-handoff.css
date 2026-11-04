@@ -49,6 +49,10 @@
   --color-border: #d3dae2;
   /* 悬停等需要比常规边框更醒目的描边；此前未定义，回落值在浅色下近乎透明 */
   --color-border-strong: #a9b4c0;
+  /* 组件中引用但此前未定义的别名：由现有语义色推导，明暗主题随 --color-primary 等自动切换 */
+  --color-text-placeholder: var(--color-text-tertiary);
+  --color-primary-light-8: color-mix(in srgb, var(--color-primary) 20%, var(--color-bg-card));
+  --color-primary-bg: color-mix(in srgb, var(--color-primary) 10%, var(--color-bg-card));
   --color-border-light: #e4e9ee;
 
   --shadow-card: 0 1px 2px rgba(19, 34, 50, 0.06);

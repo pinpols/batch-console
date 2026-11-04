@@ -326,7 +326,7 @@
     position: relative;
     display: flex;
     flex-direction: column;
-    border: 1px dashed var(--color-border-subtle);
+    border: 1px dashed var(--color-border-light);
     border-radius: 8px;
     padding: 4px 4px 0;
     transition:
@@ -364,7 +364,7 @@
     align-items: center;
     gap: 12px;
     padding: 6px 6px;
-    border-top: 1px solid var(--color-border-subtle);
+    border-top: 1px solid var(--color-border-light);
     margin-top: 4px;
     flex-wrap: wrap;
   }

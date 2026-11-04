@@ -360,6 +360,7 @@
         @submit.prevent
       >
         <el-alert
+          class="jd-owner-hint"
           :title="t('jobDefinitionList.workflowOwnsScheduleHint')"
           type="info"
           :closable="false"
@@ -392,6 +393,7 @@
         @submit.prevent
       >
         <el-alert
+          class="jd-owner-hint"
           :title="t('jobDefinitionList.workflowOwnsScheduleHint')"
           type="info"
           :closable="false"

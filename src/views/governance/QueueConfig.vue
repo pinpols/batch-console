@@ -453,80 +453,13 @@
       @save="saveQueue"
     />
 
-    <FormDrawer
-      v-model:visible="windowDialogVisible"
-      :title="
-        windowEditingId == null
-          ? t('queueConfig.windowCreateTitle')
-          : t('queueConfig.windowEditTitle')
-      "
-      destroy-on-close
+    <GovernanceWindowEditor
+      v-model="windowDialogVisible"
+      :window-form="windowForm"
+      :window-editing-id="windowEditingId"
       :saving="saving"
-      @submit="saveWindow"
-    >
-      <el-form :model="windowForm" label-width="120px">
-        <el-form-item :label="t('queueConfig.fieldWindowCode')" required>
-          <el-input
-            v-model="windowForm.windowCode"
-            :disabled="windowEditingId != null"
-            maxlength="128"
-          />
-        </el-form-item>
-        <el-form-item :label="t('queueConfig.fieldWindowName')"
-          ><el-input v-model="windowForm.windowName" maxlength="256"
-        /></el-form-item>
-        <el-form-item :label="t('queueConfig.fieldTimezone')" required
-          ><el-input v-model="windowForm.timezone" maxlength="64"
-        /></el-form-item>
-        <el-form-item :label="t('queueConfig.fieldStartTime')" required
-          ><el-time-picker
-            v-model="windowForm.startTime"
-            class="query-w-full"
-            value-format="HH:mm:ss"
-        /></el-form-item>
-        <el-form-item :label="t('queueConfig.fieldEndTime')" required
-          ><el-time-picker
-            v-model="windowForm.endTime"
-            class="query-w-full"
-            value-format="HH:mm:ss"
-        /></el-form-item>
-        <el-form-item :label="t('queueConfig.fieldEndStrategy')"
-          ><MetaSelect
-            v-model="windowForm.endStrategy"
-            enum-key="endStrategy"
-            class="query-w-full"
-            clearable
-        /></el-form-item>
-        <el-form-item :label="t('queueConfig.fieldOutOfWindowAction')"
-          ><MetaSelect
-            v-model="windowForm.outOfWindowAction"
-            enum-key="outOfWindowAction"
-            class="query-w-full"
-            clearable
-        /></el-form-item>
-        <el-form-item :label="t('queueConfig.fieldAllowCrossDay')"
-          ><el-switch v-model="windowForm.allowCrossDay"
-        /></el-form-item>
-        <el-form-item :label="t('queueConfig.windowPreviewTitle')">
-          <WindowSchedulePreview
-            :start-time="windowForm.startTime"
-            :end-time="windowForm.endTime"
-            :timezone="windowForm.timezone"
-            :allow-cross-day="windowForm.allowCrossDay"
-          />
-        </el-form-item>
-        <el-form-item :label="t('queueConfig.fieldEnabled')"
-          ><el-switch v-model="windowForm.enabled"
-        /></el-form-item>
-        <el-form-item :label="t('queueConfig.fieldDescription')"
-          ><el-input
-            v-model="windowForm.description"
-            type="textarea"
-            maxlength="512"
-            show-word-limit
-        /></el-form-item>
-      </el-form>
-    </FormDrawer>
+      @save="saveWindow"
+    />
 
     <GovernanceCalendarEditor
       v-model="calendarDialogVisible"
@@ -619,7 +552,7 @@
   import StatusTag from '@/components/common/StatusTag.vue'
   import GovernanceFilterBar from './components/GovernanceFilterBar.vue'
   import HolidayMonthView from './HolidayMonthView.vue'
-  import WindowSchedulePreview from './WindowSchedulePreview.vue'
+  import GovernanceWindowEditor from './GovernanceWindowEditor.vue'
   import { userErrorMessage } from '@/utils/userErrorMessage'
   import { clampPage, optionalText } from './queueConfigSupport'
 
