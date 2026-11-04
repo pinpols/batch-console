@@ -833,6 +833,7 @@
     try {
       const action = enabledNext ? t('queueConfig.enable') : t('queueConfig.disable')
       await confirmDanger({
+        reversible: true,
         verb: action,
         target: `「${label}」`,
         consequence: enabledNext

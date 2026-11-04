@@ -3189,7 +3189,7 @@ export default {
     pauseTitle: '暂停确认',
     pauseText: '暂停 Trigger:{code}?',
     pauseConfirmVerb: '暂停',
-    pauseConfirmConsequence: '可在列表里恢复或重新启用',
+    pauseConfirmConsequence: '暂停期间该触发器不再自动发起运行。',
     pauseConfirmButton: '确认暂停',
     pauseSuccess: '已暂停',
     resumeSuccess: '已恢复',

@@ -222,7 +222,8 @@
   }
 
   {
-    const q = route.query.jobInstanceId as string | undefined
+    // 深链参数以 jobInstanceId 为准；instanceId 是作业运行列表早期使用的名字，继续兼容
+    const q = (route.query.jobInstanceId ?? route.query.instanceId) as string | undefined
     if (q) filterInstanceId.value = q
   }
 

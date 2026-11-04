@@ -917,6 +917,7 @@
         ? t('workflowDefinitionList.actionDisable')
         : t('workflowDefinitionList.actionEnable')
       await confirmDanger({
+        reversible: true,
         verb: t('workflowDefinitionList.toggleConfirmTitle'),
         target: '',
         consequence: t('workflowDefinitionList.toggleConfirmText', {

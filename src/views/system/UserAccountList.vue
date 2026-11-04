@@ -779,6 +779,7 @@
     if (!ensureWriteAvailable()) return
     try {
       await confirmDanger({
+        reversible: true,
         verb: t('userAccountList.disableConfirmTitle'),
         target: '',
         consequence: t('userAccountList.disableConfirmText', { name: row.username }),

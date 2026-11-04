@@ -102,7 +102,11 @@
             <el-timeline-item
               v-for="(event, index) in visibleTimeline"
               :key="index"
-              :timestamp="event.occurredAt || t('traceDiagnostic.timelineFieldUnavailable')"
+              :timestamp="
+                event.occurredAt
+                  ? fmtDatetime(event.occurredAt)
+                  : t('traceDiagnostic.timelineFieldUnavailable')
+              "
               placement="top"
             >
               <span>{{ t('traceDiagnostic.timelineSource') }}: </span>
@@ -189,22 +193,22 @@
                     <template #default="{ row }">
                       <CopyableText
                         v-if="col.inspect && hasCellValue(row[col.prop])"
-                        :text="formatCell(row[col.prop])"
+                        :text="formatCell(row[col.prop], col.prop)"
                         :copyable="false"
                       >
                         <router-link v-if="col.linkTo" :to="col.linkTo(row)" class="cell-link">
-                          {{ formatCell(row[col.prop]) }}
+                          {{ formatCell(row[col.prop], col.prop) }}
                         </router-link>
-                        <span v-else>{{ formatCell(row[col.prop]) }}</span>
+                        <span v-else>{{ formatCell(row[col.prop], col.prop) }}</span>
                       </CopyableText>
                       <router-link
                         v-else-if="col.linkTo && hasCellValue(row[col.prop])"
                         :to="col.linkTo(row)"
                         class="cell-link"
                       >
-                        {{ formatCell(row[col.prop]) }}
+                        {{ formatCell(row[col.prop], col.prop) }}
                       </router-link>
-                      <span v-else>{{ formatCell(row[col.prop]) }}</span>
+                      <span v-else>{{ formatCell(row[col.prop], col.prop) }}</span>
                     </template>
                   </el-table-column>
                 </el-table>
@@ -239,6 +243,7 @@
   import { useTenantRequestScope } from '@/composables/useTenantRequestScope'
   import { queryTraceSnapshot } from '@/api/observabilityQueries'
   import { buildTraceTimeline } from './traceTimeline'
+  import { fmtDatetime } from '@/utils/datetime'
 
   const { t } = useI18n({ useScope: 'global' })
   const route = useRoute()
@@ -363,8 +368,10 @@
     return trimmedValue !== ''
   }
 
-  function formatCell(value: unknown): string {
+  /** 时间字段（*At）按系统时区格式化，与其他页面一致；其余值原样展示 */
+  function formatCell(value: unknown, prop?: string): string {
     if (!hasCellValue(value)) return '—'
+    if (prop && /At$/.test(prop) && typeof value === 'string') return fmtDatetime(value)
     return typeof value === 'object' ? JSON.stringify(value) : String(value)
   }
 

@@ -185,7 +185,8 @@
             :description="t('jobDefinitionList.emptyDescription')"
             :image-size="80"
           >
-            <template #action>
+            <!-- 配置包导入页只对可写配置的角色开放，只读用户不显示该引导，避免点击后被路由权限送回首页 -->
+            <template v-if="canMutateConfig" #action>
               <el-button
                 type="primary"
                 :icon="Upload"

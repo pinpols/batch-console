@@ -3163,7 +3163,7 @@ const messages: Messages = {
     pauseTitle: 'Confirm pause',
     pauseText: 'Pause trigger {code}?',
     pauseConfirmVerb: 'Pause',
-    pauseConfirmConsequence: 'You can resume or enable it again from the list',
+    pauseConfirmConsequence: 'While paused, this trigger no longer starts runs automatically.',
     pauseConfirmButton: 'Confirm pause',
     pauseSuccess: 'Paused',
     resumeSuccess: 'Resumed',

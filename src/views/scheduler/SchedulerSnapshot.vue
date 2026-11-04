@@ -770,6 +770,7 @@
   async function confirmPauseAll() {
     try {
       await confirmDanger({
+        reversible: true,
         verb: t('schedulerSnapshot.pauseAllConfirmVerb'),
         target: t('schedulerSnapshot.confirmAllTarget'),
         consequence: t('schedulerSnapshot.pauseAllConfirmConsequence'),
@@ -790,6 +791,7 @@
   async function confirmResumeAll() {
     try {
       await confirmDanger({
+        reversible: true,
         verb: t('schedulerSnapshot.resumeAllConfirmVerb'),
         target: t('schedulerSnapshot.confirmAllTarget'),
         consequence: t('schedulerSnapshot.resumeAllConfirmConsequence'),
