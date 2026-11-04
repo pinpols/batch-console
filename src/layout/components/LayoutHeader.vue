@@ -434,7 +434,7 @@
   .nav-arrow:hover {
     color: var(--color-text-primary);
     border-color: var(--color-border-strong, var(--color-border));
-    background: var(--color-bg-hover, transparent);
+    background: var(--color-bg-hover);
   }
 
   .nav-arrow :deep(.el-icon) {

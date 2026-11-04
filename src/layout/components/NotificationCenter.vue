@@ -209,7 +209,7 @@
   }
 
   .notif-center__row:hover {
-    background: var(--color-bg-hover, #f5f7fa);
+    background: var(--color-bg-hover);
   }
 
   .notif-center__icon {

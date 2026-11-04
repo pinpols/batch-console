@@ -3,8 +3,8 @@
 
 :root {
   --font-sans:
-    Barlow, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue',
-    Arial, sans-serif;
+    Barlow, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', Arial,
+    sans-serif;
   --font-mono:
     'IBM Plex Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Monaco, monospace;
   --font-family-base: var(--font-sans);
@@ -53,6 +53,13 @@
   --color-text-placeholder: var(--color-text-tertiary);
   --color-primary-light-8: color-mix(in srgb, var(--color-primary) 20%, var(--color-bg-card));
   --color-primary-bg: color-mix(in srgb, var(--color-primary) 10%, var(--color-bg-card));
+  --color-primary-light-9: color-mix(in srgb, var(--color-primary) 6%, var(--color-bg-card));
+  /* 状态浅底（横幅、提示块）：同样由语义色推导，深色主题下不再沿用浅色回退值 */
+  --color-danger-light: color-mix(in srgb, var(--color-danger) 12%, var(--color-bg-card));
+  --color-warning-light: color-mix(in srgb, var(--color-warning) 14%, var(--color-bg-card));
+  --color-info-light: color-mix(in srgb, var(--color-info) 10%, var(--color-bg-card));
+  /* 图标按钮、列表项悬停底色 */
+  --color-bg-hover: var(--color-bg-subtle);
   --color-border-light: #e4e9ee;
 
   --shadow-card: 0 1px 2px rgba(19, 34, 50, 0.06);

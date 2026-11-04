@@ -72,8 +72,16 @@
       <div class="cr-timeline">
         <EmptyState
           v-if="!tableBlocking && rows.length === 0"
-          :description="t('configReleaseList.listEmpty')"
-        />
+          class="cr-empty"
+          :title="t('configReleaseList.listEmpty')"
+          :description="t('configReleaseList.listEmptyHint')"
+        >
+          <template v-if="canManageSystem" #action>
+            <el-button type="primary" :icon="Plus" :disabled="writesFrozen" @click="openCreate">
+              {{ t('configReleaseList.headerCreate') }}
+            </el-button>
+          </template>
+        </EmptyState>
         <div v-for="row in rows" :key="row.id" class="cr-item">
           <div class="cr-rail">
             <span
@@ -154,12 +162,12 @@
           </div>
         </div>
         <div class="cr-panel__section">{{ t('configReleaseList.panelInfoTitle') }}</div>
-        <div class="cr-panel__list">
-          <div v-for="item in panelInfoItems" :key="item.label" class="cr-panel__list-item">
-            <span class="cr-panel__list-dot">·</span>
-            <span class="cr-panel__list-text">{{ item.label }}: {{ item.value }}</span>
-          </div>
-        </div>
+        <dl class="cr-panel__kv">
+          <template v-for="item in panelInfoItems" :key="item.label">
+            <dt>{{ item.label }}</dt>
+            <dd>{{ item.value }}</dd>
+          </template>
+        </dl>
         <div class="cr-panel__actions">
           <el-button
             v-if="canManageSystem && selectedRow.configStatus === 'DRAFT'"
@@ -244,13 +252,17 @@
       </el-table>
     </el-drawer>
 
-    <el-drawer
-      :append-to-body="true"
-      v-model="createVisible"
+    <FormDrawer
+      v-model:visible="createVisible"
       :title="t('configReleaseList.createTitle')"
-      size="520px"
-      :before-close="onCreateClose"
+      :description="t('configReleaseList.createDescription')"
+      size="md"
+      :saving="createSaving"
+      :submit-disabled="writesFrozen"
+      :submit-text="t('configReleaseList.createSubmit')"
+      :before-close="confirmCreateDiscard"
       @opened="focusCreateForm"
+      @submit="submitCreate"
     >
       <el-form
         ref="createFormRef"
@@ -260,58 +272,67 @@
         label-position="top"
         @submit.prevent="submitCreate"
       >
-        <el-form-item :label="t('configReleaseList.createKeyLabel')" prop="configKey">
-          <el-input
-            v-model="createForm.configKey"
-            maxlength="128"
-            show-word-limit
-            :placeholder="t('configReleaseList.createKeyPlaceholder')"
-          />
-        </el-form-item>
-        <el-form-item :label="t('configReleaseList.createTypeLabel')" prop="configType">
-          <el-input
-            v-model="createForm.configType"
-            maxlength="64"
-            :placeholder="t('configReleaseList.createTypePlaceholder')"
-          />
-        </el-form-item>
-        <el-form-item :label="t('configReleaseList.createNameLabel')" prop="configName">
-          <el-input
-            v-model="createForm.configName"
-            maxlength="256"
-            show-word-limit
-            :placeholder="t('configReleaseList.createNamePlaceholder')"
-          />
-        </el-form-item>
-        <el-form-item :label="t('configReleaseList.createPayloadLabel')" prop="configPayloadJson">
-          <el-input
-            v-model="createForm.configPayloadJson"
-            type="textarea"
-            :rows="12"
-            maxlength="1048576"
-            :placeholder="t('configReleaseList.createPayloadPlaceholder')"
-          />
-        </el-form-item>
-        <el-form-item :label="t('configReleaseList.createNoteLabel')" prop="releaseNote">
-          <el-input
-            v-model="createForm.releaseNote"
-            type="textarea"
-            :rows="4"
-            maxlength="512"
-            show-word-limit
-            :placeholder="t('configReleaseList.createNotePlaceholder')"
-          />
-        </el-form-item>
-        <div class="form-action-bar">
-          <el-button native-type="button" :disabled="createSaving" @click="closeCreate">
-            {{ t('common.cancel') }}
-          </el-button>
-          <el-button type="primary" native-type="submit" :loading="createSaving">
-            {{ t('configReleaseList.createSubmit') }}
-          </el-button>
-        </div>
+        <FormSection
+          :title="t('configReleaseList.createSectionIdentity')"
+          :description="t('configReleaseList.createSectionIdentityHint')"
+          :columns="2"
+        >
+          <el-form-item :label="t('configReleaseList.createKeyLabel')" prop="configKey">
+            <el-input
+              v-model="createForm.configKey"
+              maxlength="128"
+              show-word-limit
+              :placeholder="t('configReleaseList.createKeyPlaceholder')"
+            />
+          </el-form-item>
+          <el-form-item :label="t('configReleaseList.createTypeLabel')" prop="configType">
+            <el-input
+              v-model="createForm.configType"
+              maxlength="64"
+              :placeholder="t('configReleaseList.createTypePlaceholder')"
+            />
+          </el-form-item>
+          <el-form-item
+            class="form-block__full"
+            :label="t('configReleaseList.createNameLabel')"
+            prop="configName"
+          >
+            <el-input
+              v-model="createForm.configName"
+              maxlength="256"
+              show-word-limit
+              :placeholder="t('configReleaseList.createNamePlaceholder')"
+            />
+          </el-form-item>
+        </FormSection>
+        <FormSection
+          :title="t('configReleaseList.createSectionContent')"
+          :description="t('configReleaseList.createSectionContentHint')"
+        >
+          <el-form-item :label="t('configReleaseList.createPayloadLabel')" prop="configPayloadJson">
+            <el-input
+              v-model="createForm.configPayloadJson"
+              class="cr-payload-input"
+              type="textarea"
+              :rows="12"
+              maxlength="1048576"
+              spellcheck="false"
+              :placeholder="t('configReleaseList.createPayloadPlaceholder')"
+            />
+          </el-form-item>
+          <el-form-item :label="t('configReleaseList.createNoteLabel')" prop="releaseNote">
+            <el-input
+              v-model="createForm.releaseNote"
+              type="textarea"
+              :rows="3"
+              maxlength="512"
+              show-word-limit
+              :placeholder="t('configReleaseList.createNotePlaceholder')"
+            />
+          </el-form-item>
+        </FormSection>
       </el-form>
-    </el-drawer>
+    </FormDrawer>
 
     <el-drawer
       :append-to-body="true"
@@ -333,10 +354,10 @@
       :title="t('configReleaseList.diffTitle')"
       width="min(800px, calc(100vw - 32px))"
     >
-      <el-form :inline="true" class="diff-form">
+      <el-form label-position="top" class="diff-form" @submit.prevent>
         <el-form-item :label="t('configReleaseList.diffVersionA')">
           <el-select
-            class="query-w-240"
+            class="w-full"
             v-model="diffForm.releaseIdA"
             filterable
             :placeholder="t('configReleaseList.diffPlaceholder')"
@@ -351,7 +372,7 @@
         </el-form-item>
         <el-form-item :label="t('configReleaseList.diffVersionB')">
           <el-select
-            class="query-w-240"
+            class="w-full"
             v-model="diffForm.releaseIdB"
             filterable
             :placeholder="t('configReleaseList.diffPlaceholder')"
@@ -364,7 +385,7 @@
             />
           </el-select>
         </el-form-item>
-        <el-form-item>
+        <el-form-item class="diff-form__action">
           <el-button
             type="primary"
             :loading="diffLoading"
@@ -404,13 +425,15 @@
           >
         </el-descriptions>
         <template v-if="diffData.payloadChanged && diffPaths.paths.length">
-          <p>{{ t('configReleaseList.diffPaths') }}</p>
-          <ul>
+          <p class="diff-result__label">{{ t('configReleaseList.diffPaths') }}</p>
+          <ul class="diff-result__paths">
             <li v-for="path in diffPaths.paths" :key="path">
               <code>{{ path }}</code>
             </li>
           </ul>
-          <p v-if="diffPaths.truncated">{{ t('configReleaseList.diffPathsTruncated') }}</p>
+          <p v-if="diffPaths.truncated" class="diff-result__note">
+            {{ t('configReleaseList.diffPathsTruncated') }}
+          </p>
         </template>
         <el-collapse>
           <el-collapse-item :title="t('configReleaseList.diffRaw')" name="raw">
@@ -443,13 +466,12 @@
         <el-descriptions-item :label="t('configReleaseList.detailPublishedAt')">{{
           fmtDatetime(typeof detail.publishedAt === 'string' ? detail.publishedAt : undefined)
         }}</el-descriptions-item>
-        <el-descriptions-item
-          :label="t('configReleaseList.detailRawResponse')"
-          :span="isMobile ? 1 : 2"
-        >
-          <JsonPreview :data="detail" />
-        </el-descriptions-item>
       </el-descriptions>
+      <el-collapse v-if="detail" class="cr-detail-raw">
+        <el-collapse-item :title="t('configReleaseList.detailRawResponse')" name="raw">
+          <JsonPreview :data="detail" />
+        </el-collapse-item>
+      </el-collapse>
     </el-drawer>
   </PageContainer>
 </template>
@@ -495,6 +517,8 @@
   import MetaSelect from '@/components/common/MetaSelect.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
+  import FormDrawer from '@/components/common/FormDrawer.vue'
+  import FormSection from '@/components/common/FormSection.vue'
   import CopyableText from '@/components/common/CopyableText.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import JsonPreview from '@/components/common/JsonPreview.vue'
@@ -747,15 +771,9 @@
     createDirty.markPristine()
   }
 
-  async function closeCreate() {
-    if (!(await createDirty.confirmDiscard())) return
-    createVisible.value = false
-  }
-
-  async function onCreateClose(done: () => void) {
-    if (createSaving.value) return
-    if (!(await createDirty.confirmDiscard())) return
-    done()
+  /** 新增抽屉关闭前确认是否丢弃未保存内容；保存中由 FormDrawer 拦截 */
+  function confirmCreateDiscard() {
+    return createDirty.confirmDiscard()
   }
 
   async function submitCreate() {

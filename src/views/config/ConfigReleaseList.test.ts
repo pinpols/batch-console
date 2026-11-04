@@ -73,6 +73,8 @@ const stubs = {
   ListPageQueryBar: pass,
   ElButton: { template: '<button><slot /></button>' },
   ElDrawer: overlay,
+  FormDrawer: false,
+  FormSection: false,
   ElDialog: overlay,
   ElForm: form,
   ElFormItem: pass,
@@ -290,10 +292,8 @@ describe('配置发布的租户与异步操作边界', () => {
     await flushPromises()
     await fillCreate(wrapper)
     await wrapper.get('form').trigger('submit')
-    const drawer = wrapper
-      .findAllComponents({ name: 'OverlayHarness' })
-      .find((component) => component.props('title') === 'configReleaseList.createTitle')!
-    drawer.vm.$emit('update:modelValue', false)
+    // 新增抽屉由 FormDrawer 承载，模拟用户关闭抽屉
+    wrapper.findComponent({ name: 'FormDrawer' }).vm.$emit('update:visible', false)
     await flushPromises()
     await click(wrapper, 'configReleaseList.headerCreate')
     validation.resolve(true)
