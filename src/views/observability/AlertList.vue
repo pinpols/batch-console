@@ -739,8 +739,9 @@
     width: min(156px, 14vw);
   }
 
+  /* 与作业运行一致：预设、日期区间与时区提示同排需约 530px */
   .al-range {
-    width: min(420px, 36vw);
+    width: min(530px, 100%);
   }
 
   .al-trace {

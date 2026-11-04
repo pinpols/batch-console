@@ -5209,6 +5209,8 @@ const messages: Messages = {
     cleanupTip:
       'Cleans up published or abandoned Outbox events past the retention period. Requires confirmation.',
     republishTip: 'Re-publishes FAILED / GIVE_UP events by ID. Will prompt for event IDs.',
+    rawData: 'Raw data',
+    itemCount: '{n} items',
     needAdmin: 'ADMIN role required for high-risk remediation actions.',
     needOutboxStats: 'Load Outbox stats first.',
     needOutboxHealth: 'Load Outbox health first.',

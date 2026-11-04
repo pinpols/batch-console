@@ -187,7 +187,7 @@
         <el-table-column
           prop="description"
           :label="t('workflowDefinitionList.colDescription')"
-          min-width="320"
+          min-width="200"
         >
           <template #default="{ row }">
             <CopyableText
@@ -218,7 +218,7 @@
           :label="t('workflowDefinitionList.colUpdatedAt')"
           width="180"
         />
-        <el-table-column :label="t('workflowDefinitionList.colActions')" width="220" fixed="right">
+        <el-table-column :label="t('workflowDefinitionList.colActions')" width="240" fixed="right">
           <template #default="{ row }">
             <RowActions
               :actions="rowActions(row as ConsoleWorkflowDefinitionResponse)"
