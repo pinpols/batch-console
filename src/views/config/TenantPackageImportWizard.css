@@ -288,11 +288,27 @@
   min-height: 0;
 }
 
+/* 筛选行：搜索框伸缩，工作表与场景下拉定宽，层级分段按内容宽度；放不下时整体换行 */
 .guide-drawer__filters {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  display: flex;
+  flex-wrap: wrap;
   gap: 10px;
   align-items: center;
+}
+
+.guide-drawer__filters > .el-input {
+  flex: 1 1 240px;
+  min-width: 0;
+}
+
+.guide-drawer__filters > .el-select {
+  flex: 0 1 240px;
+  min-width: 180px;
+}
+
+.guide-drawer__filters > .el-segmented {
+  flex: 0 0 auto;
+  max-width: 100%;
 }
 
 .guide-drawer__summary {
@@ -318,9 +334,10 @@
   flex-shrink: 0;
 }
 
+/* 列名与“必填/选填”标签保持同一行，长列名不把标签挤到下一行 */
 .guide-column-name {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
   gap: 6px;
   min-width: 0;
@@ -371,8 +388,9 @@
 }
 
 @media (max-width: 720px) {
-  .guide-drawer__filters {
-    grid-template-columns: 1fr;
+  .guide-drawer__filters > .el-input,
+  .guide-drawer__filters > .el-select {
+    flex-basis: 100%;
   }
 
   .guide-row-detail {

@@ -9,6 +9,7 @@ const tenantPackageImportWizard = {
   btnDownloadTemplate: 'Download package template',
   btnExportCurrent: 'Export current package',
   btnFieldGuide: 'Field guide',
+  guideScenarioPlaceholder: 'Select a business scenario',
   templateScopeTitle: 'Template scope',
   templateScopeHint: 'Choose file formats and job scenarios for the template',
   scenarioPlaceholder: 'Select job scenarios and file formats',

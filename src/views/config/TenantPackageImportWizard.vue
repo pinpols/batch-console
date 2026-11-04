@@ -593,8 +593,22 @@
               :value="sheet.sheetName"
             />
           </el-select>
+          <!-- 业务场景有十余项，分段控件放不下，改为下拉选择 -->
+          <el-select
+            v-model="selectedGuideScenario"
+            class="guide-drawer__scenario"
+            filterable
+            :placeholder="t('tenantPackageImportWizard.guideScenarioPlaceholder')"
+            :aria-label="t('tenantPackageImportWizard.guideScenarioPlaceholder')"
+          >
+            <el-option
+              v-for="option in scenarioOptions"
+              :key="option.value"
+              :label="option.label"
+              :value="option.value"
+            />
+          </el-select>
           <el-segmented v-model="guideLevelFilter" :options="guideLevelOptions" />
-          <el-segmented v-model="selectedGuideScenario" :options="scenarioOptions" />
         </div>
 
         <div v-if="activeGuideSheet" class="guide-drawer__summary">
@@ -636,7 +650,7 @@
           <el-table-column
             prop="columnName"
             :label="t('tenantPackageImportWizard.guideColColumn')"
-            min-width="210"
+            min-width="250"
             fixed="left"
           >
             <template #default="{ row }">
