@@ -3341,6 +3341,7 @@ const messages: Messages = {
     statusLabel: 'Status',
     statusPlaceholder: 'All statuses',
     listEmpty: 'No config releases',
+    loadError: 'Failed to load config releases. Try again.',
     listEmptyHint: 'A new release is saved as a draft and takes effect only after approval.',
     colKey: 'Key',
     colName: 'Name',

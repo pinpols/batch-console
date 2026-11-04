@@ -3361,6 +3361,7 @@ export default {
     statusLabel: '状态',
     statusPlaceholder: '全部状态',
     listEmpty: '暂无配置发布记录',
+    loadError: '配置发布记录加载失败，请重试。',
     listEmptyHint: '新增发布后先保存为草稿，提交审批通过后才会生效。',
     colKey: '配置键',
     colName: '名称',

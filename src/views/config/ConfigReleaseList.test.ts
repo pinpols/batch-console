@@ -163,6 +163,14 @@ it('accepts config names and creation notes up to the backend limits', async () 
 })
 
 describe('配置发布的租户与异步操作边界', () => {
+  it('列表加载失败时只显示错误提示，不显示“暂无记录”空态', async () => {
+    mocks.list.mockRejectedValue(new Error('boom'))
+    const wrapper = render()
+    await flushPromises()
+    expect(wrapper.get('.cr-load-error').attributes('title')).toBe('configReleaseList.loadError')
+    expect(wrapper.findComponent({ name: 'EmptyState' }).exists()).toBe(false)
+  })
+
   it('版本对比未选择目标版本时显示选择提示，选择后按原 ID 比较', async () => {
     mocks.list.mockResolvedValue([row(), { ...row('PUBLISHED', 'release-b'), id: 42 }])
     const wrapper = render()

@@ -71,7 +71,7 @@
     <div class="cr-layout" v-loading="tableBlocking">
       <div class="cr-timeline">
         <EmptyState
-          v-if="!tableBlocking && rows.length === 0"
+          v-if="!tableBlocking && !loadError && rows.length === 0"
           class="cr-empty"
           :title="t('configReleaseList.listEmpty')"
           :description="t('configReleaseList.listEmptyHint')"
