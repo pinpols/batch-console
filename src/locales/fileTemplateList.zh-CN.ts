@@ -1,4 +1,7 @@
 export default {
+  sectionChannelTarget: '投递目标',
+  sectionChannelTargetDesc: '文件发往哪里、如何认证，以及是否等待对方回执。',
+  sectionChannelAdvanced: '高级配置',
   mappingAssistant: '字段映射助手',
   mappingAssistantHint:
     '填写常用字段生成草案；确认后才带入空白配置。已有配置和定长文件请使用高级 JSON。',

@@ -11,41 +11,55 @@
     :saving="saving"
     @submit="emit('save')"
   >
-    <el-form :model="form" label-position="top">
-      <el-form-item :label="t('fileTemplateList.fieldChannelCode')" required>
-        <el-input v-if="editingId != null" v-model="form.channelCode" disabled maxlength="128" />
-        <CodeNameBuilder v-else v-model="form.channelCode" default-domain="DISPATCH" />
-      </el-form-item>
-      <el-form-item :label="t('fileTemplateList.fieldChannelName')">
-        <el-input v-model="form.channelName" maxlength="256" />
-      </el-form-item>
-      <el-form-item :label="t('fileTemplateList.fieldChannelType')" required>
-        <MetaSelect v-model="form.channelType" enum-key="channelType" class="query-w-full" />
-      </el-form-item>
-      <el-form-item :label="t('fileTemplateList.fieldTargetEndpoint')">
-        <el-input v-model="form.targetEndpoint" maxlength="512" />
-      </el-form-item>
-      <el-form-item :label="t('fileTemplateList.fieldAuthType')">
-        <MetaSelect v-model="form.authType" enum-key="authType" class="query-w-full" clearable />
-      </el-form-item>
-      <el-form-item :label="t('fileTemplateList.fieldReceiptPolicy')">
-        <MetaSelect
-          v-model="form.receiptPolicy"
-          enum-key="receiptPolicy"
-          class="query-w-full"
-          clearable
-        />
-      </el-form-item>
-      <el-form-item :label="t('fileTemplateList.fieldTimeoutSeconds')">
-        <el-input-number v-model="form.timeoutSeconds" :min="0" :max="2147483647" />
-      </el-form-item>
-      <el-form-item :label="t('fileTemplateList.fieldEnabled')">
-        <el-switch v-model="form.enabled" />
-      </el-form-item>
-      <el-form-item :label="t('fileTemplateList.fieldConfigJson')">
-        <JsonTextareaInput v-model="form.configJson" :rows="5" expect="object" />
-        <div class="field-hint">{{ t('fileTemplateList.configJsonSecretHint') }}</div>
-      </el-form-item>
+    <el-form :model="form" label-position="top" @submit.prevent>
+      <FormSection :title="t('fileTemplateList.sectionBasic')" :columns="2">
+        <el-form-item
+          class="form-block__full"
+          :label="t('fileTemplateList.fieldChannelCode')"
+          required
+        >
+          <el-input v-if="editingId != null" v-model="form.channelCode" disabled maxlength="128" />
+          <CodeNameBuilder v-else v-model="form.channelCode" default-domain="DISPATCH" />
+        </el-form-item>
+        <el-form-item :label="t('fileTemplateList.fieldChannelName')">
+          <el-input v-model="form.channelName" maxlength="256" />
+        </el-form-item>
+        <el-form-item :label="t('fileTemplateList.fieldChannelType')" required>
+          <MetaSelect v-model="form.channelType" enum-key="channelType" class="query-w-full" />
+        </el-form-item>
+        <el-form-item :label="t('fileTemplateList.fieldEnabled')">
+          <el-switch v-model="form.enabled" />
+        </el-form-item>
+      </FormSection>
+      <FormSection
+        :title="t('fileTemplateList.sectionChannelTarget')"
+        :description="t('fileTemplateList.sectionChannelTargetDesc')"
+        :columns="2"
+      >
+        <el-form-item class="form-block__full" :label="t('fileTemplateList.fieldTargetEndpoint')">
+          <el-input v-model="form.targetEndpoint" maxlength="512" />
+        </el-form-item>
+        <el-form-item :label="t('fileTemplateList.fieldAuthType')">
+          <MetaSelect v-model="form.authType" enum-key="authType" class="query-w-full" clearable />
+        </el-form-item>
+        <el-form-item :label="t('fileTemplateList.fieldReceiptPolicy')">
+          <MetaSelect
+            v-model="form.receiptPolicy"
+            enum-key="receiptPolicy"
+            class="query-w-full"
+            clearable
+          />
+        </el-form-item>
+        <el-form-item :label="t('fileTemplateList.fieldTimeoutSeconds')">
+          <el-input-number v-model="form.timeoutSeconds" :min="0" :max="2147483647" />
+        </el-form-item>
+      </FormSection>
+      <FormSection :title="t('fileTemplateList.sectionChannelAdvanced')">
+        <el-form-item :label="t('fileTemplateList.fieldConfigJson')">
+          <JsonTextareaInput v-model="form.configJson" :rows="5" expect="object" />
+          <div class="field-hint">{{ t('fileTemplateList.configJsonSecretHint') }}</div>
+        </el-form-item>
+      </FormSection>
     </el-form>
   </FormDrawer>
 
@@ -85,6 +99,7 @@
 </template>
 
 <script setup lang="ts">
+  import FormSection from '@/components/common/FormSection.vue'
   import FormDrawer from '@/components/common/FormDrawer.vue'
   import { useI18n } from 'vue-i18n'
   import { useResponsive } from '@/composables/useResponsive'

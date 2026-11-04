@@ -148,3 +148,14 @@
   font-family: var(--font-mono);
   font-size: 12px;
 }
+
+/* 抽屉顶部“调度由工作流管理”提示：与正文同字号，和第一个分节拉开距离 */
+.jd-owner-hint {
+  margin-bottom: 20px;
+}
+
+.jd-owner-hint :deep(.el-alert__title) {
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  line-height: 1.5;
+}

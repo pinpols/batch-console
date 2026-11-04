@@ -166,59 +166,88 @@
       :saving="submitAction.loading.value"
       @submit="submitForm"
     >
-      <el-form ref="formRef" :model="form" :rules="rules" label-width="120px">
-        <el-form-item :label="t('alertRoutingPanel.fieldRouteCode')" prop="routeCode">
-          <el-input v-model="form.routeCode" :disabled="editingId != null" maxlength="128" />
-        </el-form-item>
-        <el-form-item :label="t('alertRoutingPanel.fieldRouteName')" prop="routeName">
-          <el-input v-model="form.routeName" maxlength="128" />
-        </el-form-item>
-        <el-form-item :label="t('alertRoutingPanel.fieldTeam')" prop="team">
-          <el-input v-model="form.team" maxlength="64" />
-        </el-form-item>
-        <el-form-item :label="t('alertRoutingPanel.fieldAlertGroup')" prop="alertGroup">
-          <el-input v-model="form.alertGroup" maxlength="64" />
-        </el-form-item>
-        <el-form-item :label="t('alertRoutingPanel.fieldSeverity')" prop="severity">
-          <MetaSelect v-model="form.severity" enum-key="severity" class="query-w-full" />
-        </el-form-item>
-        <el-form-item :label="t('alertRoutingPanel.fieldReceiver')" prop="receiver">
-          <el-input v-model="form.receiver" maxlength="256" />
-        </el-form-item>
-        <el-form-item :label="t('alertRoutingPanel.fieldGroupBy')" prop="groupBy">
-          <el-input
-            v-model="form.groupBy"
-            :placeholder="t('alertRoutingPanel.fieldGroupByPlaceholder')"
-            maxlength="128"
-          />
-        </el-form-item>
-        <el-form-item :label="t('alertRoutingPanel.fieldGroupWaitSeconds')">
-          <el-input-number v-model="form.groupWaitSeconds" :min="0" :max="INT32_MAX" />
-        </el-form-item>
-        <el-form-item :label="t('alertRoutingPanel.fieldGroupIntervalSeconds')">
-          <el-input-number v-model="form.groupIntervalSeconds" :min="0" :max="INT32_MAX" />
-        </el-form-item>
-        <el-form-item :label="t('alertRoutingPanel.fieldRepeatIntervalSeconds')">
-          <el-input-number v-model="form.repeatIntervalSeconds" :min="0" :max="INT32_MAX" />
-        </el-form-item>
-        <el-form-item :label="t('alertRoutingPanel.fieldEnabled')">
-          <el-switch v-model="form.enabled" />
-        </el-form-item>
-        <el-form-item :label="t('alertRoutingPanel.descriptionLabel')" prop="description">
-          <el-input
-            v-model="form.description"
-            type="textarea"
-            :rows="3"
-            maxlength="512"
-            show-word-limit
-          />
-        </el-form-item>
+      <el-form ref="formRef" :model="form" :rules="rules" label-position="top">
+        <FormSection :title="t('alertRoutingPanel.sectionBasic')" :columns="2">
+          <el-form-item :label="t('alertRoutingPanel.fieldRouteCode')" prop="routeCode">
+            <el-input v-model="form.routeCode" :disabled="editingId != null" maxlength="128" />
+          </el-form-item>
+          <el-form-item :label="t('alertRoutingPanel.fieldRouteName')" prop="routeName">
+            <el-input v-model="form.routeName" maxlength="128" />
+          </el-form-item>
+          <el-form-item :label="t('alertRoutingPanel.fieldEnabled')">
+            <el-switch v-model="form.enabled" />
+          </el-form-item>
+          <el-form-item
+            class="form-block__full"
+            :label="t('alertRoutingPanel.descriptionLabel')"
+            prop="description"
+          >
+            <el-input
+              v-model="form.description"
+              type="textarea"
+              :rows="3"
+              maxlength="512"
+              show-word-limit
+            />
+          </el-form-item>
+        </FormSection>
+        <FormSection
+          :title="t('alertRoutingPanel.sectionMatch')"
+          :description="t('alertRoutingPanel.sectionMatchDesc')"
+          :columns="2"
+        >
+          <el-form-item :label="t('alertRoutingPanel.fieldTeam')" prop="team">
+            <el-input v-model="form.team" maxlength="64" />
+          </el-form-item>
+          <el-form-item :label="t('alertRoutingPanel.fieldAlertGroup')" prop="alertGroup">
+            <el-input v-model="form.alertGroup" maxlength="64" />
+          </el-form-item>
+          <el-form-item :label="t('alertRoutingPanel.fieldSeverity')" prop="severity">
+            <MetaSelect v-model="form.severity" enum-key="severity" class="query-w-full" />
+          </el-form-item>
+        </FormSection>
+        <FormSection
+          :title="t('alertRoutingPanel.sectionDelivery')"
+          :description="t('alertRoutingPanel.sectionDeliveryDesc')"
+          :columns="2"
+        >
+          <el-form-item
+            class="form-block__full"
+            :label="t('alertRoutingPanel.fieldReceiver')"
+            prop="receiver"
+          >
+            <el-input v-model="form.receiver" maxlength="256" />
+          </el-form-item>
+          <el-form-item
+            class="form-block__full"
+            :label="t('alertRoutingPanel.fieldGroupBy')"
+            prop="groupBy"
+          >
+            <el-input
+              v-model="form.groupBy"
+              :placeholder="t('alertRoutingPanel.fieldGroupByPlaceholder')"
+              maxlength="128"
+            />
+          </el-form-item>
+          <div class="route-timing form-block__full">
+            <el-form-item :label="t('alertRoutingPanel.fieldGroupWaitSeconds')">
+              <el-input-number v-model="form.groupWaitSeconds" :min="0" :max="INT32_MAX" />
+            </el-form-item>
+            <el-form-item :label="t('alertRoutingPanel.fieldGroupIntervalSeconds')">
+              <el-input-number v-model="form.groupIntervalSeconds" :min="0" :max="INT32_MAX" />
+            </el-form-item>
+            <el-form-item :label="t('alertRoutingPanel.fieldRepeatIntervalSeconds')">
+              <el-input-number v-model="form.repeatIntervalSeconds" :min="0" :max="INT32_MAX" />
+            </el-form-item>
+          </div>
+        </FormSection>
       </el-form>
     </FormDrawer>
   </PageContainer>
 </template>
 
 <script setup lang="ts">
+  import FormSection from '@/components/common/FormSection.vue'
   import FormDrawer from '@/components/common/FormDrawer.vue'
   import { reactive, ref } from 'vue'
   import { useI18n } from 'vue-i18n'
@@ -481,6 +510,17 @@
 </script>
 
 <style scoped>
+  /* 三个以秒计的合并/重复间隔同排 */
+  .route-timing {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 0 var(--space-md);
+  }
+
+  .route-timing :deep(.el-input-number) {
+    width: 100%;
+  }
+
   .panel-head {
     margin-bottom: var(--space-sm);
     display: flex;

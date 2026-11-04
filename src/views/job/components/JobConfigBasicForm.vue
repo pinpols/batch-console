@@ -19,6 +19,7 @@
         {{ t('jobConfigBasic.groupBasic') }}
       </div>
       <el-form-item
+        class="config-full"
         :label="t('jobDefinitionList.fieldJobCode')"
         :prop="readonlyIdentity ? undefined : 'jobCode'"
       >
@@ -79,7 +80,7 @@
         <el-form-item :label="t('jobDefinitionList.fieldScheduleExpr')" prop="scheduleExpr">
           <CronExprInput v-model="model.scheduleExpr" />
         </el-form-item>
-        <el-form-item :label="t('jobConfigBasic.fieldDependsOnJobCode')" prop="dependsOnJobCode">
+        <el-form-item class="config-full" :label="t('jobConfigBasic.fieldDependsOnJobCode')" prop="dependsOnJobCode">
           <el-input
             v-model="model.dependsOnJobCode"
             clearable
@@ -102,7 +103,7 @@
         </el-select>
       </el-form-item>
       <template v-if="!isManualSchedule">
-        <el-form-item :label="t('jobConfigBasic.fieldCalendarCode')" prop="calendarCode">
+        <el-form-item class="config-full" :label="t('jobConfigBasic.fieldCalendarCode')" prop="calendarCode">
           <div class="inline-create-wrapper">
             <el-select
               v-model="model.calendarCode"
@@ -131,7 +132,7 @@
             </el-button>
           </div>
         </el-form-item>
-        <el-form-item :label="t('jobConfigBasic.fieldWindowCode')" prop="windowCode">
+        <el-form-item class="config-full" :label="t('jobConfigBasic.fieldWindowCode')" prop="windowCode">
           <div class="inline-create-wrapper">
             <el-select
               v-model="model.windowCode"
@@ -269,20 +270,20 @@
       <div v-if="!singleSection" class="config-group__title">
         {{ t('jobConfigBasic.groupParams') }}
       </div>
-      <el-form-item :label="t('jobConfigBasic.fieldExecutionHandler')" prop="executionHandler">
+      <el-form-item class="config-full" :label="t('jobConfigBasic.fieldExecutionHandler')" prop="executionHandler">
         <el-input
           v-model="model.executionHandler"
           :placeholder="t('jobConfigBasic.placeholderExecutionHandler')"
         />
       </el-form-item>
-      <el-form-item :label="t('jobConfigBasic.fieldParamSchema')" prop="paramSchema">
+      <el-form-item class="config-full" :label="t('jobConfigBasic.fieldParamSchema')" prop="paramSchema">
         <JsonTextareaInput
           v-model="model.paramSchema"
           :rows="3"
           :placeholder="t('jobConfigBasic.placeholderJson')"
         />
       </el-form-item>
-      <el-form-item :label="t('jobConfigBasic.fieldDefaultParams')" prop="defaultParams">
+      <el-form-item class="config-full" :label="t('jobConfigBasic.fieldDefaultParams')" prop="defaultParams">
         <JsonTextareaInput
           v-model="model.defaultParams"
           :rows="3"
@@ -299,7 +300,7 @@
           />
         </el-select>
       </el-form-item>
-      <el-form-item :label="t('jobConfigBasic.fieldDescription')" prop="description">
+      <el-form-item class="config-full" :label="t('jobConfigBasic.fieldDescription')" prop="description">
         <el-input
           v-model="model.description"
           type="textarea"
@@ -424,30 +425,50 @@
   .job-config-basic-form {
     display: flex;
     flex-direction: column;
-    gap: 12px;
   }
 
+  /* 分组即表单分节：不画灰框，组间分隔线；短字段两列，长字段（JSON、说明、带新建按钮的选择）占整行 */
   .config-group {
-    border: 1px solid var(--color-border-light);
-    border-radius: 6px;
-    padding: 12px 16px 4px;
-    background: var(--color-bg-page);
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+    column-gap: 20px;
+  }
+
+  .config-group + .config-group {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid var(--color-border-light);
   }
 
   .config-group__title {
-    font-size: 13px;
-    font-weight: 600;
+    grid-column: 1 / -1;
+    margin-bottom: 14px;
     color: var(--color-text-primary);
-    margin-bottom: 8px;
-    padding-bottom: 6px;
-    border-bottom: 1px solid var(--color-border-light);
+    font-size: var(--font-size-md);
+    font-weight: 600;
+  }
+
+  .config-group > .config-full,
+  .config-group > :deep(.el-alert) {
+    grid-column: 1 / -1;
+  }
+
+  .config-group :deep(.el-form-item__content > .el-select),
+  .config-group :deep(.el-form-item__content > .el-input-number) {
+    width: 100%;
   }
 
   /* 字段下方提示(联动禁用时) */
   .field-hint {
-    margin-left: 12px;
     font-size: 12px;
     color: var(--color-text-tertiary);
+  }
+
+  @media (max-width: 640px) {
+    .config-group {
+      grid-template-columns: minmax(0, 1fr);
+    }
   }
 
   /* 内联「+ 新建子实体」按钮容器 — 输入框 + 右侧 link 按钮一行布局 */

@@ -8,58 +8,75 @@
     :saving="saving"
     @submit="emit('save')"
   >
-    <el-form :model="queueForm" label-width="120px">
-      <el-form-item :label="t('queueConfig.fieldQueueCode')" :error="errors?.queueCode" required>
-        <el-input
-          v-model="queueForm.queueCode"
-          :disabled="queueEditingId != null"
-          maxlength="128"
-        />
-      </el-form-item>
-      <el-form-item :label="t('queueConfig.fieldQueueName')"
-        ><el-input v-model="queueForm.queueName" maxlength="256"
-      /></el-form-item>
-      <el-form-item :label="t('queueConfig.fieldQueueType')" :error="errors?.queueType" required
-        ><MetaSelect v-model="queueForm.queueType" enum-key="queueType" class="query-w-full"
-      /></el-form-item>
-      <div class="queue-limits">
-        <el-form-item :label="t('queueConfig.fieldMaxRunningJobs')" label-position="top">
-          <el-input-number v-model="queueForm.maxRunningJobs" :min="0" :max="INT32_MAX" />
+    <el-form :model="queueForm" label-position="top" @submit.prevent>
+      <FormSection :title="t('queueConfig.sectionBasic')" :columns="2">
+        <el-form-item :label="t('queueConfig.fieldQueueCode')" :error="errors?.queueCode" required>
+          <el-input
+            v-model="queueForm.queueCode"
+            :disabled="queueEditingId != null"
+            maxlength="128"
+          />
         </el-form-item>
-        <el-form-item :label="t('queueConfig.fieldMaxRunningPartitions')" label-position="top">
-          <el-input-number v-model="queueForm.maxRunningPartitions" :min="0" :max="INT32_MAX" />
+        <el-form-item :label="t('queueConfig.fieldQueueName')">
+          <el-input v-model="queueForm.queueName" maxlength="256" />
         </el-form-item>
-        <el-form-item :label="t('queueConfig.fieldMaxQps')" label-position="top">
-          <el-input-number v-model="queueForm.maxQps" :min="0" :max="INT32_MAX" />
+        <el-form-item :label="t('queueConfig.fieldQueueType')" :error="errors?.queueType" required>
+          <MetaSelect v-model="queueForm.queueType" enum-key="queueType" class="query-w-full" />
         </el-form-item>
-      </div>
-      <el-form-item :label="t('queueConfig.fieldWorkerGroup')"
-        ><el-input v-model="queueForm.workerGroup" maxlength="128"
-      /></el-form-item>
-      <el-form-item :label="t('queueConfig.fieldResourceTag')"
-        ><el-input v-model="queueForm.resourceTag" maxlength="64"
-      /></el-form-item>
-      <el-form-item :label="t('queueConfig.fieldPriorityPolicy')"
-        ><MetaSelect
-          v-model="queueForm.priorityPolicy"
-          enum-key="priorityPolicy"
-          class="query-w-full"
-          clearable
-      /></el-form-item>
-      <el-form-item :label="t('queueConfig.fieldFairShareWeight')"
-        ><el-input-number v-model="queueForm.fairShareWeight" :min="1" :max="INT32_MAX"
-      /></el-form-item>
-      <el-form-item :label="t('queueConfig.fieldEnabled')"
-        ><el-switch v-model="queueForm.enabled"
-      /></el-form-item>
-      <el-form-item :label="t('queueConfig.fieldDescription')"
-        ><el-input v-model="queueForm.description" type="textarea" maxlength="512" show-word-limit
-      /></el-form-item>
+        <el-form-item :label="t('queueConfig.fieldEnabled')">
+          <el-switch v-model="queueForm.enabled" />
+        </el-form-item>
+      </FormSection>
+      <FormSection
+        :title="t('queueConfig.sectionCapacity')"
+        :description="t('queueConfig.sectionCapacityDesc')"
+        :columns="2"
+      >
+        <div class="queue-limits form-block__full">
+          <el-form-item :label="t('queueConfig.fieldMaxRunningJobs')">
+            <el-input-number v-model="queueForm.maxRunningJobs" :min="0" :max="INT32_MAX" />
+          </el-form-item>
+          <el-form-item :label="t('queueConfig.fieldMaxRunningPartitions')">
+            <el-input-number v-model="queueForm.maxRunningPartitions" :min="0" :max="INT32_MAX" />
+          </el-form-item>
+          <el-form-item :label="t('queueConfig.fieldMaxQps')">
+            <el-input-number v-model="queueForm.maxQps" :min="0" :max="INT32_MAX" />
+          </el-form-item>
+        </div>
+        <el-form-item :label="t('queueConfig.fieldPriorityPolicy')">
+          <MetaSelect
+            v-model="queueForm.priorityPolicy"
+            enum-key="priorityPolicy"
+            class="query-w-full"
+            clearable
+          />
+        </el-form-item>
+        <el-form-item :label="t('queueConfig.fieldFairShareWeight')">
+          <el-input-number v-model="queueForm.fairShareWeight" :min="1" :max="INT32_MAX" />
+        </el-form-item>
+      </FormSection>
+      <FormSection :title="t('queueConfig.sectionRouting')" :columns="2">
+        <el-form-item :label="t('queueConfig.fieldWorkerGroup')">
+          <el-input v-model="queueForm.workerGroup" maxlength="128" />
+        </el-form-item>
+        <el-form-item :label="t('queueConfig.fieldResourceTag')">
+          <el-input v-model="queueForm.resourceTag" maxlength="64" />
+        </el-form-item>
+        <el-form-item class="form-block__full" :label="t('queueConfig.fieldDescription')">
+          <el-input
+            v-model="queueForm.description"
+            type="textarea"
+            maxlength="512"
+            show-word-limit
+          />
+        </el-form-item>
+      </FormSection>
     </el-form>
   </FormDrawer>
 </template>
 
 <script setup lang="ts">
+  import FormSection from '@/components/common/FormSection.vue'
   import FormDrawer from '@/components/common/FormDrawer.vue'
   import { useI18n } from 'vue-i18n'
   import MetaSelect from '@/components/common/MetaSelect.vue'

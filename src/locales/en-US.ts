@@ -2018,6 +2018,15 @@ const messages: Messages = {
     backHome: 'Back to home',
   },
   queueConfig: {
+    sectionCalendarRules: 'Holidays and catch-up',
+    sectionCalendarRulesDesc: 'How business days roll over holidays, and whether missed business days are caught up and for how many days.',
+    sectionWindowTime: 'Open hours',
+    sectionWindowTimeDesc: 'Opens daily in the given time zone. Turn on cross-day when the end is earlier than the start.',
+    sectionWindowBehavior: 'At close and outside the window',
+    sectionBasic: 'Basics',
+    sectionCapacity: 'Capacity and rate limits',
+    sectionCapacityDesc: 'Caps on concurrent jobs, partitions and requests per second for this queue, plus priority and weight when queues compete.',
+    sectionRouting: 'Routing and notes',
     holidayLoadError: 'Could not load holiday records. Try again.',
     holidayMonthTitle: 'Holiday month view',
     holidayMonthPrevious: 'Previous',
@@ -2177,6 +2186,11 @@ const messages: Messages = {
     descUpdatedAt: 'Updated at',
   },
   alertRoutingPanel: {
+    sectionBasic: 'Basics',
+    sectionMatch: 'Match conditions',
+    sectionMatchDesc: 'Team, alert group and severity select which alerts use this route.',
+    sectionDelivery: 'Receiver and grouping',
+    sectionDeliveryDesc: 'Alerts in the same group are combined before being sent to the receiver. Waits and intervals are in seconds.',
     reservedTitle: 'Reserved configuration; not active',
     reservedDescription:
       'Existing records are read-only for audit. Runtime alerts currently use static Prometheus / Alertmanager templates and the escalation webhook path; this page is not consumed.',

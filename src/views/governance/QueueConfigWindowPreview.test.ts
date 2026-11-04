@@ -30,6 +30,8 @@ describe('批次窗口编辑预览', () => {
           ElForm: slot,
           ElFormItem: slot,
           WindowSchedulePreview: false,
+          GovernanceWindowEditor: false,
+          FormSection: slot,
         },
       },
     })

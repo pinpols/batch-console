@@ -10,45 +10,56 @@
     :saving="saving"
     @submit="emit('save')"
   >
-    <el-form :model="calendarForm" label-width="120px">
-      <el-form-item :label="t('queueConfig.fieldCalendarCode')" required>
-        <el-input
-          v-model="calendarForm.calendarCode"
-          :disabled="calendarEditingId != null"
-          maxlength="128"
-        />
-      </el-form-item>
-      <el-form-item :label="t('queueConfig.fieldCalendarName')" required
-        ><el-input v-model="calendarForm.calendarName" maxlength="256"
-      /></el-form-item>
-      <el-form-item :label="t('queueConfig.fieldTimezone')" required
-        ><el-input v-model="calendarForm.timezone" maxlength="64"
-      /></el-form-item>
-      <el-form-item :label="t('queueConfig.fieldHolidayRollRule')"
-        ><MetaSelect
-          v-model="calendarForm.holidayRollRule"
-          enum-key="holidayStrategy"
-          class="query-w-full"
-          clearable
-      /></el-form-item>
-      <el-form-item :label="t('queueConfig.fieldCatchUpPolicy')"
-        ><MetaSelect
-          v-model="calendarForm.catchUpPolicy"
-          enum-key="catchUpPolicy"
-          class="query-w-full"
-          clearable
-      /></el-form-item>
-      <el-form-item :label="t('queueConfig.fieldCatchUpMaxDays')"
-        ><el-input-number v-model="calendarForm.catchUpMaxDays" :min="0" :max="INT32_MAX"
-      /></el-form-item>
-      <el-form-item :label="t('queueConfig.fieldEnabled')"
-        ><el-switch v-model="calendarForm.enabled"
-      /></el-form-item>
+    <el-form :model="calendarForm" label-position="top" @submit.prevent>
+      <FormSection :title="t('queueConfig.sectionBasic')" :columns="2">
+        <el-form-item :label="t('queueConfig.fieldCalendarCode')" required>
+          <el-input
+            v-model="calendarForm.calendarCode"
+            :disabled="calendarEditingId != null"
+            maxlength="128"
+          />
+        </el-form-item>
+        <el-form-item :label="t('queueConfig.fieldCalendarName')" required>
+          <el-input v-model="calendarForm.calendarName" maxlength="256" />
+        </el-form-item>
+        <el-form-item :label="t('queueConfig.fieldTimezone')" required>
+          <el-input v-model="calendarForm.timezone" maxlength="64" />
+        </el-form-item>
+        <el-form-item :label="t('queueConfig.fieldEnabled')">
+          <el-switch v-model="calendarForm.enabled" />
+        </el-form-item>
+      </FormSection>
+      <FormSection
+        :title="t('queueConfig.sectionCalendarRules')"
+        :description="t('queueConfig.sectionCalendarRulesDesc')"
+        :columns="2"
+      >
+        <el-form-item class="form-block__full" :label="t('queueConfig.fieldHolidayRollRule')">
+          <MetaSelect
+            v-model="calendarForm.holidayRollRule"
+            enum-key="holidayStrategy"
+            class="query-w-full"
+            clearable
+          />
+        </el-form-item>
+        <el-form-item :label="t('queueConfig.fieldCatchUpPolicy')">
+          <MetaSelect
+            v-model="calendarForm.catchUpPolicy"
+            enum-key="catchUpPolicy"
+            class="query-w-full"
+            clearable
+          />
+        </el-form-item>
+        <el-form-item :label="t('queueConfig.fieldCatchUpMaxDays')">
+          <el-input-number v-model="calendarForm.catchUpMaxDays" :min="0" :max="INT32_MAX" />
+        </el-form-item>
+      </FormSection>
     </el-form>
   </FormDrawer>
 </template>
 
 <script setup lang="ts">
+  import FormSection from '@/components/common/FormSection.vue'
   import FormDrawer from '@/components/common/FormDrawer.vue'
   import { useI18n } from 'vue-i18n'
   import MetaSelect from '@/components/common/MetaSelect.vue'

@@ -2072,6 +2072,15 @@ export default {
     backHome: '返回首页',
   },
   queueConfig: {
+    sectionCalendarRules: '节假日与补跑',
+    sectionCalendarRulesDesc: '遇到节假日时业务日如何顺延，以及错过的业务日是否补跑、最多补几天。',
+    sectionWindowTime: '开放时间',
+    sectionWindowTimeDesc: '按所填时区每天开放；结束早于开始时需打开“允许跨天”。',
+    sectionWindowBehavior: '到点与窗口外行为',
+    sectionBasic: '基本信息',
+    sectionCapacity: '容量与限流',
+    sectionCapacityDesc: '限制该队列同时运行的作业数、分片数和每秒请求数，以及多队列争用时的优先级与权重。',
+    sectionRouting: '归属与说明',
     holidayLoadError: '节假日记录加载失败，请重试。',
     holidayMonthTitle: '节假日月视图',
     holidayMonthPrevious: '上月',
@@ -2224,6 +2233,11 @@ export default {
     descUpdatedAt: '更新时间',
   },
   alertRoutingPanel: {
+    sectionBasic: '基本信息',
+    sectionMatch: '匹配条件',
+    sectionMatchDesc: '按团队、告警组和级别选出走这条路由的告警。',
+    sectionDelivery: '接收与合并',
+    sectionDeliveryDesc: '同一分组的告警合并后发给接收方；等待和间隔以秒为单位。',
     reservedTitle: '预留配置，当前不生效',
     reservedDescription:
       '此处仅保留历史配置供审计。当前告警通过 Prometheus / Alertmanager 静态模板及告警升级 Webhook 投递，运行时不会读取本页记录。',
