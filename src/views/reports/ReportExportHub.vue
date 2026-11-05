@@ -485,7 +485,7 @@
   }
 
   .rp-tab.is-active {
-    color: var(--color-primary);
+    color: var(--color-primary-text);
     background: color-mix(in srgb, var(--color-primary) 12%, transparent);
     font-weight: 600;
   }
