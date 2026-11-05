@@ -308,6 +308,7 @@ export const routes: RouteRecordRaw[] = [
         component: () => import('@/views/job/JobDefinitionWizard.vue'),
         meta: {
           title: '新建作业向导',
+          // 向导提交走 /api/console/jobs/bundle/create，后端仅平台管理员可用
           activeMenu: '/jobs/definitions',
           minRole: 'OPERATOR',
           permissions: ['ROLE_ADMIN'],
@@ -612,7 +613,8 @@ export const routes: RouteRecordRaw[] = [
         meta: {
           title: '租户配额',
           activeMenu: '/governance/quota',
-          minRole: 'OPERATOR',
+          // 后端 /api/console/quota-policies 仅平台管理员可用，租户管理员进入只会 403
+          minRole: 'ADMIN',
         },
       },
       {

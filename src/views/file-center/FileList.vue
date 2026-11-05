@@ -98,18 +98,14 @@
         </template>
 
         <template #empty>
-          <EmptyState
-            variant="tenant-empty"
+          <ListEmptyState
+            :filtered="hasListFilters"
+            @reset="reset"
             :title="t('fileList.emptyTitle')"
             :description="t('fileList.emptyDescription')"
-            :image-size="80"
-          >
-            <template #action>
-              <el-button type="primary" @click="$router.push('/files/templates')">
-                {{ t('fileList.emptyGoTemplates') }}
-              </el-button>
-            </template>
-          </EmptyState>
+            :action-text="t('fileList.emptyGoTemplates')"
+            action-to="/files/templates"
+          />
         </template>
 
         <template #default="{ isColVisible }">
@@ -504,7 +500,7 @@
   import MetaSelect from '@/components/common/MetaSelect.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
-  import EmptyState from '@/components/common/EmptyState.vue'
+  import ListEmptyState from '@/components/common/ListEmptyState.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import ProTable from '@/components/table/ProTable.vue'
   import TablePagerBar from '@/components/table/TablePagerBar.vue'
@@ -1041,6 +1037,18 @@
       await load()
     })
   }
+
+  // 状态 / 业务类型 / 文件名 / 链路 / 文件 ID / 今日到达任一生效时，空表是筛选造成的
+  const hasListFilters = computed(() =>
+    Boolean(
+      filters.fileStatus ||
+      filters.bizType ||
+      filters.fileName ||
+      filters.traceId ||
+      filters.fileId ||
+      filters.arrivalToday,
+    ),
+  )
 
   function reset() {
     return runReset(async () => {

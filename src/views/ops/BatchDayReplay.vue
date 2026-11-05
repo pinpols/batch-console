@@ -263,17 +263,18 @@
         </el-table>
       </el-alert>
       <template #footer>
-        <el-button :loading="rangePreviewing" :disabled="rangeSubmitting" @click="previewRange">{{
-          t('batchDayReplay.previewBtn')
-        }}</el-button>
-        <el-button
-          type="primary"
-          :disabled="!isCurrentRangePreview || !rangePreview?.totalCandidateCount"
-          :loading="rangeSubmitting"
-          @click="submitRange"
-        >
-          {{ t('batchDayReplay.submitConfirm') }}
-        </el-button>
+        <StepActionFooter
+          :preview-text="t('batchDayReplay.previewBtn')"
+          :submit-text="t('batchDayReplay.submitConfirm')"
+          :preview-loading="rangePreviewing"
+          :preview-disabled="rangeSubmitting"
+          :submit-loading="rangeSubmitting"
+          :submit-disabled="!isCurrentRangePreview || !rangePreview?.totalCandidateCount"
+          :hint="rangeSubmitHint"
+          :show-cancel="false"
+          @preview="previewRange"
+          @submit="submitRange"
+        />
       </template>
     </el-drawer>
 
@@ -340,6 +341,7 @@
         <el-button
           v-if="canApproveOperation"
           type="success"
+          :icon="CircleCheck"
           :loading="operationActing"
           @click="approveOperation"
         >
@@ -348,6 +350,8 @@
         <el-button
           v-if="canCancelOperation"
           type="danger"
+          plain
+          :icon="CircleX"
           :loading="operationActing"
           @click="cancelOperation"
         >
@@ -668,35 +672,25 @@
         />
       </div>
       <template #footer>
-        <el-button
-          native-type="button"
-          :disabled="Boolean(submissionOutcomeUnknown)"
-          @click="submitDrawerOpen = false"
-        >
-          {{ t('common.cancel') }}
-        </el-button>
-        <el-button
-          :loading="previewing"
-          :disabled="Boolean(submissionOutcomeUnknown)"
-          @click="doPreview"
-        >
-          {{ t('batchDayReplay.previewBtn') }}
-        </el-button>
-        <el-button
-          type="primary"
-          native-type="submit"
-          form="batch-day-replay-form"
-          :loading="submitting"
-          :disabled="
-            !submissionOutcomeUnknown && (writesFrozen || !preview || preview.totalCount === 0)
-          "
-        >
-          {{
+        <StepActionFooter
+          :preview-text="t('batchDayReplay.previewBtn')"
+          :submit-text="
             submissionOutcomeUnknown
               ? t('batchDayReplay.resolveSubmitOutcome')
               : t('batchDayReplay.submitConfirm')
-          }}
-        </el-button>
+          "
+          :preview-loading="previewing"
+          :preview-disabled="Boolean(submissionOutcomeUnknown)"
+          :cancel-disabled="Boolean(submissionOutcomeUnknown)"
+          :submit-loading="submitting"
+          :submit-disabled="
+            !submissionOutcomeUnknown && (writesFrozen || !preview || preview.totalCount === 0)
+          "
+          submit-form="batch-day-replay-form"
+          :hint="submitHint"
+          @cancel="submitDrawerOpen = false"
+          @preview="doPreview"
+        />
       </template>
     </el-drawer>
 
@@ -850,7 +844,9 @@
 
 <script setup lang="ts">
   import FormSection from '@/components/common/FormSection.vue'
-  import { RefreshCw as Refresh, Plus } from '@lucide/vue'
+  import { CircleCheck, CircleX, RefreshCw as Refresh, Plus } from '@lucide/vue'
+  import StepActionFooter from '@/components/common/StepActionFooter.vue'
+  import { computed } from 'vue'
   import { useI18n } from 'vue-i18n'
   import PageContainer from '@/components/common/PageContainer.vue'
   import CopyableText from '@/components/common/CopyableText.vue'
@@ -949,6 +945,20 @@
     doApprove,
     doCancel,
   } = useBatchDayReplay()
+
+  // 提交按钮不可用时告诉用户还差哪一步（先预览 / 预览为空 / 维护中）
+  const rangeSubmitHint = computed(() => {
+    if (!isCurrentRangePreview.value) return t('batchDayReplay.hintPreviewFirst')
+    if (!rangePreview.value?.totalCandidateCount) return t('batchDayReplay.hintPreviewEmpty')
+    return ''
+  })
+  const submitHint = computed(() => {
+    if (submissionOutcomeUnknown.value) return ''
+    if (writesFrozen.value) return t('batchDayReplay.hintWritesFrozen')
+    if (!preview.value) return t('batchDayReplay.hintPreviewFirst')
+    if (preview.value.totalCount === 0) return t('batchDayReplay.hintPreviewEmpty')
+    return ''
+  })
 </script>
 
 <style scoped>

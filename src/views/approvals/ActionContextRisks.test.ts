@@ -204,22 +204,18 @@ function pending<T>() {
 beforeEach(() => {
   mocks.state = reactive({ tenantId: 'tenant-a', writer: true, writesFrozen: false })
   mocks.route = reactive({ params: { id: '9' }, query: {}, name: 'workflow-run-detail' })
-  mocks.runDetail
-    .mockReset()
-    .mockImplementation(async (id: number) => ({
-      id,
-      workflowDefinitionId: 1,
-      runStatus: 'RUNNING',
-      bizDate: '2026-10-26',
-    }))
-  mocks.nodes
-    .mockReset()
-    .mockResolvedValue({
-      records: [
-        { id: 41, nodeCode: 'job', nodeType: 'JOB', nodeStatus: 'FAILED', jobInstanceId: 10 },
-      ],
-      total: 1,
-    })
+  mocks.runDetail.mockReset().mockImplementation(async (id: number) => ({
+    id,
+    workflowDefinitionId: 1,
+    runStatus: 'RUNNING',
+    bizDate: '2026-10-26',
+  }))
+  mocks.nodes.mockReset().mockResolvedValue({
+    records: [
+      { id: 41, nodeCode: 'job', nodeType: 'JOB', nodeStatus: 'FAILED', jobInstanceId: 10 },
+    ],
+    total: 1,
+  })
   for (const fn of [
     mocks.runCancel,
     mocks.runTerminate,
@@ -229,16 +225,14 @@ beforeEach(() => {
     mocks.submitReplay,
   ])
     fn.mockReset().mockResolvedValue(undefined)
-  mocks.preview
-    .mockReset()
-    .mockResolvedValue({
-      sourceWorkflowRunId: 9,
-      bizDate: '2026-10-26',
-      nodes: [],
-      edges: [],
-      operationKey: 'operation-9',
-      previewToken: 'preview-9',
-    })
+  mocks.preview.mockReset().mockResolvedValue({
+    sourceWorkflowRunId: 9,
+    bizDate: '2026-10-26',
+    nodes: [],
+    edges: [],
+    operationKey: 'operation-9',
+    previewToken: 'preview-9',
+  })
   mocks.approvals.mockReset().mockResolvedValue({ items: [approval()], total: 1 })
   mocks.partitions.mockReset().mockResolvedValue({ records: [partition()], total: 1 })
   mocks.waits.mockReset().mockResolvedValue([wait()])
@@ -335,6 +329,17 @@ describe('审批提交与读取范围', () => {
       'AP-41',
       expect.objectContaining({ tenantId: 'tenant-a', reason: '复核原因' }),
     )
+  })
+
+  it('已执行的审批是终态，不能再批准或拒绝', async () => {
+    mocks.approvals.mockResolvedValue({
+      items: [{ ...approval('AP-90'), approvalStatus: 'EXECUTED' }],
+      total: 1,
+    })
+    const wrapper = renderApprovals()
+    await flushPromises()
+    expect(wrapper.find('.action-approve').attributes('disabled')).toBeDefined()
+    expect(wrapper.find('.action-reject').attributes('disabled')).toBeDefined()
   })
 })
 describe('分区操作上下文', () => {
@@ -505,12 +510,10 @@ describe('Workflow 详情的请求代次与操作目标', () => {
   })
   it('旧节点查询晚到不覆盖新运行', async () => {
     const old = pending<unknown>()
-    mocks.nodes
-      .mockReturnValueOnce(old.promise)
-      .mockResolvedValue({
-        records: [{ id: 52, nodeCode: 'new', nodeStatus: 'SUCCESS' }],
-        total: 1,
-      })
+    mocks.nodes.mockReturnValueOnce(old.promise).mockResolvedValue({
+      records: [{ id: 52, nodeCode: 'new', nodeStatus: 'SUCCESS' }],
+      total: 1,
+    })
     const wrapper = shallowMount(Workflow, { global: { stubs } })
     await flushPromises()
     mocks.route.params.id = '10'

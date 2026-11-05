@@ -395,7 +395,7 @@ const navigationGroupsByKey = {
       {
         title: pageTitle('/governance/quota'),
         path: '/governance/quota',
-        minRole: 'OPERATOR',
+        minRole: 'ADMIN',
         icon: Briefcase,
         hidden: true,
       },

@@ -221,6 +221,14 @@
   border-top: 1px solid var(--color-border);
 }
 
+.wk-card__ops {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-left: auto;
+}
+
 .wk-card__actions .el-button + .el-button {
   margin-left: 0;
 }

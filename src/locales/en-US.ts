@@ -1639,6 +1639,21 @@ const messages: Messages = {
       JOB_RERUN: 'Job rerun',
       CATCH_UP: 'Catch-up',
       QUOTA_REQUEST: 'Quota request',
+      COMPENSATION: 'Compensation',
+      DLQ_REPLAY: 'DLQ replay',
+      DOWNLOAD: 'Download',
+      SELF_SERVICE: 'Self-service remedy',
+    },
+    approvalTargetType: {
+      JOB_INSTANCE: 'Job run',
+      JOB_PARTITION: 'Job partition',
+      JOB_TASK: 'Job task',
+      WORKFLOW_RUN: 'Workflow run',
+      FILE: 'File',
+      DLQ: 'Dead letter',
+      CATCH_UP: 'Catch-up',
+      CONFIG_RELEASE: 'Config release',
+      BATCH_DAY: 'Batch day',
     },
     approvalActionType: {
       COMPENSATION: 'Compensation',
@@ -4747,6 +4762,8 @@ const messages: Messages = {
     cancel: 'Cancel',
     dryRunPreview: 'Dry-run preview',
     dryRunPreviewDiff: 'Dry-run diff',
+    hintDryRunFirst:
+      'The formal run writes to the target tenant configuration. Dry-run first to check the result.',
   },
   tenantFormDialog: {
     titleCreate: 'New tenant',
@@ -5190,7 +5207,9 @@ const messages: Messages = {
     fieldTagValue: 'Tag value',
     tagValueOptionalPlaceholder: 'tagValue (optional)',
     tagKeyPlaceholder: 'e.g. env, owner, costCenter',
-    needResourceTypeCode: 'Please fill in resource type and code',
+    needResourceTypeCode: 'Select a resource type and enter a resource code below first',
+    emptyNeedResource:
+      'Select a resource type and enter a resource code, then search or add tags for that resource.',
     selectAbove: 'Please pick a resource type and code above first',
     tagKeyRequired: 'Tag Key is required',
     savedToast: 'Saved',

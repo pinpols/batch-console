@@ -80,18 +80,14 @@
         </template>
 
         <template #empty>
-          <EmptyState
-            variant="tenant-empty"
+          <ListEmptyState
+            :filtered="hasRunFilters"
+            @reset="resetQueryBar"
             :title="t('monitor.runListEmptyTitle')"
             :description="t('monitor.runListEmptyDescription')"
-            :image-size="80"
-          >
-            <template #action>
-              <el-button type="primary" @click="$router.push('/workflow/definitions')">
-                {{ t('monitor.runListEmptyGoDefinitions') }}
-              </el-button>
-            </template>
-          </EmptyState>
+            :action-text="t('monitor.runListEmptyGoDefinitions')"
+            action-to="/workflow/definitions"
+          />
         </template>
 
         <el-table-column prop="id" :label="t('monitor.runColRunId')" width="90">
@@ -208,7 +204,7 @@
   import TraceIdInput from '@/components/common/TraceIdInput.vue'
   import MetaSelect from '@/components/common/MetaSelect.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
-  import EmptyState from '@/components/common/EmptyState.vue'
+  import ListEmptyState from '@/components/common/ListEmptyState.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import SavedFiltersMenu from '@/components/table/SavedFiltersMenu.vue'
   import { useSavedFilters } from '@/composables/useSavedFilters'
@@ -362,6 +358,11 @@
       await load()
     })
   }
+
+  // 工作流 / 状态 / 链路任一筛选生效时，空表是筛选造成的
+  const hasRunFilters = computed(() =>
+    Boolean(workflowCode.value || runStatus.value || traceId.value),
+  )
 
   function resetQueryBar() {
     return runReset(async () => {

@@ -1,8 +1,10 @@
 const batchDayReplay = {
   sectionTarget: 'Replay scope',
-  sectionTargetDesc: 'Pick the business day and the jobs to run again. A dry run only computes the impact and has no side effects.',
+  sectionTargetDesc:
+    'Pick the business day and the jobs to run again. A dry run only computes the impact and has no side effects.',
   sectionPolicy: 'Results and configuration',
-  sectionPolicyDesc: 'Decide how new results coexist with the originals and which job configuration version the replay uses.',
+  sectionPolicyDesc:
+    'Decide how new results coexist with the originals and which job configuration version the replay uses.',
   sectionApproval: 'Reason and approval',
   submitFlowHint:
     'Enter the scope and reason, preview and review the impact, then submit. Review the status and results in the details. If approval is required, an authorized user can act.',
@@ -209,6 +211,10 @@ const batchDayReplay = {
   entryStatusSucceeded: 'Succeeded',
   entryStatusFailed: 'Failed',
   previewBtn: 'Preview impact',
+  hintPreviewFirst:
+    'Preview the impact before submitting; preview again after changing the conditions.',
+  hintPreviewEmpty: 'The preview found nothing to replay. Adjust the conditions and preview again.',
+  hintWritesFrozen: 'Maintenance is in progress; replays cannot be submitted now.',
   previewOk: 'Preview generated',
   previewRequired:
     'Preview the current options before submitting. Any option change requires a new preview.',

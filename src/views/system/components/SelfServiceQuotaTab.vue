@@ -89,8 +89,8 @@
   const auth = useAuthStore()
   const router = useRouter()
 
-  // 仅 admin / operator 看得到「去配额策略」入口;tenant 用户不应被引到 CRUD 页
-  const canManagePolicy = computed(() => auth.canAccess('OPERATOR'))
+  // 配额策略接口仅平台管理员可用，其他角色不显示「去配额策略」入口，避免进去后 403
+  const canManagePolicy = computed(() => auth.canAccess('ADMIN'))
 
   function goPolicy() {
     void router.push({ path: '/governance/quota' })

@@ -1746,3 +1746,8 @@ html.dark {
 .el-tag--primary.el-tag--light {
   --el-tag-text-color: var(--color-primary-text);
 }
+
+/* 分段选择器选中项是主色实底：深色主题主色较亮，白字只有 3.2:1，改用深色字（与状态色块一致） */
+html.dark .el-segmented {
+  --el-segmented-item-selected-color: var(--color-on-status);
+}

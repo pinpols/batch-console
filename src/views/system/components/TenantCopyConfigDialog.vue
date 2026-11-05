@@ -431,31 +431,27 @@
       </el-tab-pane>
     </el-tabs>
     <template #footer>
-      <el-button @click="emit('update:modelValue', false)">
-        {{ t('tenantConfigShared.cancel') }}
-      </el-button>
-      <el-button
-        plain
-        :loading="saving && lastDryRun"
-        :disabled="busy || !canWriteSystem"
-        @click="submit(true)"
-      >
-        {{ t('tenantConfigShared.dryRunPreviewDiff') }}
-      </el-button>
-      <el-button
-        type="danger"
-        :loading="saving && !lastDryRun"
-        :disabled="busy || !canWriteSystem"
-        @click="submit(false)"
-      >
-        {{ t('tenantCopyConfigDialog.btnRunFormal') }}
-      </el-button>
+      <StepActionFooter
+        :cancel-text="t('tenantConfigShared.cancel')"
+        :preview-text="t('tenantConfigShared.dryRunPreviewDiff')"
+        :submit-text="t('tenantCopyConfigDialog.btnRunFormal')"
+        submit-tone="danger"
+        :preview-loading="saving && lastDryRun"
+        :preview-disabled="busy || !canWriteSystem"
+        :submit-loading="saving && !lastDryRun"
+        :submit-disabled="busy || !canWriteSystem"
+        :hint="dryRunVerified ? '' : t('tenantConfigShared.hintDryRunFirst')"
+        @cancel="emit('update:modelValue', false)"
+        @preview="submit(true)"
+        @submit="submit(false)"
+      />
     </template>
   </el-drawer>
 </template>
 
 <script setup lang="ts">
   import CopyableText from '@/components/common/CopyableText.vue'
+  import StepActionFooter from '@/components/common/StepActionFooter.vue'
   import { computed, onScopeDispose, reactive, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage, ElMessageBox } from 'element-plus'
@@ -514,6 +510,9 @@
   let disposed = false
   const previewing = ref<'' | 'copy' | 'overlay' | 'matrix'>('')
   const lastDryRun = ref(true)
+  // 必须声明在 immediate watch（会调用 invalidatePreview）之前，否则初始化时访问报错
+  /** 当前表单是否已成功试运行；表单或上下文变化后失效，用于底部“建议先试运行”提示 */
+  const dryRunVerified = ref(false)
   const activeResultTab = ref<'diff' | 'matrix'>('diff')
   const diffPreview = ref<TenantConfigDiffPreviewResponse | null>(null)
   const matrixPreview = ref<TenantConfigMatrixResponse | null>(null)
@@ -623,6 +622,7 @@
     { immediate: true, flush: 'sync' },
   )
   function invalidatePreview() {
+    dryRunVerified.value = false
     revision += 1
     previewAttempt += 1
     previewing.value = ''
@@ -932,6 +932,7 @@
         : await copyTenantConfig(payload)
       if (!isCurrent() || (command && headerTenant() !== command.headerTenant)) return
       emit('result', res)
+      if (dryRun) dryRunVerified.value = true
       if (!dryRun) {
         const outcome = res ? assessBatchInitOutcome(res) : null
         if (!outcome?.fullySuccessful) {

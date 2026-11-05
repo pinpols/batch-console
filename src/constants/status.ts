@@ -108,6 +108,7 @@ export const logTypeColor: Record<LogType, StatusTagType> = {
 export const approvalStatusColor: Record<string, StatusTagType> = {
   PENDING: 'warning',
   APPROVED: 'success',
+  EXECUTED: 'success',
   REJECTED: 'danger',
   CANCELLED: 'info',
   CLOSED: 'info',

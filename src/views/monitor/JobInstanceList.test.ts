@@ -389,3 +389,44 @@ describe('作业实例列表的读取与批量操作上下文', () => {
     expect(ElMessage.success).toHaveBeenCalledOnce()
   })
 })
+
+describe('作业运行空表文案', () => {
+  const emptyTable = defineComponent({
+    name: 'ProTable',
+    setup(_, { slots }) {
+      return () => h('section', slots.empty?.())
+    },
+  })
+  const ListEmptyState = {
+    name: 'ListEmptyState',
+    props: ['filtered', 'actionText'],
+    template: '<div class="empty" :data-filtered="String(filtered)">{{ actionText }}</div>',
+  }
+
+  beforeEach(() => {
+    mocks.route.query = {}
+    mocks.state = reactive({ tenantId: 'tenant-a', writer: true, writesFrozen: false })
+    mocks.jobs.mockReset().mockResolvedValue({ records: [] })
+  })
+
+  it('按状态筛选无结果但租户有运行时，提示筛选无结果并可重置，不引导去定义作业', async () => {
+    mocks.route.query = { status: 'FAILED' }
+    mocks.page
+      .mockReset()
+      .mockImplementation(async (params: { instanceStatus?: string }) =>
+        params.instanceStatus ? { records: [], total: 0 } : { records: [], total: 21 },
+      )
+    const wrapper = render({ ProTable: emptyTable, ListEmptyState })
+    await flushPromises()
+    expect(wrapper.get('.empty').attributes('data-filtered')).toBe('true')
+  })
+
+  it('无筛选且租户没有任何运行时，引导去定义作业', async () => {
+    mocks.page.mockReset().mockResolvedValue({ records: [], total: 0 })
+    const wrapper = render({ ProTable: emptyTable, ListEmptyState })
+    await flushPromises()
+    const empty = wrapper.get('.empty')
+    expect(empty.attributes('data-filtered')).toBe('false')
+    expect(empty.text()).toContain('jobInstanceList.emptyGoDefinitions')
+  })
+})
