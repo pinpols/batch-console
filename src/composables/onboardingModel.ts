@@ -92,6 +92,8 @@ function buildConfigurationSteps(
   const workerStatus = hasTenant
     ? evidenceStatus(evidence.onlineWorkerCount, (count) => count > 0)
     : 'pending'
+  // 新建作业向导走作业包接口，后端仅平台管理员可用；租户管理员用 Excel 配置导入（后端允许）
+  const createJobRoute = role === 'ROLE_ADMIN' ? '/jobs/definitions/new' : '/config/tenant-package'
   const workerReady = evidence.onlineWorkerCount != null && evidence.onlineWorkerCount > 0
   const readinessReady = evidence.readiness?.ready === true
   const canRun = hasJob && readinessReady && workerReady
@@ -107,8 +109,8 @@ function buildConfigurationSteps(
     {
       id: 'job-config',
       status: jobStatus,
-      route: '/jobs/definitions/new',
-      secondaryRoute: '/config/tenant-package',
+      route: createJobRoute,
+      secondaryRoute: role === 'ROLE_ADMIN' ? '/config/tenant-package' : '/jobs/definitions',
       docKey: 'first-tenant-config-quickstart',
       completion: 'evidence',
     },
@@ -130,7 +132,7 @@ function buildConfigurationSteps(
     {
       id: 'first-success',
       status: successStatus,
-      route: hasJob ? '/jobs/definitions' : '/jobs/definitions/new',
+      route: hasJob ? '/jobs/definitions' : createJobRoute,
       completion: 'evidence',
     },
   ]

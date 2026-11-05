@@ -115,9 +115,9 @@
 
           <EmptyState
             v-else-if="!workerTableBlocking && workerTableRows.length === 0"
-            variant="tenant-empty"
-            :title="t('workerManagement.emptyTitle')"
-            :description="workerEmptyDescription"
+            :variant="hasWorkerFilters ? 'filter-empty' : 'tenant-empty'"
+            :title="hasWorkerFilters ? t('empty.filterTitle') : t('workerManagement.emptyTitle')"
+            :description="hasWorkerFilters ? workerFilteredEmptyText : workerEmptyDescription"
             :image-size="96"
           >
             <template #action>
@@ -130,7 +130,7 @@
                 >
                   {{ t('common.refresh') }}
                 </el-button>
-                <el-button @click="resetWorkers">
+                <el-button v-if="hasWorkerFilters" @click="resetWorkers">
                   {{ t('workerManagement.clearFilters') }}
                 </el-button>
               </div>
@@ -674,6 +674,10 @@
     ),
   )
   const workerFilteredEmptyText = computed(() => t('workerManagement.emptyFiltered'))
+  // 只有设置了分组 / 状态 / 关键字筛选时才提示“筛选无结果”并给“清空筛选”
+  const hasWorkerFilters = computed(() =>
+    Boolean(workerFilters.workerGroup || workerFilters.status || workerFilters.keyword),
+  )
   const workerEmptyDescription = computed(() =>
     t('workerManagement.emptyDescription', { tenant: tenant.tenantId || '—' }),
   )

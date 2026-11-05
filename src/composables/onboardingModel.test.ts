@@ -36,6 +36,24 @@ describe('buildOnboardingChecklist', () => {
     expect(result.activated).toBe(false)
   })
 
+  it('租户管理员的配置作业入口指向 Excel 配置导入，不指向仅平台管理员可用的新建向导', () => {
+    const tenantAdmin = buildOnboardingChecklist({
+      role: 'ROLE_TENANT_ADMIN',
+      evidence: evidence(),
+    })
+    const jobConfig = tenantAdmin.steps.find((step) => step.id === 'job-config')
+    expect(jobConfig?.route).toBe('/config/tenant-package')
+    expect(jobConfig?.secondaryRoute).toBe('/jobs/definitions')
+    expect(tenantAdmin.steps.find((step) => step.id === 'first-success')?.route).toBe(
+      '/config/tenant-package',
+    )
+
+    const admin = buildOnboardingChecklist({ role: 'ROLE_ADMIN', evidence: evidence() })
+    expect(admin.steps.find((step) => step.id === 'job-config')?.route).toBe(
+      '/jobs/definitions/new',
+    )
+  })
+
   it('only reports activation after real readiness, worker, job and successful-run evidence', () => {
     const result = buildOnboardingChecklist({
       role: 'ROLE_ADMIN',
