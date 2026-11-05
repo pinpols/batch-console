@@ -231,9 +231,10 @@ describe('告警状态操作与查询范围', () => {
     ['alertList.actionAck', 'ack'],
     ['alertList.actionSilence24', 'silence'],
     ['alertList.actionClose', 'close'],
-  ] as const)('原因输入期间切租户，停止告警操作：%s', async (label, method) => {
+  ] as const)('确认框打开期间切租户，停止告警操作：%s', async (label, method) => {
+    // 确认与审计说明在同一个确认框里：确认框打开期间切租户，提交说明后也不能继续
     let reason!: (value: unknown) => void
-    mocks.prompt.mockReturnValueOnce(
+    mocks.confirm.mockReturnValueOnce(
       new Promise((resolve) => {
         reason = resolve
       }),
@@ -244,7 +245,7 @@ describe('告警状态操作与查询范围', () => {
     await flushPromises()
     mocks.state.tenantId = 'tenant-b'
     await flushPromises()
-    reason({ value: '原因' })
+    reason('原因')
     await flushPromises()
     expect(mocks[method]).not.toHaveBeenCalled()
   })

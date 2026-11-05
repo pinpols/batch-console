@@ -33,12 +33,12 @@
               {{ kindLabel(card.kind) }}
             </el-tag>
             <el-tag
-              v-if="card.kind === 'request' && card.approvalTypes.length"
+              v-if="card.kind === 'request' && card.selfServiceAction"
               size="small"
               effect="plain"
-              :type="pendingCount(card.approvalTypes) > 0 ? 'warning' : 'info'"
+              :type="pendingCount(card.selfServiceAction) > 0 ? 'warning' : 'info'"
             >
-              {{ pendingBadge(card.approvalTypes) }}
+              {{ pendingBadge(card.selfServiceAction) }}
             </el-tag>
           </div>
 
@@ -104,6 +104,7 @@
   import SelfServiceTriggerPauseTab from './components/SelfServiceTriggerPauseTab.vue'
   import { useTenantStore } from '@/stores/tenant'
   import { useAuthStore } from '@/stores/auth'
+  import { usePermission } from '@/composables/usePermission'
   import { useTenantReload } from '@/composables/useTenantReload'
   import { useDrawerAutoClose } from '@/composables/useDrawerAutoClose'
   import { queryApprovalsPage } from '@/api/approvals'
@@ -113,6 +114,7 @@
   const router = useRouter()
   const tenant = useTenantStore()
   const auth = useAuthStore()
+  const { canManageSystem } = usePermission()
 
   /**
    * 卡片类型:
@@ -139,7 +141,11 @@
     title: string
     desc: string
     kind: CardKind
-    approvalTypes: string[]
+    /**
+     * 自助申请在审批单里的 actionType（approvalType 固定为 SELF_SERVICE），用于“待审批”徽章；
+     * 配额变更不走审批单，不显示徽章
+     */
+    selfServiceAction?: 'RERUN' | 'COMPENSATION'
     cta: { icon: Component; label: string }
     linkTo?: string
   }
@@ -152,7 +158,6 @@
       title: t('selfServicePanel.tabQuota'),
       desc: t('selfServicePanel.descQuota'),
       kind: 'view',
-      approvalTypes: [],
       cta: { icon: ArrowDown, label: t('selfServicePanel.cardCtaView') },
     },
     {
@@ -161,7 +166,6 @@
       title: t('selfServicePanel.tabQuotaChange'),
       desc: t('selfServicePanel.descQuotaChange'),
       kind: 'request',
-      approvalTypes: ['QUOTA_CHANGE', 'TENANT_QUOTA_CHANGE'],
       cta: { icon: EditPen, label: t('selfServicePanel.cardCtaRequest') },
     },
     {
@@ -170,7 +174,7 @@
       title: t('selfServicePanel.tabRerun'),
       desc: t('selfServicePanel.descRerun'),
       kind: 'request',
-      approvalTypes: ['JOB_RERUN', 'RERUN'],
+      selfServiceAction: 'RERUN',
       cta: { icon: RefreshRight, label: t('selfServicePanel.cardCtaRequest') },
     },
     {
@@ -179,7 +183,7 @@
       title: t('selfServicePanel.tabCompensation'),
       desc: t('selfServicePanel.descCompensation'),
       kind: 'request',
-      approvalTypes: ['COMPENSATION', 'DATA_COMPENSATION'],
+      selfServiceAction: 'COMPENSATION',
       cta: { icon: SetUp, label: t('selfServicePanel.cardCtaRequest') },
     },
     // --- 第二批 5 张 ---
@@ -189,7 +193,6 @@
       title: t('selfServicePanel.tabApiKey'),
       desc: t('selfServicePanel.descApiKey'),
       kind: 'link-out',
-      approvalTypes: [],
       cta: { icon: Key, label: t('selfServicePanel.cardCtaApiKey') },
       linkTo: '/system/api-keys',
     },
@@ -199,7 +202,6 @@
       title: t('selfServicePanel.tabFailedJobs'),
       desc: t('selfServicePanel.descFailedJobs'),
       kind: 'view-drawer',
-      approvalTypes: [],
       cta: { icon: Warning, label: t('selfServicePanel.cardCtaFailedJobs') },
     },
     {
@@ -208,7 +210,6 @@
       title: t('selfServicePanel.tabNotifSubs'),
       desc: t('selfServicePanel.descNotifSubs'),
       kind: 'view-drawer',
-      approvalTypes: [],
       cta: { icon: Bell, label: t('selfServicePanel.cardCtaNotifSubs') },
     },
     {
@@ -217,18 +218,21 @@
       title: t('selfServicePanel.tabMyAudits'),
       desc: t('selfServicePanel.descMyAudits'),
       kind: 'view-drawer',
-      approvalTypes: [],
       cta: { icon: Memo, label: t('selfServicePanel.cardCtaMyAudits') },
     },
-    {
-      key: 'triggerPause',
-      icon: Timer,
-      title: t('selfServicePanel.tabTriggerPause'),
-      desc: t('selfServicePanel.descTriggerPause'),
-      kind: 'request',
-      approvalTypes: [],
-      cta: { icon: Timer, label: t('selfServicePanel.cardCtaTriggerPause') },
-    },
+    // 触发器暂停 / 恢复接口仅平台管理员可用，其他角色不显示，避免提交后 403
+    ...(canManageSystem.value
+      ? [
+          {
+            key: 'triggerPause' as const,
+            icon: Timer,
+            title: t('selfServicePanel.tabTriggerPause'),
+            desc: t('selfServicePanel.descTriggerPause'),
+            kind: 'request' as const,
+            cta: { icon: Timer, label: t('selfServicePanel.cardCtaTriggerPause') },
+          },
+        ]
+      : []),
   ])
 
   function kindTagType(kind: CardKind): 'info' | 'primary' | 'success' | 'warning' {
@@ -316,14 +320,14 @@
 
   // ---------- 待审批徽章 ----------
 
-  const pendingByType = ref<Record<string, number>>({})
+  const pendingByAction = ref<Record<string, number>>({})
 
-  function pendingCount(types: string[]): number {
-    return types.reduce((n, k) => n + (pendingByType.value[k] ?? 0), 0)
+  function pendingCount(action: string): number {
+    return pendingByAction.value[action] ?? 0
   }
 
-  function pendingBadge(types: string[]): string {
-    const n = pendingCount(types)
+  function pendingBadge(action: string): string {
+    const n = pendingCount(action)
     return n > 0 ? t('selfServicePanel.badgePending', { n }) : t('selfServicePanel.badgeNoPending')
   }
 
@@ -331,26 +335,28 @@
     if (!tenant.tenantId) return
     try {
       const me = auth.userInfo?.userId
-      const cardApprovalTypes = cards.value.flatMap((card) => card.approvalTypes)
-      const availableApprovalTypes = cardApprovalTypes.filter(Boolean)
-      const approvalTypes = Array.from(new Set(availableApprovalTypes))
+      const actions = Array.from(
+        new Set(cards.value.map((card) => card.selfServiceAction).filter(Boolean)),
+      ) as string[]
+      // 后端自助重跑 / 补偿统一写 approvalType=SELF_SERVICE，按 actionType 区分
       const results = await Promise.all(
-        approvalTypes.map(async (approvalType) => ({
-          approvalType,
+        actions.map(async (actionType) => ({
+          actionType,
           result: await queryApprovalsPage(tenant.tenantId, 1, 1, {
             approvalStatus: 'PENDING',
-            approvalType,
+            approvalType: 'SELF_SERVICE',
+            actionType,
             ...(me ? { requesterId: me } : {}),
           }),
         })),
       )
       const counts: Record<string, number> = {}
-      for (const { approvalType, result } of results) {
-        counts[approvalType] = result.total ?? 0
+      for (const { actionType, result } of results) {
+        counts[actionType] = result.total ?? 0
       }
-      pendingByType.value = counts
+      pendingByAction.value = counts
     } catch {
-      pendingByType.value = {}
+      pendingByAction.value = {}
     }
   }
 
@@ -367,7 +373,8 @@
       'myAudits',
       'triggerPause',
     ]
-    if (a && drawerCards.includes(a)) {
+    // 深链只打开当前角色看得到的卡片（如触发器暂停仅平台管理员）
+    if (a && drawerCards.includes(a) && cards.value.some((card) => card.key === a)) {
       drawerKey.value = a
       drawerOpen.value = true
     }

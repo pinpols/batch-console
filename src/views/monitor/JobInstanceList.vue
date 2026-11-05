@@ -556,7 +556,7 @@
       label,
       isCurrent,
     )
-    if (isCurrent()) void loadData()
+    if (isCurrent()) void loadData(true)
   }
 
   async function onBulkCancel() {
@@ -599,7 +599,7 @@
       label,
       isCurrent,
     )
-    if (isCurrent()) void loadData()
+    if (isCurrent()) void loadData(true)
   }
 
   // 按作业开始时间默认查看近7天；业务日期在行中独立展示，URL可覆盖日期范围。
@@ -682,7 +682,7 @@
   })
 
   let lastCountSig = ''
-  async function loadStatusCounts() {
+  async function loadStatusCounts(force = false) {
     const sig = JSON.stringify([
       tenant.tenantId,
       query.jobCode,
@@ -692,7 +692,7 @@
       query.traceId,
       query.slaBreached,
     ])
-    if (sig === lastCountSig) return
+    if (sig === lastCountSig && !force) return // 操作后与实时刷新强制重算，避免计数停在旧值
     lastCountSig = sig
     const scope = countScope.begin()
     const filters = { ...query, tenantId: scope.tenantId }
@@ -839,7 +839,7 @@
   }
 
   const loadError = ref<unknown>(null)
-  async function loadData() {
+  async function loadData(refreshCounts = false) {
     const scope = listScope.begin()
     if (!scope.tenantId) return
     const filters = {
@@ -854,7 +854,7 @@
       if (!listScope.isCurrent(scope)) return
       rows.value = result.records
       total.value = result.total
-      void loadStatusCounts()
+      void loadStatusCounts(refreshCounts)
       live.markRefreshed()
     } catch (err) {
       if (listScope.isCurrent(scope)) loadError.value = err
@@ -971,7 +971,7 @@
     domain: 'job-instances',
     reload: async () => {
       if (livePaused.value) return
-      await loadData()
+      await loadData(true)
     },
     scope: () => tenant.tenantId,
   })

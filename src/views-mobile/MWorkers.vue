@@ -99,9 +99,9 @@
             <span class="m-card__meta-key">{{ t('mobile.workers.heartbeat') }}</span>
             {{ fmt(row.heartbeatAt) }}
           </div>
-          <div v-if="row.capabilityTags">
+          <div v-if="parseCapabilityTags(row.capabilityTags).length">
             <span class="m-card__meta-key">{{ t('mobile.workers.capability') }}</span>
-            {{ row.capabilityTags }}
+            {{ parseCapabilityTags(row.capabilityTags).join('、') }}
           </div>
         </div>
         <div class="m-card__actions m-workers-actions">
@@ -181,6 +181,7 @@
   } from '@/api/workers'
   import type { ConsoleWorkerRegistryResponse } from '@/types/console-api'
   import { canWorkerAction, type WorkerAction } from '@/views/worker/workerActions'
+  import { parseCapabilityTags } from '@/utils/capabilityTags'
 
   const route = useRoute()
   const { t, te } = useI18n({ useScope: 'global' })

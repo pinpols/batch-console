@@ -379,7 +379,7 @@
           t('mobile.approvals.reject'),
           {
             type: 'warning',
-            confirmButtonText: t('common.confirm'),
+            confirmButtonText: t('mobile.approvals.reject'),
             cancelButtonText: t('common.cancel'),
           },
         )

@@ -1751,3 +1751,15 @@ html.dark {
 html.dark .el-segmented {
   --el-segmented-item-selected-color: var(--color-on-status);
 }
+
+/* 消息框里的结构化说明（如重放预览的阻塞原因）：概要在上，逐条原因用列表 */
+.el-message-box .replay-preview p {
+  margin: 0 0 6px;
+}
+
+.el-message-box .replay-preview ul {
+  display: grid;
+  gap: 4px;
+  margin: 4px 0 0;
+  padding-left: 18px;
+}

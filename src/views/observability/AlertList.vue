@@ -237,7 +237,7 @@
   import { computed, reactive, ref, watch } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
-  import { ElMessage, ElMessageBox } from 'element-plus'
+  import { ElMessage } from 'element-plus'
   import { confirmDanger } from '@/composables/useDangerConfirm'
 
   const { t } = useI18n({ useScope: 'global' })
@@ -410,7 +410,7 @@
 
   const groupCounts = reactive<Record<string, number | null>>({ OPEN: null, ACKED: null, '': null })
   let lastCountSig = ''
-  async function loadGroupCounts() {
+  async function loadGroupCounts(force = false) {
     const sig = JSON.stringify([
       tenant.tenantId,
       filters.severity,
@@ -419,7 +419,8 @@
       filters.startTime,
       filters.endTime,
     ])
-    if (sig === lastCountSig) return
+    // 筛选未变时跳过计数；处理告警后与实时刷新需强制重算
+    if (sig === lastCountSig && !force) return
     lastCountSig = sig
     const scope = countScope.begin()
     const query = { ...filters, tenantId: scope.tenantId }
@@ -523,7 +524,7 @@
   // 服务端分页 + 服务端筛选:severity/status/alertType/traceId/时间范围全部传后端
   // (BE 2026-06-21 契约对齐,status 传真值 OPEN/ACKED/SUPPRESSED/CLOSED,时间走 last_seen_at),
   // 不再做 acknowledged 映射与"当前页局部过滤"。
-  async function load() {
+  async function load(refreshCounts = false) {
     const scope = readScope.begin()
     if (!scope.tenantId) return
     const query = { ...filters, tenantId: scope.tenantId }
@@ -544,7 +545,7 @@
       // 维护 union 供 alertType 候选,限制最近 5 页 ≈ 1000 行避免膨胀
       const cap = pageSize.value * 5
       allRows.value = [...allRows.value, ...rows.value].slice(-cap)
-      void loadGroupCounts()
+      void loadGroupCounts(refreshCounts)
       live.markRefreshed()
     } catch (err) {
       if (readScope.isCurrent(scope)) loadError.value = err
@@ -587,21 +588,6 @@
     })
   }
 
-  async function optionalReason(title: string): Promise<string | undefined> {
-    try {
-      const { value } = await ElMessageBox.prompt(t('alertList.reasonPrompt'), title, {
-        confirmButtonText: t('alertList.reasonSubmit'),
-        cancelButtonText: t('alertList.reasonSkip'),
-        distinguishCancelAndClose: true,
-        inputPlaceholder: t('alertList.reasonPlaceholder'),
-      })
-      return value?.trim() || undefined
-    } catch (e) {
-      if (e === 'cancel') return undefined
-      throw e
-    }
-  }
-
   async function doAck(row: ConsoleAlertEventResponse) {
     const context = captureAlertAction(row)
     const canAct = () =>
@@ -609,20 +595,20 @@
       ['OPEN'].includes(rows.value.find((item) => item.id === row.id)?.status ?? '')
     if (!canAct()) return
     try {
-      await confirmDanger({
+      // 确认与可选审计说明放在同一个框里
+      const reason = await confirmDanger({
         verb: t('alertList.ackConfirmVerb'),
         target: t('alertList.confirmTarget', { title: row.title }),
         consequence: t('alertList.ackConfirmConsequence'),
         confirmButtonText: t('alertList.ackConfirmButton'),
+        note: { placeholder: t('alertList.reasonPlaceholder') },
       })
       if (!canAct()) return
       actingId.value = row.id
-      const reason = await optionalReason(t('alertList.ackReasonTitle'))
-      if (!canAct()) return
       await acknowledgeAlert(row.id, actionBody(reason, context))
       if (!context.isCurrent()) return
       ElMessage.success(t('alertList.ackedToast'))
-      await load()
+      await load(true)
     } catch (e) {
       if (e !== 'cancel' && e !== 'close') {
         /* handled */
@@ -639,20 +625,20 @@
       ['OPEN'].includes(rows.value.find((item) => item.id === row.id)?.status ?? '')
     if (!canAct()) return
     try {
-      await confirmDanger({
+      // 确认与可选审计说明放在同一个框里
+      const reason = await confirmDanger({
         verb: t('alertList.silenceConfirmVerb'),
         target: t('alertList.confirmTarget', { title: row.title }),
         consequence: t('alertList.silenceConfirmConsequence'),
         confirmButtonText: t('alertList.silenceConfirmButton'),
+        note: { placeholder: t('alertList.reasonPlaceholder') },
       })
       if (!canAct()) return
       actingId.value = row.id
-      const reason = await optionalReason(t('alertList.silenceReasonTitle'))
-      if (!canAct()) return
       await silenceAlert(row.id, actionBody(reason, context))
       if (!context.isCurrent()) return
       ElMessage.success(t('alertList.silencedToast'))
-      await load()
+      await load(true)
     } catch (e) {
       if (e !== 'cancel' && e !== 'close') {
         /* handled */
@@ -669,21 +655,21 @@
       ['OPEN', 'ACKED'].includes(rows.value.find((item) => item.id === row.id)?.status ?? '')
     if (!canAct()) return
     try {
-      await confirmDanger({
+      // 确认与可选审计说明放在同一个框里
+      const reason = await confirmDanger({
         verb: t('alertList.closeConfirmVerb'),
         target: t('alertList.confirmTarget', { title: row.title }),
         consequence: t('alertList.closeConfirmConsequence'),
         irreversible: true,
         confirmButtonText: t('alertList.closeConfirmButton'),
+        note: { placeholder: t('alertList.reasonPlaceholder') },
       })
       if (!canAct()) return
       actingId.value = row.id
-      const reason = await optionalReason(t('alertList.closeReasonTitle'))
-      if (!canAct()) return
       await closeAlert(row.id, actionBody(reason, context))
       if (!context.isCurrent()) return
       ElMessage.success(t('alertList.closedToast'))
-      await load()
+      await load(true)
     } catch (e) {
       if (e !== 'cancel' && e !== 'close') {
         /* handled */
@@ -700,7 +686,7 @@
 
   const live = useSseAutoReload({
     domain: 'alerts',
-    reload: load,
+    reload: () => load(true),
     scope: () => tenant.tenantId,
   })
 
