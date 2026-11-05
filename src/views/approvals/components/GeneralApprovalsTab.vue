@@ -97,8 +97,9 @@
       </template>
 
       <template #empty>
-        <EmptyState
-          variant="tenant-empty"
+        <ListEmptyState
+          :filtered="hasActiveFilters"
+          @reset="reset"
           :title="t('approvals.emptyTitle')"
           :description="t('approvals.emptyDescription')"
           :image-size="64"
@@ -106,7 +107,7 @@
           <template #action>
             <el-button type="primary" plain @click="load">{{ t('common.refresh') }}</el-button>
           </template>
-        </EmptyState>
+        </ListEmptyState>
       </template>
 
       <el-table-column
@@ -115,7 +116,7 @@
         :selectable="isPending"
         :reserve-selection="true"
       />
-      <el-table-column prop="approvalNo" :label="t('approvals.colApprovalNo')" width="160">
+      <el-table-column prop="approvalNo" :label="t('approvals.colApprovalNo')" min-width="200">
         <template #default="{ row }">
           <!-- dump:审批单号 mono + accent 蓝 -->
           <CopyableText class="ap-no" :text="row.approvalNo" @click.stop />
@@ -129,7 +130,7 @@
       <el-table-column :label="t('approvals.colTarget')" min-width="220">
         <template #default="{ row }">
           <div class="target-cell">
-            <span class="target-cell__type">{{ row.targetType || '—' }}</span>
+            <span class="target-cell__type">{{ resolveTargetType(row.targetType) || '—' }}</span>
             <router-link
               v-if="targetLink(row)"
               class="cell-link ap-mono"
@@ -189,7 +190,7 @@
           <h3>{{ t('approvals.detailSummary') }}</h3>
           <el-descriptions :column="1" border>
             <el-descriptions-item :label="t('approvals.colTarget')">
-              {{ detailRow.targetType || '—' }} /
+              {{ resolveTargetType(detailRow.targetType) || '—' }} /
               <router-link
                 v-if="targetLink(detailRow)"
                 :to="targetLink(detailRow) || ''"
@@ -268,6 +269,12 @@
     return te(key) ? t(key) : value
   }
 
+  function resolveTargetType(value?: string | null): string {
+    if (!value) return ''
+    const key = `enum.approvalTargetType.${value}`
+    return te(key) ? t(key) : value
+  }
+
   /**
    * targetId 跳到对应实体详情:
    * JOB_RERUN → /monitor/job-instances/{id}
@@ -314,7 +321,7 @@
   import StatusSegment, { type StatusSegmentItem } from '@/components/table/StatusSegment.vue'
   import CopyableText from '@/components/common/CopyableText.vue'
   import DetailDrawer from '@/components/common/DetailDrawer.vue'
-  import EmptyState from '@/components/common/EmptyState.vue'
+  import ListEmptyState from '@/components/common/ListEmptyState.vue'
   import RowActions, { type RowAction } from '@/components/common/RowActions.vue'
   import type { ConsoleApprovalCommandResponse } from '@/types/console-api'
   import { useAuthStore } from '@/stores/auth'
@@ -410,7 +417,8 @@
 
   const approvalTypeOptions = computed(() => pickMetaEnumGroup(metaEnums.value, 'approvalType'))
 
-  const terminal = new Set(['APPROVED', 'REJECTED', 'CLOSED', 'CANCELLED'])
+  // 已执行（EXECUTED）同样是终态，不能再批准 / 拒绝或勾选批量
+  const terminal = new Set(['APPROVED', 'EXECUTED', 'REJECTED', 'CLOSED', 'CANCELLED'])
   const requestedAtLabel = computed(() => t('approvals.colRequestedAt'))
 
   function relativeDayTime(value: unknown): string {

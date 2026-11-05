@@ -111,18 +111,15 @@
         @selection-change="bulk.onSelectionChange"
       >
         <template #empty>
-          <EmptyState
-            variant="tenant-empty"
+          <ListEmptyState
+            :filtered="hasNarrowingFilters"
             :title="t('jobInstanceList.emptyTitle')"
             :description="t('jobInstanceList.emptyDescription')"
-            :image-size="80"
-          >
-            <template #action>
-              <el-button type="primary" :icon="List" @click="$router.push('/jobs/definitions')">
-                {{ t('jobInstanceList.emptyGoDefinitions') }}
-              </el-button>
-            </template>
-          </EmptyState>
+            @reset="resetQuery"
+            :action-text="t('jobInstanceList.emptyGoDefinitions')"
+            action-to="/jobs/definitions"
+            :action-icon="List"
+          />
         </template>
 
         <template #toolbar>
@@ -435,7 +432,7 @@
   import PageContainer from '@/components/common/PageContainer.vue'
   import TraceIdInput from '@/components/common/TraceIdInput.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
-  import EmptyState from '@/components/common/EmptyState.vue'
+  import ListEmptyState from '@/components/common/ListEmptyState.vue'
   import { Eye, List } from '@lucide/vue'
   import SavedFiltersMenu from '@/components/table/SavedFiltersMenu.vue'
   import { useSavedFilters } from '@/composables/useSavedFilters'
@@ -726,6 +723,12 @@
     )
     if (failed && countScope.isCurrent(scope)) lastCountSig = ''
   }
+
+  // 有收窄筛选，或“全部”在当前时间段内有记录时，空表是筛选造成的
+  const narrowingKeys = ['instanceStatus', 'instanceStatuses', 'jobCode', 'traceId'] as const
+  const hasNarrowingFilters = computed(
+    () => narrowingKeys.some((k) => query[k]) || query.slaBreached || !!statusCounts[''],
+  )
 
   const statusTabs = computed(() =>
     TAB_DEFS.map((tab) => ({

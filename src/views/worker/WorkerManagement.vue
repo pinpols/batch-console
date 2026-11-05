@@ -198,53 +198,62 @@
                 <span class="wk-card__load">{{ row.currentLoad ?? 0 }}</span>
               </div>
               <div class="wk-card__actions">
-                <el-button size="small" plain :icon="Eye" @click="openClaimedTasks(row)">
+                <!-- 查看类操作用链接样式靠左；改状态的操作成组靠右，危险操作放最后，换行时整组一起换 -->
+                <el-button
+                  size="small"
+                  link
+                  type="primary"
+                  :icon="Eye"
+                  @click="openClaimedTasks(row)"
+                >
                   {{ t('workerManagement.actionClaimedTasks') }}
                 </el-button>
-                <el-button
-                  v-if="canWorkerAction(row.status, 'drain')"
-                  size="small"
-                  :disabled="!canMutateConfig"
-                  plain
-                  type="warning"
-                  :icon="CirclePause"
-                  @click="drain(row)"
-                >
-                  {{ t('workerManagement.actionDrain') }}
-                </el-button>
-                <el-button
-                  v-if="canWorkerAction(row.status, 'offline')"
-                  size="small"
-                  :disabled="!canMutateConfig"
-                  plain
-                  type="danger"
-                  :icon="Power"
-                  @click="offline(row)"
-                >
-                  {{ t('workerManagement.actionOffline') }}
-                </el-button>
-                <el-button
-                  v-if="canWorkerAction(row.status, 'takeover')"
-                  size="small"
-                  :disabled="!canMutateConfig"
-                  plain
-                  type="warning"
-                  :icon="ArrowRightLeft"
-                  @click="takeover(row)"
-                >
-                  {{ t('workerManagement.actionTakeover') }}
-                </el-button>
-                <el-button
-                  v-if="canWorkerAction(row.status, 'warmup')"
-                  size="small"
-                  :disabled="!canMutateConfig"
-                  plain
-                  type="success"
-                  :icon="Flame"
-                  @click="warmup(row)"
-                >
-                  {{ t('workerManagement.actionWarmup') }}
-                </el-button>
+                <div class="wk-card__ops">
+                  <el-button
+                    v-if="canWorkerAction(row.status, 'drain')"
+                    size="small"
+                    :disabled="!canMutateConfig"
+                    plain
+                    type="warning"
+                    :icon="CirclePause"
+                    @click="drain(row)"
+                  >
+                    {{ t('workerManagement.actionDrain') }}
+                  </el-button>
+                  <el-button
+                    v-if="canWorkerAction(row.status, 'takeover')"
+                    size="small"
+                    :disabled="!canMutateConfig"
+                    plain
+                    type="warning"
+                    :icon="ArrowRightLeft"
+                    @click="takeover(row)"
+                  >
+                    {{ t('workerManagement.actionTakeover') }}
+                  </el-button>
+                  <el-button
+                    v-if="canWorkerAction(row.status, 'warmup')"
+                    size="small"
+                    :disabled="!canMutateConfig"
+                    plain
+                    type="success"
+                    :icon="Flame"
+                    @click="warmup(row)"
+                  >
+                    {{ t('workerManagement.actionWarmup') }}
+                  </el-button>
+                  <el-button
+                    v-if="canWorkerAction(row.status, 'offline')"
+                    size="small"
+                    :disabled="!canMutateConfig"
+                    plain
+                    type="danger"
+                    :icon="Power"
+                    @click="offline(row)"
+                  >
+                    {{ t('workerManagement.actionOffline') }}
+                  </el-button>
+                </div>
               </div>
             </div>
           </div>

@@ -44,8 +44,9 @@
         </ListPageQueryBar>
       </template>
       <template #empty>
-        <EmptyState
-          variant="tenant-empty"
+        <ListEmptyState
+          :filtered="hasCatchUpFilters"
+          @reset="onReset"
           :title="t('approvals.catchUpEmptyTitle')"
           :description="t('approvals.catchUpEmptyDescription')"
           :image-size="64"
@@ -53,7 +54,7 @@
           <template #action>
             <el-button type="primary" plain @click="load">{{ t('common.refresh') }}</el-button>
           </template>
-        </EmptyState>
+        </ListEmptyState>
       </template>
       <el-table-column prop="requestId" :label="t('approvals.catchUpColRequestId')" min-width="180">
         <template #default="{ row }">
@@ -173,7 +174,7 @@
   import StatusTag from '@/components/common/StatusTag.vue'
   import DetailDrawer from '@/components/common/DetailDrawer.vue'
   import CopyableText from '@/components/common/CopyableText.vue'
-  import EmptyState from '@/components/common/EmptyState.vue'
+  import ListEmptyState from '@/components/common/ListEmptyState.vue'
   import DatetimeColumn from '@/components/common/DatetimeColumn.vue'
   import { fmtDatetime } from '@/utils/datetime'
 
@@ -240,6 +241,9 @@
       await load()
     })
   }
+
+  // 关键字或业务日筛选生效时，空表是筛选造成的
+  const hasCatchUpFilters = computed(() => Boolean(kwApplied.value || bizDateApplied.value))
 
   function onReset() {
     return runReset(async () => {

@@ -179,8 +179,9 @@
         </template>
 
         <template #empty>
-          <EmptyState
-            variant="tenant-empty"
+          <ListEmptyState
+            :filtered="hasDefinitionFilters"
+            @reset="reset"
             :title="t('jobDefinitionList.emptyTitle')"
             :description="t('jobDefinitionList.emptyDescription')"
             :image-size="80"
@@ -195,7 +196,7 @@
                 {{ t('jobDefinitionList.emptyGoImport') }}
               </el-button>
             </template>
-          </EmptyState>
+          </ListEmptyState>
         </template>
 
         <template #default="{ isColVisible }">
@@ -632,7 +633,7 @@
   import MetaSelect from '@/components/common/MetaSelect.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
-  import EmptyState from '@/components/common/EmptyState.vue'
+  import ListEmptyState from '@/components/common/ListEmptyState.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import ProTable from '@/components/table/ProTable.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
@@ -743,6 +744,18 @@
       page.value = 1
     })
   }
+
+  // 任一筛选生效时，空表是筛选造成的，不引导去导入配置包
+  const hasDefinitionFilters = computed(() =>
+    Boolean(
+      filters.jobCode ||
+      filters.jobName ||
+      filters.enabled !== undefined ||
+      filters.workerGroup ||
+      filters.queueCode ||
+      filters.scheduleType,
+    ),
+  )
 
   function reset() {
     return runReset(() => {

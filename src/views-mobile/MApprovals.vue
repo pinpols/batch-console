@@ -83,7 +83,7 @@
         <div class="m-card__meta">
           <div>
             <span class="m-card__meta-key">{{ t('mobile.approvals.target') }}</span
-            >{{ row.targetType }}/{{ row.targetId || '—' }}
+            >{{ resolveEnumLabel('approvalTargetType', row.targetType) }}/{{ row.targetId || '—' }}
           </div>
           <div>
             <span class="m-card__meta-key">{{ t('mobile.approvals.submitter') }}</span>
