@@ -117,7 +117,9 @@
       </el-descriptions-item>
     </el-descriptions>
 
+    <!-- 新建向导复核时还没有创建/更新时间，整组都是“—”，不显示 -->
     <el-descriptions
+      v-if="job.createdAt || job.updatedAt"
       :title="t('jobConfigBasic.groupAudit')"
       :column="isMobile ? 1 : 2"
       border

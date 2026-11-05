@@ -29,7 +29,7 @@
           <el-option v-for="opt in execResultOptions" :key="opt" :label="opt" :value="opt" />
         </el-select>
       </el-form-item>
-      <el-form-item label="Trace">
+      <el-form-item :label="t('common.trace')">
         <el-input
           class="query-w-320"
           v-model="execDraft.traceId"
@@ -217,7 +217,7 @@
     return [
       { label: t('observability.execMetaOperationType'), value: pickString(r, 'operationType') },
       { label: t('observability.execMetaResult'), value: pickString(r, 'operationResult') },
-      { label: 'Trace', value: pickString(r, 'traceId') },
+      { label: t('common.trace'), value: pickString(r, 'traceId') },
     ]
   })
 

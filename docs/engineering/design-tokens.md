@@ -27,3 +27,7 @@
 - **品牌标志**：`public/icons/batch-mark.svg`（完整图标）与 `batch-mark-foreground.svg`（白色前景，叠在 `--brand-mark-fill` 上）。造型是三条错开起止的泳道，对应控制面板“业务日时刻轨道”。`--brand-mark-fill` 为 `--color-brand-mark-bg` 的纯色，明暗主题各一值。改动标志后用 `scripts/gen-pwa-icons.mjs` 重新生成 favicon、PWA 图标和 iOS 启动图（需临时准备 `sharp`，不加入依赖），并同步 `index.html` 与 `manifest.webmanifest` 的 `theme-color`。SVG 注释中不得出现 `--`，否则浏览器整张丢弃。
 - **加载动画**：`v-loading` 遮罩不再显示品牌标志，改为同一泳道意象的四段条依次铺满（`element-override.css` 的 `lane-loader-fill`）；遮罩高度不足 90px 时整体缩小。启动页（`public/app-startup.css`）的品牌方块内泳道依次绘出。两者都尊重 `prefers-reduced-motion`。按钮内的 loading 保留 Element Plus 原生图标。
 - **提示块图标**：`el-alert` 的实心图标替换为与 lucide 一致的线性图标（CSS mask），只给图标上色；标题用正文色、说明用次级色，底色用 `--color-*-light` 状态浅底，随主题变化。
+
+## 中文界面的大小写
+
+描述列表标签与表格表头不做 `text-transform: uppercase`（2026-11-05 移除）。界面以中文为主，大写转换只会把混排的英文变成“WORKER 分组”“JOB CODE”这类写法；英文缩写按词条原样展示。

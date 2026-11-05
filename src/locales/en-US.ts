@@ -826,6 +826,7 @@ const messages: Messages = {
   },
   pageHeader: {
     backTooltip: 'Back',
+    backLabel: 'Back',
     forwardTooltip: 'Forward',
   },
   docsDrawer: {
@@ -3848,9 +3849,10 @@ const messages: Messages = {
     fieldUpdatedAt: 'Updated at',
   },
   alertList: {
+    groupMore: '{count} more similar alerts',
+    groupCollapse: 'Hide similar alerts',
     pageTitle: 'Event alerts',
     pageDescription: 'View and manage alert events',
-    actionRules: 'Alert routing rules',
     tabOpen: 'Open',
     tabAcked: 'Acked',
     tabAll: 'All',
@@ -4184,6 +4186,9 @@ const messages: Messages = {
     opsDiagnosticAction: 'Operations diagnostic',
     metricStatusDescription: 'Current instance state',
     metricBizDateDescription: 'Business date for this run',
+    metricInstanceNoDescription: 'Unique number of this run',
+    metricJobCodeDescription: 'Job definition this run belongs to',
+    metricTraceDescription: 'Used for trace diagnosis',
     metricTraceEmpty: 'No trace identifier for this instance',
     metricQueueDescription: 'Resource queue used by this run',
     dryRunBannerTitle: 'Dry-run instance — no real execution',

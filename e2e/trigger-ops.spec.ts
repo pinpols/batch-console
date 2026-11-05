@@ -19,8 +19,8 @@ test.describe('Trigger 管理 — 页面基础', () => {
     await expectPageTitle(page, '触发器')
   })
 
-  test('表格展示 Job Code / 类型 / 状态 / 操作列', async ({ page }) => {
-    await expect(page.getByRole('columnheader', { name: 'Job Code' })).toBeVisible()
+  test('表格展示工作流编码 / 类型 / 状态 / 操作列', async ({ page }) => {
+    await expect(page.getByRole('columnheader', { name: '工作流编码' })).toBeVisible()
     await expect(page.getByRole('columnheader', { name: '类型' })).toBeVisible()
     await expect(page.getByRole('columnheader', { name: '状态' })).toBeVisible()
     await expect(page.getByRole('columnheader', { name: '操作' })).toBeVisible()

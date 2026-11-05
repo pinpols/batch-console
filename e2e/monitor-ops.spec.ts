@@ -64,7 +64,7 @@ test.describe('Job Instance 详情 — 操作流', () => {
     await page.goto(`/monitor/job-instances/${id}`)
     await expectPageTitle(page, '作业实例详情')
     await expect(page.getByText('实例编号')).toBeVisible({ timeout: 10_000 })
-    await expect(page.getByText('Job Code')).toBeVisible()
+    await expect(page.getByText('作业编码').first()).toBeVisible()
     await expect(page.getByText('状态')).toBeVisible()
   })
 
@@ -224,7 +224,7 @@ test.describe('审计日志 — 筛选查询', () => {
   })
 
   test('Trace 搜索 → 查询', async ({ page }) => {
-    const input = page.locator('.el-form-item').filter({ hasText: 'Trace' }).getByRole('textbox')
+    const input = page.locator('.el-form-item').filter({ hasText: '链路 ID' }).getByRole('textbox')
     if (!(await isVisible(input, 2000))) return
     await input.fill('trace-test-123')
     await page.getByRole('button', { name: '搜索' }).click()

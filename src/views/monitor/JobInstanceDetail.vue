@@ -33,10 +33,6 @@
         <el-button v-if="row && canManageSystem" :loading="diagnosisLoading" @click="runDiagnosis">
           {{ t('monitor.detailDiagnose') }}
         </el-button>
-        <el-button v-if="canManageSystem" @click="router.push('/ops/diagnostic')">
-          {{ t('jobInstanceDetail.opsDiagnosticAction') }}
-        </el-button>
-        <el-button v-if="row" @click="goLogs">{{ t('monitor.detailGoLogs') }}</el-button>
         <el-button
           v-if="canWriteSystem && row && isTerminal"
           type="warning"
@@ -72,7 +68,24 @@
         >
           {{ t('monitor.detailTerminateBtn') }}
         </el-button>
-        <PrintButton />
+        <!-- 不针对本实例的入口（平台诊断、执行日志、打印）收进“更多”，页头一行只留实例操作 -->
+        <el-dropdown trigger="click" @command="onMoreCommand">
+          <el-button>
+            {{ t('common.more') }}
+            <el-icon class="el-icon--right"><ChevronDown /></el-icon>
+          </el-button>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item v-if="row" command="logs">
+                {{ t('monitor.detailGoLogs') }}
+              </el-dropdown-item>
+              <el-dropdown-item v-if="canManageSystem" command="opsDiagnostic">
+                {{ t('jobInstanceDetail.opsDiagnosticAction') }}
+              </el-dropdown-item>
+              <el-dropdown-item command="print">{{ t('print.label') }}</el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
       </template>
     </PageHeader>
 
@@ -98,7 +111,7 @@
         :label="t('monitor.detailMetricInstanceNo')"
         :value="compactIdentifier(row.instanceNo)"
         :copy-value="row.instanceNo"
-        :description="row.instanceNo"
+        :description="t('jobInstanceDetail.metricInstanceNoDescription')"
       />
       <MetricCard
         :label="t('monitor.detailMetricStatus')"
@@ -110,7 +123,7 @@
         :label="t('monitor.detailMetricJobCode')"
         :value="compactIdentifier(row.jobCode, 18, 8)"
         :copy-value="row.jobCode"
-        :description="row.jobCode"
+        :description="t('jobInstanceDetail.metricJobCodeDescription')"
       />
       <MetricCard
         :label="t('monitor.detailMetricBizDate')"
@@ -121,7 +134,11 @@
         :label="t('monitor.detailMetricTrace')"
         :value="compactIdentifier(row.traceId)"
         :copy-value="row.traceId || ''"
-        :description="row.traceId || t('jobInstanceDetail.metricTraceEmpty')"
+        :description="
+          row.traceId
+            ? t('jobInstanceDetail.metricTraceDescription')
+            : t('jobInstanceDetail.metricTraceEmpty')
+        "
       />
       <MetricCard
         :label="t('monitor.detailMetricQueue')"
@@ -466,14 +483,14 @@
 
 <script setup lang="ts">
   import StepTimelineStrip from './components/StepTimelineStrip.vue'
-  import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+  import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { fmtDatetime, fmtDuration } from '@/utils/datetime'
 
   const { t, te } = useI18n({ useScope: 'global' })
   import { useRoute, useRouter } from 'vue-router'
   import { ElMessage } from 'element-plus'
-  import { GitBranch, List, RefreshCw as Refresh } from '@lucide/vue'
+  import { ChevronDown, GitBranch, List, RefreshCw as Refresh } from '@lucide/vue'
   import { useRefreshAction } from '@/composables/useRefreshAction'
   import { useResponsive } from '@/composables/useResponsive'
 
@@ -500,7 +517,6 @@
   import { TERMINAL_INSTANCE_STATUSES } from './jobInstanceBulk'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
-  import PrintButton from '@/components/common/PrintButton.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
   import MetricCard from '@/components/common/MetricCard.vue'
@@ -768,6 +784,16 @@
 
   function goSteps() {
     router.push(`/monitor/job-instances/${instanceId.value}/partitions`)
+  }
+
+  async function onMoreCommand(command: string) {
+    if (command === 'logs') goLogs()
+    if (command === 'opsDiagnostic') void router.push('/ops/diagnostic')
+    if (command === 'print') {
+      // 等下拉收起后再唤起打印，避免菜单出现在打印稿里
+      await nextTick()
+      window.print()
+    }
   }
 
   function goLogs() {

@@ -23,6 +23,8 @@
           @click="goBack"
         >
           <el-icon :size="16"><ArrowLeft /></el-icon>
+          <!-- 纯图标的返回不易发现，补文字 -->
+          <span class="nav-arrow-btn__label">{{ t('pageHeader.backLabel') }}</span>
         </button>
         <button
           v-if="showForwardButton"
@@ -227,6 +229,13 @@
     color: var(--color-text-secondary);
     cursor: pointer;
     transition: all 0.2s;
+  }
+
+  .nav-arrow-btn:has(.nav-arrow-btn__label) {
+    width: auto;
+    gap: 4px;
+    padding: 0 10px 0 8px;
+    font-size: var(--font-size-sm, 13px);
   }
 
   .nav-arrow-btn:hover {

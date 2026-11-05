@@ -2,13 +2,8 @@
   <PageContainer>
     <!-- 照设计 #alerts:三分组 tab + 告警卡片流(proto dump: docs/redesign/proto-alerts.html) -->
     <!-- 页头只留动作钮;日期范围下移到筛选行(用户反馈:右上一排挤压溢出) -->
-    <PageHeader :title="t('alertList.pageTitle')" :description="t('alertList.pageDescription')">
-      <template #actions>
-        <el-button @click="$router.push('/observability/alert-routings')">
-          {{ t('alertList.actionRules') }}
-        </el-button>
-      </template>
-    </PageHeader>
+    <!-- 告警路由页为预留配置、当前不生效，不再从告警页提供入口（路由保留，供审计查看历史记录） -->
+    <PageHeader :title="t('alertList.pageTitle')" :description="t('alertList.pageDescription')" />
 
     <OpsFilterToolbar
       :filter-busy="queryActionBusy"
@@ -90,98 +85,115 @@
       show-icon
     />
     <div v-loading="tableBlocking" class="al-list">
-      <article
-        v-for="row in rows"
-        :key="row.id"
-        class="al-card"
-        :style="{ borderLeftColor: sevMeta(row.severity).color }"
-      >
-        <span
-          class="al-card__icon"
-          :style="{ background: sevMeta(row.severity).soft, color: sevMeta(row.severity).color }"
+      <!-- 同页内同类告警合并：只展示最新一条，其余可展开 -->
+      <template v-for="group in alertGroups" :key="group.key">
+        <article
+          v-for="row in visibleGroupRows(group)"
+          :key="row.id"
+          class="al-card"
+          :class="{ 'al-card--grouped': row !== group.rows[0] }"
+          :style="{ borderLeftColor: sevMeta(row.severity).color }"
         >
-          <el-icon><TriangleAlert /></el-icon>
-        </span>
-        <div class="al-card__main">
-          <div class="al-card__meta">
-            <span
-              class="al-card__sev"
-              :style="{
-                background: sevMeta(row.severity).soft,
-                color: sevMeta(row.severity).color,
-              }"
-            >
-              {{ sevLabel(row.severity) }}
-            </span>
-            <span class="al-card__time">{{ fmtTodayOrDatetime(row.lastSeenAt) }}</span>
-            <span v-if="(row.occurrenceCount ?? 0) > 1" class="al-card__time"
-              >x{{ row.occurrenceCount }}</span
-            >
+          <span
+            class="al-card__icon"
+            :style="{ background: sevMeta(row.severity).soft, color: sevMeta(row.severity).color }"
+          >
+            <el-icon><TriangleAlert /></el-icon>
+          </span>
+          <div class="al-card__main">
+            <div class="al-card__meta">
+              <span
+                class="al-card__sev"
+                :style="{
+                  background: sevMeta(row.severity).soft,
+                  color: sevMeta(row.severity).color,
+                }"
+              >
+                {{ sevLabel(row.severity) }}
+              </span>
+              <span class="al-card__time">{{ fmtTodayOrDatetime(row.lastSeenAt) }}</span>
+              <span v-if="(row.occurrenceCount ?? 0) > 1" class="al-card__time"
+                >x{{ row.occurrenceCount }}</span
+              >
+            </div>
+            <div class="al-card__title">{{ row.title }}</div>
+            <div class="al-card__chips">
+              <span class="al-card__chip">{{ row.serviceName }} · {{ row.alertType }}</span>
+              <router-link
+                v-if="alertResourceTargets.get(row.id)"
+                class="al-card__chip al-card__chip--link"
+                :to="alertResourceTargets.get(row.id)?.path ?? ''"
+              >
+                {{
+                  alertResourceTargets.get(row.id)?.type === 'workflowRun'
+                    ? t('alertList.viewWorkflowRun')
+                    : t('alertList.viewJobRun')
+                }}
+              </router-link>
+              <router-link
+                v-if="row.traceId"
+                class="al-card__chip al-card__chip--link"
+                :to="`/observability/trace?traceId=${row.traceId}`"
+              >
+                {{ row.traceId.slice(0, 16) }}…
+              </router-link>
+            </div>
           </div>
-          <div class="al-card__title">{{ row.title }}</div>
-          <div class="al-card__chips">
-            <span class="al-card__chip">{{ row.serviceName }} · {{ row.alertType }}</span>
-            <router-link
-              v-if="alertResourceTargets.get(row.id)"
-              class="al-card__chip al-card__chip--link"
-              :to="alertResourceTargets.get(row.id)?.path ?? ''"
-            >
-              {{
-                alertResourceTargets.get(row.id)?.type === 'workflowRun'
-                  ? t('alertList.viewWorkflowRun')
-                  : t('alertList.viewJobRun')
-              }}
-            </router-link>
-            <router-link
-              v-if="row.traceId"
-              class="al-card__chip al-card__chip--link"
-              :to="`/observability/trace?traceId=${row.traceId}`"
-            >
-              {{ row.traceId.slice(0, 16) }}…
-            </router-link>
+          <div class="al-card__ops">
+            <template v-if="row.status === 'OPEN'">
+              <button
+                type="button"
+                class="al-op al-op--ack"
+                :disabled="!canMutateConfig || actingId === row.id"
+                @click="doAck(row)"
+              >
+                {{ t('alertList.actionAck') }}
+              </button>
+              <button
+                type="button"
+                class="al-op"
+                :disabled="!canMutateConfig || actingId === row.id"
+                @click="doSilence(row)"
+              >
+                {{ t('alertList.actionSilence24') }}
+              </button>
+              <button
+                type="button"
+                class="al-op al-op--danger"
+                :disabled="!canMutateConfig || actingId === row.id"
+                @click="doClose(row)"
+              >
+                {{ t('alertList.actionClose') }}
+              </button>
+            </template>
+            <template v-else-if="row.status === 'ACKED'">
+              <span class="al-acked">&#10003; {{ t('alertList.ackedBadge') }}</span>
+              <button
+                type="button"
+                class="al-op al-op--danger"
+                :disabled="!canMutateConfig || actingId === row.id"
+                @click="doClose(row)"
+              >
+                {{ t('alertList.actionClose') }}
+              </button>
+            </template>
+            <StatusTag v-else :value="String(row.status ?? '')" category="alertStatus" />
           </div>
-        </div>
-        <div class="al-card__ops">
-          <template v-if="row.status === 'OPEN'">
-            <button
-              type="button"
-              class="al-op al-op--ack"
-              :disabled="!canMutateConfig || actingId === row.id"
-              @click="doAck(row)"
-            >
-              {{ t('alertList.actionAck') }}
-            </button>
-            <button
-              type="button"
-              class="al-op"
-              :disabled="!canMutateConfig || actingId === row.id"
-              @click="doSilence(row)"
-            >
-              {{ t('alertList.actionSilence24') }}
-            </button>
-            <button
-              type="button"
-              class="al-op al-op--danger"
-              :disabled="!canMutateConfig || actingId === row.id"
-              @click="doClose(row)"
-            >
-              {{ t('alertList.actionClose') }}
-            </button>
-          </template>
-          <template v-else-if="row.status === 'ACKED'">
-            <span class="al-acked">&#10003; {{ t('alertList.ackedBadge') }}</span>
-            <button
-              type="button"
-              class="al-op al-op--danger"
-              :disabled="!canMutateConfig || actingId === row.id"
-              @click="doClose(row)"
-            >
-              {{ t('alertList.actionClose') }}
-            </button>
-          </template>
-          <StatusTag v-else :value="String(row.status ?? '')" category="alertStatus" />
-        </div>
-      </article>
+        </article>
+        <button
+          v-if="group.rows.length > 1"
+          type="button"
+          class="al-group-toggle"
+          :aria-expanded="expandedGroups.has(group.key)"
+          @click="toggleGroup(group.key)"
+        >
+          {{
+            expandedGroups.has(group.key)
+              ? t('alertList.groupCollapse')
+              : t('alertList.groupMore', { count: group.rows.length - 1 })
+          }}
+        </button>
+      </template>
 
       <EmptyState
         v-if="!tableBlocking && !loadError && rows.length === 0"
@@ -217,6 +229,7 @@
 </template>
 
 <script setup lang="ts">
+  import { groupSimilarAlerts, type AlertGroup } from './alertGrouping'
   import { computed, reactive, ref, watch } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
@@ -276,6 +289,17 @@
   // (alertType 后端无枚举字典,只能从已加载数据归纳候选)
   const allRows = ref<ConsoleAlertEventResponse[]>([])
   const rows = ref<ConsoleAlertEventResponse[]>([])
+  const alertGroups = computed(() => groupSimilarAlerts(rows.value))
+  const expandedGroups = ref(new Set<string>())
+  function visibleGroupRows(group: AlertGroup<ConsoleAlertEventResponse>) {
+    return expandedGroups.value.has(group.key) ? group.rows : group.rows.slice(0, 1)
+  }
+  function toggleGroup(key: string) {
+    const next = new Set(expandedGroups.value)
+    if (next.has(key)) next.delete(key)
+    else next.add(key)
+    expandedGroups.value = next
+  }
   const alertResourceTargets = computed(() => {
     const resourceTargetEntries = rows.value.map(
       (row) => [row.id, getAlertResourceTarget(row.detailJson)] as const,
@@ -937,5 +961,31 @@
     .al-card__ops {
       grid-column: 2;
     }
+  }
+
+  /* 同类告警：展开后的其余条目稍缩进，折叠按钮贴在首条下方 */
+  .al-card--grouped {
+    margin-left: 24px;
+  }
+
+  .al-group-toggle {
+    align-self: flex-start;
+    margin: -4px 0 4px 24px;
+    padding: 2px 0;
+    border: 0;
+    background: transparent;
+    color: var(--color-primary);
+    font-size: var(--font-size-sm, 13px);
+    cursor: pointer;
+  }
+
+  .al-group-toggle:hover {
+    text-decoration: underline;
+  }
+
+  .al-group-toggle:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+    border-radius: 4px;
   }
 </style>
