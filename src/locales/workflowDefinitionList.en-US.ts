@@ -92,6 +92,8 @@ export default {
   actionResumeSchedule: 'Resume schedule',
   actionSchedule: 'Schedule settings',
   scheduleTitle: 'Workflow schedule settings',
+  scheduleTriggerModeNormalized:
+    'The saved trigger mode "{from}" does not match the schedule type, so the scheduler would never run it. It has been changed to a compatible value and takes effect when you save.',
   scheduleType: 'Schedule type',
   scheduleManual: 'Manual',
   scheduleCron: 'Cron',

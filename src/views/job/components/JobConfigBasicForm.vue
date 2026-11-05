@@ -18,6 +18,14 @@
       <div v-if="!singleSection" class="config-group__title">
         {{ t('jobConfigBasic.groupBasic') }}
       </div>
+      <!-- 先选作业类型，编码前缀随类型自动带出 -->
+      <el-form-item
+        :label="t('jobDefinitionList.fieldJobType')"
+        :prop="readonlyIdentity ? undefined : 'jobType'"
+      >
+        <el-input v-if="readonlyIdentity" :model-value="model.jobType" disabled />
+        <MetaSelect v-else v-model="model.jobType" class="query-w-full" enum-key="jobType" />
+      </el-form-item>
       <el-form-item
         class="config-full"
         :label="t('jobDefinitionList.fieldJobCode')"
@@ -25,17 +33,14 @@
       >
         <!-- 编辑/详情态走只读;新建态走 CodeNameBuilder(DOMAIN_BIZ[_vN] 拼接) -->
         <el-input v-if="readonlyIdentity" v-model="model.jobCode" disabled maxlength="128" />
-        <CodeNameBuilder v-else v-model="model.jobCode" />
+        <CodeNameBuilder
+          v-else
+          v-model="model.jobCode"
+          :default-domain="codeDomainForJobType(model.jobType)"
+        />
       </el-form-item>
       <el-form-item :label="t('jobDefinitionList.fieldJobName')" prop="jobName">
         <el-input v-model="model.jobName" maxlength="256" show-word-limit />
-      </el-form-item>
-      <el-form-item
-        :label="t('jobDefinitionList.fieldJobType')"
-        :prop="readonlyIdentity ? undefined : 'jobType'"
-      >
-        <el-input v-if="readonlyIdentity" :model-value="model.jobType" disabled />
-        <MetaSelect v-else v-model="model.jobType" class="query-w-full" enum-key="jobType" />
       </el-form-item>
       <el-form-item :label="t('jobDefinitionList.enabledLabel')" prop="enabled">
         <el-switch v-model="model.enabled" />
@@ -75,12 +80,26 @@
           :options="scheduleTypeOptions"
         />
       </el-form-item>
+      <!-- 触发模式与调度类型强相关，放在调度分组；切换调度类型时清掉不兼容的取值 -->
+      <el-form-item :label="t('jobConfigBasic.fieldTriggerMode')" prop="triggerMode">
+        <MetaSelect
+          v-model="model.triggerMode"
+          class="query-w-full"
+          enum-key="triggerMode"
+          clearable
+          :placeholder="t('jobConfigBasic.placeholderTriggerMode')"
+        />
+      </el-form-item>
       <!-- scheduleType=MANUAL 时不需要 cron / 日历 / 窗口,本组其他字段隐藏 -->
       <template v-if="!isManualSchedule">
         <el-form-item :label="t('jobDefinitionList.fieldScheduleExpr')" prop="scheduleExpr">
           <CronExprInput v-model="model.scheduleExpr" />
         </el-form-item>
-        <el-form-item class="config-full" :label="t('jobConfigBasic.fieldDependsOnJobCode')" prop="dependsOnJobCode">
+        <el-form-item
+          class="config-full"
+          :label="t('jobConfigBasic.fieldDependsOnJobCode')"
+          prop="dependsOnJobCode"
+        >
           <el-input
             v-model="model.dependsOnJobCode"
             clearable
@@ -103,7 +122,11 @@
         </el-select>
       </el-form-item>
       <template v-if="!isManualSchedule">
-        <el-form-item class="config-full" :label="t('jobConfigBasic.fieldCalendarCode')" prop="calendarCode">
+        <el-form-item
+          class="config-full"
+          :label="t('jobConfigBasic.fieldCalendarCode')"
+          prop="calendarCode"
+        >
           <div class="inline-create-wrapper">
             <el-select
               v-model="model.calendarCode"
@@ -132,7 +155,11 @@
             </el-button>
           </div>
         </el-form-item>
-        <el-form-item class="config-full" :label="t('jobConfigBasic.fieldWindowCode')" prop="windowCode">
+        <el-form-item
+          class="config-full"
+          :label="t('jobConfigBasic.fieldWindowCode')"
+          prop="windowCode"
+        >
           <div class="inline-create-wrapper">
             <el-select
               v-model="model.windowCode"
@@ -251,15 +278,6 @@
       <el-form-item :label="t('jobConfigBasic.fieldTimeoutSeconds')" prop="timeoutSeconds">
         <el-input-number v-model="model.timeoutSeconds" :min="0" :max="86400" class="query-w-160" />
       </el-form-item>
-      <el-form-item :label="t('jobConfigBasic.fieldTriggerMode')" prop="triggerMode">
-        <MetaSelect
-          v-model="model.triggerMode"
-          class="query-w-full"
-          enum-key="triggerMode"
-          clearable
-          :placeholder="t('jobConfigBasic.placeholderTriggerMode')"
-        />
-      </el-form-item>
       <el-form-item :label="t('jobConfigBasic.fieldDagEnabled')" prop="dagEnabled">
         <el-switch v-model="model.dagEnabled" />
       </el-form-item>
@@ -270,20 +288,32 @@
       <div v-if="!singleSection" class="config-group__title">
         {{ t('jobConfigBasic.groupParams') }}
       </div>
-      <el-form-item class="config-full" :label="t('jobConfigBasic.fieldExecutionHandler')" prop="executionHandler">
+      <el-form-item
+        class="config-full"
+        :label="t('jobConfigBasic.fieldExecutionHandler')"
+        prop="executionHandler"
+      >
         <el-input
           v-model="model.executionHandler"
           :placeholder="t('jobConfigBasic.placeholderExecutionHandler')"
         />
       </el-form-item>
-      <el-form-item class="config-full" :label="t('jobConfigBasic.fieldParamSchema')" prop="paramSchema">
+      <el-form-item
+        class="config-full"
+        :label="t('jobConfigBasic.fieldParamSchema')"
+        prop="paramSchema"
+      >
         <JsonTextareaInput
           v-model="model.paramSchema"
           :rows="3"
           :placeholder="t('jobConfigBasic.placeholderJson')"
         />
       </el-form-item>
-      <el-form-item class="config-full" :label="t('jobConfigBasic.fieldDefaultParams')" prop="defaultParams">
+      <el-form-item
+        class="config-full"
+        :label="t('jobConfigBasic.fieldDefaultParams')"
+        prop="defaultParams"
+      >
         <JsonTextareaInput
           v-model="model.defaultParams"
           :rows="3"
@@ -300,7 +330,11 @@
           />
         </el-select>
       </el-form-item>
-      <el-form-item class="config-full" :label="t('jobConfigBasic.fieldDescription')" prop="description">
+      <el-form-item
+        class="config-full"
+        :label="t('jobConfigBasic.fieldDescription')"
+        prop="description"
+      >
         <el-input
           v-model="model.description"
           type="textarea"
@@ -334,6 +368,7 @@
   import { Plus } from '@lucide/vue'
   import MetaSelect from '@/components/common/MetaSelect.vue'
   import CodeNameBuilder from '@/components/common/CodeNameBuilder.vue'
+  import { isTriggerModeCompatible } from '@/utils/scheduleTriggerModes'
   import type { MetaOption } from '@/api/meta'
   import type { JobEditFormState } from '@/views/job/jobEditFormTypes'
   import CalendarMiniCreateDrawer from './CalendarMiniCreateDrawer.vue'
@@ -371,6 +406,29 @@
   const { canWriteSystem } = usePermission()
   const model = props.model
   const readonlyIdentity = computed(() => props.readonlyIdentity)
+
+  /** 编码前缀与作业类型对应；打包类型取其基础业务域，其余类型不改用户已选的前缀 */
+  const CODE_DOMAIN_BY_JOB_TYPE: Record<string, string> = {
+    IMPORT: 'IMPORT',
+    EXPORT: 'EXPORT',
+    PROCESS: 'PROCESS',
+    DISPATCH: 'DISPATCH',
+    ATOMIC: 'ATOMIC',
+    BUNDLE_IMPORT: 'IMPORT',
+    BUNDLE_EXPORT: 'EXPORT',
+    BUNDLE_DISPATCH: 'DISPATCH',
+  }
+  function codeDomainForJobType(jobType?: string | null): string | undefined {
+    return jobType ? CODE_DOMAIN_BY_JOB_TYPE[jobType] : undefined
+  }
+
+  // 切换调度类型后，已选的触发模式若不再兼容（如改成 Cron 仍是手动）则清空，由后端按调度类型取默认值
+  watch(
+    () => model.scheduleType,
+    (scheduleType) => {
+      if (!isTriggerModeCompatible(scheduleType, model.triggerMode)) model.triggerMode = ''
+    },
+  )
   const canConfigureRouting = computed(() => props.canConfigureRouting)
 
   function showSection(section: 'basic' | 'schedule' | 'resource' | 'retry' | 'params') {

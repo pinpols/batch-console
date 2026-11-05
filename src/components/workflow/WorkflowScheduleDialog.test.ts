@@ -67,6 +67,33 @@ beforeEach(() => {
 })
 
 describe('工作流调度设置', () => {
+  it('读到 Cron + 手动 这类不兼容组合时改为定时并提示，保存时提交兼容值', async () => {
+    state.detailById.mockResolvedValueOnce({
+      version: 3,
+      scheduleType: 'CRON',
+      scheduleExpr: '0 0 2 * * ?',
+      timezone: 'UTC',
+      triggerMode: 'MANUAL',
+    })
+    const wrapper = mountDialog()
+    await flushPromises()
+    const alerts = wrapper.findAll('el-alert-stub').map((a) => a.attributes('title'))
+    expect(alerts).toContain('workflowDefinitionList.scheduleTriggerModeNormalized')
+    await wrapper.get('.btn-primary').trigger('click')
+    await flushPromises()
+    expect(state.updateSchedule).toHaveBeenCalledWith(
+      9,
+      expect.objectContaining({ scheduleType: 'CRON', triggerMode: 'SCHEDULED' }),
+    )
+  })
+
+  it('兼容组合不显示纠正提示', async () => {
+    const wrapper = mountDialog()
+    await flushPromises()
+    const alerts = wrapper.findAll('el-alert-stub').map((a) => a.attributes('title'))
+    expect(alerts).not.toContain('workflowDefinitionList.scheduleTriggerModeNormalized')
+  })
+
   it('打开时读取最新调度并带版本号保存，成功后交出新版本号', async () => {
     const wrapper = mountDialog()
     await flushPromises()

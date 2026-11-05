@@ -20,14 +20,29 @@ function readObject(value: unknown): Record<string, unknown> | null {
     : null
 }
 
-export function getAlertResourceTarget(detailJson: string): AlertResourceTarget | null {
-  let details: Record<string, unknown> | null
-  try {
-    const parsedDetails = JSON.parse(detailJson) as unknown
-    details = readObject(parsedDetails)
-  } catch {
-    return null
+/** 旧版后端会把 detailJson 当作展示文本做 HTML 转义（引号变成 &quot;），解析失败时还原实体再试一次 */
+function decodeHtmlEntities(text: string): string {
+  return text
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;|&#x27;/g, "'")
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&amp;/g, '&')
+}
+
+function parseDetails(detailJson: string): Record<string, unknown> | null {
+  for (const candidate of [detailJson, decodeHtmlEntities(detailJson)]) {
+    try {
+      return readObject(JSON.parse(candidate) as unknown)
+    } catch {
+      // 继续尝试还原实体后的文本
+    }
   }
+  return null
+}
+
+export function getAlertResourceTarget(detailJson: string): AlertResourceTarget | null {
+  const details = parseDetails(detailJson)
   if (!details) return null
 
   const workflowRunId = parsePositiveId(details.workflowRunId)

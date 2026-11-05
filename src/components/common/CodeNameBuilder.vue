@@ -4,6 +4,7 @@
       <el-select
         v-model="domain"
         class="cnb-domain"
+        @change="domainTouched = true"
         :aria-label="t('codeNameBuilder.domainLabel')"
         :placeholder="t('codeNameBuilder.domainLabel')"
       >
@@ -69,7 +70,15 @@
 
   const emit = defineEmits<{ (e: 'update:modelValue', v: string): void }>()
 
-  const domain = ref(props.defaultDomain)
+  const domain = ref(props.defaultDomain ?? 'IMPORT')
+  /** 用户手动选过前缀后，不再随 defaultDomain（作业类型）变化覆盖 */
+  const domainTouched = ref(false)
+  watch(
+    () => props.defaultDomain,
+    (next) => {
+      if (next && !domainTouched.value && DOMAINS.includes(next)) domain.value = next
+    },
+  )
   const biz = ref('')
   const version = ref('')
 
