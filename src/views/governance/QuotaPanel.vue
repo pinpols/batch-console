@@ -393,6 +393,7 @@
     try {
       const action = target ? t('quotaPanel.switchOn') : t('quotaPanel.switchOff')
       await confirmDanger({
+        reversible: true,
         verb: t('quotaPanel.toggleConfirmTitle'),
         target: '',
         consequence: t('quotaPanel.toggleConfirmText', { code: row.policyCode, action }),

@@ -32,6 +32,29 @@ beforeEach(() => {
   })
   mocks.confirm.mockReset().mockResolvedValue(undefined)
 })
+/** 递归取出确认内容 VNode 中的文字，断言可恢复性说明 */
+function vnodeText(node: unknown): string {
+  if (node == null || typeof node === 'boolean') return ''
+  if (typeof node === 'string') return node
+  if (Array.isArray(node)) return node.map(vnodeText).join('')
+  return vnodeText((node as { children?: unknown }).children)
+}
+
+describe('危险确认的可恢复性说明', () => {
+  it('未声明可恢复的操作不附“可在列表里恢复”，避免把重跑、取消说成可撤销', async () => {
+    await confirmDanger({ verb: '重跑', target: '实例 614' })
+    expect(vnodeText(mocks.confirm.mock.calls[0]![0])).not.toContain('dangerConfirm.reversibleNote')
+  })
+  it('显式声明可恢复的启停类操作才附可恢复说明', async () => {
+    await confirmDanger({ verb: '暂停', target: '触发器', reversible: true })
+    expect(vnodeText(mocks.confirm.mock.calls[0]![0])).toContain('dangerConfirm.reversibleNote')
+  })
+  it('不可恢复操作附不可恢复说明', async () => {
+    await confirmDanger({ verb: '吊销', target: '密钥', irreversible: true })
+    expect(vnodeText(mocks.confirm.mock.calls[0]![0])).toContain('dangerConfirm.irreversibleNote')
+  })
+})
+
 describe('危险确认共享上下文', () => {
   it.each(['tenant', 'aba', 'operator', 'permission', 'maintenance', 'logout'] as const)(
     '确认期间 %s 变化，旧确认按取消处理',

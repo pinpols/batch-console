@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { fmtDatetime } from '@/utils/datetime'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, shallowMount } from '@vue/test-utils'
 import { computed, defineComponent, provide, reactive } from 'vue'
@@ -130,6 +131,20 @@ describe('TraceDiagnostic', () => {
     expect(text).toContain('READY')
     expect(text).not.toContain('table-file')
     expect(wrapper.find('.trace-domains').exists()).toBe(true)
+    wrapper.unmount()
+  })
+
+  it('时间线时间按系统时区格式化，不直接显示后端 ISO 原文', async () => {
+    mocks.load.mockResolvedValue({
+      timeline: [
+        { source: 'JOB_INSTANCE', eventType: 'STATUS', occurredAt: '2026-11-03T03:26:35.031552Z' },
+      ],
+    })
+    const wrapper = render()
+    await flushPromises()
+    const stamp = wrapper.find('.trace-timeline [timestamp]').attributes('timestamp')
+    expect(stamp).toBe(fmtDatetime('2026-11-03T03:26:35.031552Z'))
+    expect(stamp).not.toContain('T03:26')
     wrapper.unmount()
   })
 

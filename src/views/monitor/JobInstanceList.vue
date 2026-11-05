@@ -322,7 +322,7 @@
                 link
                 type="primary"
                 :icon="List"
-                @click.stop="router.push(`/monitor/job-steps?instanceId=${row.id}`)"
+                @click.stop="router.push(`/monitor/job-steps?jobInstanceId=${row.id}`)"
               >
                 {{ t('jobInstanceList.actionSteps') }}
               </el-button>
