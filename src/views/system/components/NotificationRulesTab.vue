@@ -371,7 +371,8 @@
         verb: t('notificationCommon.deleteVerb'),
         target: t('notificationRulesTab.deleteTarget', { name: row.ruleName }),
         consequence: t('notificationRulesTab.deleteConsequence'),
-        irreversible: false,
+        // 后端为物理删除（delete from），无法恢复
+        irreversible: true,
       })
       if (!deleteScope.isCurrent(request)) return
       await deleteNotificationRule(ruleId, request.tenantId)

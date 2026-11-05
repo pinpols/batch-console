@@ -149,8 +149,7 @@ html.dark {
   color: var(--color-text-tertiary);
   font-size: var(--font-size-xs);
   font-weight: 500;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
+  /* 中文界面不做大写转换：只会把混排的英文变成 “WORKER 分组”“参数 SCHEMA” 这样的写法 */
   vertical-align: middle;
   width: 120px;
   min-width: 96px;
@@ -226,8 +225,7 @@ html.dark {
   font-weight: 500;
   font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
+  /* 不做大写转换：表头里的英文缩写保持原样，避免 “JOB CODE” 这种写法 */
 }
 
 .el-table .el-table__cell .cell {

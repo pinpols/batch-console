@@ -30,7 +30,7 @@ test.describe('执行日志 — 筛选查询', () => {
   })
 
   test('Trace 筛选 → 查询 → 重置', async ({ page }) => {
-    const input = page.locator('.el-form-item').filter({ hasText: 'Trace' }).getByRole('textbox')
+    const input = page.locator('.el-form-item').filter({ hasText: '链路 ID' }).getByRole('textbox')
     await input.fill('trace-test-e2e')
     await page.getByRole('button', { name: '搜索' }).click()
     await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
@@ -40,7 +40,7 @@ test.describe('执行日志 — 筛选查询', () => {
   })
 
   test('Trace 输入框回车触发查询', async ({ page }) => {
-    const input = page.locator('.el-form-item').filter({ hasText: 'Trace' }).getByRole('textbox')
+    const input = page.locator('.el-form-item').filter({ hasText: '链路 ID' }).getByRole('textbox')
     await input.fill('trace-enter-test')
     await input.press('Enter')
     await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
@@ -77,7 +77,7 @@ test.describe('执行日志 — 筛选查询', () => {
   test('多条件组合筛选 → 重置清空所有条件', async ({ page }) => {
     const traceInput = page
       .locator('.el-form-item')
-      .filter({ hasText: 'Trace' })
+      .filter({ hasText: '链路 ID' })
       .getByRole('textbox')
     await traceInput.fill('combined-test')
     await page.getByRole('button', { name: '搜索' }).click()
@@ -104,7 +104,7 @@ test.describe('执行日志 — URL 参数预填', () => {
     await enterDemoApp(page)
     await page.goto('/logs?traceId=url-trace-test-123')
     await expectPageTitle(page, /综合查询/)
-    const input = page.locator('.el-form-item').filter({ hasText: 'Trace' }).getByRole('textbox')
+    const input = page.locator('.el-form-item').filter({ hasText: '链路 ID' }).getByRole('textbox')
     await expect(input).toHaveValue('url-trace-test-123')
     await expect(page.locator('.el-table, .empty-state, .table-skeleton').first()).toBeAttached({ timeout: 10_000 })
   })

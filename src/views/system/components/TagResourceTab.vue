@@ -302,7 +302,8 @@
           type: identity.resourceType,
           code: identity.resourceCode,
         }),
-        irreversible: false,
+        // 后端为物理删除（delete from），无法恢复
+        irreversible: true,
       })
       const identityAfterConfirmation = currentIdentity()
       if (!tagResourceIdentityMatches(identity, identityAfterConfirmation)) {

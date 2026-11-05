@@ -156,6 +156,8 @@ export const useAuthStore = defineStore('auth', () => {
     userInfoInternal.value = null
     profileLoaded.value = false
     sessionStorage.removeItem(PASSWORD_NOTICE_KEY)
+    // 退出后重新登录仍应看到改密提示
+    sessionStorage.removeItem(STORAGE_KEYS.passwordNoticeDismissed)
     return true
   }
 
@@ -210,18 +212,25 @@ export const useAuthStore = defineStore('auth', () => {
     profileLoaded.value = false
     sessionStorage.removeItem(PASSWORD_NOTICE_KEY)
     if (localStorage.getItem(SESSION_FLAG_KEY) !== '1') return
-    void fetchMe().then(() => {
-      if (session === currentAuthSession() && isSharedAuthRevisionCurrent() && profileLoaded.value) {
-        sessionActive.value = true
-      }
-    }).catch(() => {
-      logError('auth-profile-refresh-failed', { kind: 'authProfile' })
-    })
+    void fetchMe()
+      .then(() => {
+        if (
+          session === currentAuthSession() &&
+          isSharedAuthRevisionCurrent() &&
+          profileLoaded.value
+        ) {
+          sessionActive.value = true
+        }
+      })
+      .catch(() => {
+        logError('auth-profile-refresh-failed', { kind: 'authProfile' })
+      })
   }
 
   if (typeof window !== 'undefined') {
     const onStorage = (event: StorageEvent) => {
-      if (event.key === STORAGE_KEYS.authSessionRevision || event.key == null) reconcileExternalSession()
+      if (event.key === STORAGE_KEYS.authSessionRevision || event.key == null)
+        reconcileExternalSession()
     }
     const onVisibilityChange = () => {
       if (document.visibilityState === 'visible') reconcileExternalSession()
@@ -241,10 +250,14 @@ export const useAuthStore = defineStore('auth', () => {
   // 不再依赖每个调用方手动调 fetchMe。watch 默认非 immediate,初始值不触发。
   const tenantStore = useTenantStore()
   // 失效同步执行以识别租户往返；实际刷新仍在原异步 watch 中，等租户存储更新完成。
-  watch(() => tenantStore.tenantId, () => {
-    invalidateProfileRequests()
-    if (sessionActive.value) profileLoaded.value = false
-  }, { flush: 'sync' })
+  watch(
+    () => tenantStore.tenantId,
+    () => {
+      invalidateProfileRequests()
+      if (sessionActive.value) profileLoaded.value = false
+    },
+    { flush: 'sync' },
+  )
   watch(
     () => tenantStore.tenantId,
     () => {

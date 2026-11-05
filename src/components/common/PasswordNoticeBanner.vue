@@ -8,7 +8,7 @@
     <AutoDismissBannerActions
       :countdown-text="t('passwordNotice.autoClose', { seconds: secondsLeft })"
       :close-label="t('common.close')"
-      @dismiss="dismissed = true"
+      @dismiss="dismiss"
     >
       <el-button link type="warning" :icon="ArrowRight" @click="openAccount">
         {{ t('passwordNotice.action') }}
@@ -23,6 +23,7 @@
   import { useI18n } from 'vue-i18n'
   import { ArrowRight, KeyRound } from '@lucide/vue'
   import { useAuthStore } from '@/stores/auth'
+  import { STORAGE_KEYS } from '@/constants/storageKeys'
   import AutoDismissBannerActions from './AutoDismissBannerActions.vue'
 
   const auth = useAuthStore()
@@ -53,17 +54,39 @@
       : t('passwordNotice.expiringDescription'),
   )
 
+  // 关闭（手动或倒计时结束）记入本次浏览器会话：同一用户切换页面、刷新都不再出现，重新登录后再提示
+  function readDismissedFor(username?: string): boolean {
+    if (!username) return false
+    try {
+      return sessionStorage.getItem(STORAGE_KEYS.passwordNoticeDismissed) === username
+    } catch {
+      return false
+    }
+  }
+  function dismiss() {
+    dismissed.value = true
+    if (countdownTimer) clearInterval(countdownTimer)
+    countdownTimer = null
+    const username = auth.userInfo?.username
+    if (!username) return
+    try {
+      sessionStorage.setItem(STORAGE_KEYS.passwordNoticeDismissed, username)
+    } catch {
+      // 存储不可用时只在当前页面内关闭
+    }
+  }
+
   watch(
-    () => [auth.userInfo?.username, needsPasswordUpdate.value || isExpiringSoon.value],
-    ([, eligible]) => {
+    () => [auth.userInfo?.username, needsPasswordUpdate.value || isExpiringSoon.value] as const,
+    ([username, eligible]) => {
       if (countdownTimer) clearInterval(countdownTimer)
       countdownTimer = null
-      dismissed.value = false
+      dismissed.value = readDismissedFor(username)
       secondsLeft.value = 15
-      if (!eligible) return
+      if (!eligible || dismissed.value) return
       countdownTimer = setInterval(() => {
         if (secondsLeft.value <= 1) {
-          dismissed.value = true
+          dismiss()
           if (countdownTimer) clearInterval(countdownTimer)
           countdownTimer = null
         } else {
