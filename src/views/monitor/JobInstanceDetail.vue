@@ -6,8 +6,8 @@
       back-to="/monitor/job-instances"
     >
       <template #actions>
+        <!-- 刷新是例行操作，不占主色；危险/写操作各自用语义色 -->
         <el-button
-          type="primary"
           :icon="Refresh"
           :loading="loading || refresh.loading.value"
           @click="refresh.run(load)"

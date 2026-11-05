@@ -9,7 +9,7 @@ test.describe('monitoring pages', () => {
   test('Job Instance 列表支持基础筛选控件', async ({ page }) => {
     await page.goto('/monitor/job-instances')
     await expectPageTitle(page, '作业运行')
-    await expect(page.getByText('Job Code').first()).toBeVisible()
+    await expect(page.getByText('作业编码').first()).toBeVisible()
     await expect(page.getByText('状态').first()).toBeVisible()
     await expect(page.getByRole('button', { name: '刷新' })).toBeVisible()
   })
