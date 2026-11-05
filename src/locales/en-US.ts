@@ -4747,6 +4747,8 @@ const messages: Messages = {
     cancel: 'Cancel',
     dryRunPreview: 'Dry-run preview',
     dryRunPreviewDiff: 'Dry-run diff',
+    hintDryRunFirst:
+      'The formal run writes to the target tenant configuration. Dry-run first to check the result.',
   },
   tenantFormDialog: {
     titleCreate: 'New tenant',

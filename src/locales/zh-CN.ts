@@ -4763,6 +4763,7 @@ export default {
     cancel: '取消',
     dryRunPreview: '试运行预览',
     dryRunPreviewDiff: '试运行预览差异',
+    hintDryRunFirst: '正式执行会直接写入目标租户配置，建议先试运行确认结果。',
   },
   tenantFormDialog: {
     titleCreate: '新增租户',

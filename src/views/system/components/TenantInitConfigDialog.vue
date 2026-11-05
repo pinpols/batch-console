@@ -67,30 +67,26 @@
       </section>
     </el-form>
     <template #footer>
-      <el-button @click="emit('update:modelValue', false)">
-        {{ t('tenantConfigShared.cancel') }}
-      </el-button>
-      <el-button
-        plain
-        :loading="saving && lastDryRun"
-        :disabled="saving || !canWriteSystem"
-        @click="submit(true)"
-      >
-        {{ t('tenantConfigShared.dryRunPreview') }}
-      </el-button>
-      <el-button
-        type="danger"
-        :loading="saving && !lastDryRun"
-        :disabled="saving || !canWriteSystem"
-        @click="submit(false)"
-      >
-        {{ t('tenantInitConfigDialog.btnRunFormal') }}
-      </el-button>
+      <StepActionFooter
+        :cancel-text="t('tenantConfigShared.cancel')"
+        :preview-text="t('tenantConfigShared.dryRunPreview')"
+        :submit-text="t('tenantInitConfigDialog.btnRunFormal')"
+        submit-tone="danger"
+        :preview-loading="saving && lastDryRun"
+        :preview-disabled="saving || !canWriteSystem"
+        :submit-loading="saving && !lastDryRun"
+        :submit-disabled="saving || !canWriteSystem"
+        :hint="dryRunVerified ? '' : t('tenantConfigShared.hintDryRunFirst')"
+        @cancel="emit('update:modelValue', false)"
+        @preview="submit(true)"
+        @submit="submit(false)"
+      />
     </template>
   </el-drawer>
 </template>
 
 <script setup lang="ts">
+  import StepActionFooter from '@/components/common/StepActionFooter.vue'
   import { computed, onScopeDispose, reactive, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
@@ -123,6 +119,8 @@
   let disposed = false
   // 用于两个按钮区分 loading 状态:点试运行时只有"试运行"按钮转,反之亦然
   const lastDryRun = ref(true)
+  /** 当前表单是否已成功试运行；表单变化或重新打开后失效，用于底部“建议先试运行”提示 */
+  const dryRunVerified = ref(false)
   const form = reactive({
     targetTenantId: '',
     configTypes: [] as ConfigType[],
@@ -171,6 +169,7 @@
       form.mode = 'SKIP_EXISTING'
       form.specJson = '{}'
       lastDryRun.value = true
+      dryRunVerified.value = false
     },
     { immediate: true, flush: 'sync' },
   )
@@ -178,6 +177,7 @@
     form,
     () => {
       revision += 1
+      dryRunVerified.value = false
     },
     { flush: 'sync' },
   )
@@ -220,6 +220,7 @@
       })
       if (!isCurrent()) return
       emit('result', res)
+      if (dryRun) dryRunVerified.value = true
       if (!dryRun) {
         const outcome = res ? assessBatchInitOutcome(res) : null
         if (!outcome?.fullySuccessful) {
