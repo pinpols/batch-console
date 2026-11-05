@@ -8,6 +8,11 @@ import { effectScope, nextTick, ref } from 'vue'
 
 const createSseStreamMock = vi.fn()
 const elMessageWarningMock = vi.fn()
+const permissions = vi.hoisted(() => ({ list: ['ROLE_ADMIN'] as string[] }))
+
+vi.mock('@/stores/auth', () => ({
+  useAuthStore: () => ({ hasPermission: (role: string) => permissions.list.includes(role) }),
+}))
 
 vi.mock('@/api/stream', () => ({
   createSseStream: (...args: unknown[]) => createSseStreamMock(...args),
@@ -45,12 +50,42 @@ async function flushMicrotasks(n = 5) {
 
 beforeEach(() => {
   vi.useFakeTimers()
+  permissions.list = ['ROLE_ADMIN']
   createSseStreamMock.mockReset()
   elMessageWarningMock.mockReset()
 })
 
 afterEach(() => {
   vi.useRealTimers()
+})
+
+describe('useSseAutoReload 角色限定的实时流', () => {
+  it.each([
+    ['alerts', ['ROLE_AUDITOR']],
+    ['workers', ['ROLE_TENANT_USER']],
+    ['workflow-runs', ['ROLE_TENANT_ADMIN']],
+  ] as const)('%s 流对无权角色不开流、不弹回退提示，直接显示手动刷新', async (domain, roles) => {
+    permissions.list = [...roles]
+    const scope = effectScope()
+    const handle = scope.run(() =>
+      useSseAutoReload({ domain, reload: vi.fn(), scope: () => 'ta' }),
+    )!
+    await flushMicrotasks()
+    expect(createSseStreamMock).not.toHaveBeenCalled()
+    expect(handle.status.value).toBe('polling')
+    expect(elMessageWarningMock).not.toHaveBeenCalled()
+    scope.stop()
+  })
+
+  it('有权角色照常开流', async () => {
+    permissions.list = ['ROLE_TENANT_ADMIN']
+    createSseStreamMock.mockResolvedValue(makeFakeEs())
+    const scope = effectScope()
+    scope.run(() => useSseAutoReload({ domain: 'alerts', reload: vi.fn(), scope: () => 'ta' }))
+    await flushMicrotasks()
+    expect(createSseStreamMock).toHaveBeenCalledTimes(1)
+    scope.stop()
+  })
 })
 
 describe('useSseAutoReload', () => {

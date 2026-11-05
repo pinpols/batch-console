@@ -987,7 +987,7 @@
     border-radius: 10px;
     font-size: 12px;
     line-height: 20px;
-    color: #fff;
+    color: var(--color-on-status);
     background: var(--el-fill-color-darker);
   }
   .status-pill--success {
@@ -1139,7 +1139,7 @@
     border-radius: 12px;
     font-size: 12px;
     line-height: 18px;
-    color: #fff;
+    color: var(--color-on-status);
   }
   .legend-chip--running {
     background: var(--workflow-run-running-fill);

@@ -291,7 +291,7 @@
     border-radius: 10px;
     font-size: 10px;
     line-height: 16px;
-    color: #fff;
+    color: var(--color-on-status);
     letter-spacing: 0.02em;
   }
   .m-legend-chip--running {

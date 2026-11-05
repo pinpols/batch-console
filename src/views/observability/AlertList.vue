@@ -147,14 +147,16 @@
                 :disabled="!canMutateConfig || actingId === row.id"
                 @click="doAck(row)"
               >
+                <CircleCheck :size="14" aria-hidden="true" />
                 {{ t('alertList.actionAck') }}
               </button>
               <button
                 type="button"
-                class="al-op"
+                class="al-op al-op--silence"
                 :disabled="!canMutateConfig || actingId === row.id"
                 @click="doSilence(row)"
               >
+                <BellOff :size="14" aria-hidden="true" />
                 {{ t('alertList.actionSilence24') }}
               </button>
               <button
@@ -163,6 +165,7 @@
                 :disabled="!canMutateConfig || actingId === row.id"
                 @click="doClose(row)"
               >
+                <CircleX :size="14" aria-hidden="true" />
                 {{ t('alertList.actionClose') }}
               </button>
             </template>
@@ -174,6 +177,7 @@
                 :disabled="!canMutateConfig || actingId === row.id"
                 @click="doClose(row)"
               >
+                <CircleX :size="14" aria-hidden="true" />
                 {{ t('alertList.actionClose') }}
               </button>
             </template>
@@ -229,7 +233,7 @@
 </template>
 
 <script setup lang="ts">
-  import { groupSimilarAlerts, type AlertGroup } from './alertGrouping'
+  import { groupSimilarAlerts, type AlertGroup } from '@/utils/alertGrouping'
   import { computed, reactive, ref, watch } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
@@ -259,7 +263,7 @@
   import StatusSegment, { type StatusSegmentItem } from '@/components/table/StatusSegment.vue'
   import LiveMonitorBar from '@/components/table/LiveMonitorBar.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
-  import { TriangleAlert } from '@lucide/vue'
+  import { BellOff, CircleCheck, CircleX, TriangleAlert } from '@lucide/vue'
   import { fmtClockTime, fmtTodayOrDatetime } from '@/utils/datetime'
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
   import { pickMetaEnumGroup } from '@/utils/metaEnumPick'
@@ -876,29 +880,43 @@
   }
 
   .al-card__chip--link {
-    color: var(--color-primary);
+    color: var(--color-primary-text);
   }
 
   .al-card__ops {
     flex-shrink: 0;
     display: flex;
     align-items: center;
-    gap: 2px;
+    gap: 6px;
   }
 
+  /* 告警操作：图标 + 语义色。确认=主色、静默=警告色、关闭=危险色，浅底描边同色，悬停加深 */
   .al-op {
+    --al-op-tone: var(--color-text-secondary);
+
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
     font-size: 12px;
-    color: var(--color-text-secondary);
+    color: var(--al-op-tone);
     cursor: pointer;
-    padding: 5px 11px;
+    padding: 5px 10px;
     border-radius: 7px;
-    border: 1px solid transparent;
-    background: transparent;
+    border: 1px solid color-mix(in srgb, var(--al-op-tone) 30%, transparent);
+    background: color-mix(in srgb, var(--al-op-tone) 8%, transparent);
+    transition:
+      background-color var(--motion-duration-sm, 0.15s) ease,
+      border-color var(--motion-duration-sm, 0.15s) ease;
   }
 
   .al-op:hover:not(:disabled) {
-    background: var(--color-bg-elevated);
-    color: var(--color-text-primary);
+    background: color-mix(in srgb, var(--al-op-tone) 16%, transparent);
+    border-color: color-mix(in srgb, var(--al-op-tone) 55%, transparent);
+  }
+
+  .al-op:focus-visible {
+    outline: 2px solid var(--al-op-tone);
+    outline-offset: 2px;
   }
 
   .al-op:disabled {
@@ -907,19 +925,15 @@
   }
 
   .al-op--ack {
-    color: var(--color-primary);
-    border-color: var(--color-border);
+    --al-op-tone: var(--color-primary-text);
   }
 
-  .al-op--ack:hover:not(:disabled) {
-    background: color-mix(in srgb, var(--color-primary) 12%, transparent);
-    border-color: var(--color-primary);
-    color: var(--color-primary);
+  .al-op--silence {
+    --al-op-tone: var(--color-warning);
   }
 
-  .al-op--danger:hover:not(:disabled) {
-    color: var(--color-danger);
-    background: color-mix(in srgb, var(--color-danger) 10%, transparent);
+  .al-op--danger {
+    --al-op-tone: var(--color-danger);
   }
 
   .al-acked {

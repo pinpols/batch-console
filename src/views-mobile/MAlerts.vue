@@ -47,71 +47,97 @@
         {{ t('mobile.alerts.empty') }}
       </div>
 
-      <div v-for="row in filtered" :key="row.id" class="m-card">
-        <div class="m-card__row">
-          <div class="m-card__title">
-            {{ row.title || row.alertType }}
+      <!-- 同类告警合并：与桌面端同一规则，只展示最新一条，其余可展开 -->
+      <template v-for="group in alertGroups" :key="group.key">
+        <div v-for="row in visibleGroupRows(group)" :key="row.id" class="m-card">
+          <div class="m-card__row">
+            <div class="m-card__title">
+              {{ row.title || row.alertType }}
+            </div>
+            <span :class="['m-chip', severityChipClass(row.severity)]">
+              {{ resolveEnumLabel('severity', row.severity) }}
+            </span>
           </div>
-          <span :class="['m-chip', severityChipClass(row.severity)]">
-            {{ resolveEnumLabel('severity', row.severity) }}
-          </span>
-        </div>
-        <div class="m-card__sub">{{ row.serviceName }} · {{ row.alertType }}</div>
-        <div class="m-card__meta">
-          <div>
-            <span class="m-card__meta-key">{{ t('common.status') }}</span>
-            {{ resolveEnumLabel('alertStatus', row.status) }}
+          <div class="m-card__sub">{{ row.serviceName }} · {{ row.alertType }}</div>
+          <div class="m-card__meta">
+            <div>
+              <span class="m-card__meta-key">{{ t('common.status') }}</span>
+              {{ resolveEnumLabel('alertStatus', row.status) }}
+            </div>
+            <div>
+              <span class="m-card__meta-key">{{ t('mobile.alerts.occurrences') }}</span>
+              {{ row.occurrenceCount }}
+            </div>
+            <div>
+              <span class="m-card__meta-key">{{ t('mobile.alerts.lastSeen') }}</span>
+              {{ fmt(row.lastSeenAt) }}
+            </div>
+            <div v-if="row.traceId">
+              <span class="m-card__meta-key">{{ t('common.trace') }}</span>
+              <button
+                type="button"
+                class="m-copy-text"
+                :aria-label="`${t('common.copy')} ${t('common.trace')} ${row.traceId}`"
+                @click.stop="copy(row.traceId, 'traceId')"
+              >
+                {{ row.traceId }}
+              </button>
+            </div>
           </div>
-          <div>
-            <span class="m-card__meta-key">{{ t('mobile.alerts.occurrences') }}</span>
-            {{ row.occurrenceCount }}
-          </div>
-          <div>
-            <span class="m-card__meta-key">{{ t('mobile.alerts.lastSeen') }}</span>
-            {{ fmt(row.lastSeenAt) }}
-          </div>
-          <div v-if="row.traceId">
-            <span class="m-card__meta-key">{{ t('common.trace') }}</span>
+          <div v-if="row.traceId" class="m-card__actions">
             <button
-              type="button"
-              class="m-copy-text"
-              :aria-label="`${t('common.copy')} ${t('common.trace')} ${row.traceId}`"
-              @click.stop="copy(row.traceId, 'traceId')"
+              class="m-btn"
+              @click="
+                $router.push({ path: '/observability/trace', query: { traceId: row.traceId } })
+              "
             >
-              {{ row.traceId }}
+              {{ t('mobile.alerts.viewLogs') }}
+            </button>
+          </div>
+          <div v-if="row.status === 'OPEN'" class="m-card__actions">
+            <button
+              class="m-btn m-alert-op m-alert-op--ack"
+              :disabled="writesFrozen"
+              data-track="alerts.ack"
+              @click="ack(row)"
+            >
+              <CircleCheck :size="16" aria-hidden="true" />
+              {{ t('mobile.alerts.ack') }}
+            </button>
+            <button
+              class="m-btn m-alert-op m-alert-op--silence"
+              :disabled="writesFrozen"
+              data-track="alerts.silence"
+              @click="silence(row)"
+            >
+              <BellOff :size="16" aria-hidden="true" />
+              {{ t('mobile.alerts.silence') }}
+            </button>
+            <button
+              class="m-btn m-alert-op m-alert-op--close"
+              :disabled="writesFrozen"
+              data-track="alerts.close"
+              @click="close(row)"
+            >
+              <CircleX :size="16" aria-hidden="true" />
+              {{ t('mobile.alerts.close') }}
             </button>
           </div>
         </div>
-        <div v-if="row.traceId" class="m-card__actions">
-          <button
-            class="m-btn"
-            @click="$router.push({ path: '/observability/trace', query: { traceId: row.traceId } })"
-          >
-            {{ t('mobile.alerts.viewLogs') }}
-          </button>
-        </div>
-        <div v-if="row.status === 'OPEN'" class="m-card__actions">
-          <button
-            class="m-btn"
-            :disabled="writesFrozen"
-            data-track="alerts.silence"
-            @click="silence(row)"
-          >
-            {{ t('mobile.alerts.silence') }}
-          </button>
-          <button class="m-btn" :disabled="writesFrozen" data-track="alerts.ack" @click="ack(row)">
-            {{ t('mobile.alerts.ack') }}
-          </button>
-          <button
-            class="m-btn m-btn--primary"
-            :disabled="writesFrozen"
-            data-track="alerts.close"
-            @click="close(row)"
-          >
-            {{ t('mobile.alerts.close') }}
-          </button>
-        </div>
-      </div>
+        <button
+          v-if="group.rows.length > 1"
+          type="button"
+          class="m-group-toggle"
+          :aria-expanded="expandedGroups.has(group.key)"
+          @click="toggleGroup(group.key)"
+        >
+          {{
+            expandedGroups.has(group.key)
+              ? t('alertList.groupCollapse')
+              : t('alertList.groupMore', { count: group.rows.length - 1 })
+          }}
+        </button>
+      </template>
       <div v-if="loadError" class="m-alert-error" role="alert">
         <span>{{ t('mobile.common.loadFail') }}</span>
         <button class="m-btn" type="button" :disabled="loading" @click="load(retryReset)">
@@ -129,9 +155,10 @@
 </template>
 
 <script setup lang="ts">
+  import { groupSimilarAlerts, type AlertGroup } from '@/utils/alertGrouping'
   import { computed, nextTick, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
-  import { Search } from '@lucide/vue'
+  import { BellOff, CircleCheck, CircleX, Search } from '@lucide/vue'
   import { ElMessage } from 'element-plus'
   import { confirmActionSheet } from '@/layout-mobile/MActionSheet'
   import { useTenantStore } from '@/stores/tenant'
@@ -247,6 +274,18 @@
     }
     return list
   })
+
+  const alertGroups = computed(() => groupSimilarAlerts(filtered.value))
+  const expandedGroups = ref(new Set<string>())
+  function visibleGroupRows(group: AlertGroup<ConsoleAlertEventResponse>) {
+    return expandedGroups.value.has(group.key) ? group.rows : group.rows.slice(0, 1)
+  }
+  function toggleGroup(key: string) {
+    const next = new Set(expandedGroups.value)
+    if (next.has(key)) next.delete(key)
+    else next.add(key)
+    expandedGroups.value = next
+  }
 
   function fmt(ts?: string | null) {
     return fmtDatetime(ts)
@@ -391,5 +430,42 @@
     color: var(--ios-label-secondary);
     font-size: 12px;
     line-height: 1.4;
+  }
+
+  /* 同类告警折叠按钮：贴在首条卡片下方 */
+  .m-group-toggle {
+    display: block;
+    margin: -4px 0 12px 4px;
+    padding: 6px 0;
+    border: 0;
+    background: transparent;
+    color: var(--color-primary-text);
+    font-size: 13px;
+  }
+
+  /* 告警操作与桌面端一致：图标 + 语义色（确认=主色、静默=警告色、关闭=危险色）。
+     关闭会结束告警，不再用实心主色按钮当作推荐操作 */
+  .m-alert-op {
+    --m-alert-op-tone: var(--color-text-secondary);
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    color: var(--m-alert-op-tone);
+    border: 1px solid color-mix(in srgb, var(--m-alert-op-tone) 30%, transparent);
+    background: color-mix(in srgb, var(--m-alert-op-tone) 10%, transparent);
+  }
+
+  .m-alert-op--ack {
+    --m-alert-op-tone: var(--color-primary-text);
+  }
+
+  .m-alert-op--silence {
+    --m-alert-op-tone: var(--color-warning);
+  }
+
+  .m-alert-op--close {
+    --m-alert-op-tone: var(--color-danger);
   }
 </style>

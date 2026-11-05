@@ -21,7 +21,11 @@ const workflowRunVisualSources: Record<WorkflowRunVisualClass, WorkflowRunVisual
 
 /** 描边比填充略深，节点在浅底和深底上都有清晰边界 */
 const STROKE_DARKEN = 'color-mix(in srgb, {fill} 78%, #000)'
-const NODE_TEXT = '#ffffff'
+/** 状态色上的文字：浅色主题为白字，深色主题状态色更亮，改用深色字保证对比度 */
+const NODE_TEXT_SOURCE: WorkflowRunVisualSource = {
+  token: '--color-on-status',
+  fallback: '#ffffff',
+}
 
 export const workflowRunVisualClasses = Object.keys(
   workflowRunVisualSources,
@@ -33,7 +37,7 @@ export const workflowRunVisualCssVars = Object.fromEntries(
     return [
       [`--workflow-run-${klass}-fill`, fill],
       [`--workflow-run-${klass}-stroke`, STROKE_DARKEN.replace('{fill}', fill)],
-      [`--workflow-run-${klass}-text`, NODE_TEXT],
+      [`--workflow-run-${klass}-text`, `var(${NODE_TEXT_SOURCE.token})`],
     ]
   }),
 ) as Record<string, string>
@@ -68,8 +72,8 @@ export function workflowRunMermaidClassDefs(): string {
   return workflowRunVisualClasses
     .map((klass) => {
       const fill = resolveTokenColor(workflowRunVisualSources[klass])
-      // Mermaid 的 classDef 不支持 color-mix，描边与填充同色，靠白字与圆角区分层次
-      return `  classDef ${klass} fill:${fill},stroke:${fill},color:${NODE_TEXT}`
+      // Mermaid 的 classDef 不支持 color-mix，描边与填充同色，靠文字色与圆角区分层次
+      return `  classDef ${klass} fill:${fill},stroke:${fill},color:${resolveTokenColor(NODE_TEXT_SOURCE)}`
     })
     .join('\n')
 }
