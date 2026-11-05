@@ -12,6 +12,8 @@ import {
   channelTypeColor,
   configStatusColor,
   deliveryStatusColor,
+  fileDispatchStatusColor,
+  fileReceiptStatusColor,
   executionModeColor,
   fileStatusColor,
   instanceStatusColor,
@@ -20,11 +22,13 @@ import {
   operationResultColor,
   outboxPublishStatusColor,
   partitionStatusColor,
+  taskStatusColor,
   slaStatusMeta,
   apiKeyStatusMeta,
   tenantConfigInitActionColor,
   tenantStatusColor,
   triggerResourceTypeColor,
+  triggerRequestStatusColor,
   triggerStatusColor,
   workerStatusColor,
   workflowDefinitionStatusColor,
@@ -62,6 +66,10 @@ export type StatusTagCategory =
   | 'apiKey'
   | 'executionMode'
   | 'jobType'
+  | 'task'
+  | 'triggerRequest'
+  | 'fileDispatch'
+  | 'fileReceipt'
 
 /**
  * 每个分类的解析配置。
@@ -116,6 +124,10 @@ export const STATUS_TAG_CATEGORIES: Record<StatusTagCategory, CategoryConfig> = 
   // 作业类型(IMPORT/EXPORT/PROCESS/GENERAL/ATOMIC…):label 走 /meta/enums
   // 或 i18n enum.jobType.*,统一 info 色。此前漏注册 → 作业详情页头 StatusTag 必崩。
   jobType: { color: {}, metaKeys: ['jobType'] },
+  task: { color: taskStatusColor, metaKeys: ['taskStatus'] },
+  triggerRequest: { color: triggerRequestStatusColor, metaKeys: ['triggerRequestStatus'] },
+  fileDispatch: { color: fileDispatchStatusColor, metaKeys: ['fileDispatchStatus'] },
+  fileReceipt: { color: fileReceiptStatusColor, metaKeys: ['fileReceiptStatus'] },
   // /meta/enums 未提供,label 由前端维护
   log: { color: {}, local: logLevelMeta },
   yn: { color: {}, local: ynStatusMeta },

@@ -86,13 +86,15 @@
               class="m-btn m-btn--primary"
               @click="retry"
             >
+              <RotateCcw :size="16" aria-hidden="true" />
               {{ t('mobile.jobs.retry') }}
             </button>
             <button
               v-if="canWriteSystem && row.instanceStatus === 'RUNNING'"
-              class="m-btn m-btn--danger"
+              class="m-btn m-btn--plain-danger"
               @click="terminate"
             >
+              <OctagonX :size="16" aria-hidden="true" />
               {{ t('mobile.jobs.terminate') }}
             </button>
             <button
@@ -102,6 +104,7 @@
                 $router.push({ path: '/observability/trace', query: { traceId: row.traceId } })
               "
             >
+              <ScrollText :size="16" aria-hidden="true" />
               {{ t('mobile.jobDetail.viewLogs') }}
             </button>
           </div>
@@ -201,7 +204,7 @@
   import { usePermission } from '@/composables/usePermission'
   import { useRoute, useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
-  import { ArrowLeft, RefreshCw as Refresh } from '@lucide/vue'
+  import { ArrowLeft, OctagonX, RefreshCw as Refresh, RotateCcw, ScrollText } from '@lucide/vue'
   import { ElMessage } from 'element-plus'
   import { confirmActionSheet } from '@/layout-mobile/MActionSheet'
   import { useTenantStore } from '@/stores/tenant'

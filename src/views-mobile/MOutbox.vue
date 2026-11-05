@@ -68,6 +68,7 @@
             :disabled="busyId !== null || !positiveLongId(row.outboxEventId)"
             @click="doRepublish(row)"
           >
+            <Send :size="16" aria-hidden="true" />
             {{ t('mobile.outbox.republish') }}
           </button>
         </div>
@@ -80,7 +81,7 @@
   import { computed, ref, watch } from 'vue'
   import { useTenantReload } from '@/composables/useTenantReload'
   import { useI18n } from 'vue-i18n'
-  import { RefreshCw as Refresh } from '@lucide/vue'
+  import { RefreshCw as Refresh, Send } from '@lucide/vue'
   import { ElMessage } from 'element-plus'
   import { useTenantStore } from '@/stores/tenant'
   import { useAutoRefresh } from '@/composables/useAutoRefresh'

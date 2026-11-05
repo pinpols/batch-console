@@ -134,14 +134,16 @@
             data-track="jobs.retry"
             @click="retry(row)"
           >
+            <RotateCcw :size="16" aria-hidden="true" />
             {{ t('mobile.jobs.retry') }}
           </button>
           <button
             v-if="row.instanceStatus === 'RUNNING'"
-            class="m-btn m-btn--danger"
+            class="m-btn m-btn--plain-danger"
             data-track="jobs.terminate"
             @click="terminate(row)"
           >
+            <OctagonX :size="16" aria-hidden="true" />
             {{ t('mobile.jobs.terminate') }}
           </button>
         </div>
@@ -168,7 +170,7 @@
   import { useTenantReload } from '@/composables/useTenantReload'
   import { useRoute, useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
-  import { Search } from '@lucide/vue'
+  import { OctagonX, RotateCcw, Search } from '@lucide/vue'
   import { ElMessage } from 'element-plus'
   import { confirmActionSheet } from '@/layout-mobile/MActionSheet'
   import { useTenantStore } from '@/stores/tenant'

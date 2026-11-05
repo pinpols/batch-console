@@ -70,7 +70,7 @@
           width="100"
         >
           <template #default="{ row }">
-            {{ resolveEnumLabel('operationResult', row.operationResult) }}
+            <StatusTag :value="String(row.operationResult ?? '')" category="operationResult" />
           </template>
         </el-table-column>
         <el-table-column
@@ -135,6 +135,7 @@
 </template>
 
 <script setup lang="ts">
+  import StatusTag from '@/components/common/StatusTag.vue'
   import { ref, reactive, computed } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'

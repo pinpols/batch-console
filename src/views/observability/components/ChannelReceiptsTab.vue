@@ -81,13 +81,21 @@
         <el-table-column
           prop="dispatchStatus"
           :label="t('observability.chanColDispatchStatus')"
-          width="100"
-        />
+          width="110"
+        >
+          <template #default="{ row }">
+            <StatusTag :value="String(row.dispatchStatus ?? '')" category="fileDispatch" />
+          </template>
+        </el-table-column>
         <el-table-column
           prop="receiptStatus"
           :label="t('observability.chanColReceiptStatus')"
-          width="100"
-        />
+          width="110"
+        >
+          <template #default="{ row }">
+            <StatusTag :value="String(row.receiptStatus ?? '')" category="fileReceipt" />
+          </template>
+        </el-table-column>
         <el-table-column
           prop="errorMessage"
           :label="t('observability.chanColError')"
@@ -137,6 +145,7 @@
 </template>
 
 <script setup lang="ts">
+  import StatusTag from '@/components/common/StatusTag.vue'
   import { Eye } from '@lucide/vue'
   import { ref, reactive, computed } from 'vue'
   import { useI18n } from 'vue-i18n'

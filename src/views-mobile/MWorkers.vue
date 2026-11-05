@@ -107,29 +107,32 @@
         <div class="m-card__actions m-workers-actions">
           <button
             v-if="canWorkerAction(row.status, 'drain')"
-            class="m-btn"
+            class="m-btn m-btn--plain-warning"
             data-track="workers.drain"
             :disabled="!canMutateConfig || loadError || loading || busyCode === row.workerCode"
             @click="doDrain(row)"
           >
+            <CirclePause :size="16" aria-hidden="true" />
             {{ t('mobile.workers.drainAction') }}
           </button>
           <button
             v-if="canWorkerAction(row.status, 'warmup')"
-            class="m-btn"
+            class="m-btn m-btn--plain-success"
             data-track="workers.warmup"
             :disabled="!canMutateConfig || loadError || loading || busyCode === row.workerCode"
             @click="doWarmup(row)"
           >
+            <Flame :size="16" aria-hidden="true" />
             {{ t('mobile.workers.warmup') }}
           </button>
           <button
             v-if="canWorkerAction(row.status, 'takeover')"
-            class="m-btn"
+            class="m-btn m-btn--plain-warning"
             data-track="workers.takeover"
             :disabled="!canMutateConfig || loadError || loading || busyCode === row.workerCode"
             @click="doTakeover(row)"
           >
+            <ArrowRightLeft :size="16" aria-hidden="true" />
             {{ t('mobile.workers.takeover') }}
           </button>
           <button
@@ -139,6 +142,7 @@
             :disabled="!canMutateConfig || loadError || loading || busyCode === row.workerCode"
             @click="doForceOffline(row)"
           >
+            <Power :size="16" aria-hidden="true" />
             {{ t('mobile.workers.forceOffline') }}
           </button>
         </div>
@@ -155,7 +159,7 @@
   import { useWriteAvailability } from '@/composables/useWriteAvailability'
   import { useRoute } from 'vue-router'
   import { useI18n } from 'vue-i18n'
-  import { Search } from '@lucide/vue'
+  import { ArrowRightLeft, CirclePause, Flame, Power, Search } from '@lucide/vue'
   import { ElMessage } from 'element-plus'
   import { confirmActionSheet } from '@/layout-mobile/MActionSheet'
   import { useTenantStore } from '@/stores/tenant'

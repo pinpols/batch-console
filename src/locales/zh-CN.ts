@@ -1689,6 +1689,14 @@ export default {
     },
     triggerRequestStatus: {
       ACCEPTED: '已接收',
+      PENDING: '待处理',
+      PROCESSING: '处理中',
+      WAITING: '等待中',
+      LAUNCHED: '已派发',
+      REJECTED: '已拒绝',
+      DUPLICATE: '重复请求',
+      FORWARD_FAILED: '转发失败',
+      GIVE_UP: '已放弃',
     },
     approvalType: {
       CONFIG_RELEASE: '配置发布',
@@ -1871,6 +1879,9 @@ export default {
       FAILED: '失败',
       CANCELLED: '已取消',
       SKIPPED: '已跳过',
+      READY: '就绪',
+      SUCCESS: '成功',
+      TERMINATED: '已终止',
     },
     workflowType: {
       DAG: 'DAG',
@@ -1984,6 +1995,19 @@ export default {
       OPS: '运维',
       ANALYSIS: '分析',
       EXPLAIN: '解读',
+    },
+    fileDispatchStatus: {
+      CREATED: '已创建',
+      SENT: '已发送',
+      ACKED: '已确认',
+      FAILED: '失败',
+      COMPENSATED: '已补偿',
+    },
+    fileReceiptStatus: {
+      NONE: '无回执',
+      PENDING: '待回执',
+      SUCCESS: '成功',
+      FAILED: '失败',
     },
   },
   login: {
