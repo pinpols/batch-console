@@ -10450,6 +10450,8 @@ export interface components {
       dryRun?: boolean
       /** @description ADR-012 失败分类码（FailureClass enum），仅终态 FAILED/PARTIAL_FAILED 时填值。 */
       failureClass?: string
+      /** @description 根运行的触发类型（MANUAL / SCHEDULED 等）。工作流节点派发的子实例 triggerType 恒为 EVENT，用户关心的来源在根运行上；非工作流派发的实例为 null，以 triggerType 为准。 */
+      rootTriggerType?: string | null
     }
     ConsoleJobExecutionLogResponse: {
       /** Format: int64 */

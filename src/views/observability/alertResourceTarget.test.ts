@@ -2,6 +2,14 @@ import { describe, expect, it } from 'vitest'
 import { getAlertResourceTarget } from './alertResourceTarget'
 
 describe('getAlertResourceTarget', () => {
+  it('兼容后端把 detailJson 做了 HTML 转义的旧响应', () => {
+    expect(
+      getAlertResourceTarget(
+        '{&quot;jobInstanceId&quot;:&quot;442&quot;,&quot;workflowRunId&quot;:&quot;343&quot;}',
+      ),
+    ).toEqual({ type: 'workflowRun', id: '343', path: '/monitor/workflow-runs/343' })
+  })
+
   it('links an alert to its workflow run when a workflow identity is present', () => {
     expect(getAlertResourceTarget('{"workflowRunId":91,"jobInstanceId":42}')).toEqual({
       type: 'workflowRun',

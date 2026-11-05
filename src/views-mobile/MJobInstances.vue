@@ -107,7 +107,7 @@
           <div class="m-job-card__meta-item">
             <span class="m-card__meta-key">{{ t('mobile.jobs.trigger') }}</span>
             <span class="m-job-card__meta-value">{{
-              resolveEnumLabel('triggerType', row.triggerType)
+              resolveEnumLabel('triggerType', jobInstanceTriggerSource(row))
             }}</span>
           </div>
           <div class="m-job-card__meta-item">
@@ -163,6 +163,7 @@
 </template>
 
 <script setup lang="ts">
+  import { jobInstanceTriggerSource } from '@/utils/jobInstanceTrigger'
   import { computed, nextTick, reactive, ref, watch } from 'vue'
   import { useTenantReload } from '@/composables/useTenantReload'
   import { useRoute, useRouter } from 'vue-router'

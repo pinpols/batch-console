@@ -39,7 +39,7 @@ test.describe('Job Definition Wizard / Detail (Day 1-4 交付)', () => {
     })
     await expect(page.locator('.el-step')).toHaveCount(6)
     const stepTitles = await page.locator('.el-step__title').allTextContents()
-    for (const want of ['基本信息', '调度', '执行策略', '触发', '关联配置', '复核']) {
+    for (const want of ['基本信息', '调度与触发', '执行策略', '执行参数', '随包配置', '复核']) {
       expect(stepTitles.some((t) => t.includes(want))).toBeTruthy()
     }
 
@@ -47,6 +47,18 @@ test.describe('Job Definition Wizard / Detail (Day 1-4 交付)', () => {
     // 新建态 jobCode 走 CodeNameBuilder(不是裸 maxlength=128 input),jobName 是 maxlength=256
     await expect(page.locator('.code-name-builder').first()).toBeVisible({ timeout: 6000 })
     await expect(page.locator('input[maxlength="256"]').first()).toBeVisible()
+    // 作业类型不再预设，先选类型；编码前缀随类型带出（导出类型 → EXPORT_）
+    await page
+      .locator('.el-form-item')
+      .filter({ hasText: '作业类型' })
+      .locator('.el-select')
+      .click()
+    await page
+      .locator('.el-select-dropdown__item:visible')
+      .filter({ hasText: 'EXPORT' })
+      .first()
+      .click()
+    await expect(page.locator('.code-name-builder .cnb-domain')).toContainText('EXPORT')
     await page.locator('.code-name-builder .cnb-biz input').fill(`E2E_WIZARD_${Date.now()}`)
     await page.locator('input[maxlength="256"]').first().fill('E2E 作业向导验证')
 
@@ -56,7 +68,7 @@ test.describe('Job Definition Wizard / Detail (Day 1-4 交付)', () => {
     for (let index = 0; index < 4; index += 1) {
       await page.getByRole('button', { name: '下一步' }).click()
     }
-    await expect(page.locator('.wizard-step-banner__title')).toHaveText('关联配置')
+    await expect(page.locator('.wizard-step-banner__title')).toHaveText('随包配置')
     await expect(page.getByText('选择 channel', { exact: true })).toBeVisible()
     await expect(page.getByText('选择工作流', { exact: true })).toBeVisible()
     await expect(page.getByText('选择路由', { exact: true })).toBeVisible()
@@ -118,6 +130,9 @@ async function openWizardExecutionPolicyStep(page: import('@playwright/test').Pa
   await expect(page.locator('.wizard-step-banner__title')).toHaveText('基本信息', {
     timeout: 10_000,
   })
+  // 作业类型为必选，先选类型再填编码
+  await page.locator('.el-form-item').filter({ hasText: '作业类型' }).locator('.el-select').click()
+  await page.locator('.el-select-dropdown__item:visible').filter({ hasText: 'IMPORT' }).first().click()
   await page.locator('.cnb-biz input').fill('ROUTING_CHECK')
   await page.getByLabel('作业名称').fill('资源路由权限检查')
   await page.getByRole('button', { name: '下一步' }).click()

@@ -3682,15 +3682,16 @@ const messages: Messages = {
     submitCreate: 'Create',
     stepBasicTitle: 'Basic',
     stepBasicDesc: 'Set the unique job identity and base attributes',
-    stepScheduleTitle: 'Workflow schedule',
-    stepScheduleDesc: 'Set the initial trigger plan for the generated single-job Workflow',
+    stepScheduleTitle: 'Schedule & trigger',
+    stepScheduleDesc:
+      'Set the initial schedule and trigger mode for the generated single-job Workflow',
     workflowScheduleBootstrapHint:
       'These values initialize the linked Workflow schedule. Maintain scheduling in Workflow Definitions afterward.',
     stepResourceTitle: 'Execution policy',
     stepResourceDesc:
       'Configure sharding and retries as needed; execution resources are assigned by the platform',
-    stepTriggerTitle: 'Trigger',
-    stepTriggerDesc: 'Set default params, param schema, and trigger behavior',
+    stepTriggerTitle: 'Execution params',
+    stepTriggerDesc: 'Set the execution handler, default params, and param schema',
     stepFilesTitle: 'File configuration',
     stepFilesDesc: 'Include file channels and templates in the bundle as needed',
     stepWorkflowTitle: 'Workflow configuration',
@@ -3724,6 +3725,10 @@ const messages: Messages = {
     prefillSuccess: 'Bundle JSON prefilled',
     prefillBadJson: 'Invalid Bundle JSON',
     createBundleSuccess: 'Job Bundle created',
+    createBundleSuccessDisabled:
+      'Job created but not enabled. Enable it in the job definition list before it can be scheduled.',
+    reviewDisabledHint:
+      'The job will be created disabled and will not be scheduled. To run it, turn on “Enabled” in step 1, or enable it from the list after creation.',
     createBundleFailed: 'Job Bundle creation did not fully succeed. Check tenant(s): {tenants}',
     createBundleUnknownOutcome:
       'The creation outcome is unknown and the job may have committed. Check the current tenant configuration before proceeding.',

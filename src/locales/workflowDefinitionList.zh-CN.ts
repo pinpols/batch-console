@@ -90,6 +90,8 @@ export default {
   actionResumeSchedule: '恢复定时',
   actionSchedule: '调度设置',
   scheduleTitle: '工作流调度设置',
+  scheduleTriggerModeNormalized:
+    '原触发模式“{from}”与调度类型不匹配，调度器不会按此配置运行，已改为兼容值，保存后生效。',
   scheduleType: '调度类型',
   scheduleManual: '手动',
   scheduleCron: 'Cron',
