@@ -6,6 +6,18 @@
     :close-on-click-modal="false"
   >
     <el-form v-loading="loading" label-position="top" @submit.prevent>
+      <!-- 存量数据可能是“Cron + 手动”这类调度器不会注册的组合，打开时改为兼容值并说明 -->
+      <el-alert
+        v-if="normalizedTriggerMode"
+        class="schedule-normalized"
+        type="warning"
+        :closable="false"
+        :title="
+          t('workflowDefinitionList.scheduleTriggerModeNormalized', {
+            from: t(`enum.triggerMode.${normalizedTriggerMode}`, normalizedTriggerMode),
+          })
+        "
+      />
       <FormSection :columns="2">
         <el-form-item :label="t('workflowDefinitionList.scheduleType')" required>
           <el-select v-model="form.scheduleType" class="w-full" @change="onScheduleTypeChange">
@@ -108,6 +120,8 @@
   const loading = ref(false)
   const saving = ref(false)
   const dependencyOptions = ref<string[]>([])
+  /** 读入时被纠正的原触发模式；为空表示读入值与调度类型兼容 */
+  const normalizedTriggerMode = ref('')
   let generation = 0
   const form = reactive({
     expectedVersion: 1,
@@ -158,6 +172,13 @@
         calendarCode: detail.calendarCode ?? '',
         dependsOnJobCode: detail.dependsOnJobCode ?? '',
       })
+      // 与调度类型不兼容的触发模式按调度类型取默认值，后端保存校验同样拒绝这类组合
+      normalizedTriggerMode.value = ''
+      const loadedTriggerMode = form.triggerMode ?? ''
+      if (!triggerModeOptions.value.includes(loadedTriggerMode)) {
+        normalizedTriggerMode.value = loadedTriggerMode
+        onScheduleTypeChange(form.scheduleType ?? 'MANUAL')
+      }
       // 依赖已停用或从选项中移除时，仍保留历史配置值供用户查看。
       const configured = detail.dependsOnJobCode
       dependencyOptions.value = configured

@@ -41,7 +41,7 @@
             </div>
             <div>
               <span class="m-card__meta-key">{{ t('mobile.jobs.trigger') }}</span>
-              {{ resolveEnumLabel('triggerType', row.triggerType) }}
+              {{ resolveEnumLabel('triggerType', jobInstanceTriggerSource(row)) }}
             </div>
             <div>
               <span class="m-card__meta-key">{{ t('mobile.jobs.priority') }}</span
@@ -196,6 +196,7 @@
 </template>
 
 <script setup lang="ts">
+  import { jobInstanceTriggerSource } from '@/utils/jobInstanceTrigger'
   import { computed, ref, watch } from 'vue'
   import { usePermission } from '@/composables/usePermission'
   import { useRoute, useRouter } from 'vue-router'

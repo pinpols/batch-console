@@ -290,6 +290,14 @@
           </div>
 
           <div v-else class="review-step">
+            <!-- 新建作业默认不启用：创建后不会被调度，在复核页明确说明，避免用户以为建完就会跑 -->
+            <el-alert
+              v-if="!form.enabled"
+              class="review-step__disabled-hint"
+              type="warning"
+              :closable="false"
+              :title="t('jobDefinitionWizard.reviewDisabledHint')"
+            />
             <JobConfigBasicSection :job="reviewJob" :execution-mode-label="form.executionMode" />
             <el-descriptions :column="2" border size="small" class="bundle-summary">
               <el-descriptions-item :label="t('jobDefinitionWizard.selectChannelLabel')">
@@ -451,7 +459,8 @@
   function newWizardForm(): ReturnType<typeof createEmptyJobEditForm> {
     return {
       ...createEmptyJobEditForm(),
-      jobType: 'GENERAL',
+      // 不预设作业类型：类型决定编码前缀，由用户先选，避免“编码前缀 IMPORT + 通用任务”这类不一致
+      jobType: '',
       scheduleType: 'MANUAL',
       executionMode: 'FULL',
       enabled: false,
@@ -910,7 +919,11 @@
         ElMessage.warning(t('configBatchRecovery.cleanupFailed'))
       }
       refreshRecoveryCommands()
-      ElMessage.success(t('jobDefinitionWizard.createBundleSuccess'))
+      ElMessage.success(
+        form.enabled
+          ? t('jobDefinitionWizard.createBundleSuccess')
+          : t('jobDefinitionWizard.createBundleSuccessDisabled'),
+      )
       markPristine()
       await router.push({ path: '/jobs/definitions', query: { jobCode: submittedJobCode } })
     } catch (error) {

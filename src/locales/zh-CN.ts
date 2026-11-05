@@ -3692,14 +3692,14 @@ export default {
     submitCreate: '提交创建',
     stepBasicTitle: '基本信息',
     stepBasicDesc: '填写作业唯一标识与基础属性',
-    stepScheduleTitle: '工作流调度',
-    stepScheduleDesc: '为新建的单作业工作流设置初始触发计划',
+    stepScheduleTitle: '调度与触发',
+    stepScheduleDesc: '为新建的单作业工作流设置初始调度计划与触发模式',
     workflowScheduleBootstrapHint:
       '此处设置的是自动关联工作流的初始调度配置；后续请在工作流定义中统一维护。',
     stepResourceTitle: '执行策略',
     stepResourceDesc: '按业务需要设置分片与重试；执行资源由平台统一分配',
-    stepTriggerTitle: '触发',
-    stepTriggerDesc: '默认参数、参数 schema 与触发方式',
+    stepTriggerTitle: '执行参数',
+    stepTriggerDesc: '执行处理器、默认参数与参数 schema',
     stepFilesTitle: '文件配置',
     stepFilesDesc: '按需将文件渠道与模板加入创建包',
     stepWorkflowTitle: '工作流配置',
@@ -3732,6 +3732,9 @@ export default {
     prefillSuccess: 'Bundle JSON 已预填',
     prefillBadJson: 'Bundle JSON 格式不正确',
     createBundleSuccess: '作业 Bundle 已创建',
+    createBundleSuccessDisabled: '作业已创建，当前未启用；在作业定义列表中开启后才会被调度。',
+    reviewDisabledHint:
+      '作业创建后为未启用状态，不会被自动调度；需要运行时可返回第 1 步打开“启用状态”，或创建后在列表中开启。',
     createBundleFailed: '作业 Bundle 创建未完整成功，请检查租户：{tenants}',
     createBundleUnknownOutcome:
       '创建结果尚不明确，作业可能已提交。请先核实当前租户配置，再决定后续操作。',

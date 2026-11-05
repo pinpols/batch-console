@@ -207,7 +207,7 @@
             width="100"
           >
             <template #default="{ row }">
-              {{ resolveTriggerType(row.triggerType) }}
+              {{ resolveTriggerType(jobInstanceTriggerSource(row)) }}
             </template>
           </el-table-column>
           <DatetimeColumn
@@ -391,6 +391,7 @@
 </template>
 
 <script setup lang="ts">
+  import { jobInstanceTriggerSource } from '@/utils/jobInstanceTrigger'
   import { ref, reactive, computed, onMounted, watch } from 'vue'
   import { useRouter, useRoute } from 'vue-router'
   import { useI18n } from 'vue-i18n'
