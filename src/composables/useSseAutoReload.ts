@@ -13,8 +13,20 @@ import {
 import { ElMessage } from 'element-plus'
 import { createSseStream } from '@/api/stream'
 import { i18n } from '@/locales'
+import { useAuthStore } from '@/stores/auth'
 
 type SseStreamType = Parameters<typeof createSseStream>[0]
+
+/**
+ * 后端对部分实时流限定角色（与各 *RealtimeController 的 @PreAuthorize 一致）：
+ * 告警、Worker 为平台或租户管理员，工作流运行列表仅平台管理员。其他角色连上只会反复 403，
+ * 这里不开流，直接退回手动刷新；未列出的域对所有控制台角色开放。
+ */
+const STREAM_ROLES: Partial<Record<SseStreamType, readonly string[]>> = {
+  alerts: ['ROLE_ADMIN', 'ROLE_TENANT_ADMIN'],
+  workers: ['ROLE_ADMIN', 'ROLE_TENANT_ADMIN'],
+  'workflow-runs': ['ROLE_ADMIN'],
+}
 
 /**
  * 实时连接状态,供 LiveStatusBadge 展示:
@@ -103,6 +115,12 @@ export function useSseAutoReload(options: UseSseAutoReloadOptions): UseSseAutoRe
   /** KeepAlive 激活态;deactivate 时为 false,期间 maybeOpen() 会跳过。 */
   let isActive = true
 
+  const auth = useAuthStore()
+  function roleAllowed(): boolean {
+    const roles = STREAM_ROLES[domain]
+    return !roles || roles.some((role) => auth.hasPermission(role))
+  }
+
   function isEnabled(): boolean {
     const e = options.enabled
     if (e == null) return true
@@ -189,6 +207,11 @@ export function useSseAutoReload(options: UseSseAutoReloadOptions): UseSseAutoRe
     close()
     if (!isEnabled()) return
     if (scopeEmpty()) return
+    if (!roleAllowed()) {
+      // 无权订阅：不请求票据、不重试，状态直接显示为手动刷新
+      status.value = 'polling'
+      return
+    }
     if (status.value !== 'reconnecting') status.value = 'connecting'
     const my = generation
     try {

@@ -1737,3 +1737,12 @@ html.dark {
 .el-table--small {
   font-size: var(--font-size-sm);
 }
+
+/* 主色浅底上的主色文字（激活页签、主色浅标签）：深色主题用提亮的 --color-primary-text，对比度 ≥ 4.5:1 */
+.el-tabs__item.is-active {
+  color: var(--color-primary-text);
+}
+
+.el-tag--primary.el-tag--light {
+  --el-tag-text-color: var(--color-primary-text);
+}

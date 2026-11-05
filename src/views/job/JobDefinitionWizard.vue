@@ -1046,7 +1046,7 @@
     flex: 0 0 auto;
     font-size: 14px;
     font-weight: 600;
-    color: var(--el-color-primary);
+    color: var(--color-primary-text);
     padding: 4px 10px;
     background: var(--el-color-primary-light-9, rgba(64, 158, 255, 0.12));
     border-radius: 12px;

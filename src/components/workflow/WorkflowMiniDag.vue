@@ -320,6 +320,13 @@
   .mini-dag__graph :deep(.node.cancelled text) {
     fill: var(--workflow-run-cancelled-text);
   }
+  /* Mermaid 用 HTML 标签（foreignObject）渲染节点文字时，上面的 SVG text 规则不生效，需单独着色 */
+  .mini-dag__graph
+    :deep(
+      :is(.node.success, .node.running, .node.failed, .node.waiting, .node.cancelled) .nodeLabel
+    ) {
+    color: var(--color-on-status);
+  }
   .mini-dag__graph :deep(path.flowchart-link) {
     fill: none;
     stroke: var(--color-text-secondary);
