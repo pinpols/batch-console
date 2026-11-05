@@ -1431,7 +1431,79 @@ a:focus-visible,
   font-weight: 500;
 }
 
-/* 页面遮罩使用静态品牌与不定进度光带；按钮内保留原生loading。 */
+/* 提示块：图标改为与 lucide 一致的线性图标（EP 自带为实心圆），只给图标上色，
+ * 标题用正文色、说明用次级色，底色用随主题推导的状态浅底；明暗主题一致。 */
+.el-alert {
+  --el-alert-icon-size: 16px;
+  --el-alert-icon-large-size: 20px;
+  --el-alert-title-with-description-font-size: var(--font-size-base, 14px);
+  --el-alert-description-font-size: var(--font-size-sm, 13px);
+  --alert-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='M12 16v-4M12 8h.01'/%3E%3C/svg%3E");
+  --alert-tone: var(--color-info);
+  --alert-bg: var(--color-info-light);
+}
+
+.el-alert--success {
+  --alert-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='m9 12 2 2 4-4'/%3E%3C/svg%3E");
+  --alert-tone: var(--color-success);
+  --alert-bg: color-mix(in srgb, var(--color-success) 10%, var(--color-bg-card));
+}
+
+.el-alert--warning {
+  --alert-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3'/%3E%3Cpath d='M12 9v4M12 17h.01'/%3E%3C/svg%3E");
+  --alert-tone: var(--color-warning);
+  --alert-bg: var(--color-warning-light);
+}
+
+.el-alert--error {
+  --alert-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='m15 9-6 6M9 9l6 6'/%3E%3C/svg%3E");
+  --alert-tone: var(--color-danger);
+  --alert-bg: var(--color-danger-light);
+}
+
+.el-alert.is-light {
+  background-color: var(--alert-bg);
+  color: var(--color-text-primary);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--alert-tone) 18%, transparent);
+}
+
+.el-alert.is-light .el-alert__title {
+  color: var(--color-text-primary);
+  font-weight: 500;
+}
+
+.el-alert.is-light .el-alert__description {
+  color: var(--color-text-secondary);
+}
+
+.el-alert .el-alert__icon {
+  align-self: flex-start;
+  height: var(--el-alert-icon-size);
+  margin-top: 4px;
+  color: var(--alert-tone);
+}
+
+.el-alert .el-alert__icon.is-big {
+  height: var(--el-alert-icon-large-size);
+  margin-top: 2px;
+}
+
+.el-alert .el-alert__icon > svg {
+  display: none;
+}
+
+.el-alert .el-alert__icon::before {
+  content: '';
+  display: block;
+  width: 100%;
+  height: 100%;
+  background-color: currentColor;
+  mask: var(--alert-icon) center / contain no-repeat;
+}
+
+/* 页面遮罩：三条泳道依次铺满的时刻表加载动画，与品牌标志同一意象；按钮内保留原生 loading。
+ * 泳道几何（36×24）：上 x0 宽20，中 x8 宽28，下两段 x0 宽10、x18 宽10，条高 4。
+ * mask 给出圆头的完整轮廓，底色渐变按宽度生长，动画只改 background-size。 */
 .el-loading-mask:has(.circular) {
   background-color: color-mix(in srgb, var(--color-bg-card) 90%, transparent);
   border-radius: inherit;
@@ -1439,9 +1511,8 @@ a:focus-visible,
 }
 
 .el-loading-mask .el-loading-spinner:has(.circular) {
-  --brand-loading-size: min(48px, 40cqh, 50cqw);
-  --brand-loading-gap: min(11px, 5cqh);
-  --brand-loading-tail: min(11px, 10cqh);
+  --lane-loader-w: 36px;
+  --lane-loader-h: 24px;
 
   top: 50%;
   left: 50%;
@@ -1449,9 +1520,7 @@ a:focus-visible,
   width: min(240px, 90%);
   min-height: 0;
   margin: 0;
-  padding-top: calc(
-    var(--brand-loading-size) + var(--brand-loading-gap) + var(--brand-loading-tail)
-  );
+  padding-top: calc(var(--lane-loader-h) + 12px);
   transform: translate(-50%, -50%);
 }
 
@@ -1460,50 +1529,106 @@ a:focus-visible,
 }
 
 .el-loading-mask .el-loading-spinner:has(.circular)::before {
+  --lane-fill: linear-gradient(var(--color-primary), var(--color-primary));
+
   content: '';
   position: absolute;
   top: 0;
-  left: calc(50% - var(--brand-loading-size) / 2);
-  width: var(--brand-loading-size);
-  height: var(--brand-loading-size);
-  border-radius: 25%;
-  background-image: url('/icons/batch-mark-foreground.svg'), var(--brand-mark-fill);
-  background-position: center;
-  background-size: contain;
+  left: calc(50% - var(--lane-loader-w) / 2);
+  width: var(--lane-loader-w);
+  height: var(--lane-loader-h);
+  background-image: var(--lane-fill), var(--lane-fill), var(--lane-fill), var(--lane-fill);
   background-repeat: no-repeat;
-  box-shadow: 0 3px 9px color-mix(in srgb, var(--color-brand-mark-bg) 10%, transparent);
-}
-
-.el-loading-mask .el-loading-spinner:has(.circular)::after {
-  content: '';
-  position: absolute;
-  top: calc(var(--brand-loading-size) + var(--brand-loading-gap));
-  left: calc(50% - var(--brand-loading-size) / 2);
-  width: var(--brand-loading-size);
-  height: 3px;
-  border-radius: 999px;
-  background: linear-gradient(90deg, transparent, var(--color-primary), transparent) -100% 0 / 50%
-    100% no-repeat color-mix(in srgb, var(--color-primary) 12%, transparent);
-  animation: brand-loading-travel 1.8s ease-in-out infinite;
+  background-position:
+    0 0,
+    8px 10px,
+    0 20px,
+    18px 20px;
+  background-size:
+    20px 4px,
+    28px 4px,
+    10px 4px,
+    10px 4px;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 36 24'%3E%3Cg fill='%23000'%3E%3Crect width='20' height='4' rx='2'/%3E%3Crect x='8' y='10' width='28' height='4' rx='2'/%3E%3Crect y='20' width='10' height='4' rx='2'/%3E%3Crect x='18' y='20' width='10' height='4' rx='2'/%3E%3C/g%3E%3C/svg%3E")
+    center / 100% 100% no-repeat;
+  animation: lane-loader-fill 1.8s var(--motion-ease-standard, ease-in-out) infinite;
 }
 
 .el-loading-mask .el-loading-spinner:has(.circular) .el-loading-text {
   margin: 0;
   font-size: min(14px, 20cqh);
   line-height: 1.2;
+  color: var(--color-text-secondary);
   overflow-wrap: anywhere;
 }
 
-@keyframes brand-loading-travel {
-  to {
-    background-position: 200% 0;
+@keyframes lane-loader-fill {
+  0% {
+    background-size:
+      0 4px,
+      0 4px,
+      0 4px,
+      0 4px;
+    opacity: 1;
+  }
+  28% {
+    background-size:
+      20px 4px,
+      0 4px,
+      0 4px,
+      0 4px;
+  }
+  55% {
+    background-size:
+      20px 4px,
+      28px 4px,
+      0 4px,
+      0 4px;
+  }
+  70% {
+    background-size:
+      20px 4px,
+      28px 4px,
+      10px 4px,
+      0 4px;
+  }
+  84% {
+    background-size:
+      20px 4px,
+      28px 4px,
+      10px 4px,
+      10px 4px;
+    opacity: 1;
+  }
+  100% {
+    background-size:
+      20px 4px,
+      28px 4px,
+      10px 4px,
+      10px 4px;
+    opacity: 0;
+  }
+}
+
+/* 小区域（如表格单元、卡片角落）：泳道整体缩小，文字缩小，保证图形与提示都留在遮罩内 */
+@container (max-height: 90px) {
+  .el-loading-mask .el-loading-spinner:has(.circular) {
+    padding-top: calc(var(--lane-loader-h) * 0.6 + 6px);
+  }
+
+  .el-loading-mask .el-loading-spinner:has(.circular)::before {
+    transform: scale(0.6);
+    transform-origin: 50% 0;
+  }
+
+  .el-loading-mask .el-loading-spinner:has(.circular) .el-loading-text {
+    font-size: 12px;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .el-loading-mask .el-loading-spinner:has(.circular)::after {
+  .el-loading-mask .el-loading-spinner:has(.circular)::before {
     animation: none;
-    background: var(--color-primary);
   }
 }
 
