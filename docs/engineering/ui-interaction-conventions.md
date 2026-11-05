@@ -55,7 +55,7 @@
 ## 操作前置条件
 
 - 用户触发的新增、导入、触发等操作不得在前置条件不满足时静默返回。需要当前租户的操作在处理器开头调用 `useTenantRequirement().ensureTenantSelected()`：未选租户时提示“请先在顶部选择租户，再执行此操作。”并返回；维护期写操作同样使用 `useWriteAvailability().ensureWriteAvailable()`。
-- 依赖前置条件的按钮若选择禁用，必须同时给出原因（tooltip 或旁注），例如标签管理需先选资源类型与编码。不能只禁用、不说明。
+- 依赖前置条件的按钮若选择禁用，必须同时给出原因（tooltip 或旁注），例如标签管理需先选资源类型与编码，未选时列表空态直接写明这一步。不能只禁用、不说明。
 - 依赖租户的数据加载仍使用 `useTenantReload`，无租户时不发请求，不弹提示。
 - 回归由 `e2e/admin-no-tenant-crash-guard.spec.ts` 的“新增入口有可见反馈”用例守护：无租户时点击新增，至少要打开表单、跳转或出现提示之一。
 
@@ -67,7 +67,7 @@
 - 字段多于约 6 个或存在明显分组时用 `src/components/common/FormSection.vue` 分节：标题 + 一句说明 + 字段；抽屉内用默认 `stacked`，整页设置表单用 `layout="side"`（维护设置页为样板），`columns="2"` 时整行字段加 `.form-block__full`。
 - 只读详情继续用 `DetailDrawer`；对话框保留给短确认、触发和预演类流程，不承载对象的新增/编辑。
 - 一个对象一个编辑入口：有独立详情页的对象，列表不再另开查看抽屉；工作流的调度与时限告警只在设计器（单作业工作流在查看页）的“工作流设置”中编辑，列表只保留启停类开关。
-- 例外（多主操作或危险主操作）：批次日回放提交/范围补跑、租户配置复制/初始化仍用原生抽屉，待批次 4 逐对象收敛时再定。
+- “先预览、再提交”的抽屉（批次日重放、区间重放、租户配置初始化 / 复制）底部用 `src/components/common/StepActionFooter.vue`：取消、预览（浅底 + 预览图标）、提交；提交按影响选主色或危险色（正式写入配置用危险色）；提交不可用时 `hint` 说明原因（先预览、预览为空、维护中、建议先试运行）。
 
 ## 日历与日期视图
 
@@ -83,6 +83,7 @@
 - 有数值轴和时间轴语义的图表应显示可读的轴、刻度/网格、单位和图例。空数据时保留图表标题及必要的轴/图表框架，并在绘图区显示明确空态；不编造零值、日期或刻度来伪装真实数据。环图等无笛卡尔坐标轴的图表不强加横纵轴。
 - 空、单点、全零、极端长类别名和大量类别均需有合理表现；避免只有孤立色块而无法判断数据含义。工具提示、图例和颜色语义应一致，颜色不作唯一信息通道。
 - 多张图表应根据分析任务选择不同且合适的表达，不以“形式多样”为由牺牲可比较性或可读性。
+- 列表空态区分“筛选无结果”和“还没有数据”：只要有收窄结果的筛选（状态、关键字、编码等，或其他状态页签下有记录），就显示“筛选无结果 + 重置”，不能写“当前租户还没有……”并引导去新建。用 `src/components/common/ListEmptyState.vue`，`filtered` 由页面按自己的筛选字段计算。
 
 ## JSON 与结构化内容
 
@@ -108,6 +109,8 @@
 - 状态分段：`src/components/table/StatusSegment.vue`
 - 行操作：`src/components/common/RowActions.vue`
 - 编辑抽屉与表单分节：`src/components/common/FormDrawer.vue`、`src/components/common/FormSection.vue`
+- 先预览再提交的抽屉底部：`src/components/common/StepActionFooter.vue`
+- 列表空态（筛选无结果 / 还没有数据）：`src/components/common/ListEmptyState.vue`
 - 列表筛选工具栏：`src/components/table/OpsFilterToolbar.vue`（若页面采用）
 - 次要筛选：`ListPageQueryBar` 的 `advanced` 插槽，配合 `advanced-active` 传入已生效数；主筛选超过一行时使用
 - 设计变量：`src/styles/tokens-handoff.css`，规则见 `docs/engineering/design-tokens.md`
