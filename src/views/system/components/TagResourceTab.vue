@@ -30,6 +30,7 @@
       :loading="loadingTags"
       :error="loadTagsError"
       :has-data="tagRows.length > 0"
+      :empty-text="canCreate ? '' : t('tagResourceTab.emptyNeedResource')"
       :on-retry="loadTags"
     >
       <el-table

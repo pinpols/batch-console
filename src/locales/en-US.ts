@@ -5192,7 +5192,9 @@ const messages: Messages = {
     fieldTagValue: 'Tag value',
     tagValueOptionalPlaceholder: 'tagValue (optional)',
     tagKeyPlaceholder: 'e.g. env, owner, costCenter',
-    needResourceTypeCode: 'Please fill in resource type and code',
+    needResourceTypeCode: 'Select a resource type and enter a resource code below first',
+    emptyNeedResource:
+      'Select a resource type and enter a resource code, then search or add tags for that resource.',
     selectAbove: 'Please pick a resource type and code above first',
     tagKeyRequired: 'Tag Key is required',
     savedToast: 'Saved',
