@@ -301,6 +301,7 @@
       const confirmConsequence = t('triggerList.pauseConfirmConsequence')
       const confirmButtonText = t('triggerList.pauseConfirmButton')
       await confirmDanger({
+        reversible: true,
         verb: confirmVerb,
         target: confirmTarget,
         consequence: confirmConsequence,

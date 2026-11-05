@@ -298,6 +298,7 @@
     if (changesMode) {
       try {
         await confirmDanger({
+          reversible: true,
           verb: form.enabled
             ? t('maintenanceSettings.confirmEnableVerb')
             : t('maintenanceSettings.confirmDisableVerb'),

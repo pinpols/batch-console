@@ -201,7 +201,11 @@
     />
     <TenantCopyConfigDialog v-model="copyVisible" :items="page.items" @result="showResult" />
 
-    <el-dialog v-model="resultVisible" :title="t('tenantList.resultDialogTitle')" width="min(640px, calc(100vw - 32px))">
+    <el-dialog
+      v-model="resultVisible"
+      :title="t('tenantList.resultDialogTitle')"
+      width="min(640px, calc(100vw - 32px))"
+    >
       <JsonPreview class="result-json" :data="resultJson" />
       <template #footer>
         <el-button type="primary" @click="resultVisible = false">{{ t('common.ok') }}</el-button>
@@ -484,6 +488,7 @@
     if (!canManageTenants.value) return
     try {
       await confirmDanger({
+        reversible: true,
         verb: t('tenantList.suspendConfirmVerb'),
         target: t('tenantList.confirmTarget', { id: row.tenantId }),
         consequence: t('tenantList.suspendConfirmConsequence'),
@@ -501,6 +506,7 @@
     if (!canManageTenants.value) return
     try {
       await confirmDanger({
+        reversible: true,
         verb: t('tenantList.activateConfirmVerb'),
         target: t('tenantList.confirmTarget', { id: row.tenantId }),
         consequence: t('tenantList.activateConfirmConsequence'),

@@ -3,11 +3,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, shallowMount } from '@vue/test-utils'
 import JobStepInstanceList from './JobStepInstanceList.vue'
 
-const mocks = vi.hoisted(() => ({ query: vi.fn() }))
+const mocks = vi.hoisted(() => ({ query: vi.fn(), routeQuery: {} as Record<string, string> }))
 vi.mock('@/api/jobStepInstances', () => ({ queryJobStepInstancePage: mocks.query }))
 vi.mock('@/stores/tenant', () => ({ useTenantStore: () => ({ tenantId: 'tenant-a' }) }))
 vi.mock('vue-router', () => ({
-  useRoute: () => ({ query: {} }),
+  useRoute: () => ({ query: mocks.routeQuery }),
   useRouter: () => ({ push: vi.fn() }),
 }))
 vi.mock('vue-i18n', async (original) => ({
@@ -59,7 +59,20 @@ const stubs = {
 }
 
 describe('作业步骤实例编号筛选', () => {
-  beforeEach(() => mocks.query.mockReset().mockResolvedValue({ items: [], total: 0 }))
+  beforeEach(() => {
+    mocks.routeQuery = {}
+    mocks.query.mockReset().mockResolvedValue({ items: [], total: 0 })
+  })
+
+  it.each([['instanceId'], ['jobInstanceId']])(
+    '从作业运行深链带入 %s 时只查询该实例的步骤',
+    async (key) => {
+      mocks.routeQuery = { [key]: '614' }
+      shallowMount(JobStepInstanceList, { global: { stubs } })
+      await flushPromises()
+      expect(mocks.query).toHaveBeenCalledWith(expect.objectContaining({ jobInstanceId: '614' }))
+    },
+  )
 
   it.each(['abc', '12.5', '0', '-1', '9223372036854775808'])(
     '拒绝非法编号 %s 并允许清空后恢复查询',

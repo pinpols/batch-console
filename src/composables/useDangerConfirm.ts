@@ -20,6 +20,12 @@ export interface DangerConfirmOptions {
   consequence?: string
   /** 是否真不可恢复(吊销 / 永久删除 / 强制终止 / 物理删除) */
   irreversible?: boolean
+  /**
+   * 是否可在列表里恢复(启用/停用、暂停/恢复、挂起/激活等开关类操作)。
+   * 只有显式声明才显示“可恢复”说明；重跑、取消、重放、清理等既非开关也非永久删除的操作不附说明，
+   * 避免把不能撤销的动作说成可恢复。
+   */
+  reversible?: boolean
   /** 自定义 confirm 按钮文案;默认由 verb 生成 */
   confirmButtonText?: string
   /** 自定义取消按钮文案;默认 "取消" */
@@ -37,6 +43,7 @@ export async function confirmDanger(opts: DangerConfirmOptions): Promise<void> {
     target,
     consequence,
     irreversible = false,
+    reversible = false,
     confirmButtonText,
     cancelButtonText = t('dangerConfirm.cancel'),
   } = opts
@@ -46,24 +53,30 @@ export async function confirmDanger(opts: DangerConfirmOptions): Promise<void> {
     : `${verb}${target}`
   const reversibility = irreversible
     ? t('dangerConfirm.irreversibleNote')
-    : t('dangerConfirm.reversibleNote')
+    : reversible
+      ? t('dangerConfirm.reversibleNote')
+      : null
 
   // 富文本内容:用 h() 而非纯字符串,避免转义;红字突出后果
   const content = h('div', { style: { lineHeight: '1.7' } }, [
-    consequence ? h('div', { style: { marginBottom: '8px' } }, consequence) : null,
-    h(
-      'div',
-      {
-        style: {
-          fontSize: '13px',
-          fontWeight: irreversible ? 600 : 400,
-          color: irreversible
-            ? 'var(--el-color-danger, #f56c6c)'
-            : 'var(--color-text-tertiary, #909399)',
-        },
-      },
-      reversibility,
-    ),
+    consequence
+      ? h('div', { style: { marginBottom: reversibility ? '8px' : 0 } }, consequence)
+      : null,
+    reversibility === null
+      ? null
+      : h(
+          'div',
+          {
+            style: {
+              fontSize: '13px',
+              fontWeight: irreversible ? 600 : 400,
+              color: irreversible
+                ? 'var(--el-color-danger, #f56c6c)'
+                : 'var(--color-text-tertiary, #909399)',
+            },
+          },
+          reversibility,
+        ),
   ])
 
   const tenant = useTenantStore()
