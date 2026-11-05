@@ -105,6 +105,7 @@
             data-track="approvals.reject"
             @click="decide(row, 'reject')"
           >
+            <CircleX :size="16" aria-hidden="true" />
             {{ t('mobile.approvals.reject') }}
           </button>
           <button
@@ -113,6 +114,7 @@
             data-track="approvals.approve"
             @click="decide(row, 'approve')"
           >
+            <CircleCheck :size="16" aria-hidden="true" />
             {{ t('mobile.approvals.approve') }}
           </button>
         </div>
@@ -140,7 +142,7 @@
   import { useTenantRequestScope } from '@/composables/useTenantRequestScope'
   import { usePermission } from '@/composables/usePermission'
   import { useI18n } from 'vue-i18n'
-  import { Search } from '@lucide/vue'
+  import { CircleCheck, CircleX, Search } from '@lucide/vue'
   import { ElMessage } from 'element-plus'
   import { confirmActionSheet } from '@/layout-mobile/MActionSheet'
   import { useTenantStore } from '@/stores/tenant'

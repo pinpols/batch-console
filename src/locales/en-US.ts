@@ -1625,6 +1625,14 @@ const messages: Messages = {
     },
     triggerRequestStatus: {
       ACCEPTED: 'Accepted',
+      PENDING: 'Pending',
+      PROCESSING: 'Processing',
+      WAITING: 'Waiting',
+      LAUNCHED: 'Launched',
+      REJECTED: 'Rejected',
+      DUPLICATE: 'Duplicate',
+      FORWARD_FAILED: 'Forward failed',
+      GIVE_UP: 'Given up',
     },
     approvalType: {
       CONFIG_RELEASE: 'Config release',
@@ -1807,6 +1815,9 @@ const messages: Messages = {
       FAILED: 'Failed',
       CANCELLED: 'Cancelled',
       SKIPPED: 'Skipped',
+      READY: 'Ready',
+      SUCCESS: 'Success',
+      TERMINATED: 'Terminated',
     },
     workflowType: {
       DAG: 'DAG',
@@ -1920,6 +1931,19 @@ const messages: Messages = {
       OPS: 'Operations',
       ANALYSIS: 'Analysis',
       EXPLAIN: 'Explain',
+    },
+    fileDispatchStatus: {
+      CREATED: 'Created',
+      SENT: 'Sent',
+      ACKED: 'Acknowledged',
+      FAILED: 'Failed',
+      COMPENSATED: 'Compensated',
+    },
+    fileReceiptStatus: {
+      NONE: 'No receipt',
+      PENDING: 'Pending',
+      SUCCESS: 'Success',
+      FAILED: 'Failed',
     },
   },
   login: {

@@ -39,7 +39,14 @@
     </el-table-column>
     <el-table-column prop="deliveryStatus" :label="t('terminalNotifications.status')" width="180">
       <template #default="{ row }">
-        {{ displayStatus(row as TerminalDelivery) }}
+        <el-tag
+          size="small"
+          :type="terminalDeliveryTone(row as TerminalDelivery)"
+          effect="light"
+          disable-transitions
+        >
+          {{ displayStatus(row as TerminalDelivery) }}
+        </el-tag>
       </template>
     </el-table-column>
     <el-table-column prop="attempt" :label="t('terminalNotifications.attempt')" width="110" />
@@ -131,7 +138,11 @@
   import { useTenantReload } from '@/composables/useTenantReload'
   import ProTable from '@/components/table/ProTable.vue'
   import DatetimeColumn from '@/components/common/DatetimeColumn.vue'
-  import { canRetryTerminalDelivery, terminalDeliveryStatusKey } from './terminalDeliveryRecovery'
+  import {
+    canRetryTerminalDelivery,
+    terminalDeliveryStatusKey,
+    terminalDeliveryTone,
+  } from './terminalDeliveryRecovery'
 
   const { t } = useI18n({ useScope: 'global' })
   const tenant = useTenantStore()

@@ -501,9 +501,37 @@ html.dark .m-btn--danger {
     inset 0 -1px 2px rgb(0 0 0 / 12%);
 }
 
+/* 操作按钮语义（与桌面一致）：
+   实心 --primary 只给推荐操作（批准、重试、重新投递）；
+   浅底 --plain-* 给其余操作：primary=普通确认/查看，success=恢复类（预热），warning=需要留意（静默、排空、接管），
+   danger=结束或破坏性操作（关闭、终止、驳回、强制下线）。按钮内放 16px 线性图标 */
+.m-btn {
+  gap: 6px;
+}
+
+.m-btn--plain-primary,
+.m-btn--plain-success,
+.m-btn--plain-warning,
 .m-btn--plain-danger {
-  background: var(--ios-fill-tertiary);
-  color: var(--ios-red);
+  color: var(--m-btn-tone);
+  background: color-mix(in srgb, var(--m-btn-tone) 10%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--m-btn-tone) 30%, transparent);
+}
+
+.m-btn--plain-primary {
+  --m-btn-tone: var(--ios-blue);
+}
+
+.m-btn--plain-success {
+  --m-btn-tone: var(--ios-green);
+}
+
+.m-btn--plain-warning {
+  --m-btn-tone: var(--ios-orange);
+}
+
+.m-btn--plain-danger {
+  --m-btn-tone: var(--ios-red);
 }
 
 /* ── 指标网格:工作台用 ────────────────────────────────────── */

@@ -88,7 +88,7 @@
         width="120"
       >
         <template #default="{ row }">
-          {{ requestStatusText(row.requestStatus) }}
+          <StatusTag :value="String(row.requestStatus ?? '')" category="triggerRequest" />
         </template>
       </el-table-column>
       <DatetimeColumn prop="createdAt" :label="t('approvals.catchUpColCreatedAt')" width="160" />

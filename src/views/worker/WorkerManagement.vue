@@ -207,6 +207,7 @@
                   :disabled="!canMutateConfig"
                   plain
                   type="warning"
+                  :icon="CirclePause"
                   @click="drain(row)"
                 >
                   {{ t('workerManagement.actionDrain') }}
@@ -217,6 +218,7 @@
                   :disabled="!canMutateConfig"
                   plain
                   type="danger"
+                  :icon="Power"
                   @click="offline(row)"
                 >
                   {{ t('workerManagement.actionOffline') }}
@@ -226,6 +228,8 @@
                   size="small"
                   :disabled="!canMutateConfig"
                   plain
+                  type="warning"
+                  :icon="ArrowRightLeft"
                   @click="takeover(row)"
                 >
                   {{ t('workerManagement.actionTakeover') }}
@@ -236,6 +240,7 @@
                   :disabled="!canMutateConfig"
                   plain
                   type="success"
+                  :icon="Flame"
                   @click="warmup(row)"
                 >
                   {{ t('workerManagement.actionWarmup') }}
@@ -400,7 +405,11 @@
           prop="taskStatus"
           :label="t('workerManagement.claimedTaskStatus')"
           width="130"
-        />
+        >
+          <template #default="{ row }">
+            <StatusTag :value="String(row.taskStatus ?? '')" category="task" />
+          </template>
+        </el-table-column>
         <el-table-column
           prop="errorCode"
           :label="t('workerManagement.claimedTaskErrorCode')"
@@ -460,7 +469,7 @@
 </template>
 
 <script setup lang="ts">
-  import { Eye } from '@lucide/vue'
+  import { ArrowRightLeft, CirclePause, Eye, Flame, Power } from '@lucide/vue'
   import { computed, reactive, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage, ElMessageBox } from 'element-plus'

@@ -288,3 +288,47 @@ export const apiKeyStatusMeta: Record<string, LocalStatusMeta> = {
   DISABLED: { label: '停用', type: 'info' },
   REVOKED: { label: '已吊销', type: 'danger' },
 }
+
+/** /meta/enums: `taskStatus`（技术任务；Worker 认领任务列表） */
+export const taskStatusColor: Record<string, StatusTagType> = {
+  CREATED: 'info',
+  READY: 'primary',
+  WAITING: 'warning',
+  RUNNING: 'primary',
+  SUCCESS: 'success',
+  COMPLETED: 'success',
+  FAILED: 'danger',
+  CANCELLED: 'info',
+  SKIPPED: 'info',
+  TERMINATED: 'danger',
+}
+
+/** /meta/enums: `triggerRequestStatus`（触发请求；补跑审批列表） */
+export const triggerRequestStatusColor: Record<string, StatusTagType> = {
+  PENDING: 'warning',
+  PROCESSING: 'primary',
+  ACCEPTED: 'primary',
+  WAITING: 'warning',
+  LAUNCHED: 'success',
+  REJECTED: 'danger',
+  DUPLICATE: 'info',
+  FORWARD_FAILED: 'danger',
+  GIVE_UP: 'danger',
+}
+
+/** /meta/enums: `fileDispatchStatus`（渠道回执：派发） */
+export const fileDispatchStatusColor: Record<string, StatusTagType> = {
+  CREATED: 'info',
+  SENT: 'primary',
+  ACKED: 'success',
+  FAILED: 'danger',
+  COMPENSATED: 'warning',
+}
+
+/** /meta/enums: `fileReceiptStatus`（渠道回执：回执） */
+export const fileReceiptStatusColor: Record<string, StatusTagType> = {
+  NONE: 'info',
+  PENDING: 'warning',
+  SUCCESS: 'success',
+  FAILED: 'danger',
+}

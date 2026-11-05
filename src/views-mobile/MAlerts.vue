@@ -91,12 +91,13 @@
                 $router.push({ path: '/observability/trace', query: { traceId: row.traceId } })
               "
             >
+              <ScanSearch :size="16" aria-hidden="true" />
               {{ t('mobile.alerts.viewLogs') }}
             </button>
           </div>
           <div v-if="row.status === 'OPEN'" class="m-card__actions">
             <button
-              class="m-btn m-alert-op m-alert-op--ack"
+              class="m-btn m-btn--plain-primary"
               :disabled="writesFrozen"
               data-track="alerts.ack"
               @click="ack(row)"
@@ -105,7 +106,7 @@
               {{ t('mobile.alerts.ack') }}
             </button>
             <button
-              class="m-btn m-alert-op m-alert-op--silence"
+              class="m-btn m-btn--plain-warning"
               :disabled="writesFrozen"
               data-track="alerts.silence"
               @click="silence(row)"
@@ -114,7 +115,7 @@
               {{ t('mobile.alerts.silence') }}
             </button>
             <button
-              class="m-btn m-alert-op m-alert-op--close"
+              class="m-btn m-btn--plain-danger"
               :disabled="writesFrozen"
               data-track="alerts.close"
               @click="close(row)"
@@ -158,7 +159,7 @@
   import { groupSimilarAlerts, type AlertGroup } from '@/utils/alertGrouping'
   import { computed, nextTick, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
-  import { BellOff, CircleCheck, CircleX, Search } from '@lucide/vue'
+  import { BellOff, CircleCheck, CircleX, ScanSearch, Search } from '@lucide/vue'
   import { ElMessage } from 'element-plus'
   import { confirmActionSheet } from '@/layout-mobile/MActionSheet'
   import { useTenantStore } from '@/stores/tenant'
@@ -441,31 +442,5 @@
     background: transparent;
     color: var(--color-primary-text);
     font-size: 13px;
-  }
-
-  /* 告警操作与桌面端一致：图标 + 语义色（确认=主色、静默=警告色、关闭=危险色）。
-     关闭会结束告警，不再用实心主色按钮当作推荐操作 */
-  .m-alert-op {
-    --m-alert-op-tone: var(--color-text-secondary);
-
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    color: var(--m-alert-op-tone);
-    border: 1px solid color-mix(in srgb, var(--m-alert-op-tone) 30%, transparent);
-    background: color-mix(in srgb, var(--m-alert-op-tone) 10%, transparent);
-  }
-
-  .m-alert-op--ack {
-    --m-alert-op-tone: var(--color-primary-text);
-  }
-
-  .m-alert-op--silence {
-    --m-alert-op-tone: var(--color-warning);
-  }
-
-  .m-alert-op--close {
-    --m-alert-op-tone: var(--color-danger);
   }
 </style>

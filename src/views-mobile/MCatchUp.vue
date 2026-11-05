@@ -50,13 +50,15 @@
             :disabled="writesFrozen || loading || loadError || busyKey !== null"
             @click="decide(row, 'approve')"
           >
+            <CircleCheck :size="16" aria-hidden="true" />
             {{ t('mobile.catchup.approve') }}
           </button>
           <button
-            class="m-btn m-btn--danger"
+            class="m-btn m-btn--plain-danger"
             :disabled="writesFrozen || loading || loadError || busyKey !== null"
             @click="decide(row, 'reject')"
           >
+            <CircleX :size="16" aria-hidden="true" />
             {{ t('mobile.catchup.reject') }}
           </button>
         </div>
@@ -72,6 +74,7 @@
 </template>
 
 <script setup lang="ts">
+  import { CircleCheck, CircleX } from '@lucide/vue'
   import { computed, ref, watch } from 'vue'
   import { useTenantReload } from '@/composables/useTenantReload'
   import { useTenantRequestScope } from '@/composables/useTenantRequestScope'
