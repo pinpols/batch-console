@@ -28,6 +28,16 @@ function inside(root, file) {
   return path !== '..' && !path.startsWith(`..${sep}`) && !path.startsWith(sep)
 }
 
+/**
+ * 文档目录补斜杠的跳转地址：只由已校验的文档相对路径与重新编码的查询参数拼出，
+ * 固定落在站内 /docs/ 下，不回写请求原文。
+ */
+function docsLocation(path, query) {
+  const segments = path.split('/').filter(Boolean).map(encodeURIComponent)
+  const search = new URLSearchParams(query.join('?')).toString()
+  return `/docs/${segments.length ? `${segments.join('/')}/` : ''}${search ? `?${search}` : ''}`
+}
+
 /** 挂载 VitePress 构建目录；未命中文档不能落入控制台 SPA fallback。 */
 export function docsStaticMiddleware(directory) {
   const root = resolve(directory)
@@ -39,7 +49,7 @@ export function docsStaticMiddleware(directory) {
     }
     if (rawPath !== '/docs' && !rawPath.startsWith('/docs/')) return next()
     if (rawPath === '/docs') {
-      res.writeHead(301, { Location: `/docs/${query.length ? `?${query.join('?')}` : ''}` })
+      res.writeHead(301, { Location: docsLocation('', query) })
       return res.end()
     }
     if (req.method !== 'GET' && req.method !== 'HEAD') {
@@ -72,9 +82,7 @@ export function docsStaticMiddleware(directory) {
       }
       if (info?.isDirectory()) {
         if (!rawPath.endsWith('/')) {
-          res.writeHead(301, {
-            Location: `${rawPath}/${query.length ? `?${query.join('?')}` : ''}`,
-          })
+          res.writeHead(301, { Location: docsLocation(path, query) })
           return res.end()
         }
         file = join(file, 'index.html')

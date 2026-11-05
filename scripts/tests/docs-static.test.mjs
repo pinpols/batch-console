@@ -65,6 +65,12 @@ test('directory without a matching page redirects with query intact', async () =
   assert.equal(response.headers.get('location'), '/docs/frontend/?theme=dark')
 })
 
+test('directory redirect re-encodes the path and query instead of echoing the request', async () => {
+  const response = await fetch(base + '/docs/frontend?next=<x>&a=1', { redirect: 'manual' })
+  assert.equal(response.status, 301)
+  assert.equal(response.headers.get('location'), '/docs/frontend/?next=%3Cx%3E&a=1')
+})
+
 test('missing docs do not fall through to SPA and unrelated routes still do', async () => {
   for (const path of ['/docs/missing', '/docs/assets/missing.js']) {
     const response = await fetch(base + path)
