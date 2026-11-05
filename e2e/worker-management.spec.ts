@@ -55,7 +55,7 @@ test.describe('worker management (Worker 管理)', () => {
     await expect(page.getByRole('button', { name: '重试' })).toBeVisible()
   })
 
-  test('页面加载图标与进度光带居中且使用品牌标识', async ({ page }) => {
+  test('页面加载使用居中的时刻表泳道动画', async ({ page }) => {
     await page.route('**/api/console/queries/workers*', () => new Promise(() => {}))
     await page.goto('/workers/management')
     const spinner = page.locator('.wk-grid .el-loading-mask .el-loading-spinner')
@@ -64,20 +64,20 @@ test.describe('worker management (Worker 管理)', () => {
     const spinnerStyle = await spinner.evaluate((element) => {
       const mask = element.closest('.el-loading-mask')!.getBoundingClientRect()
       const bounds = element.getBoundingClientRect()
-      const icon = getComputedStyle(element, '::before')
-      const track = getComputedStyle(element, '::after')
+      const lanes = getComputedStyle(element, '::before')
       return {
-        icon: icon.backgroundImage,
-        animation: track.animationName,
+        icon: lanes.backgroundImage,
+        animation: lanes.animationName,
         offset: Math.abs(bounds.top + bounds.height / 2 - (mask.top + mask.height / 2)),
       }
     })
-    expect(spinnerStyle.icon).toContain('batch-mark-foreground.svg')
-    expect(spinnerStyle.animation).toBe('brand-loading-travel')
+    // 四段泳道由四层纯色渐变绘制，动画只改宽度
+    expect(spinnerStyle.icon.match(/linear-gradient/g)).toHaveLength(4)
+    expect(spinnerStyle.animation).toBe('lane-loader-fill')
     expect(spinnerStyle.offset).toBeLessThan(2)
   })
 
-  test('小区域加载遮罩在明暗主题中保留完整图标和提示', async ({ page }) => {
+  test('小区域加载遮罩在明暗主题中保留完整泳道和提示', async ({ page }) => {
     const layouts = await page.evaluate(() => {
       const host = document.createElement('div')
       host.style.cssText = 'position: relative; width: 240px; height: 50px;'

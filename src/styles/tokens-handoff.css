@@ -32,7 +32,8 @@
   --color-danger: #c2352e;
   --color-info: #1f4fd1;
   --color-brand-mark-bg: #1f4fd1;
-  --brand-mark-fill: linear-gradient(145deg, #3a68e0 0%, #1f4fd1 60%, #183fa8 100%);
+  /* 品牌标志底色：纯色，不用渐变与高光，与扁平的界面一致 */
+  --brand-mark-fill: linear-gradient(var(--color-brand-mark-bg), var(--color-brand-mark-bg));
   --color-on-warning: #1b1e26;
 
   --color-text-primary: #132232;
@@ -127,7 +128,7 @@
 html.dark {
   --color-primary: #5b8cff;
   --color-brand-mark-bg: #3a68e0;
-  --brand-mark-fill: linear-gradient(145deg, #5b8cff 0%, #3a68e0 60%, #2b52bd 100%);
+  --brand-mark-fill: linear-gradient(var(--color-brand-mark-bg), var(--color-brand-mark-bg));
 
   --color-success: #4cc38a;
   --color-warning: #f2b246;
