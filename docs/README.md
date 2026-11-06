@@ -29,6 +29,7 @@
 | 文档                                                                                   | 用途                                                              |
 | -------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
 | [作业与工作流联动、系统 Pipeline 前端实施方案](engineering/workflow-job-pipeline-unification-plan-2026-10-14.md) | 两个定义菜单联动、系统 Pipeline 只读展示、统一整体运行与兼容迁移；方案已确定，功能待实施 |
+| [产品信息架构整改方案](engineering/product-ia-remediation-plan-2026-11-06.md) | 重复入口合并、隐藏入口归位、自助服务与移动端审批整改；方案已确定，待实施 |
 | [项目结构图](./architecture/project-structure.md)                                      | 顶层 + src 子目录 + 关键 composable + npm script |
 | [前端方案设计说明书 V3](archive/early-proposals/frontend-design-v3-2026-03-28.md) | 前端总体方案:业务域 / 路由 / 页面职责 / 组件分层 / 联调边界       |
 | [设计 Token 治理](./engineering/design-tokens.md)                                       | 运行时 token 权威源；根目录 `design/` 是不发布到文档站的本地只读参考 |
