@@ -386,7 +386,9 @@
     >
       <div v-if="claimedTasksWorker" class="claimed-tasks-context">
         {{ t('workerManagement.claimedTasksWorker', { code: claimedTasksWorker }) }}
-        <span v-if="!claimedTasksLoading"> · {{ claimedTaskRows.length }}</span>
+        <span v-if="!claimedTasksLoading">
+          · {{ t('workerManagement.claimedTasksCount', { n: claimedTaskRows.length }) }}
+        </span>
       </div>
       <el-alert
         v-if="claimedTasksError"

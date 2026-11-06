@@ -125,6 +125,13 @@
       <el-table-column prop="approvalType" :label="t('approvals.colType')" width="110">
         <template #default="{ row }">
           <span class="wrap-cell">{{ resolveType(row.approvalType) }}</span>
+          <!-- 自助补救等类型下再区分具体动作（重跑 / 补偿），与手机端“类型 · 动作”一致 -->
+          <span
+            v-if="row.actionType && row.actionType !== row.approvalType"
+            class="wrap-cell target-cell__type type-cell__action"
+          >
+            {{ resolveAction(row.actionType) }}
+          </span>
         </template>
       </el-table-column>
       <el-table-column :label="t('approvals.colTarget')" min-width="220">
@@ -269,6 +276,12 @@
     return te(key) ? t(key) : value
   }
 
+  function resolveAction(value?: string | null): string {
+    if (!value) return ''
+    const key = `enum.approvalActionType.${value}`
+    return te(key) ? t(key) : value
+  }
+
   function resolveTargetType(value?: string | null): string {
     if (!value) return ''
     const key = `enum.approvalTargetType.${value}`
@@ -276,26 +289,28 @@
   }
 
   /**
-   * targetId 跳到对应实体详情:
-   * JOB_RERUN → /monitor/job-instances/{id}
-   * CONFIG_RELEASE → /config/releases?id={id}(配置发布列表过滤)
-   * 其余类型返回空,展示纯文本。
+   * 按后端实际写入的 targetType 跳到对应对象：
+   * JOB_INSTANCE 数字 ID → 作业运行详情；自助重跑写的是作业编码 → 作业运行列表按编码过滤
+   * WORKFLOW_RUN → 工作流运行详情；FILE → 文件列表按文件 ID 过滤；其余展示纯文本
    */
-  function targetLink(row: { approvalType?: string; targetId?: string | null }): string | null {
+  function targetLink(row: { targetType?: string; targetId?: string | null }): string | null {
     if (!row?.targetId) return null
     const id = String(row.targetId)
-    switch (row.approvalType) {
-      case 'JOB_RERUN':
-        // BE targetId 可能是 instanceNo 或数字 ID;数字直接跳详情,字符串跳列表过滤
-        return /^\d+$/.test(id)
+    const numeric = /^\d+$/.test(id)
+    switch (row.targetType) {
+      case 'JOB_INSTANCE':
+        return numeric
           ? `/monitor/job-instances/${id}`
-          : `/monitor/job-instances?instanceNo=${encodeURIComponent(id)}`
-      case 'CONFIG_RELEASE':
-        return `/config/releases?id=${encodeURIComponent(id)}`
+          : `/monitor/job-instances?jobCode=${encodeURIComponent(id)}`
+      case 'WORKFLOW_RUN':
+        return numeric ? `/monitor/workflow-runs/${id}` : null
+      case 'FILE':
+        return `/files/list?fileId=${encodeURIComponent(id)}`
       default:
         return null
     }
   }
+
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import {
     batchApprove,
@@ -572,7 +587,8 @@
         t('approvals.approveDialogPrompt'),
         t('approvals.approveDialogTitle'),
         {
-          confirmButtonText: t('common.confirm'),
+          // 确认按钮直接写动作，拒绝类用危险色，与列表上的“通过 / 拒绝”一致
+          confirmButtonText: t('approvals.actionApprove'),
           cancelButtonText: t('common.cancel'),
           inputPlaceholder: t('approvals.approveDialogPlaceholder'),
         },
@@ -609,7 +625,8 @@
         t('approvals.rejectDialogPrompt'),
         t('approvals.rejectDialogTitle'),
         {
-          confirmButtonText: t('common.confirm'),
+          confirmButtonText: t('approvals.actionReject'),
+          confirmButtonClass: 'el-button--danger',
           cancelButtonText: t('common.cancel'),
           inputPlaceholder: t('approvals.rejectDialogPlaceholder'),
         },
@@ -713,7 +730,7 @@
         t('approvals.batchApproveTitle'),
         {
           type: 'warning',
-          confirmButtonText: t('common.confirm'),
+          confirmButtonText: t('approvals.actionApprove'),
           cancelButtonText: t('common.cancel'),
         },
       )
@@ -747,7 +764,8 @@
         t('approvals.batchRejectPrompt'),
         t('approvals.batchRejectTitle', { n: nos.length }),
         {
-          confirmButtonText: t('common.confirm'),
+          confirmButtonText: t('approvals.actionReject'),
+          confirmButtonClass: 'el-button--danger',
           cancelButtonText: t('common.cancel'),
         },
       )
@@ -865,6 +883,10 @@
   .wrap-cell {
     white-space: pre-wrap;
     overflow-wrap: anywhere;
+  }
+
+  .type-cell__action {
+    display: block;
   }
 
   .target-cell__type,

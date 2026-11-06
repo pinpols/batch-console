@@ -444,7 +444,7 @@
 <script setup lang="ts">
   import type { DeepReadonly } from 'vue'
   import type { WorkflowExecutionProgress } from '@/api/workflowRuns'
-  import { computed, ref, shallowRef, watch, reactive } from 'vue'
+  import { computed, h, ref, shallowRef, watch, reactive } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import { List, SkipForward, Eye as View, RefreshCw as Refresh, RotateCcw } from '@lucide/vue'
   import { useRefreshAction } from '@/composables/useRefreshAction'
@@ -454,7 +454,7 @@
   import { useResponsive } from '@/composables/useResponsive'
   import { ElMessage, ElMessageBox } from 'element-plus'
 
-  const { t } = useI18n({ useScope: 'global' })
+  const { t, te } = useI18n({ useScope: 'global' })
   import { confirmDanger } from '@/composables/useDangerConfirm'
   import { instanceApi } from '@/api/instance'
   import { jobApi } from '@/api/job'
@@ -507,6 +507,7 @@
   import { canSkipWorkflowNode } from './canSkipWorkflowNode'
   import { canReplayFailedWorkflowJobNode } from './canReplayFailedWorkflowJobNode'
   import { canReplayWholeWorkflowRun } from './canReplayWholeWorkflowRun'
+  import { describeWholeWorkflowReplay } from './workflowReplayPreviewText'
 
   const route = useRoute()
   const router = useRouter()
@@ -1014,41 +1015,23 @@
         reason,
       })
       if (!context.isCurrent()) return
-      const nodeLines = preview.nodes.map((node) => {
-        const capabilityStatus =
-          node.capability?.status ?? t('monitor.replayWholeWorkflowCapabilityUnknown')
-        const effects =
-          node.capability?.declaration?.externalEffectCategories.join(', ') ||
-          t('monitor.replayWholeWorkflowCapabilityUnknown')
-        const blockers = node.blockers.length
-          ? node.blockers.join(', ')
-          : t('monitor.replayWholeWorkflowNoBlockers')
-        return `${node.nodeCode} (${node.nodeType}; ${node.pluginId ?? '—'}): ${capabilityStatus}; ${effects}; ${blockers}`
-      })
-      const edgeLines = preview.edges.map(
-        (edge) => `${edge.fromNodeCode} → ${edge.toNodeCode} (${edge.edgeType})`,
-      )
-      const previewDetails = [
-        t('monitor.replayWholeWorkflowPreviewHeader', {
-          sourceRunId: preview.sourceWorkflowRunId,
-          bizDate: preview.bizDate,
-          workflowVersion: preview.workflowVersion,
-          resultPolicy: preview.resultPolicy,
-          configVersionPolicy: preview.configVersionPolicy,
-        }),
-        t('monitor.replayWholeWorkflowNodesHeader'),
-        ...nodeLines,
-        t('monitor.replayWholeWorkflowEdgesHeader'),
-        ...(edgeLines.length ? edgeLines : [t('monitor.replayWholeWorkflowNoEdges')]),
-      ].join('\n')
-      const blockers = preview.nodes.flatMap((node) => node.blockers)
-      if (blockers.length > 0) {
-        await ElMessageBox.alert(previewDetails, t('monitor.replayWholeWorkflowBlockedTitle'), {
+      const previewText = describeWholeWorkflowReplay(preview, t, te)
+      if (previewText.blocked) {
+        // 阻塞原因逐行列出；ElMessageBox 纯文本不保留换行，用列表节点渲染
+        const blockedIntro = t('monitor.replayWholeWorkflowBlockedIntro')
+        const blockedNodeItems = previewText.items.map((item) => h('li', item))
+        const blockedMessage = h('div', { class: 'replay-preview' }, [
+          h('p', previewText.header),
+          h('p', blockedIntro),
+          h('ul', blockedNodeItems),
+        ])
+        await ElMessageBox.alert(blockedMessage, t('monitor.replayWholeWorkflowBlockedTitle'), {
           type: 'warning',
           confirmButtonText: t('common.close'),
         })
         return
       }
+      const previewDetails = [previewText.header, ...previewText.items].join('\n')
       await confirmDanger({
         verb: t('monitor.replayWholeWorkflowVerb'),
         target: t('monitor.replayWholeWorkflowTarget', { runId: sourceRun.id }),

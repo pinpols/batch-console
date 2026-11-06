@@ -55,6 +55,32 @@ describe('危险确认的可恢复性说明', () => {
   })
 })
 
+describe('危险确认附带说明', () => {
+  it('提供 note 时在同一个框里显示输入框，并返回去掉空白的说明', async () => {
+    mocks.confirm.mockResolvedValue({ value: '  上游已恢复  ', action: 'confirm' })
+    const note = await confirmDanger({
+      verb: '确认告警',
+      target: '「A」',
+      note: { placeholder: '审计说明（可选）' },
+    })
+    expect(mocks.confirm.mock.calls[0]![2]).toMatchObject({
+      showInput: true,
+      inputPlaceholder: '审计说明（可选）',
+    })
+    expect(note).toBe('上游已恢复')
+  })
+
+  it('说明留空返回 undefined；不提供 note 时不显示输入框', async () => {
+    mocks.confirm.mockResolvedValue({ value: '   ', action: 'confirm' })
+    expect(await confirmDanger({ verb: '静默', target: '「A」', note: { placeholder: 'x' } })).toBe(
+      undefined,
+    )
+    mocks.confirm.mockResolvedValue('confirm')
+    await confirmDanger({ verb: '关闭', target: '「A」' })
+    expect(mocks.confirm.mock.calls[1]![2]).not.toHaveProperty('showInput')
+  })
+})
+
 describe('危险确认共享上下文', () => {
   it.each(['tenant', 'aba', 'operator', 'permission', 'maintenance', 'logout'] as const)(
     '确认期间 %s 变化，旧确认按取消处理',

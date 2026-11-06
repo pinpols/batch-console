@@ -104,6 +104,33 @@ export default {
   replayWholeWorkflowNoBlockers: 'no blockers reported',
   replayWholeWorkflowCapabilityUnknown: 'unknown capability',
   replayWholeWorkflowBlockedTitle: 'Replay is blocked by the preview',
+  replayWholeWorkflowBlockedIntro: 'These nodes cannot be replayed yet:',
+  replayWholeWorkflowBlockedNode: 'Node "{code}": {reasons}',
+  replayBlocker: {
+    EXTERNAL_OUTCOME_UNKNOWN:
+      'The previous external outcome is unknown; replay may repeat side effects',
+    DEPENDENCY_RESULTS_NOT_PINNED: 'Upstream results are not pinned to a version',
+    CONFIGURATION_UNAVAILABLE: 'The original configuration is no longer available',
+    TEMPLATE_CONFIGURATION_NOT_FROZEN: 'Template configuration is not pinned',
+    PLUGIN_SELECTION_NOT_FROZEN: 'The execution plugin is not pinned',
+    WORKER_GROUP_NOT_FROZEN: 'The worker group is not pinned',
+    NO_ONLINE_WORKERS: 'No worker is online for this tenant, so replay safety cannot be checked',
+    MISSING_OR_AMBIGUOUS_DECLARATION:
+      'Workers do not declare replay capability, or declare it ambiguously',
+    REPLAY_SAFETY_UNPROVEN: 'Workers do not declare replay as safe',
+    WORKER_DECLARATIONS_DIFFER: 'Workers declare different replay capabilities',
+    DECLARED_CONSISTENT: 'Replay capability declared consistently',
+  },
+  replayResultPolicy: {
+    CREATE_NEW_VERSION: 'Create a new result version',
+    KEEP_BOTH: 'Keep both results',
+    MANUAL_CONFIRM_EFFECTIVE: 'Confirm the effective version manually',
+  },
+  replayConfigPolicy: {
+    USE_ORIGINAL_CONFIG: 'Use the original configuration',
+    USE_LATEST_CONFIG: 'Use the latest configuration',
+    USE_SPECIFIED_VERSION: 'Use a specified version',
+  },
   replayWholeWorkflowSuccess: 'Replay approval {approvalNo} was submitted',
   runCancelConfirmText: 'Cancel workflow run #{id}?',
   runCancelTitle: 'Confirm cancel',
