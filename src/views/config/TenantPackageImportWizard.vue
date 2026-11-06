@@ -95,13 +95,7 @@
                     >
                       {{ t('tenantPackageImportWizard.btnExportCurrent') }}
                     </el-button>
-                    <el-button
-                      link
-                      type="primary"
-                      :icon="BookOpen"
-                      :loading="guideLoading"
-                      @click="openGuideDrawer"
-                    >
+                    <el-button link type="primary" :icon="BookOpen" @click="openGuideDrawer">
                       {{ t('tenantPackageImportWizard.btnFieldGuide') }}
                     </el-button>
                   </div>
@@ -156,7 +150,7 @@
                       {{ t('excelMaintenanceWizard.btnDownloadAnnotated') }}
                     </el-button>
                   </el-tooltip>
-                  <el-button :icon="BookOpen" :loading="guideLoading" @click="openGuideDrawer">
+                  <el-button :icon="BookOpen" @click="openGuideDrawer">
                     {{ t('tenantPackageImportWizard.btnFieldGuide') }}
                   </el-button>
                 </div>
@@ -558,178 +552,7 @@
       </div>
     </SectionCard>
 
-    <el-drawer
-      v-model="guideDrawerVisible"
-      class="tenant-pkg-guide-drawer"
-      :title="t('tenantPackageImportWizard.guideDrawerTitle')"
-      size="78%"
-      append-to-body
-      destroy-on-close
-    >
-      <div class="guide-drawer">
-        <el-alert type="info" show-icon :closable="false" class="guide-drawer__intro">
-          <template #title>{{ t('tenantPackageImportWizard.guideDrawerIntroTitle') }}</template>
-          <template #default>{{ t('tenantPackageImportWizard.guideDrawerIntroBody') }}</template>
-        </el-alert>
-
-        <div class="guide-drawer__filters">
-          <el-input
-            v-model="guideKeyword"
-            clearable
-            :prefix-icon="Search"
-            :placeholder="t('tenantPackageImportWizard.guideSearchPlaceholder')"
-            :aria-label="t('tenantPackageImportWizard.guideSearchPlaceholder')"
-          />
-          <el-select
-            v-model="guideSheetName"
-            filterable
-            :placeholder="t('tenantPackageImportWizard.guideSheetPlaceholder')"
-            :aria-label="t('tenantPackageImportWizard.guideSheetPlaceholder')"
-          >
-            <el-option
-              v-for="sheet in guideSheets"
-              :key="sheet.sheetName"
-              :label="sheet.sheetName"
-              :value="sheet.sheetName"
-            />
-          </el-select>
-          <!-- 业务场景有十余项，分段控件放不下，改为下拉选择 -->
-          <el-select
-            v-model="selectedGuideScenario"
-            class="guide-drawer__scenario"
-            filterable
-            :placeholder="t('tenantPackageImportWizard.guideScenarioPlaceholder')"
-            :aria-label="t('tenantPackageImportWizard.guideScenarioPlaceholder')"
-          >
-            <el-option
-              v-for="option in scenarioOptions"
-              :key="option.value"
-              :label="option.label"
-              :value="option.value"
-            />
-          </el-select>
-          <el-segmented v-model="guideLevelFilter" :options="guideLevelOptions" />
-        </div>
-
-        <div v-if="activeGuideSheet" class="guide-drawer__summary">
-          <el-tag effect="plain">{{ activeGuideSheet.sheetName }}</el-tag>
-          <span>{{ activeGuideSheet.appliesTo }}</span>
-          <span>
-            {{
-              t('tenantPackageImportWizard.guideSheetSummary', {
-                total: activeGuideSheet.columns.length,
-                required: activeGuideRequiredCount,
-              })
-            }}
-          </span>
-        </div>
-
-        <el-table
-          v-loading="guideLoading"
-          class="guide-drawer__table console-table"
-          :data="filteredGuideColumns"
-          stripe
-          border
-          size="small"
-          :empty-text="t('common.noData')"
-        >
-          <el-table-column type="expand" width="42">
-            <template #default="{ row }">
-              <div class="guide-row-detail">
-                <div>
-                  <strong>{{ t('tenantPackageImportWizard.guideColFillExample') }}</strong>
-                  <pre>{{ row.fillExample || row.example || '-' }}</pre>
-                </div>
-                <div>
-                  <strong>{{ t('tenantPackageImportWizard.guideColAppliesTo') }}</strong>
-                  <p>{{ row.appliesTo || '-' }}</p>
-                </div>
-              </div>
-            </template>
-          </el-table-column>
-          <el-table-column
-            prop="columnName"
-            :label="t('tenantPackageImportWizard.guideColColumn')"
-            min-width="250"
-            fixed="left"
-          >
-            <template #default="{ row }">
-              <div class="guide-column-name">
-                <CopyableText v-if="row.columnName" :text="String(row.columnName)" />
-                <span v-else>—</span>
-                <el-tag v-if="row.required" size="small" type="danger" effect="plain">
-                  {{ t('tenantPackageImportWizard.guideRequired') }}
-                </el-tag>
-                <el-tag v-else size="small" effect="plain">
-                  {{ t('tenantPackageImportWizard.guideOptional') }}
-                </el-tag>
-                <el-tag v-if="row.readOnly" size="small" type="info" effect="plain">
-                  {{ t('tenantPackageImportWizard.guideReadOnly') }}
-                </el-tag>
-              </div>
-            </template>
-          </el-table-column>
-          <el-table-column
-            prop="guideLevel"
-            :label="t('tenantPackageImportWizard.guideColLevel')"
-            width="100"
-          />
-          <el-table-column
-            prop="format"
-            :label="t('tenantPackageImportWizard.guideColFormat')"
-            min-width="110"
-          >
-            <template #default="{ row }">
-              <CopyableText v-if="row.format" :text="String(row.format)" />
-              <span v-else>—</span>
-            </template>
-          </el-table-column>
-          <el-table-column
-            prop="defaultBehavior"
-            :label="t('tenantPackageImportWizard.guideColDefault')"
-            min-width="220"
-          >
-            <template #default="{ row }">
-              <CopyableText v-if="row.defaultBehavior" :text="String(row.defaultBehavior)" />
-              <span v-else>—</span>
-            </template>
-          </el-table-column>
-          <el-table-column
-            prop="description"
-            :label="t('tenantPackageImportWizard.guideColDescription')"
-            min-width="280"
-          >
-            <template #default="{ row }">
-              <CopyableText v-if="row.description" :text="String(row.description)" />
-              <span v-else>—</span>
-            </template>
-          </el-table-column>
-          <el-table-column
-            prop="allowedValues"
-            :label="t('tenantPackageImportWizard.guideColAllowed')"
-            min-width="240"
-          >
-            <template #default="{ row }">
-              <CopyableText
-                v-if="row.allowedValues?.length"
-                :text="row.allowedValues.join(' / ')"
-              />
-              <span v-else>—</span>
-            </template>
-          </el-table-column>
-          <el-table-column
-            prop="example"
-            :label="t('tenantPackageImportWizard.guideColExample')"
-            min-width="180"
-          >
-            <template #default="{ row }">
-              <CopyableText v-if="row.example" :text="String(row.example)" />
-              <span v-else>—</span>
-            </template>
-          </el-table-column>
-        </el-table>
-      </div>
-    </el-drawer>
+    <TenantPackageGuideDrawer v-model="guideDrawerVisible" />
   </PageContainer>
 </template>
 
@@ -743,7 +566,6 @@
     Download,
     FileText as Document,
     RefreshCw as Refresh,
-    Search,
     Upload,
     Upload as UploadFilled,
     TriangleAlert as WarningFilled,
@@ -757,15 +579,12 @@
     tenantPackageExport,
     tenantPackageUpload,
     tenantPackagePreview,
-    tenantPackageGuide,
     tenantPackageDownloadPreviewWorkbook,
     tenantPackagePatchRow,
     tenantPackageApply,
     refreshTenantPackagePreviewOnConflict,
     type TenantPackageApplyResponse,
-    type TenantPackageColumnGuide,
     type TenantPackageSampleScenario,
-    type TenantPackageSheetGuide,
   } from '@/api/tenantPackageExcel'
   import {
     useImportWizard,
@@ -773,11 +592,11 @@
     type SheetStats,
     type PreviewErrorRow,
   } from '@/composables/useImportWizard'
-  import { guideMatchesScenario } from './tenantPackageGuide'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
   import CopyableText from '@/components/common/CopyableText.vue'
+  import TenantPackageGuideDrawer from './TenantPackageGuideDrawer.vue'
   import { useAuthStore } from '@/stores/auth'
   import { useTenantStore } from '@/stores/tenant'
   import { useTenantChangeGuard } from '@/composables/useTenantChangeGuard'
@@ -858,112 +677,9 @@
   const patchSaving = ref<string | null>(null)
   const showOnlyInvalidSheets = ref(false)
   const guideDrawerVisible = ref(false)
-  const guideLoading = ref(false)
-  const guideSheets = shallowRef<TenantPackageSheetGuide[]>([])
-  const guideSheetName = ref('')
-  const guideKeyword = ref('')
   const selectedScenarios = ref<TenantPackageSampleScenario[]>([])
-  const selectedGuideScenario = ref<TenantPackageSampleScenario>('ALL')
-  const scenarioOptions = computed<Array<{ label: string; value: TenantPackageSampleScenario }>>(
-    () => [
-      { label: t('tenantPackageImportWizard.scenarioAll'), value: 'ALL' },
-      { label: t('tenantPackageImportWizard.scenarioImportDelimited'), value: 'IMPORT_DELIMITED' },
-      {
-        label: t('tenantPackageImportWizard.scenarioImportFixedWidth'),
-        value: 'IMPORT_FIXED_WIDTH',
-      },
-      { label: t('tenantPackageImportWizard.scenarioImportExcel'), value: 'IMPORT_EXCEL' },
-      { label: t('tenantPackageImportWizard.scenarioImportXml'), value: 'IMPORT_XML' },
-      { label: t('tenantPackageImportWizard.scenarioImportJson'), value: 'IMPORT_JSON' },
-      { label: t('tenantPackageImportWizard.scenarioExportDelimited'), value: 'EXPORT_DELIMITED' },
-      {
-        label: t('tenantPackageImportWizard.scenarioExportFixedWidth'),
-        value: 'EXPORT_FIXED_WIDTH',
-      },
-      { label: t('tenantPackageImportWizard.scenarioExportExcel'), value: 'EXPORT_EXCEL' },
-      { label: t('tenantPackageImportWizard.scenarioExportJson'), value: 'EXPORT_JSON' },
-      { label: t('tenantPackageImportWizard.scenarioProcess'), value: 'PROCESS' },
-      { label: t('tenantPackageImportWizard.scenarioDispatch'), value: 'DISPATCH' },
-      { label: t('tenantPackageImportWizard.scenarioAtomic'), value: 'ATOMIC' },
-      { label: t('tenantPackageImportWizard.scenarioWorkflow'), value: 'WORKFLOW' },
-      { label: t('tenantPackageImportWizard.scenarioSchedule'), value: 'SCHEDULE' },
-    ],
-  )
-  const guideLevelFilter = ref<'all' | 'required' | 'common' | 'advanced'>('all')
-  const guideLevelOptions = computed(() => [
-    { label: t('tenantPackageImportWizard.guideFilterAll'), value: 'all' },
-    { label: t('tenantPackageImportWizard.guideFilterRequired'), value: 'required' },
-    { label: t('tenantPackageImportWizard.guideFilterCommon'), value: 'common' },
-    { label: t('tenantPackageImportWizard.guideFilterAdvanced'), value: 'advanced' },
-  ])
-
-  const activeGuideSheet = computed<TenantPackageSheetGuide | null>(() => {
-    if (!guideSheets.value.length) return null
-    return (
-      guideSheets.value.find((sheet) => sheet.sheetName === guideSheetName.value) ??
-      guideSheets.value[0] ??
-      null
-    )
-  })
-
-  const activeGuideRequiredCount = computed<number>(() => {
-    return activeGuideSheet.value?.columns.filter((column) => column.required).length ?? 0
-  })
-
-  const filteredGuideColumns = computed<TenantPackageColumnGuide[]>(() => {
-    const columns = activeGuideSheet.value?.columns ?? []
-    const trimmedKeyword = guideKeyword.value.trim()
-    const keyword = trimmedKeyword.toLowerCase()
-    const scenario = selectedGuideScenario.value
-    return columns.filter((column) => {
-      if (!guideColumnMatchesScenario(column, activeGuideSheet.value, scenario)) return false
-      if (guideLevelFilter.value === 'required' && !column.required) return false
-      if (guideLevelFilter.value === 'common' && column.guideLevel !== '常用') return false
-      if (guideLevelFilter.value === 'advanced' && column.guideLevel !== '高级') return false
-      if (!keyword) return true
-      const searchableValues = [
-        column.columnName,
-        column.guideLevel,
-        column.format,
-        column.description,
-        column.example,
-        column.fillExample,
-        column.defaultBehavior,
-        column.appliesTo,
-        ...(column.allowedValues ?? []),
-      ]
-      const nonEmptyValues = searchableValues.filter(Boolean)
-      return nonEmptyValues.some((value) => {
-        const valueText = String(value)
-        const normalizedValue = valueText.toLowerCase()
-        return normalizedValue.includes(keyword)
-      })
-    })
-  })
-
-  async function loadGuideIfNeeded() {
-    if (guideSheets.value.length || guideLoading.value) return
-    guideLoading.value = true
-    try {
-      const resp = await tenantPackageGuide()
-      guideSheets.value = resp.sheets ?? []
-      guideSheetName.value = guideSheets.value[0]?.sheetName ?? ''
-    } finally {
-      guideLoading.value = false
-    }
-  }
-
-  async function openGuideDrawer() {
+  function openGuideDrawer() {
     guideDrawerVisible.value = true
-    await loadGuideIfNeeded()
-  }
-
-  function guideColumnMatchesScenario(
-    column: TenantPackageColumnGuide,
-    sheet: TenantPackageSheetGuide | null,
-    scenario: TenantPackageSampleScenario,
-  ): boolean {
-    return guideMatchesScenario([sheet?.appliesTo ?? '', column.appliesTo ?? ''], scenario)
   }
 
   function rowKeyOf(row: PreviewErrorRow): string {
