@@ -277,53 +277,6 @@
   transform: none;
 }
 
-:global(.tenant-pkg-guide-drawer .el-drawer__body) {
-  padding-top: 8px;
-}
-
-.guide-drawer {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  min-height: 0;
-}
-
-/* 筛选行：搜索框伸缩，工作表与场景下拉定宽，层级分段按内容宽度；放不下时整体换行 */
-.guide-drawer__filters {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  align-items: center;
-}
-
-.guide-drawer__filters > .el-input {
-  flex: 1 1 240px;
-  min-width: 0;
-}
-
-.guide-drawer__filters > .el-select {
-  flex: 0 1 240px;
-  min-width: 180px;
-}
-
-.guide-drawer__filters > .el-segmented {
-  flex: 0 0 auto;
-  max-width: 100%;
-}
-
-.guide-drawer__summary {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-  color: var(--color-text-secondary);
-  font-size: 13px;
-}
-
-.guide-drawer__table {
-  width: 100%;
-}
-
 .sheet-name-cell {
   display: flex;
   align-items: center;
@@ -332,42 +285,6 @@
 
 .sheet-name-cell .sheet-risk-tag {
   flex-shrink: 0;
-}
-
-/* 列名与“必填/选填”标签保持同一行，长列名不把标签挤到下一行 */
-.guide-column-name {
-  display: flex;
-  flex-wrap: nowrap;
-  align-items: center;
-  gap: 6px;
-  min-width: 0;
-}
-
-.guide-row-detail {
-  display: grid;
-  grid-template-columns: minmax(0, 2fr) minmax(220px, 1fr);
-  gap: 16px;
-  padding: 8px 14px 12px;
-  color: var(--color-text-secondary);
-}
-
-.guide-row-detail strong {
-  display: block;
-  margin-bottom: 6px;
-  color: var(--color-text-primary);
-}
-
-.guide-row-detail pre {
-  margin: 0;
-  padding: 10px;
-  max-height: 260px;
-  overflow: auto;
-  white-space: pre-wrap;
-  word-break: break-word;
-  border-radius: var(--radius-input);
-  border: 1px solid var(--color-border-light);
-  background: var(--el-fill-color-lighter);
-  color: var(--color-text-primary);
 }
 
 @media (max-width: 960px) {
@@ -384,17 +301,6 @@
 
   .upload-zone__desc {
     max-width: 100%;
-  }
-}
-
-@media (max-width: 720px) {
-  .guide-drawer__filters > .el-input,
-  .guide-drawer__filters > .el-select {
-    flex-basis: 100%;
-  }
-
-  .guide-row-detail {
-    grid-template-columns: 1fr;
   }
 }
 
