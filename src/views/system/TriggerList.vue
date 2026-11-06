@@ -1,6 +1,8 @@
 <template>
   <PageContainer>
     <PageHeader />
+    <!-- 后端暂停会把触发器从调度器移除并关闭工作流调度，暂停后不再出现在本列表 -->
+    <p class="trigger-paused-hint">{{ t('triggerList.pausedHint') }}</p>
 
     <div>
       <ProTable
@@ -43,9 +45,9 @@
             <CopyableText :text="String(row.workflowCode ?? '')" />
           </template>
         </el-table-column>
-        <el-table-column prop="triggerType" :label="t('triggerList.colType')" width="120">
+        <el-table-column prop="scheduleType" :label="t('triggerList.colType')" width="120">
           <template #default="{ row }">
-            {{ resolveTriggerType(row.triggerType) }}
+            {{ resolveScheduleType(row.scheduleType) }}
           </template>
         </el-table-column>
         <el-table-column prop="triggerStatus" :label="t('triggerList.colStatus')" width="120">
@@ -61,11 +63,11 @@
         <el-table-column :label="t('triggerList.colCron')" min-width="160" show-overflow-tooltip>
           <template #default="{ row }">
             <CopyableText
-              v-if="row.cronExpression"
-              :text="String(row.cronExpression)"
+              v-if="row.scheduleExpression"
+              :text="String(row.scheduleExpression)"
               :copyable="false"
             >
-              <code class="cell-code">{{ row.cronExpression }}</code>
+              <code class="cell-code">{{ row.scheduleExpression }}</code>
             </CopyableText>
             <span v-else class="cell-empty">—</span>
           </template>
@@ -84,7 +86,8 @@
                 plain
                 type="primary"
                 :icon="CirclePlay"
-                :disabled="writesFrozen"
+                :disabled="!canOperateTriggers"
+                :title="canOperateTriggers ? undefined : t('common.permissionDenied')"
                 v-track-click="{ action: 'register trigger', workflowCode: row.workflowCode }"
                 @click="doRegister(row)"
               >
@@ -96,7 +99,8 @@
                 plain
                 type="danger"
                 :icon="CircleStop"
-                :disabled="writesFrozen"
+                :disabled="!canOperateTriggers"
+                :title="canOperateTriggers ? undefined : t('common.permissionDenied')"
                 v-track-click="{ action: 'unregister trigger', workflowCode: row.workflowCode }"
                 @click="doUnregister(row)"
               >
@@ -108,7 +112,8 @@
                 plain
                 type="warning"
                 :icon="Pause"
-                :disabled="writesFrozen"
+                :disabled="!canOperateTriggers"
+                :title="canOperateTriggers ? undefined : t('common.permissionDenied')"
                 v-track-click="{ action: 'pause trigger', workflowCode: row.workflowCode }"
                 @click="doPause(row)"
               >
@@ -120,7 +125,8 @@
                 plain
                 type="success"
                 :icon="Play"
-                :disabled="writesFrozen"
+                :disabled="!canOperateTriggers"
+                :title="canOperateTriggers ? undefined : t('common.permissionDenied')"
                 v-track-click="{ action: 'resume trigger', workflowCode: row.workflowCode }"
                 @click="doResume(row)"
               >
@@ -141,16 +147,25 @@
   import { ElMessage } from 'element-plus'
   import { confirmDanger } from '@/composables/useDangerConfirm'
   import { useWriteAvailability } from '@/composables/useWriteAvailability'
+  import { usePermission } from '@/composables/usePermission'
   import { useResponsive } from '@/composables/useResponsive'
 
   const { t, te } = useI18n({ useScope: 'global' })
   const { writesFrozen, ensureWriteAvailable } = useWriteAvailability()
+  const { canManageSystem } = usePermission()
+  // 后端 /api/console/ops/triggers 的注册、注销、暂停、恢复仅平台管理员可用，其他角色只读
+  const canOperateTriggers = computed(() => canManageSystem.value && !writesFrozen.value)
   const { isMobile } = useResponsive()
 
-  function resolveTriggerType(value?: string | null): string {
+  function resolveScheduleType(value?: string | null): string {
     if (!value) return '—'
-    const key = `enum.triggerType.${value}`
+    const key = `enum.scheduleType.${value}`
     return te(key) ? t(key) : value
+  }
+
+  /** 操作按行所属租户提交，避免跨租户行误用当前选择的租户 */
+  function rowTenant(row: Record<string, unknown>): string {
+    return String(row.tenantId || tenant.tenantId)
   }
 
   // 破坏性动作按行状态门控:未注册只显示"注册";已注册显示"注销";
@@ -207,11 +222,18 @@
   const kwDraft = ref('')
   const keyword = ref('')
 
+  // 平台管理员拿到的是全部租户的触发器，页面与其他列表一致只看当前租户
+  const tenantRows = computed(() =>
+    allRows.value.filter(
+      (row) => !tenant.tenantId || !row.tenantId || row.tenantId === tenant.tenantId,
+    ),
+  )
+
   const filtered = computed(() => {
     const trimmedKeyword = keyword.value.trim()
     const k = trimmedKeyword.toLowerCase()
-    if (!k) return allRows.value
-    return allRows.value.filter((row) => {
+    if (!k) return tenantRows.value
+    return tenantRows.value.filter((row) => {
       const workflowCodeText = String(row.workflowCode ?? '')
       const normalizedWorkflowCode = workflowCodeText.toLowerCase()
       return normalizedWorkflowCode.includes(k)
@@ -248,7 +270,7 @@
   }
 
   async function doRegister(row: Record<string, unknown>) {
-    if (!ensureWriteAvailable()) return
+    if (!canManageSystem.value || !ensureWriteAvailable()) return
     try {
       const confirmVerb = t('triggerList.registerConfirmVerb')
       const workflowCode = String(row.workflowCode)
@@ -261,7 +283,7 @@
         consequence: confirmConsequence,
         confirmButtonText,
       })
-      await registerTrigger(String(row.workflowCode), tenant.tenantId)
+      await registerTrigger(String(row.workflowCode), rowTenant(row))
       ElMessage.success(t('triggerList.registerSuccess'))
       await load()
     } catch {
@@ -270,7 +292,7 @@
   }
 
   async function doUnregister(row: Record<string, unknown>) {
-    if (!ensureWriteAvailable()) return
+    if (!canManageSystem.value || !ensureWriteAvailable()) return
     try {
       const confirmVerb = t('triggerList.unregisterConfirmVerb')
       const workflowCode = String(row.workflowCode)
@@ -284,7 +306,7 @@
         irreversible: true,
         confirmButtonText,
       })
-      await unregisterTrigger(String(row.workflowCode), tenant.tenantId)
+      await unregisterTrigger(String(row.workflowCode), rowTenant(row))
       ElMessage.success(t('triggerList.unregisterSuccess'))
       await load()
     } catch {
@@ -293,7 +315,7 @@
   }
 
   async function doPause(row: Record<string, unknown>) {
-    if (!ensureWriteAvailable()) return
+    if (!canManageSystem.value || !ensureWriteAvailable()) return
     try {
       const confirmVerb = t('triggerList.pauseConfirmVerb')
       const workflowCode = String(row.workflowCode)
@@ -307,7 +329,7 @@
         consequence: confirmConsequence,
         confirmButtonText,
       })
-      await pauseTrigger(String(row.workflowCode), tenant.tenantId)
+      await pauseTrigger(String(row.workflowCode), rowTenant(row))
       ElMessage.success(t('triggerList.pauseSuccess'))
       await load()
     } catch {
@@ -316,9 +338,9 @@
   }
 
   async function doResume(row: Record<string, unknown>) {
-    if (!ensureWriteAvailable()) return
+    if (!canManageSystem.value || !ensureWriteAvailable()) return
     try {
-      await resumeTrigger(String(row.workflowCode), tenant.tenantId)
+      await resumeTrigger(String(row.workflowCode), rowTenant(row))
       ElMessage.success(t('triggerList.resumeSuccess'))
       await load()
     } catch {
@@ -329,4 +351,10 @@
   useTenantReload(load)
 </script>
 
-<style scoped></style>
+<style scoped>
+  .trigger-paused-hint {
+    margin: 0 0 var(--space-sm, 8px);
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm, 13px);
+  }
+</style>

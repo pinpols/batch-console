@@ -3173,6 +3173,8 @@ const messages: Messages = {
     colError: 'Error',
   },
   triggerList: {
+    pausedHint:
+      'Paused triggers are removed from the scheduler and no longer appear here. Resume one from Self-service → Trigger pause / resume by workflow code, or re-enable scheduling in the workflow settings.',
     degradedEmpty:
       'The trigger service is unavailable. This list may be incomplete; refresh later.',
     workflowCodeLabel: 'Workflow Code',
@@ -3299,6 +3301,7 @@ const messages: Messages = {
     actionWarmup: 'Warm up',
     actionClaimedTasks: 'Claimed tasks',
     claimedTasksTitle: 'Worker claimed tasks',
+    claimedTasksCount: '{n} tasks',
     claimedTasksWorker: 'Worker: {code}',
     claimedTasksLoadFailed: 'Failed to load claimed tasks. Check permissions or service status.',
     claimedTasksEmpty: 'This worker has no currently claimed tasks.',
@@ -3936,10 +3939,7 @@ const messages: Messages = {
     confirmSilenceText: 'Silence alert "{title}"?',
     confirmCloseTitle: 'Close',
     confirmCloseText: 'Close alert "{title}"?',
-    reasonPrompt: 'Optional audit note',
-    reasonPlaceholder: 'Enter a note',
-    reasonSubmit: 'Submit',
-    reasonSkip: 'Skip',
+    reasonPlaceholder: 'Audit note (optional)',
     confirmTarget: '"{title}"',
     ackConfirmVerb: 'acknowledge',
     ackConfirmConsequence:
@@ -3953,9 +3953,6 @@ const messages: Messages = {
     closeConfirmConsequence:
       'The alert will be marked as closed. Alertmanager synchronization depends on the bridge configuration and result.',
     closeConfirmButton: 'Confirm close',
-    ackReasonTitle: 'ACK note',
-    silenceReasonTitle: 'Silence note',
-    closeReasonTitle: 'Close note',
     ackedToast: 'Ack submitted',
     silencedToast: 'Silence submitted',
     closedToast: 'Close submitted',

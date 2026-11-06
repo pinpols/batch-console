@@ -59,6 +59,8 @@
 - 依赖租户的数据加载仍使用 `useTenantReload`，无租户时不发请求，不弹提示。
 - 回归由 `e2e/admin-no-tenant-crash-guard.spec.ts` 的“新增入口有可见反馈”用例守护：无租户时点击新增，至少要打开表单、跳转或出现提示之一。
 
+- 危险确认需要附带审计说明或原因时，用 `confirmDanger` 的 `note` 在同一个确认框里输入，不在确认后再弹第二个框。
+
 ## 表单与编辑抽屉
 
 - 新增、编辑表单统一用 `src/components/common/FormDrawer.vue`：标题下可写一句说明，宽度只取 `sm`（480）、`md`（640，默认）、`lg`（880）三档；底部固定为“取消在前、主操作在后”，次要操作（预览、测试连接）放 `footer-extra` 插槽。

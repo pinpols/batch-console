@@ -30,13 +30,18 @@ export interface DangerConfirmOptions {
   confirmButtonText?: string
   /** 自定义取消按钮文案;默认 "取消" */
   cancelButtonText?: string
+  /**
+   * 同一确认框里附带可选的说明输入框（如审计说明），避免确认后再弹第二个框。
+   * 提供时确认结果返回去掉首尾空白的说明，留空返回 undefined。
+   */
+  note?: { placeholder: string }
 }
 
 /**
  * 弹出危险确认框。用户点取消会 reject(throw),外层用 try/catch 处理。
  * 用户点确认 resolve void,上下文仍有效时继续后续业务逻辑；租户、主体、权限或维护状态变化按取消处理。
  */
-export async function confirmDanger(opts: DangerConfirmOptions): Promise<void> {
+export async function confirmDanger(opts: DangerConfirmOptions): Promise<string | undefined> {
   const t = i18n.global.t
   const {
     verb,
@@ -46,6 +51,7 @@ export async function confirmDanger(opts: DangerConfirmOptions): Promise<void> {
     reversible = false,
     confirmButtonText,
     cancelButtonText = t('dangerConfirm.cancel'),
+    note,
   } = opts
 
   const title = irreversible
@@ -99,7 +105,7 @@ export async function confirmDanger(opts: DangerConfirmOptions): Promise<void> {
     { flush: 'sync' },
   )
   try {
-    await ElMessageBox.confirm(content, title, {
+    const result: unknown = await ElMessageBox.confirm(content, title, {
       type: irreversible ? 'error' : 'warning',
       confirmButtonText:
         confirmButtonText ??
@@ -111,9 +117,14 @@ export async function confirmDanger(opts: DangerConfirmOptions): Promise<void> {
       closeOnPressEscape: true,
       showClose: true,
       dangerouslyUseHTMLString: false,
+      ...(note ? { showInput: true, inputPlaceholder: note.placeholder } : {}),
     })
     // 与 Element Plus 用户取消保持同一拒绝契约，调用方不能继续执行旧确认。
     if (contextChanged || app.writesFrozen) return Promise.reject('cancel')
+    if (!note) return undefined
+    // 带输入框时 Element Plus 解析为 { value, action }
+    const value = (result as { value?: string } | undefined)?.value
+    return value?.trim() || undefined
   } finally {
     stop()
   }
