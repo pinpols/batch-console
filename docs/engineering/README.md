@@ -53,5 +53,6 @@
 |---|---|
 | [作业与工作流联动、系统 Pipeline 前端实施方案](./workflow-job-pipeline-unification-plan-2026-10-14.md) | Workflow、作业与系统 Pipeline 联动的当前范围和验收边界 |
 | [FE 手写 Wrapper 到 OpenAPI 类型迁移计划](./fe-wrapper-migration-plan-2026-06-02.md) | API 包装迁移状态与剩余范围 |
+| [产品信息架构整改方案](./product-ia-remediation-plan-2026-11-06.md) | 审查 P1–P10 的核实结果、分四批整改与待决事项；待实施 |
 
 - [WDI 前后端能力补齐与真实联调实施计划](backend-capability-alignment-plan-2026-10-25.md)：17项功能、依赖图、运行DAG/步骤进度与租户今日总进度的实施及验收唯一矩阵。

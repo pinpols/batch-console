@@ -18,6 +18,8 @@ export default {
   fieldDefaultQuerySql: '默认导出查询 SQL',
   actionCreateTemplate: '新建文件模板',
   actionCreateChannel: '新建文件渠道',
+  emptyDescription: '还没有文件模板。新增一个后，渠道可以按模板接入文件。',
+  channelEmptyDescription: '还没有文件渠道。新增一个后，文件才能从外部进入。',
   tabTemplates: '文件模板',
   tabChannels: '文件渠道',
   sectionTemplates: '文件模板',

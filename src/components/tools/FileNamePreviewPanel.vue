@@ -33,8 +33,15 @@
         <el-input v-model="form.version" clearable />
       </el-form-item>
     </el-form>
-    <div class="tool-action-row tool-action-row--end">
-      <el-button type="primary" :loading="loading" @click="preview">
+    <div class="naming-bar">
+      <el-alert
+        class="naming-bar__note"
+        type="info"
+        :closable="false"
+        :title="t('operationsToolkit.naming.authorityNote')"
+        show-icon
+      />
+      <el-button type="primary" :icon="ScanSearch" :loading="loading" @click="preview">
         {{ t('operationsToolkit.naming.preview') }}
       </el-button>
     </div>
@@ -42,18 +49,13 @@
       <span>{{ t('operationsToolkit.naming.result') }}</span>
       <CopyableText :text="fileName" />
     </div>
-    <el-alert
-      type="info"
-      :closable="false"
-      :title="t('operationsToolkit.naming.authorityNote')"
-      show-icon
-    />
   </div>
 </template>
 
 <script setup lang="ts">
   import { reactive, ref } from 'vue'
   import { useI18n } from 'vue-i18n'
+  import { ScanSearch } from '@lucide/vue'
   import { ElMessage } from 'element-plus'
   import { previewFileTemplateName } from '@/api/system'
   import CopyableText from '@/components/common/CopyableText.vue'

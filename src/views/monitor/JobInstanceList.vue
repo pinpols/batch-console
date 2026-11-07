@@ -134,6 +134,7 @@
                 size="small"
                 type="warning"
                 plain
+                :icon="RotateCcw"
                 :loading="running"
                 :disabled="!canWriteSystem"
                 @click="onBulkRetry"
@@ -433,7 +434,7 @@
   import TraceIdInput from '@/components/common/TraceIdInput.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import ListEmptyState from '@/components/common/ListEmptyState.vue'
-  import { Eye, List } from '@lucide/vue'
+  import { Eye, List, RotateCcw } from '@lucide/vue'
   import SavedFiltersMenu from '@/components/table/SavedFiltersMenu.vue'
   import { useSavedFilters } from '@/composables/useSavedFilters'
   import { userErrorMessage } from '@/utils/userErrorMessage'
@@ -1191,7 +1192,6 @@
   .jr-trace-link:hover {
     color: var(--color-primary);
   }
-
   .jr-mono {
     font-family: var(--font-mono);
     font-size: 12px;

@@ -11,6 +11,7 @@
       :error="loadError"
       :on-retry="load"
       :has-active-filters="hasActiveFilters"
+      @reset="onReset"
       class="catch-up-table"
     >
       <template #query>

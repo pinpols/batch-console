@@ -54,6 +54,7 @@
         </el-button>
         <el-button
           type="primary"
+          :icon="Send"
           native-type="submit"
           :loading="submitting"
           :disabled="!workflowCode"
@@ -67,6 +68,7 @@
 
 <script setup lang="ts">
   import { ref, watch } from 'vue'
+  import { Send } from '@lucide/vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
   import { useTenantStore } from '@/stores/tenant'

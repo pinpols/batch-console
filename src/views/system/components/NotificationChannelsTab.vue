@@ -10,6 +10,7 @@
       v-model:page-size="channelPageSize"
       @change="() => {}"
       :has-active-filters="hasActiveChannelFilters"
+      @reset="resetChannelFilter"
     >
       <template v-if="!hasActiveChannelFilters" #empty>
         <EmptyState :description="t('notificationChannelsTab.emptyDescription')" :image-size="80">

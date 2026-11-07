@@ -1,7 +1,7 @@
 <template>
   <PageContainer>
     <PageHeader />
-    <!-- 后端暂停会把触发器从调度器移除并关闭工作流调度，暂停后不再出现在本列表 -->
+    <!-- 后端暂停与注销都会移除 Quartz 任务并关闭工作流调度，列表以“未启用调度”行展示，可重新注册 -->
     <p class="trigger-paused-hint">{{ t('triggerList.pausedHint') }}</p>
 
     <div>
@@ -15,6 +15,7 @@
         v-model:page="page"
         v-model:page-size="pageSize"
         :has-active-filters="!!keyword"
+        @reset="onReset"
         @change="() => {}"
       >
         <template #query>

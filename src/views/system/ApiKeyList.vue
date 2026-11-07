@@ -25,6 +25,7 @@
         v-model:page="page"
         v-model:page-size="pageSize"
         :has-active-filters="!!keyword"
+        @reset="onReset"
         @change="() => {}"
       >
         <template #query>

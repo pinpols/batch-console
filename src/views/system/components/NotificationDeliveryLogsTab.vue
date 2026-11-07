@@ -9,6 +9,7 @@
     v-model:page-size="logPageSize"
     @change="() => {}"
     :has-active-filters="hasActiveLogFilters"
+    @reset="resetLogFilter"
   >
     <template v-if="!hasActiveLogFilters" #empty>
       <EmptyState

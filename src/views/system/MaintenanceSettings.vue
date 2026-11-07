@@ -141,7 +141,13 @@
         <el-button :loading="loading" :disabled="saving" @click="load">
           {{ t('maintenanceSettings.reload') }}
         </el-button>
-        <el-button type="primary" :loading="saving" :disabled="loading || !state" @click="save">
+        <el-button
+          type="primary"
+          :icon="Save"
+          :loading="saving"
+          :disabled="loading || !state"
+          @click="save"
+        >
           {{ t('maintenanceSettings.save') }}
         </el-button>
       </div>
@@ -152,6 +158,7 @@
 <script setup lang="ts">
   import { computed, onMounted, onUnmounted, reactive, ref } from 'vue'
   import { useI18n } from 'vue-i18n'
+  import { Save } from '@lucide/vue'
   import { ElMessage } from 'element-plus'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'

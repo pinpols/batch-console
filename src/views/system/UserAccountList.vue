@@ -63,30 +63,22 @@
 
     <SectionCard>
       <DataState
+        inline
         :loading="loading"
         :error="loadError"
         :has-data="visibleItems.length > 0"
         :on-retry="load"
       >
-        <template #empty>
-          <EmptyState
-            :variant="hasAccountFilters ? 'filter-empty' : 'empty'"
-            :title="hasAccountFilters ? t('empty.filterTitle') : t('userAccountList.emptyTitle')"
-            :description="t('userAccountList.emptyDescription')"
-          >
-            <template v-if="hasAccountFilters" #action>
-              <el-button plain @click="resetAccountFilters">{{ t('common.reset') }}</el-button>
-            </template>
-          </EmptyState>
-        </template>
-        <el-table
-          v-loading="loading"
-          :data="visibleItems"
-          stripe
-          border
-          :empty-text="t('common.noData')"
-          class="console-table"
-        >
+        <el-table v-loading="loading" :data="visibleItems" stripe border class="console-table">
+          <template #empty>
+            <ListEmptyState
+              :filtered="hasAccountFilters"
+              :title="t('userAccountList.emptyTitle')"
+              :description="t('userAccountList.emptyDescription')"
+              :filtered-description="t('userAccountList.emptyDescription')"
+              @reset="resetAccountFilters"
+            />
+          </template>
           <el-table-column prop="id" :label="t('userAccountList.colId')" width="80" />
           <el-table-column
             prop="tenantId"
@@ -387,7 +379,7 @@
   import OpsFilterToolbar from '@/components/table/OpsFilterToolbar.vue'
   import StatusSegment, { type StatusSegmentItem } from '@/components/table/StatusSegment.vue'
   import LiveMonitorBar from '@/components/table/LiveMonitorBar.vue'
-  import EmptyState from '@/components/common/EmptyState.vue'
+  import ListEmptyState from '@/components/common/ListEmptyState.vue'
   import TenantSelect from '@/components/common/TenantSelect.vue'
   import { useTenantStore } from '@/stores/tenant'
   import { useAuthStore } from '@/stores/auth'

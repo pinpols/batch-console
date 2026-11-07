@@ -293,6 +293,10 @@
             v-model:page="channelPage"
             v-model:page-size="channelPageSize"
             @change="sliceChannelPage"
+            :has-active-filters="
+              !!(channelFilters.channelCode.trim() || channelFilters.channelType.trim())
+            "
+            @reset="resetChannels"
           >
             <template #query>
               <ListPageQueryBar
@@ -483,7 +487,7 @@
   import { ArrowRightLeft, CirclePause, Eye, Flame, Power } from '@lucide/vue'
   import { computed, reactive, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
-  import { ElMessage, ElMessageBox } from 'element-plus'
+  import { ElMessage } from 'element-plus'
   import { RefreshCw as Refresh } from '@lucide/vue'
 
   const { t, te } = useI18n({ useScope: 'global' })
@@ -864,7 +868,7 @@
         verb: t('workerManagement.drainConfirmTitle'),
         target: '',
         consequence: t('workerManagement.drainConfirmText', { code: row.workerCode }),
-        confirmButtonText: t('common.confirm'),
+        confirmButtonText: t('workerManagement.drainConfirmButton'),
         cancelButtonText: t('common.cancel'),
       })
       if (!context.isCurrent()) return
@@ -882,15 +886,14 @@
     const context = captureWorkerAction(row, 'takeover')
     if (!context.isCurrent()) return
     try {
-      await ElMessageBox.confirm(
-        t('workerManagement.takeoverConfirmText', { code: row.workerCode }),
-        t('workerManagement.takeoverConfirmTitle'),
-        {
-          type: 'warning',
-          confirmButtonText: t('common.confirm'),
-          cancelButtonText: t('common.cancel'),
-        },
-      )
+      // 接管后执行器标记为已退役，与强制下线同属不可恢复操作
+      await confirmDanger({
+        verb: t('workerManagement.takeoverConfirmTitle'),
+        target: t('workerManagement.offlineTarget', { code: row.workerCode }),
+        consequence: t('workerManagement.takeoverConfirmText'),
+        irreversible: true,
+        confirmButtonText: t('workerManagement.takeoverConfirmButton'),
+      })
       if (!context.isCurrent()) return
       await takeoverWorker(row.workerCode, {
         tenantId: context.tenantId,

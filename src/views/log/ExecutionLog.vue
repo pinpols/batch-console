@@ -12,6 +12,8 @@
         :show-pager="true"
         :error="loadError"
         :on-retry="load"
+        :has-active-filters="!!(traceApplied || opApplied || opResultApplied)"
+        @reset="reset"
       >
         <template #query>
           <ListPageQueryBar

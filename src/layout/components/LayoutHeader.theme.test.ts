@@ -98,7 +98,6 @@ describe('LayoutHeader theme control', () => {
           ElBreadcrumbItem: { template: '<div><slot /></div>' },
           ElIcon: { template: '<span><slot /></span>' },
           NotificationCenter: true,
-          DisplayTimezoneMenu: true,
           TenantSelect: true,
         },
       },
@@ -107,6 +106,8 @@ describe('LayoutHeader theme control', () => {
     expect(wrapper.text()).not.toContain('nav.mobilePreview')
     expect(wrapper.text()).not.toContain('nav.onboardingCenter')
     expect(wrapper.text()).toContain('nav.interfaceTour')
+    expect(wrapper.find('.timezone-trigger').exists()).toBe(false)
+    expect(wrapper.get('.timezone-entry').text()).toContain('layoutHeader.timezoneLabel')
     const themeButton = () => wrapper.get('button[aria-label^="nav.themeControlLabel:"]')
     expect(themeButton().attributes('type')).toBe('button')
     expect(themeButton().attributes('aria-label')).toBe(

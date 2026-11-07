@@ -29,6 +29,7 @@
 | 文档                                                                                   | 用途                                                              |
 | -------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
 | [作业与工作流联动、系统 Pipeline 前端实施方案](engineering/workflow-job-pipeline-unification-plan-2026-10-14.md) | 两个定义菜单联动、系统 Pipeline 只读展示、统一整体运行与兼容迁移；方案已确定，功能待实施 |
+| [产品信息架构整改方案](engineering/product-ia-remediation-plan-2026-11-06.md) | 重复入口合并、隐藏入口归位、自助服务与移动端审批整改；方案已确定，待实施 |
 | [项目结构图](./architecture/project-structure.md)                                      | 顶层 + src 子目录 + 关键 composable + npm script |
 | [前端方案设计说明书 V3](archive/early-proposals/frontend-design-v3-2026-03-28.md) | 前端总体方案:业务域 / 路由 / 页面职责 / 组件分层 / 联调边界       |
 | [设计 Token 治理](./engineering/design-tokens.md)                                       | 运行时 token 权威源；根目录 `design/` 是不发布到文档站的本地只读参考 |
@@ -62,7 +63,7 @@
 | 文档                                            | 用途                                                                                  |
 | ----------------------------------------------- | ------------------------------------------------------------------------------------- |
 | [**前端测试体系**](./testing/README.md)         | ★ 测试分层 / 可复用 helper / 可复制测试案例模板 / 运行 / CI 门禁 / 常见坑(写测试先读) |
-| [界面与菜单调整验收台账](./backlog/frontend-ui-acceptance-2026-11-02.md) | 本地修改与用户待验项目、证据和已知边界 |
+| [界面与菜单调整验收台账](./backlog/frontend-ui-acceptance-2026-11-02.md) | 本地修改与用户待验项目、证据和已知边界；列表空态逐页状态在同文「列表空态对齐」 |
 | [运维 / QA 索引](./runbook/README.md)           | CI / dev-workflow / rollback / 联测计划与报告入口                                     |
 | [审计资料索引](./audits/README.md)              | UI / UX / 可用性审计证据与截图                                                        |
 | [QA 文档索引](./qa/README.md)                    | 当前测试指南与已关闭 campaign 的适用边界                                                |

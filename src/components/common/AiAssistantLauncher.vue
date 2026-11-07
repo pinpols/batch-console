@@ -111,6 +111,7 @@
             />
             <el-button
               type="primary"
+              :icon="Send"
               :loading="chat.sending.value"
               :disabled="!chat.prompt.value.trim() || !!chat.pendingTurnId.value"
               @click="send"
@@ -131,7 +132,7 @@
   import { computed, ref } from 'vue'
   import { useRoute } from 'vue-router'
   import { useI18n } from 'vue-i18n'
-  import { Plus, Sparkles, Square } from '@lucide/vue'
+  import { Plus, Send, Sparkles, Square } from '@lucide/vue'
   import type { InputInstance } from 'element-plus'
   import AiMessageContent from '@/components/common/AiMessageContent.vue'
   import AiMessageImages from '@/components/common/AiMessageImages.vue'

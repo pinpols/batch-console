@@ -70,8 +70,14 @@
     <!-- 主体:左时间线卡片流 + 右侧 sticky 详情面板(照 dump 双栏结构) -->
     <div class="cr-layout" v-loading="tableBlocking">
       <div class="cr-timeline">
+        <ListEmptyState
+          v-if="!tableBlocking && !loadError && rows.length === 0 && releaseFilterActive"
+          filtered
+          class="cr-empty"
+          @reset="reset"
+        />
         <EmptyState
-          v-if="!tableBlocking && !loadError && rows.length === 0"
+          v-else-if="!tableBlocking && !loadError && rows.length === 0"
           class="cr-empty"
           :title="t('configReleaseList.listEmpty')"
           :description="t('configReleaseList.listEmptyHint')"
@@ -210,6 +216,9 @@
       size="760px"
     >
       <el-table v-loading="governanceLoading" :data="governanceItems" height="calc(100vh - 180px)">
+        <template #empty>
+          <EmptyState variant="empty" :description="t('common.noData')" :image-size="80" />
+        </template>
         <el-table-column :label="t('configReleaseList.governanceClass')" min-width="210">
           <template #default="{ row }">
             <CopyableText
@@ -517,6 +526,7 @@
   import MetaSelect from '@/components/common/MetaSelect.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
+  import ListEmptyState from '@/components/common/ListEmptyState.vue'
   import FormDrawer from '@/components/common/FormDrawer.vue'
   import FormSection from '@/components/common/FormSection.vue'
   import CopyableText from '@/components/common/CopyableText.vue'
@@ -563,6 +573,9 @@
     name: '',
     status: '',
   })
+  const releaseFilterActive = computed(
+    () => !!(filters.key.trim() || filters.name.trim() || filters.status.trim()),
+  )
   const createVisible = ref(false)
   const governanceVisible = ref(false)
   const governanceLoading = ref(false)

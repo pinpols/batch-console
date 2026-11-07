@@ -2,20 +2,25 @@
   <PageContainer>
     <PageHeader>
       <template #actions>
-        <el-button v-if="canTriggerWorkflows" @click="bulkTriggerVisible = true">
+        <el-button v-if="canTriggerWorkflows" :icon="Play" @click="bulkTriggerVisible = true">
           {{ t('workflowDefinitionList.bulk.open') }}
         </el-button>
         <el-button v-if="canMutateConfig" type="primary" :icon="Plus" @click="goCreate">
           {{ t('workflowDefinitionList.headerCreate') }}
         </el-button>
-        <el-button v-if="canMutateConfig" @click="goDesignerNew">
+        <el-button v-if="canMutateConfig" :icon="Pencil" @click="goDesignerNew">
           {{ t('workflowDefinitionList.headerDesigner') }}
         </el-button>
       </template>
     </PageHeader>
 
     <BulkActionBar :count="bulkSelection.count.value" @clear="bulkSelection.clear()">
-      <el-button type="primary" :disabled="!canTriggerWorkflows" @click="bulkTriggerVisible = true">
+      <el-button
+        type="primary"
+        :icon="Play"
+        :disabled="!canTriggerWorkflows"
+        @click="bulkTriggerVisible = true"
+      >
         {{ t('workflowDefinitionList.bulk.open') }}
       </el-button>
     </BulkActionBar>
@@ -39,6 +44,7 @@
         :error="loadError"
         :on-retry="load"
         :has-active-filters="hasActiveFilters"
+        @reset="reset"
         table-layout="fixed"
         row-key="id"
         column-config-id="workflow-definitions"
@@ -477,7 +483,7 @@
   import { useResponsive } from '@/composables/useResponsive'
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
-  import { Plus } from '@lucide/vue'
+  import { Pencil, Play, Plus } from '@lucide/vue'
   import RowActions, { type RowAction } from '@/components/common/RowActions.vue'
 
   const { t, te } = useI18n({ useScope: 'global' })

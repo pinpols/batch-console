@@ -13,6 +13,7 @@
             <span>
               <el-button
                 type="primary"
+                :icon="Plus"
                 :disabled="!canWriteSystem"
                 @click="router.push('/jobs/definitions/new')"
               >
@@ -29,7 +30,7 @@
             placement="bottom"
           >
             <span>
-              <el-button :disabled="!canMutateConfig" @click="openCreate">
+              <el-button :icon="Plus" :disabled="!canMutateConfig" @click="openCreate">
                 {{ t('jobDefinitionList.headerQuickCreate') }}
               </el-button>
             </span>
@@ -41,7 +42,7 @@
             placement="top"
           >
             <span>
-              <el-button :disabled="!canWriteSystem" @click="openBundleImport">
+              <el-button :icon="Upload" :disabled="!canWriteSystem" @click="openBundleImport">
                 {{ t('jobDefinitionList.headerBundle') }}
               </el-button>
             </span>
@@ -575,7 +576,7 @@
   import { useFormFocus } from '@/composables/useFormFocus'
   import { useI18n } from 'vue-i18n'
   import { ElMessage, ElMessageBox } from 'element-plus'
-  import { ChevronDown, Upload } from '@lucide/vue'
+  import { ChevronDown, Plus, Upload } from '@lucide/vue'
   type ExecutionMode = 'FULL' | 'INCREMENTAL' | 'CDC'
   const { t, te } = useI18n({ useScope: 'global' })
 

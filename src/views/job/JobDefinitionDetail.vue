@@ -15,7 +15,13 @@
         <el-button v-if="canActOnJob" :icon="MagicStick" @click="dryRunVisible = true">
           {{ t('jobDefinitionDetail.dryRun') }}
         </el-button>
-        <el-button v-if="canActOnJob" type="primary" :loading="triggering" @click="triggerJob">
+        <el-button
+          v-if="canActOnJob"
+          type="primary"
+          :icon="Play"
+          :loading="triggering"
+          @click="triggerJob"
+        >
           {{ t('jobDefinitionDetail.manualTrigger') }}
         </el-button>
       </template>
@@ -121,10 +127,10 @@
                 <el-button type="primary" @click="router.push('/workflow/definitions')">
                   {{ t('jobDefinitionDetail.maintainWorkflowDefinition') }}
                 </el-button>
-                <el-button v-if="canWriteSystem" @click="calendarMiniVisible = true">
+                <el-button v-if="canWriteSystem" :icon="Plus" @click="calendarMiniVisible = true">
                   {{ t('jobDefinitionDetail.btnNewCalendar') }}
                 </el-button>
-                <el-button v-if="canWriteSystem" @click="windowMiniVisible = true">
+                <el-button v-if="canWriteSystem" :icon="Plus" @click="windowMiniVisible = true">
                   {{ t('jobDefinitionDetail.btnNewWindow') }}
                 </el-button>
                 <el-button
@@ -199,7 +205,7 @@
                 </el-descriptions-item>
               </el-descriptions>
               <div v-if="canActOnJob" class="panel-actions">
-                <el-button type="primary" :loading="triggering" @click="triggerJob">
+                <el-button type="primary" :icon="Play" :loading="triggering" @click="triggerJob">
                   {{ t('jobDefinitionDetail.manualTrigger') }}
                 </el-button>
                 <el-button @click="router.push('/self-service')">
@@ -507,7 +513,13 @@
   import { useI18n } from 'vue-i18n'
   import { useRoute, useRouter } from 'vue-router'
   import { ElMessage, ElMessageBox } from 'element-plus'
-  import { Pencil as Edit, RefreshCw as Refresh, Sparkles as MagicStick } from '@lucide/vue'
+  import {
+    Pencil as Edit,
+    Play,
+    Plus,
+    RefreshCw as Refresh,
+    Sparkles as MagicStick,
+  } from '@lucide/vue'
   import DryRunPlanDialog from '@/components/dialogs/DryRunPlanDialog.vue'
   import { jobApi } from '@/api/job'
   import { instanceApi } from '@/api/instance'

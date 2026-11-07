@@ -53,8 +53,15 @@
         border
         size="small"
         class="console-table"
-        :empty-text="t('common.noData')"
       >
+        <template #empty>
+          <ListEmptyState
+            v-if="query.assetCode.trim() || query.enabled !== undefined"
+            filtered
+            @reset="resetFilters"
+          />
+          <EmptyState v-else variant="empty" :description="t('common.noData')" :image-size="80" />
+        </template>
         <el-table-column prop="assetCode" :label="t('assetFreshness.assetCode')" min-width="180">
           <template #default="{ row }">
             <CopyableText v-if="row.assetCode" :text="row.assetCode" />
@@ -213,6 +220,7 @@
   import CopyableText from '@/components/common/CopyableText.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
+  import ListEmptyState from '@/components/common/ListEmptyState.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import TablePagerBar from '@/components/table/TablePagerBar.vue'
 

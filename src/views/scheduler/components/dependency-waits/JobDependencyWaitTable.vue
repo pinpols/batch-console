@@ -3,9 +3,11 @@
     v-loading="props.loading"
     :data="props.waits"
     row-key="requestId"
-    :empty-text="t('dependencyWaits.noJobWaits')"
     :aria-label="t('dependencyWaits.jobTab')"
   >
+    <template #empty>
+      <EmptyState variant="empty" :description="t('dependencyWaits.noJobWaits')" :image-size="80" />
+    </template>
     <el-table-column prop="jobCode" :label="t('dependencyWaits.jobCode')" min-width="150">
       <template #default="{ row }">
         <CopyableText v-if="row.jobCode" :text="String(row.jobCode)" />
@@ -68,6 +70,7 @@
 <script setup lang="ts">
   import { useI18n } from 'vue-i18n'
   import CopyableText from '@/components/common/CopyableText.vue'
+  import EmptyState from '@/components/common/EmptyState.vue'
   import type { JobDependencyWait } from '@/api/dependencyWaits'
   import { fmtDatetime } from '@/utils/datetime'
   import { dependencySnapshotText, waitStatusTone } from '../../dependencyWaitsPresentation'

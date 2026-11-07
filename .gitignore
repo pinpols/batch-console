@@ -49,3 +49,23 @@ test-results-full/
 coverage/
 /.openidea/
 /output/playwright/
+
+# IDE、编辑器和本地工具状态。不提交个人配置。
+.idea/
+.vscode/
+.cursor/
+.fleet/
+.zed/
+.history/
+*.iml
+*.ipr
+*.iws
+*.sublime-workspace
+.project
+.classpath
+.factorypath
+.settings/
+.claude/
+.serena/
+.playwright-cli/
+nbproject/private/

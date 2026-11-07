@@ -59,9 +59,17 @@
             border
             size="small"
             highlight-current-row
-            :empty-text="t('common.noData')"
             class="console-table"
           >
+            <template #empty>
+              <ListEmptyState v-if="listFilterActive" filtered @reset="onTabReset" />
+              <EmptyState
+                v-else
+                variant="empty"
+                :description="t('queueConfig.emptyQueues')"
+                :image-size="80"
+              />
+            </template>
             <el-table-column prop="queueCode" :label="t('queueConfig.colQueueCode')" width="220">
               <template #default="{ row }"><CopyableText :text="row.queueCode" /></template>
             </el-table-column>
@@ -157,9 +165,17 @@
             border
             size="small"
             highlight-current-row
-            :empty-text="t('common.noData')"
             class="console-table"
           >
+            <template #empty>
+              <ListEmptyState v-if="listFilterActive" filtered @reset="onTabReset" />
+              <EmptyState
+                v-else
+                variant="empty"
+                :description="t('queueConfig.emptyWindows')"
+                :image-size="80"
+              />
+            </template>
             <el-table-column prop="windowCode" :label="t('queueConfig.colWindowCode')" width="220">
               <template #default="{ row }"><CopyableText :text="row.windowCode" /></template>
             </el-table-column>
@@ -260,9 +276,17 @@
             border
             size="small"
             highlight-current-row
-            :empty-text="t('common.noData')"
             class="console-table"
           >
+            <template #empty>
+              <ListEmptyState v-if="listFilterActive" filtered @reset="onTabReset" />
+              <EmptyState
+                v-else
+                variant="empty"
+                :description="t('queueConfig.emptyCalendars')"
+                :image-size="80"
+              />
+            </template>
             <el-table-column
               prop="calendarCode"
               :label="t('queueConfig.colCalendarCode')"
@@ -379,8 +403,16 @@
         size="small"
         highlight-current-row
         class="console-table"
-        :empty-text="holidayError ? t('queueConfig.holidayLoadError') : t('common.noData')"
       >
+        <template #empty>
+          <EmptyState
+            v-if="holidayError"
+            variant="error"
+            :description="t('queueConfig.holidayLoadError')"
+            :image-size="80"
+          />
+          <EmptyState v-else variant="empty" :description="t('common.noData')" :image-size="80" />
+        </template>
         <el-table-column
           prop="holidayDate"
           :label="t('queueConfig.holidayColDate')"
@@ -539,6 +571,8 @@
   import { useTenantReload } from '@/composables/useTenantReload'
   import { useTenantRequestScope } from '@/composables/useTenantRequestScope'
   import PageContainer from '@/components/common/PageContainer.vue'
+  import EmptyState from '@/components/common/EmptyState.vue'
+  import ListEmptyState from '@/components/common/ListEmptyState.vue'
   import CopyableText from '@/components/common/CopyableText.vue'
   import MetaSelect from '@/components/common/MetaSelect.vue'
   import GovernanceQueueEditor from './GovernanceQueueEditor.vue'
@@ -615,6 +649,9 @@
   const enabledDraft = ref<boolean | undefined>(undefined)
   const kwApplied = ref('')
   const enabledApplied = ref<boolean | undefined>(undefined)
+  const listFilterActive = computed(
+    () => !!(kwApplied.value.trim() || enabledApplied.value !== undefined),
+  )
   const queues = ref<GovernanceQueueRow[]>([])
   const windows = ref<GovernanceBatchWindowRow[]>([])
   const calendars = ref<GovernanceCalendarRow[]>([])

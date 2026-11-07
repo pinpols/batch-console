@@ -6,6 +6,10 @@
 >
 > 按日期倒序,使用绝对日期(`YYYY-MM-DD`)。
 
+### 2026-11-07
+
+- **列表空态**：交互约定新增「列表空态」。主列表空态留在表体内，使用图标和一句说明；只有筛选无结果时显示重置；可新建的主列表用本页说明，日志和明细用通用「暂无数据」；详情小表、向导和抽屉保持短文案。审查记录与逐页状态见[列表空态审查](audits/ui-ux/list-empty-state-review-2026-11-07.md)和[界面台账](backlog/frontend-ui-acceptance-2026-11-02.md#列表空态对齐2026-11-07)。
+
 ### 2026-11-04
 
 - **Element Plus 样式顺序**：设计 Token 文档新增“Element Plus 样式加载顺序”，规定 `ElementPlusResolver` 保持 `importStyle: false`，避免按需样式覆盖全局主题。

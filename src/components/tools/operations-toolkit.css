@@ -23,7 +23,11 @@
 .tool-form--grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0 var(--space-lg);
+  gap: var(--space-md) var(--space-lg);
+}
+
+.tool-form--grid :deep(.el-form-item) {
+  margin-bottom: 0;
 }
 
 .tool-form__wide {
@@ -32,8 +36,21 @@
 
 .tool-form :deep(.el-date-editor),
 .tool-form :deep(.el-select),
+.tool-form :deep(.el-input),
 .tool-form :deep(.el-input-number) {
   width: 100%;
+}
+
+.naming-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.naming-bar__note {
+  flex: 1;
+  width: auto;
+  min-width: 0;
 }
 
 .tool-action-row,
@@ -62,6 +79,78 @@
   font-family: var(--font-mono);
 }
 
+.file-picker {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  min-height: 4.25rem;
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-content);
+  background: var(--color-bg-subtle);
+}
+
+.file-picker__mark {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-content);
+  background: var(--color-bg-card);
+  color: var(--color-text-secondary);
+}
+
+.file-picker__meta {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-xs);
+  min-width: 0;
+}
+
+.file-picker__name {
+  overflow: hidden;
+  color: var(--color-text-primary);
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-picker__name.is-placeholder {
+  color: var(--color-text-secondary);
+  font-weight: 500;
+}
+
+.file-picker__hint {
+  color: var(--color-text-tertiary);
+  font-size: var(--font-size-sm);
+  line-height: 1.5;
+}
+
+.file-picker__upload {
+  flex: none;
+}
+
+.file-picker__upload :deep(.el-upload) {
+  display: flex;
+}
+
+.file-hash {
+  justify-content: space-between;
+  gap: var(--space-md);
+}
+
+.file-hash__label {
+  flex: none;
+}
+
+.file-hash :deep(.copyable-text),
+.file-hash .el-button {
+  margin-left: auto;
+}
+
 .tool-result-bar--strong {
   border-color: color-mix(in srgb, var(--color-primary) 35%, var(--color-border));
 }
@@ -78,6 +167,11 @@
 
   .tool-result-bar--strong :deep(.copyable-text) {
     width: 100%;
+  }
+
+  .naming-bar {
+    flex-direction: column;
+    align-items: stretch;
   }
 
   .tool-form--grid {

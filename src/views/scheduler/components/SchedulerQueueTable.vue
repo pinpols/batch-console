@@ -1,13 +1,8 @@
 <template>
-  <el-table
-    v-loading="loading"
-    :data="records"
-    stripe
-    border
-    size="small"
-    :empty-text="t('common.noData')"
-    class="console-table"
-  >
+  <el-table v-loading="loading" :data="records" stripe border size="small" class="console-table">
+    <template #empty>
+      <EmptyState variant="empty" :description="t('common.noData')" :image-size="80" />
+    </template>
     <el-table-column :label="t('schedulerSnapshot.colQueue')" :min-width="isMobile ? 200 : 280">
       <template #default="{ row }">
         <div class="cell-stack">
@@ -102,6 +97,7 @@
   import { useI18n } from 'vue-i18n'
   import { Copy as DocumentCopy } from '@lucide/vue'
   import CopyableText from '@/components/common/CopyableText.vue'
+  import EmptyState from '@/components/common/EmptyState.vue'
   import DatetimeColumn from '@/components/common/DatetimeColumn.vue'
   import TablePagerBar from '@/components/table/TablePagerBar.vue'
   import type { ConsoleSchedulerQueueSnapshot } from '@/types/console-api'

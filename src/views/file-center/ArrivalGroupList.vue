@@ -46,6 +46,8 @@
         @change="slicePage"
         :error="loadError"
         :on-retry="load"
+        :has-active-filters="!!kwApplied.trim()"
+        @reset="onReset"
       >
         <template #query>
           <ListPageQueryBar

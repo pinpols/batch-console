@@ -4,27 +4,38 @@
       <h3>{{ t('operationsToolkit.file.title') }}</h3>
       <p>{{ t('operationsToolkit.file.description') }}</p>
     </div>
-    <div class="tool-action-row">
+    <div class="file-picker">
+      <span class="file-picker__mark" aria-hidden="true">
+        <el-icon><FileText /></el-icon>
+      </span>
+      <div class="file-picker__meta">
+        <span class="file-picker__name" :class="{ 'is-placeholder': !fileInfo }">
+          {{ fileInfo?.name ?? t('operationsToolkit.file.emptyTitle') }}
+        </span>
+        <span class="file-picker__hint">
+          <template v-if="fileInfo">{{ formatBytes(fileInfo.size) }} · </template>
+          {{
+            fileInfo
+              ? t('operationsToolkit.file.localOnly')
+              : t('operationsToolkit.file.emptyDescription')
+          }}
+        </span>
+      </div>
       <el-upload
+        class="file-picker__upload"
         :auto-upload="false"
         :show-file-list="false"
         :limit="1"
         :on-change="inspect"
         :on-exceed="replaceFile"
       >
-        <el-button type="primary" plain :icon="FileSearch">
-          {{ t('operationsToolkit.file.choose') }}
+        <el-button type="primary" plain :icon="Upload">
+          {{ fileInfo ? t('operationsToolkit.file.replace') : t('operationsToolkit.file.choose') }}
         </el-button>
       </el-upload>
-      <span class="tool-muted">{{ t('operationsToolkit.file.localOnly') }}</span>
     </div>
 
-    <EmptyState
-      v-if="!fileInfo"
-      :title="t('operationsToolkit.file.emptyTitle')"
-      :description="t('operationsToolkit.file.emptyDescription')"
-    />
-    <template v-else>
+    <template v-if="fileInfo">
       <el-descriptions :column="2" border size="small">
         <el-descriptions-item :label="t('operationsToolkit.file.name')">{{
           fileInfo.name
@@ -58,8 +69,8 @@
         :title="t('operationsToolkit.file.binaryWarning')"
         show-icon
       />
-      <div class="tool-result-bar">
-        <span>{{ t('operationsToolkit.file.sha256') }}</span>
+      <div class="tool-result-bar file-hash">
+        <span class="file-hash__label">{{ t('operationsToolkit.file.sha256') }}</span>
         <CopyableText v-if="checksum" :text="checksum" />
         <el-button v-else link type="primary" :loading="hashing" @click="calculateHash">
           {{ t('operationsToolkit.file.calculateHash') }}
@@ -72,11 +83,10 @@
 <script setup lang="ts">
   import { ref } from 'vue'
   import { useI18n } from 'vue-i18n'
-  import { SearchCode as FileSearch } from '@lucide/vue'
+  import { FileText, Upload } from '@lucide/vue'
   import type { UploadFile, UploadRawFile, UploadUserFile } from 'element-plus'
   import { ElMessage } from 'element-plus'
   import CopyableText from '@/components/common/CopyableText.vue'
-  import EmptyState from '@/components/common/EmptyState.vue'
   import {
     inspectFileSample,
     sha256Hex,

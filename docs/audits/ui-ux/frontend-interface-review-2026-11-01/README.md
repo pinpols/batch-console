@@ -93,7 +93,7 @@
 | U10 | Job向导复核页展示所选对象与本地化字段，澄清资源纳入配置包不等于自动绑定；保留高级JSON | 既有向导35例通过；字段映射 JSON 在 IMPORT/EXPORT/FIXED_WIDTH 的结构不同且存在 Worker 扩展字段，渠道配置含路径脱敏与超安全整数；缺少版本化完整 schema 和无损往返契约，结构化编辑未实施，保留原文编辑/校验/导入 |
 | U11 | 移动定义 ID 与 Workflow 运行 ID 分路由；运行页复用冻结快照和推送，旧深链兼容；首页增加共享每日进度摘要 | 路由、组件、数据流定向测试通过；真实运行样本与移动真机待验 |
 
-服务重建后真实浏览器以管理员登录、选择已有 `system` 租户；工作流运行列表显示该租户无运行，未创建数据。390×844 移动首页真实只读检查显示五层每日进度、实时连接及未启用日程时的“未确定”比例；截图为 `output/playwright/brand-navigation-2026-11-01/mobile-progress-real-empty.jpg`。登录视觉回归、i18n和文档检查通过；全量测试事实源检查仍报开工已有的两处认证测试常量问题，未覆盖其未提交改动。完整CI、四角色、真实运行快照/SSE及真机均未完成。
+服务重建后真实浏览器以管理员登录、选择已有 `system` 租户；工作流运行列表显示该租户无运行，未创建数据。390×844 移动首页真实只读检查显示五层每日进度、实时连接及未启用日程时的“未确定”比例；截图为 [mobile-progress-real-empty.jpg](assets/brand-navigation-2026-11-01/mobile-progress-real-empty.jpg)。登录视觉回归、i18n和文档检查通过；全量测试事实源检查仍报开工已有的两处认证测试常量问题，未覆盖其未提交改动。完整CI、四角色、真实运行快照/SSE及真机均未完成。
 
 本次最终验证：`npm run typecheck`、`npm run check:i18n`（6265键）、`npm run check:docs`、相关文件 ESLint、`npm run build:fast` 和 `git diff --check` 通过；登录视觉回归1例通过。定向 Vitest 最近三批分别为11文件29例、9文件39例、6文件18例通过，批次有重叠，不合并为总数。完整CI/全量单测未运行。`npm run check:test-fixture-sources` 仍因开工已有的 `src/api/interceptors.integration.test.ts:132` 和 `e2e/closure-recovery-real.spec.ts:446` 中锁名称字面量而失败。
 
@@ -179,7 +179,7 @@
 - 1440×900：登录品牌前后、浅/深色加载遮罩、表格/通用骨架、28/38/64px品牌。
 - 390×844：加载样张无水平溢出；搜索弹窗640px裁切可复现。
 - 减少动态效果：浏览器媒体模拟下，首屏光带、页面遮罩、两类骨架、路由光带计算animation为none；按钮原生loading图标仍显示。模拟结束恢复。
-- 截图目录：`output/playwright/brand-navigation-2026-11-01/`，包括`before-login.jpg`、`loading-light.jpg`、`loading-dark.jpg`、`loading-mobile-reduced.jpg`、`search-source-fixture.jpg`、`search-mobile-fixture.jpg`、`search-stale-scope-fixture.jpg`、`startup-mobile-reduced.jpg`及有效登录视觉截图。样张截图不替代业务页面/真实角色验收。
+- 截图目录：[assets/brand-navigation-2026-11-01/](assets/brand-navigation-2026-11-01/)，包括`before-login.jpg`、`loading-light.jpg`、`loading-dark.jpg`、`loading-mobile-reduced.jpg`、`search-source-fixture.jpg`、`search-mobile-fixture.jpg`、`search-stale-scope-fixture.jpg`、`startup-mobile-reduced.jpg`及有效登录视觉截图。样张截图不替代业务页面/真实角色验收。
 
 ### 本地检查
 

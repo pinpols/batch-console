@@ -31,7 +31,13 @@
         <el-button :disabled="saving" @click="cancel">
           {{ cancelText || t('common.cancel') }}
         </el-button>
-        <el-button type="primary" :loading="saving" :disabled="submitDisabled" @click="submit">
+        <el-button
+          type="primary"
+          :icon="Save"
+          :loading="saving"
+          :disabled="submitDisabled"
+          @click="submit"
+        >
           {{ submitText || t('common.save') }}
         </el-button>
       </template>
@@ -42,6 +48,7 @@
 <script setup lang="ts">
   import { computed } from 'vue'
   import { useI18n } from 'vue-i18n'
+  import { Save } from '@lucide/vue'
 
   /**
    * 编辑抽屉壳：统一新增/编辑/查看的标题区、可滚动正文和底部操作区。

@@ -17,7 +17,6 @@ batch-console/
 ├── tools/docs-bridge/         前后端 docs 跨仓桥接工具
 ├── .github/                   GitHub Actions / PR 模板等
 ├── .husky/                    Git hooks
-├── .vscode/                   共享编辑器配置
 │
 ├── dist/                      build 产物(.gitignore)
 ├── coverage/                  Vitest coverage 产物(.gitignore)
@@ -28,7 +27,8 @@ batch-console/
 ├── .remember/                 本地 session memory(.gitignore)
 ├── .codex-audit/              本地审计缓存(.gitignore)
 ├── .agents/                   仓库级 Agent 技能
-├── .idea/                     本地 IDE 状态,workspace.xml 忽略
+├── .idea/                     本地 IDE 状态(.gitignore)
+├── .vscode/                   本地编辑器配置(.gitignore)
 │
 ├── index.html                 SPA 入口
 ├── package.json               依赖 + npm scripts
@@ -55,8 +55,8 @@ batch-console/
 | 工程文档 | `docs/`                                                                                                         | 按 `docs/README.md` 的目录分层维护               |
 | 设计输入 | `design/`                                                                                                       | 作为前端设计稿输入独立保留,默认只读,不做目录整理 |
 | 工程脚本 | `scripts/`, `tools/`                                                                                            | 可重构,但要保留 CLI 入口兼容性                   |
-| 仓库配置 | `.github/`, `.husky/`, `.vscode/`                                                                               | 随 CI / DX 需求维护                              |
-| 本地产物 | `dist/`, `coverage/`, `playwright-report/`, `test-results/`, `logs/`, `.remember/`, `.codex-audit/` | 已由 `.gitignore` 管理,不提交                    |
+| 仓库配置 | `.github/`, `.husky/`                                                                                           | 随 CI / DX 需求维护                              |
+| 本地产物 | `dist/`, `coverage/`, `playwright-report/`, `test-results/`, `output/`, `logs/`, `.remember/`, `.codex-audit/`, `.idea/`, `.vscode/` | 已由 `.gitignore` 管理,不提交                    |
 
 ## src/ 子目录
 

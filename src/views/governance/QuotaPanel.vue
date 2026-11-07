@@ -57,6 +57,13 @@
           <el-button link type="primary" @click="reload">{{ t('common.retry') }}</el-button>
         </template>
       </el-alert>
+      <ListEmptyState
+        v-else-if="
+          !loading && filtered.length === 0 && (kwApplied.trim() || enabledApplied !== undefined)
+        "
+        filtered
+        @reset="onQuotaReset"
+      />
       <EmptyState
         v-else-if="!loading && filtered.length === 0"
         :description="t('quotaPanel.empty')"
@@ -225,6 +232,7 @@
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
+  import ListEmptyState from '@/components/common/ListEmptyState.vue'
   import DatetimeText from '@/components/common/DatetimeText.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
 

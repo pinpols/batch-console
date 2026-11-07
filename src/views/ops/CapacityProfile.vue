@@ -139,9 +139,11 @@
             stripe
             border
             size="small"
-            :empty-text="t('common.noData')"
             class="console-table"
           >
+            <template #empty>
+              <EmptyState variant="empty" :description="t('common.noData')" :image-size="80" />
+            </template>
             <el-table-column :label="dimensionLabel" min-width="220">
               <template #default="{ row }">
                 <div class="cell-stack">

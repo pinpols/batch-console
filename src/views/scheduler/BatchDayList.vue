@@ -199,6 +199,8 @@
         v-model:page="page"
         v-model:page-size="pageSize"
         @change="load"
+        :has-active-filters="!!(filters.from || filters.to)"
+        @reset="reset"
       >
         <el-table-column prop="bizDate" :label="t('batchDayList.colBizDate')" width="120">
           <template #default="{ row }">

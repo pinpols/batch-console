@@ -3,9 +3,15 @@
     v-loading="props.loading"
     :data="props.waits"
     row-key="id"
-    :empty-text="t('dependencyWaits.noCalendarWaits')"
     :aria-label="t('dependencyWaits.calendarTab')"
   >
+    <template #empty>
+      <EmptyState
+        variant="empty"
+        :description="t('dependencyWaits.noCalendarWaits')"
+        :image-size="80"
+      />
+    </template>
     <el-table-column prop="calendarCode" :label="t('dependencyWaits.calendarCode')" min-width="145">
       <template #default="{ row }">
         <CopyableText v-if="row.calendarCode" :text="String(row.calendarCode)" />
@@ -107,6 +113,7 @@
 <script setup lang="ts">
   import { useI18n } from 'vue-i18n'
   import CopyableText from '@/components/common/CopyableText.vue'
+  import EmptyState from '@/components/common/EmptyState.vue'
   import type { CalendarDependencyWait } from '@/api/dependencyWaits'
   import { fmtDatetime } from '@/utils/datetime'
   import {

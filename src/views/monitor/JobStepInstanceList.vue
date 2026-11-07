@@ -12,6 +12,8 @@
         @change="slicePage"
         :error="loadError"
         :on-retry="load"
+        :has-active-filters="!!(filterInstanceId.trim() || filterStepStatus)"
+        @reset="onQueryReset"
       >
         <template #query>
           <ListPageQueryBar

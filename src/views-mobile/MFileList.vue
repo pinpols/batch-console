@@ -29,7 +29,7 @@
 
       <MSkeleton v-if="loading && rows.length === 0" :count="4" />
       <div v-else-if="!loading && !error && rows.length === 0" class="m-empty">
-        {{ t('empty.default') }}
+        {{ t(statusFilter ? 'mobile.common.emptyForSearch' : 'empty.default') }}
       </div>
 
       <div v-for="row in rows" :key="row.id" class="m-card">

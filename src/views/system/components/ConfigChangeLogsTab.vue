@@ -9,6 +9,7 @@
       @reset="() => runReset(loadLogs)"
     />
     <DataState
+      inline
       :loading="loadingLogs"
       :error="loadLogsError"
       :has-data="pagedLogs.records.length > 0"
@@ -19,10 +20,12 @@
         :data="pagedLogs.records"
         stripe
         border
-        :empty-text="t('common.noData')"
         size="small"
         class="console-table"
       >
+        <template #empty>
+          <EmptyState variant="empty" :description="t('common.noData')" :image-size="80" />
+        </template>
         <el-table-column prop="id" :label="t('configChangeLogsTab.colId')" width="80" />
         <el-table-column prop="configType" :label="t('configChangeLogsTab.colType')" width="100" />
         <el-table-column
@@ -118,6 +121,7 @@
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import TablePagerBar from '@/components/table/TablePagerBar.vue'
   import DataState from '@/components/common/DataState.vue'
+  import EmptyState from '@/components/common/EmptyState.vue'
   import { useListLoadState } from '@/composables/useListLoadState'
   import DatetimeColumn from '@/components/common/DatetimeColumn.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
