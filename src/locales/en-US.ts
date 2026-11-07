@@ -762,6 +762,7 @@ const messages: Messages = {
       title: 'Local file sample check',
       description: 'Inspect the header and first 128 KiB locally without uploading file content.',
       choose: 'Choose local file',
+      replace: 'Replace file',
       localOnly: 'The file stays in this browser.',
       emptyTitle: 'No file selected',
       emptyDescription:
@@ -2070,6 +2071,9 @@ const messages: Messages = {
     sectionCapacityDesc:
       'Caps on concurrent jobs, partitions and requests per second for this queue, plus priority and weight when queues compete.',
     sectionRouting: 'Routing and notes',
+    emptyQueues: 'No resource queues yet. Add one to cap concurrency and fair share.',
+    emptyWindows: 'No batch windows yet. Add one to set the daily hours when batches can run.',
+    emptyCalendars: 'No business calendars yet. Add one to define working days and holidays.',
     holidayLoadError: 'Could not load holiday records. Try again.',
     holidayMonthTitle: 'Holiday month view',
     holidayMonthPrevious: 'Previous',

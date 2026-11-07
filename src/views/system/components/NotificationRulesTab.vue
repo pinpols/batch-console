@@ -10,6 +10,7 @@
       v-model:page-size="rulePageSize"
       @change="() => {}"
       :has-active-filters="hasActiveRuleFilters"
+      @reset="resetRuleFilter"
     >
       <template v-if="!hasActiveRuleFilters" #empty>
         <EmptyState :description="t('notificationRulesTab.emptyDescription')" :image-size="80">

@@ -22,10 +22,6 @@
 
 本节汇总本台账与[时刻表重设计方案](../engineering/console-visual-redesign-timetable-2026-11-03.md)中尚未关闭的事项，明细与证据仍以各原条目为准；完成后在原条目更新状态并从本节移除。
 
-### 未开始
-
-无。2026-11-05 已完成原列的“多主操作抽屉结构”“标签管理‘新增标签’可发现性”，见下方待用户验收。
-
 ### 待验证
 
 | 事项             | 需要的动作                                                                                                                                                                                                                                                                               |
@@ -33,6 +29,8 @@
 | 真实数据下的状态 | 2026-11-07 已复核触发器“未启用调度”、Worker 接管 / 强制下线的确认框和成功提示，详见任务走查审计“触发器状态、Worker 确认与补跑”。补跑审批仍未覆盖：有 Worker 的 `default-tenant` 没有业务日历和工作流；有工作流的 `ta` 两个日历都禁用了批量日补跑。 |
 
 ### 待用户验收
+
+2026-11-07：主列表空态已按[列表空态](../engineering/ui-interaction-conventions.md#列表空态)改完，逐页见下文。本地单测覆盖共享表格空槽和资源标签前置说明；页面测试未连真实后端。浏览器只抽查了代表页，不能当作全列表验收。
 
 2026-11-05 补充（分支 `feature/multi-action-drawers`）：
 
@@ -102,3 +100,76 @@
 ### 本分支已调整并待用户验收
 
 控制面板时刻轨道与“需要你处理”、趋势/分布/扩展面板图表高度、工作流运行列表名称与耗时、侧栏随主题深浅与分隔线、主题切换不同步、维护设置页重排、通知与投递新增入口。验证范围以各提交及 PR 描述为准。
+
+## 列表空态对齐（2026-11-07）
+
+规则：[列表空态](../engineering/ui-interaction-conventions.md#列表空态)。证据：[列表空态审查](../audits/ui-ux/list-empty-state-review-2026-11-07.md)。基线 `d87c56d0b`，分支 `local/pending-2026-11-07`。下表状态是源码已改，不是用户验收。
+
+验证：`ProTable.empty.test.ts`、`TagResourceTab.empty.test.ts` 通过；同轮相关页面单测 16 个文件通过；`npm run check:i18n` 通过。浏览器抽查见本节末。详情小表、向导、抽屉和单元格「—」不在本表。
+
+### 已改：列头保留
+
+| 列表 | 代码 | 现状 | 目标 |
+| --- | --- | --- | --- |
+| 登录账户 | `UserAccountList.vue` | `DataState` 换掉表格；有图标，筛选时有重置 | 表内空态，保留本页文案和重置 |
+| 标签资源 | `TagResourceTab.vue` | 无数据时表格不渲染 | 表头保留；未选资源仍写明先选类型和编码 |
+| 执行日志页签 | `ExecutionLogsTab.vue` | 表格不渲染 | 表内图标，保留现有说明；有筛选则重置 |
+| 渠道回执 | `ChannelReceiptsTab.vue` | 通用「暂无数据」，无表头 | 表内通用文案；有筛选则重置 |
+| 死信 | `DeadLettersTab.vue` | 同上 | 同上 |
+| 重试 | `RetriesTab.vue` | 同上 | 同上 |
+| 配置变更日志 | `ConfigChangeLogsTab.vue` | 同上 | 同上 |
+| 配置密钥 | `ConfigSecretsTab.vue` | 同上 | 同上 |
+| 配置同步日志 | `ConfigSyncLogsTab.vue` | 同上 | 同上 |
+
+### 已改：表内图标空态
+
+| 列表 | 代码 | 文案档 | 目标 |
+| --- | --- | --- | --- |
+| 触发器 | `TriggerList.vue` | 默认或降级说明；筛选时也是纯文字 | 图标；降级保持原句；筛选加重置 |
+| 终端投递 | `NotificationTerminalDeliveriesTab.vue` | 通用 | 表内通用图标空态 |
+| 审计 | `AuditList.vue` | 通用 | 通用图标；有筛选则重置 |
+| 操作审计 | `OperationAuditList.vue` | 通用 | 同上 |
+| 执行日志 | `ExecutionLog.vue` | 通用 | 同上 |
+| 作业步骤 | `JobStepInstanceList.vue` | 通用 | 同上 |
+| 文件模板 | `FileTemplateList.vue` 主表 | 通用 | 本页说明；有筛选则重置 |
+| 文件渠道 | `FileTemplateList.vue` 渠道表 | 通用 | 本页说明；有筛选则重置 |
+| 到达组 | `ArrivalGroupList.vue` | 通用 | 通用或一句本页说明；有筛选则重置 |
+| 系统参数 | `SystemParameterList.vue` | 通用，已传筛选标记 | 图标；筛选加重置 |
+| 批次日 | `BatchDayList.vue` | 通用 | 通用图标 |
+| AI 调用记录 | `AiChat.vue` | 通用 | 通用图标 |
+| 流水线观测 | `FilePipelineObservability.vue` 四表 | 通用 | 通用图标；有查询栏的表加重置 |
+| 事件目录 | `EventCatalog.vue` 两表 | 筛选时纯文字 | 图标；筛选加重置 |
+| Worker 渠道 | `WorkerManagement.vue` 渠道 `ProTable` | 通用 | 图标；有筛选则重置 |
+| 队列 / 窗口 / 日历 | `QueueConfig.vue` 三表 | 通用 | 本页说明；有筛选则重置 |
+| 日历假日 | `QueueConfig.vue` 假日表 | 通用，失败时用错误句 | 图标；失败不写成暂无数据 |
+| 调度快照 | `SchedulerSnapshot.vue` 三表 | 通用 | 通用图标 |
+| 调度队列 | `SchedulerQueueTable.vue` | 通用 | 通用图标 |
+| 依赖等待 | `dependency-waits` 三表 | 专用短句 | 保留句子，改为表内图标 |
+| 资产新鲜度 | `AssetFreshnessPolicies.vue` | 通用 | 图标；有筛选则重置 |
+| 作业监控策略 | `JobMonitoringPolicies.vue` | 通用 | 同上 |
+| 批次窗口页 | `BatchDayWindow.vue` 两表 | 通用或「无计划发生」 | 表内图标，保留专用句 |
+| 容量画像 | `CapacityProfile.vue` 表 | 通用 | 通用图标 |
+| 发布治理侧栏 | `ConfigReleaseList.vue` 治理表 | 默认纯文字 | 表内通用图标 |
+
+### 已改：筛选空态
+
+无筛选时已有图标。有筛选时 `ProTable` 丢掉 `#empty`，重置消失，或空态仍引导新建。
+
+| 列表 | 代码 | 目标 |
+| --- | --- | --- |
+| 租户 | `TenantList.vue` | 筛选无结果 + 重置；无筛选保留新建 |
+| 工作流定义 | `WorkflowDefinitionList.vue` | 同上 |
+| API Key | `ApiKeyList.vue` | 同上 |
+| 通知规则 / 渠道 / Webhook / 投递日志 | 通知四个页签 | 同上 |
+| 审批 / 补跑审批 | `GeneralApprovalsTab.vue`、`CatchUpApprovalsTab.vue` | 筛选时仍显示重置 |
+| 告警路由 | `AlertRoutingPanel.vue` | 有筛选时不显示新建，改为重置 |
+| 配额策略 | `QuotaPanel.vue` | 卡片列表按筛选切换重置 |
+| 发布记录时间线 | `ConfigReleaseList.vue` | 有筛选时不显示新建 |
+
+### 已对齐
+
+作业运行、工作流运行、作业定义、文件主表、告警、Worker 卡片、Outbox、标签搜索、重放会话、分片目录、租户放置、我的 Worker、Worker 指纹、自定义任务类型、使用统计、自助服务订阅 / 我的审计 / 失败作业、权限自查的权限列表。保持现状。文件主表的审计抽屉不改。
+
+### 移动端
+
+保持 `.m-empty` 短文字。`MWorkers.vue`、`MAlerts.vue`、`MOutbox.vue`、`MFileList.vue` 在偏离默认范围的筛选下改为「没有匹配项」。审批和作业运行的筛选空态原本已分开。

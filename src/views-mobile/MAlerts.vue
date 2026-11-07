@@ -44,7 +44,13 @@
 
       <MSkeleton v-if="loading && filtered.length === 0" :count="3" />
       <div v-else-if="!loadError && filtered.length === 0" class="m-empty">
-        {{ t('mobile.alerts.empty') }}
+        {{
+          t(
+            keyword.trim() || filter !== 'all'
+              ? 'mobile.common.emptyForSearch'
+              : 'mobile.alerts.empty',
+          )
+        }}
       </div>
 
       <!-- 同类告警合并：与桌面端同一规则，只展示最新一条，其余可展开 -->

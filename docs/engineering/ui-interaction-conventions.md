@@ -85,7 +85,18 @@
 - 有数值轴和时间轴语义的图表应显示可读的轴、刻度/网格、单位和图例。空数据时保留图表标题及必要的轴/图表框架，并在绘图区显示明确空态；不编造零值、日期或刻度来伪装真实数据。环图等无笛卡尔坐标轴的图表不强加横纵轴。
 - 空、单点、全零、极端长类别名和大量类别均需有合理表现；避免只有孤立色块而无法判断数据含义。工具提示、图例和颜色语义应一致，颜色不作唯一信息通道。
 - 多张图表应根据分析任务选择不同且合适的表达，不以“形式多样”为由牺牲可比较性或可读性。
-- 列表空态区分“筛选无结果”和“还没有数据”：只要有收窄结果的筛选（状态、关键字、编码等，或其他状态页签下有记录），就显示“筛选无结果 + 重置”，不能写“当前租户还没有……”并引导去新建。用 `src/components/common/ListEmptyState.vue`，`filtered` 由页面按自己的筛选字段计算。
+- 图表空态与列表空态分开处理。列表规则见下一节。
+
+## 列表空态
+
+主列表（页面主表、页签里的列表、卡片列表）共用同一套结构。文案分两档，不要求每一页都写成同一句。
+
+- 表格空态画在表体内，列头保留。用 `ProTable` / `el-table` 的 `#empty`，内容为 `ListEmptyState` 或 `EmptyState`。不要用 `DataState` 在没有数据时换成整块空态，否则列头会消失。首次加载仍可用骨架，请求失败仍用错误态；这两态可以先不渲染表格。
+- 外观是图标加一句说明。主列表不再使用表格默认的一行纯文字 `empty-text`。
+- 当前有收窄结果的筛选（状态、关键字、编码，或当前页签本身在收窄）且没有行时，显示「筛选无结果」和重置。没有筛选时不放重置，也不写「当前租户还没有……」或给出新建入口。`filtered` 由页面按已生效的筛选计算，并传给 `ListEmptyState` 或 `ProTable` 的 `has-active-filters`。
+- 文案两档：用户能新建或有明确下一步的主对象列表，写本页标题、说明和下一步。日志、回执、审计、明细和运行记录用通用「暂无数据」，不引申成「当前租户还没有」。
+- 详情里的从属小表、向导和预览表、抽屉里的结果表、单元格里的「—」保持短文案，不套这套大空态。
+- 没有表头的卡片列表同样用 `EmptyState`，并按上一条区分筛选无结果。移动端列表继续用各自页面的短空态，不换成桌面大空态；页面上有搜索时，同样把「筛选无结果」和「还没有数据」分开。
 
 ## JSON 与结构化内容
 
@@ -112,7 +123,7 @@
 - 行操作：`src/components/common/RowActions.vue`
 - 编辑抽屉与表单分节：`src/components/common/FormDrawer.vue`、`src/components/common/FormSection.vue`
 - 先预览再提交的抽屉底部：`src/components/common/StepActionFooter.vue`
-- 列表空态（筛选无结果 / 还没有数据）：`src/components/common/ListEmptyState.vue`
+- 列表空态（表体内图标说明；筛选无结果 / 还没有数据）：`src/components/common/ListEmptyState.vue`、`src/components/common/EmptyState.vue`；表格壳为 `src/components/table/ProTable.vue`
 - 列表筛选工具栏：`src/components/table/OpsFilterToolbar.vue`（若页面采用）
 - 次要筛选：`ListPageQueryBar` 的 `advanced` 插槽，配合 `advanced-active` 传入已生效数；主筛选超过一行时使用
 - 设计变量：`src/styles/tokens-handoff.css`，规则见 `docs/engineering/design-tokens.md`

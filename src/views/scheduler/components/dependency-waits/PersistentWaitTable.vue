@@ -3,9 +3,15 @@
     v-loading="props.loading"
     :data="props.waits"
     :row-key="persistentWaitRowKey"
-    :empty-text="t('dependencyWaits.noPersistentWaits')"
     :aria-label="t('dependencyWaits.persistentTab')"
   >
+    <template #empty>
+      <EmptyState
+        variant="empty"
+        :description="t('dependencyWaits.noPersistentWaits')"
+        :image-size="80"
+      />
+    </template>
     <el-table-column :label="t('dependencyWaits.waitType')" width="155">
       <template #default="{ row }">{{ t(`dependencyWaits.waitTypes.${row.waitType}`) }}</template>
     </el-table-column>
@@ -79,6 +85,7 @@
 <script setup lang="ts">
   import { useI18n } from 'vue-i18n'
   import CopyableText from '@/components/common/CopyableText.vue'
+  import EmptyState from '@/components/common/EmptyState.vue'
   import type { PersistentWait } from '@/api/persistentWaits'
   import { fmtDatetime } from '@/utils/datetime'
   import { persistentWaitRowKey, persistentWaitStatusTone } from '../../dependencyWaitsPresentation'

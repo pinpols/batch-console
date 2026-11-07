@@ -136,6 +136,7 @@
               </el-button>
               <el-button
                 type="primary"
+                :icon="Send"
                 native-type="submit"
                 :loading="submitting"
                 class="me-submit"
@@ -156,7 +157,7 @@
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
   import type { FormInstance, FormRules } from 'element-plus'
-  import { KeyRound, ShieldCheck, UserRound } from '@lucide/vue'
+  import { KeyRound, Send, ShieldCheck, UserRound } from '@lucide/vue'
   import { authApi } from '@/api/auth'
   import { useAuthStore } from '@/stores/auth'
   import { useTenantStore } from '@/stores/tenant'

@@ -31,9 +31,10 @@ const stubs = {
   ElFormItem: { template: '<div><slot /></div>' },
   ElDrawer: true,
   ElButton: true,
-  ElTable: true,
+  ElTable: { template: '<div class="table"><slot name="empty" /></div>' },
   ElTableColumn: true,
-  DataState: { props: ['emptyText'], template: '<p class="empty">{{ emptyText }}</p>' },
+  DataState: { template: '<div><slot /></div>' },
+  EmptyState: { props: ['description'], template: '<p class="empty">{{ description }}</p>' },
 }
 
 describe('资源标签空态', () => {
@@ -43,6 +44,6 @@ describe('资源标签空态', () => {
     expect(wrapper.get('.empty').text()).toBe('tagResourceTab.emptyNeedResource')
     await wrapper.findAll('input')[0]!.setValue('JOB')
     await wrapper.findAll('input')[1]!.setValue('job-1')
-    expect(wrapper.get('.empty').text()).toBe('')
+    expect(wrapper.get('.empty').text()).toBe('common.noData')
   })
 })

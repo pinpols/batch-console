@@ -9,7 +9,7 @@
 | 本地时刻 | `LocalTime` / `time`    | `HH:mm:ss`                   | 不附加日期或时区                         |
 | 持续时长 | 毫秒数等数值            | 原数值                       | `fmtDuration`，不当作时间点解析          |
 
-后端权威定义见 [`BatchDateTimeSupport.java`](../../../file-batch-system/batch-common/src/main/java/io/github/pinpols/batch/common/time/BatchDateTimeSupport.java) 和 [`console-api.openapi.yaml`](../../../file-batch-system/docs/api/console-api.openapi.yaml)。时间点存储和 API 响应以 UTC `Instant` 为准；业务日期按平台业务时区计算。前端部署的 `VITE_DISPLAY_TIMEZONE` 必须与后端默认业务时区一致（当前为 `Asia/Shanghai`）；用户切换展示时区只影响时间点展示和输入，不改变业务日期。
+后端权威定义见 [`BatchDateTimeSupport.java`](../../../file-batch-system/batch-common/src/main/java/io/github/pinpols/batch/common/time/BatchDateTimeSupport.java) 和 [`console-api.openapi.yaml`](../../../file-batch-system/docs/api/console-api.openapi.yaml)。时间点存储和 API 响应以 UTC `Instant` 为准；业务日期按平台业务时区计算。前端部署的 `VITE_DISPLAY_TIMEZONE` 必须与后端默认业务时区一致（当前为 `Asia/Shanghai`）；用户切换展示时区只影响时间点展示和输入，不改变业务日期。桌面端在账号菜单「展示时区」里切换；手机端仍在顶栏菜单内。
 
 ## 前端入口
 

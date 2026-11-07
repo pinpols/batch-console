@@ -9,13 +9,13 @@
     </template>
   </EmptyState>
 
+  <!-- 表格列表用 inline：无数据时仍渲染表格，空态放在表体内，列头保留 -->
+  <slot v-else-if="hasData || inline" />
+
   <!-- empty:已加载但没数据 — 支持 5 类细分文案(filter-empty/tenant-empty/no-permission/...) -->
-  <slot v-else-if="!hasData" name="empty">
+  <slot v-else name="empty">
     <EmptyState :variant="emptyVariant" :description="emptyTextResolved || undefined" />
   </slot>
-
-  <!-- 有数据:把内容交给 default slot,父组件渲染 el-table 等 -->
-  <slot v-else />
 </template>
 
 <script setup lang="ts">
@@ -53,6 +53,11 @@
       onRetry?: () => void | Promise<void>
       /** 5 类空态文案细分 — 详见 EmptyState variant */
       emptyVariant?: EmptyVariant
+      /**
+       * 为 true 时，无数据仍渲染默认插槽（表格），由表格 #empty 显示空态。
+       * 加载骨架和错误态仍替换内容。
+       */
+      inline?: boolean
     }>(),
     {
       loading: false,
@@ -61,6 +66,7 @@
       emptyText: '',
       skeletonRows: 6,
       emptyVariant: 'empty',
+      inline: false,
     },
   )
 

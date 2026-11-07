@@ -36,6 +36,7 @@
       </el-form-item>
     </ListPageQueryBar>
     <DataState
+      inline
       :loading="loadingReceipts"
       :error="loadReceiptsError"
       :has-data="pagedReceipts.records.length > 0"
@@ -46,10 +47,21 @@
         :data="pagedReceipts.records"
         stripe
         border
-        :empty-text="t('common.noData')"
         size="small"
         class="console-table"
       >
+        <template #empty>
+          <ListEmptyState
+            v-if="
+              receiptApplied.channelCode.trim() ||
+              receiptApplied.fileId.trim() ||
+              receiptApplied.status.trim()
+            "
+            filtered
+            @reset="resetFilter"
+          />
+          <EmptyState v-else variant="empty" :description="t('common.noData')" :image-size="80" />
+        </template>
         <el-table-column prop="id" label="ID" width="80" />
         <el-table-column
           prop="channelCode"
@@ -160,6 +172,8 @@
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import { useListLoadState } from '@/composables/useListLoadState'
   import DataState from '@/components/common/DataState.vue'
+  import EmptyState from '@/components/common/EmptyState.vue'
+  import ListEmptyState from '@/components/common/ListEmptyState.vue'
   import { uniqueDisplayFieldValues } from '@/utils/queryFormOptions'
 
   const { t } = useI18n({ useScope: 'global' })

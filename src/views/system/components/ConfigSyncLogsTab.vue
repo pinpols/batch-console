@@ -9,6 +9,7 @@
       @reset="() => runReset(loadSyncLogs)"
     />
     <DataState
+      inline
       :loading="loadingSyncLogs"
       :error="loadSyncLogsError"
       :has-data="total > 0"
@@ -19,10 +20,12 @@
         :data="syncLogs"
         stripe
         border
-        :empty-text="t('common.noData')"
         size="small"
         class="console-table"
       >
+        <template #empty>
+          <EmptyState variant="empty" :description="t('common.noData')" :image-size="80" />
+        </template>
         <el-table-column prop="id" :label="t('configSyncLogsTab.colId')" width="72" align="center">
           <template #default="{ row }">
             <span class="mono-id">#{{ row.id }}</span>
@@ -145,6 +148,7 @@
   import CopyableText from '@/components/common/CopyableText.vue'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import DataState from '@/components/common/DataState.vue'
+  import EmptyState from '@/components/common/EmptyState.vue'
   import TablePagerBar from '@/components/table/TablePagerBar.vue'
 
   const tenant = useTenantStore()

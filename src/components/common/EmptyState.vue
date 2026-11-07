@@ -1,16 +1,10 @@
 <template>
   <div class="empty-state">
-    <el-empty :image-size="imageSize">
+    <el-empty :image-size="48">
       <template #image>
         <slot name="image">
-          <div
-            class="empty-state__image"
-            :style="{
-              width: `${Math.min(imageSize, 64)}px`,
-              height: `${Math.min(imageSize, 64)}px`,
-            }"
-          >
-            <component :is="computedIcon" :size="30" :stroke-width="1.7" aria-hidden="true" />
+          <div class="empty-state__image" :class="`empty-state__image--${variant}`">
+            <component :is="computedIcon" :size="22" :stroke-width="2" aria-hidden="true" />
           </div>
         </slot>
       </template>
@@ -59,11 +53,15 @@
       variant?: EmptyStateVariant
       title?: string
       description?: string
+      /**
+       * 保留给旧调用。图标底板固定 48px，不再随该值放大，
+       * 避免表格空态里出现一块发虚的大盒子。
+       */
       imageSize?: number
     }>(),
     {
       variant: 'empty',
-      imageSize: 88,
+      imageSize: 48,
     },
   )
 
@@ -137,14 +135,43 @@
     padding: 16px 0;
   }
 
+  /* 底板用中性表面，线条用次级文字色。主色浅洗在深色表格上会和底融成一块影子。 */
   .empty-state__image {
     display: grid;
     place-items: center;
+    width: 48px;
+    height: 48px;
     margin: 0 auto;
-    border: 1px solid color-mix(in srgb, var(--color-primary) 30%, var(--color-border) 70%);
+    border: 1px solid var(--color-border-strong);
     border-radius: var(--radius-content);
-    color: var(--color-primary);
-    background: color-mix(in srgb, var(--color-primary) 10%, var(--color-bg-elevated) 90%);
+    color: var(--color-text-secondary);
+    background: var(--color-bg-subtle);
+  }
+
+  .empty-state__image--filter-empty {
+    color: var(--color-primary-text);
+  }
+
+  .empty-state__image--error,
+  .empty-state__image--service-down {
+    color: var(--color-danger);
+    background: var(--color-danger-light);
+  }
+
+  .empty-state__image--offline,
+  .empty-state__image--network,
+  .empty-state__image--forbidden,
+  .empty-state__image--no-permission {
+    color: var(--color-warning);
+    background: var(--color-warning-light);
+  }
+
+  /* Element Plus 会把空态 SVG 填成 monochrome grey，线条图标会变成一块暗影。 */
+  .empty-state :deep(.el-empty__image svg) {
+    color: inherit;
+    fill: none;
+    width: 22px;
+    height: 22px;
   }
 
   .empty-state__copy {

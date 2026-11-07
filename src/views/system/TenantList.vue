@@ -36,6 +36,7 @@
         :page-size="queryApplied.pageSize"
         :has-active-filters="hasActiveFilters"
         :filtered-empty-text="t('tenantList.emptyFiltered')"
+        @reset="onReset"
         column-config-id="tenants"
         :column-defs="columnDefs"
         @update:page="onPage"

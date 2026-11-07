@@ -191,13 +191,20 @@
           />
         </el-form-item>
       </ListPageQueryBar>
-      <el-table
-        :data="filteredJobs"
-        stripe
-        border
-        :empty-text="t('common.noData')"
-        class="console-table"
-      >
+      <el-table :data="filteredJobs" stripe border class="console-table">
+        <template #empty>
+          <ListEmptyState
+            v-if="jobKeyword.trim()"
+            filtered
+            @reset="
+              () =>
+                runReset(() => {
+                  jobKeyword = ''
+                })
+            "
+          />
+          <EmptyState v-else variant="empty" :description="t('common.noData')" :image-size="80" />
+        </template>
         <el-table-column prop="jobCode" :label="t('batchDayWindow.colJob')" min-width="160">
           <template #default="{ row }">
             <CopyableText v-if="row.jobCode" :text="String(row.jobCode)" :copy-on-click="false">
@@ -310,13 +317,14 @@
           <template v-else> · {{ timelineLabel(event.kind) }}</template>
         </el-timeline-item>
       </el-timeline>
-      <el-table
-        :data="filteredOccurrences"
-        stripe
-        border
-        :empty-text="t('batchDayWindow.noScheduledOccurrences')"
-        class="console-table"
-      >
+      <el-table :data="filteredOccurrences" stripe border class="console-table">
+        <template #empty>
+          <EmptyState
+            variant="empty"
+            :description="t('batchDayWindow.noScheduledOccurrences')"
+            :image-size="80"
+          />
+        </template>
         <el-table-column
           prop="workflowCode"
           :label="t('batchDayWindow.colWorkflow')"
@@ -543,6 +551,7 @@
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
+  import ListEmptyState from '@/components/common/ListEmptyState.vue'
   import DatetimeText from '@/components/common/DatetimeText.vue'
   import CopyableText from '@/components/common/CopyableText.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'

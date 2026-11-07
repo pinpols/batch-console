@@ -10,6 +10,7 @@
       v-model:page-size="webhookPageSize"
       @change="() => {}"
       :has-active-filters="hasActiveWebhookFilters"
+      @reset="resetWebhookFilter"
     >
       <template v-if="!hasActiveWebhookFilters" #empty>
         <EmptyState :description="t('notificationWebhooksTab.emptyDescription')" :image-size="80">

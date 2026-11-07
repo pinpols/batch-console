@@ -58,8 +58,15 @@
         border
         size="small"
         class="console-table"
-        :empty-text="t('common.noData')"
       >
+        <template #empty>
+          <ListEmptyState
+            v-if="filters.jobCode.trim() || filters.monitoringCategory || filters.enabled !== true"
+            filtered
+            @reset="resetFilters"
+          />
+          <EmptyState v-else variant="empty" :description="t('common.noData')" :image-size="80" />
+        </template>
         <el-table-column :label="t('jobMonitoringPolicy.jobName')" min-width="230">
           <template #default="{ row }">
             <div class="job-cell">
@@ -197,6 +204,7 @@
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
+  import ListEmptyState from '@/components/common/ListEmptyState.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import JobMonitoringFields from '@/views/job/components/JobMonitoringFields.vue'
   import ScheduledPolicySummary from './components/ScheduledPolicySummary.vue'

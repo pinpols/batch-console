@@ -176,9 +176,11 @@
           stripe
           border
           size="small"
-          :empty-text="t('common.noData')"
           class="console-table"
         >
+          <template #empty>
+            <EmptyState variant="empty" :description="t('common.noData')" :image-size="80" />
+          </template>
           <el-table-column
             :label="t('schedulerSnapshot.colPolicy')"
             :min-width="isMobile ? 200 : 280"
@@ -318,9 +320,11 @@
           stripe
           border
           size="small"
-          :empty-text="t('common.noData')"
           class="console-table"
         >
+          <template #empty>
+            <EmptyState variant="empty" :description="t('common.noData')" :image-size="80" />
+          </template>
           <el-table-column
             :label="t('schedulerSnapshot.colWorker')"
             :min-width="isMobile ? 200 : 280"
@@ -385,9 +389,11 @@
           stripe
           border
           size="small"
-          :empty-text="t('common.noData')"
           class="console-table"
         >
+          <template #empty>
+            <EmptyState variant="empty" :description="t('common.noData')" :image-size="80" />
+          </template>
           <DatetimeColumn
             v-if="!isMobile"
             prop="snapshotAt"

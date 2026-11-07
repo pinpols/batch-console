@@ -161,7 +161,11 @@
                 />
                 <AiImageAttachmentPicker ref="imagePicker" :chat="chat" :disabled="sending" />
                 <div class="composer__actions">
-                  <el-button :disabled="sending || !messages.length" @click="resetSession()">
+                  <el-button
+                    :icon="Plus"
+                    :disabled="sending || !messages.length"
+                    @click="resetSession()"
+                  >
                     {{ t('aiChat.btnNewSession') }}
                   </el-button>
                   <div class="composer__actions-right">
@@ -174,6 +178,7 @@
                     />
                     <el-button
                       type="primary"
+                      :icon="Send"
                       :loading="sending"
                       :disabled="
                         historyTurnsLoading || !prompt.trim() || !!chat.pendingTurnId.value
@@ -341,7 +346,7 @@
   import { useRoute, useRouter } from 'vue-router'
   import { ElMessageBox } from 'element-plus'
   import { currentAuthSession, isSharedAuthRevisionCurrent } from '@/api/authSession'
-  import { Eye, Plus, Square, Trash2 } from '@lucide/vue'
+  import { Eye, Plus, Send, Square, Trash2 } from '@lucide/vue'
 
   const { t } = useI18n({ useScope: 'global' })
   import {

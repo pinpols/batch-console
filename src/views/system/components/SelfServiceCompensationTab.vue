@@ -95,6 +95,7 @@
         </el-button>
         <el-button
           type="primary"
+          :icon="Send"
           native-type="submit"
           :loading="compLoading"
           v-track-click="t('selfServiceCompensationTab.trackSubmit')"
@@ -108,6 +109,7 @@
 
 <script setup lang="ts">
   import { ref, reactive, computed, toRefs, watch } from 'vue'
+  import { Send } from '@lucide/vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
   const { t } = useI18n({ useScope: 'global' })

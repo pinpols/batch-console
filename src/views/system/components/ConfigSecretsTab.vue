@@ -9,6 +9,7 @@
       @reset="() => runReset(loadSecrets)"
     />
     <DataState
+      inline
       :loading="loadingSecrets"
       :error="loadSecretsError"
       :has-data="pagedSecrets.records.length > 0"
@@ -19,10 +20,12 @@
         :data="pagedSecrets.records"
         stripe
         border
-        :empty-text="t('common.noData')"
         size="small"
         class="console-table"
       >
+        <template #empty>
+          <EmptyState variant="empty" :description="t('common.noData')" :image-size="80" />
+        </template>
         <el-table-column prop="id" :label="t('configSecretsTab.fieldId')" width="80" />
         <el-table-column
           :label="t('configSecretsTab.colSecret')"
@@ -200,6 +203,7 @@
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import { useListLoadState } from '@/composables/useListLoadState'
   import DataState from '@/components/common/DataState.vue'
+  import EmptyState from '@/components/common/EmptyState.vue'
   import RowActions, { type RowAction } from '@/components/common/RowActions.vue'
   import type { ConsoleSecretVersionResponse } from '@/types/console-api'
 

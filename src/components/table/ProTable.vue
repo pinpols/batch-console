@@ -70,17 +70,23 @@
         size="small"
         highlight-current-row
         :border="border"
-        :empty-text="hasActiveFilters ? resolvedFilteredEmpty : resolvedEmpty"
         class="pro-table__table console-table"
         v-bind="$attrs"
       >
         <!-- 默认插槽透出 isColVisible:接入列设置的页面用它给每列加 v-if;
              不读这两个 slot prop 的旧页面行为完全不变(向后兼容) -->
         <slot :is-col-visible="isColVisible" :visible-keys="visibleKeys" />
-        <!-- 过滤无结果时不抢 #empty 槽,继续走 filteredEmptyText;
-             仅在"零数据 + 无筛选"时让父组件用 #empty 渲染引导卡片(EmptyState + CTA) -->
-        <template v-if="!hasActiveFilters && $slots.empty" #empty>
-          <slot name="empty" />
+        <!-- 空态留在表体内，列头保留。有筛选时统一「筛选无结果 + 重置」，
+             不用页面的新建引导；无筛选时才用 #empty。 -->
+        <template #empty>
+          <ListEmptyState
+            v-if="hasActiveFilters"
+            filtered
+            :filtered-description="resolvedFilteredEmpty"
+            @reset="emit('reset')"
+          />
+          <slot v-else-if="$slots.empty" name="empty" />
+          <EmptyState v-else variant="empty" :description="resolvedEmpty" :image-size="80" />
         </template>
       </el-table>
       <ProPagination
@@ -136,6 +142,7 @@
   import TablePagerBar from '@/components/table/TablePagerBar.vue'
   import ProPagination from '@/components/common/ProPagination.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
+  import ListEmptyState from '@/components/common/ListEmptyState.vue'
   import { DEFAULT_PAGE_SIZES } from '@/constants/pagination'
 
   defineOptions({ inheritAttrs: false })
@@ -352,6 +359,7 @@
     (e: 'change'): void
     (e: 'cursorNext'): void
     (e: 'cursorPrev'): void
+    (e: 'reset'): void
   }>()
 
   // 暴露内部 el-table 句柄,供批量选择场景清空勾选(useBulkSelection.bindTable 用)

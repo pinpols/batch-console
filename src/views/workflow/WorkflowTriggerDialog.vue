@@ -20,7 +20,13 @@
     </el-form>
     <template #footer>
       <el-button @click="emit('update:modelValue', false)">{{ t('common.cancel') }}</el-button>
-      <el-button type="primary" :loading="busy" :disabled="!bizDate" @click="emit('submit')">
+      <el-button
+        type="primary"
+        :icon="Play"
+        :loading="busy"
+        :disabled="!bizDate"
+        @click="emit('submit')"
+      >
         {{ t('workflowDefinitionList.actionTrigger') }}
       </el-button>
     </template>
@@ -29,6 +35,7 @@
 
 <script setup lang="ts">
   import { useI18n } from 'vue-i18n'
+  import { Play } from '@lucide/vue'
 
   defineProps<{ modelValue: boolean; bizDate: string; busy: boolean }>()
   const emit = defineEmits<{

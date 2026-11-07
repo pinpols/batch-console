@@ -1,6 +1,7 @@
 export default {
   sectionChannelTarget: 'Delivery target',
-  sectionChannelTargetDesc: 'Where files are sent, how to authenticate, and whether to wait for a receipt.',
+  sectionChannelTargetDesc:
+    'Where files are sent, how to authenticate, and whether to wait for a receipt.',
   sectionChannelAdvanced: 'Advanced',
   mappingAssistant: 'Field mapping assistant',
   mappingAssistantHint:
@@ -18,6 +19,9 @@ export default {
     'Suggested export SQL (review it in the template; the default id cursor must exist and be suitable for paging):',
   fieldDefaultQuerySql: 'Default export query SQL',
   actionCreateTemplate: 'New template',
+  emptyDescription:
+    'No file templates yet. Add one so channels can receive files against a template.',
+  channelEmptyDescription: 'No file channels yet. Add one so files can arrive from outside.',
   actionCreateChannel: 'New channel',
   tabTemplates: 'File templates',
   tabChannels: 'File channels',

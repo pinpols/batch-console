@@ -136,6 +136,7 @@
         v-model:page="typePage"
         v-model:page-size="typePageSize"
         :has-active-filters="!!eventTypeKeyword"
+        @reset="runActiveReset"
         @change="() => {}"
       >
         <el-table-column
@@ -184,6 +185,7 @@
         v-model:page="topicPage"
         v-model:page-size="topicPageSize"
         :has-active-filters="!!topicKeyword"
+        @reset="runActiveReset"
         @change="() => {}"
       >
         <el-table-column

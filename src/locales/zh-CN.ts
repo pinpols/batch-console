@@ -894,6 +894,7 @@ export default {
       title: '本地文件样本检查',
       description: '在浏览器本地检查文件头与前 128 KiB 样本，不上传文件内容。',
       choose: '选择本地文件',
+      replace: '更换文件',
       localOnly: '文件不会离开当前浏览器。',
       emptyTitle: '尚未选择文件',
       emptyDescription: '选择文件后检查编码、BOM、换行符、分隔符和二进制特征。',
@@ -2122,6 +2123,9 @@ export default {
     sectionCapacityDesc:
       '限制该队列同时运行的作业数、分片数和每秒请求数，以及多队列争用时的优先级与权重。',
     sectionRouting: '归属与说明',
+    emptyQueues: '还没有资源队列。新增一个，用来限制并发和公平分享。',
+    emptyWindows: '还没有批次窗口。新增一个，用来规定每天可以跑批的时段。',
+    emptyCalendars: '还没有业务日历。新增一个，用来定义工作日和节假日。',
     holidayLoadError: '节假日记录加载失败，请重试。',
     holidayMonthTitle: '节假日月视图',
     holidayMonthPrevious: '上月',

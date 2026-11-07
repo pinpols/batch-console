@@ -92,6 +92,39 @@ describe('CopyableText', () => {
     expect(copy).toHaveBeenCalledWith('job-code')
   })
 
+  it('hides the eye when the displayed value already fits', async () => {
+    const wrapper = render('short')
+    const display = wrapper.get('.copyable-text__value').element as HTMLElement
+    Object.defineProperty(display, 'clientWidth', { configurable: true, get: () => 160 })
+    Object.defineProperty(display, 'scrollWidth', { configurable: true, get: () => 160 })
+    await wrapper.setProps({ text: 'short!' })
+    expect(wrapper.find('.copyable-text__inspect').exists()).toBe(false)
+  })
+
+  it('hides an icon-only eye when the text beside it already fits', async () => {
+    const host = document.createElement('div')
+    const label = document.createElement('a')
+    label.textContent = 'JOB'
+    document.body.appendChild(host)
+    const wrapper = render('JOB', true)
+    host.append(label, wrapper.element)
+    Object.defineProperty(label, 'clientWidth', { configurable: true, get: () => 80 })
+    Object.defineProperty(label, 'scrollWidth', { configurable: true, get: () => 80 })
+    await wrapper.setProps({ text: 'JOB!' })
+    expect(wrapper.find('.copyable-text__inspect').exists()).toBe(false)
+    wrapper.unmount()
+    host.remove()
+  })
+
+  it('keeps the eye when the displayed value is clipped', async () => {
+    const wrapper = render('long')
+    const display = wrapper.get('.copyable-text__value').element as HTMLElement
+    Object.defineProperty(display, 'clientWidth', { configurable: true, get: () => 40 })
+    Object.defineProperty(display, 'scrollWidth', { configurable: true, get: () => 200 })
+    await wrapper.setProps({ text: 'long-value' })
+    expect(wrapper.get('.copyable-text__inspect').attributes('aria-label')).toBe('查看完整内容')
+  })
+
   it('does not expose an empty value as a keyboard or copy action', () => {
     const wrapper = render('')
     expect(wrapper.find('[role="button"]').exists()).toBe(false)

@@ -377,6 +377,7 @@
   import DataState from '@/components/common/DataState.vue'
   import JsonPreview from '@/components/common/JsonPreview.vue'
   import { clearTrustedSvg, setTrustedMermaidSvg } from '@/utils/trustedMermaidSvg'
+  import { expandSvgViewBoxToContent } from './expandSvgViewBox'
   import { workflowApi } from '@/api/workflow'
   import { injectCrossDayEdges, describeCrossDayDeps } from '@/utils/crossDayMermaid'
   import { queryWorkflowNodeRuns } from '@/api/workflowQueries'
@@ -751,11 +752,17 @@
         panZoomInstance = null
       }
       const svgEl = graphRef.value?.querySelector<SVGSVGElement>('svg')
-      if (svgEl) {
-        // 让 svg 跟着容器尺寸缩,svg-pan-zoom 才能正确计算视口
-        svgEl.setAttribute('width', '100%')
-        svgEl.setAttribute('height', '100%')
-        svgEl.style.maxWidth = ''
+      if (svgEl && graphRef.value) {
+        // Mermaid 的 viewBox 经常矮于实际节点。先扩到内容包围盒，再让 svg 铺满画布，
+        // 否则 svg-pan-zoom 只适配那条矮视口，上下节点被 overflow:hidden 裁掉。
+        expandSvgViewBoxToContent(svgEl)
+        const width = Math.max(graphRef.value.clientWidth, 1)
+        const height = Math.max(graphRef.value.clientHeight, 1)
+        svgEl.setAttribute('width', String(width))
+        svgEl.setAttribute('height', String(height))
+        svgEl.style.maxWidth = 'none'
+        svgEl.style.width = '100%'
+        svgEl.style.height = '100%'
         panZoomInstance = svgPanZoom(svgEl, {
           panEnabled: true,
           zoomEnabled: true,
@@ -782,6 +789,13 @@
    */
   function safeResize() {
     try {
+      const svgEl = graphRef.value?.querySelector<SVGSVGElement>('svg')
+      const width = graphRef.value?.clientWidth ?? 0
+      const height = graphRef.value?.clientHeight ?? 0
+      if (svgEl && width > 0 && height > 0) {
+        svgEl.setAttribute('width', String(width))
+        svgEl.setAttribute('height', String(height))
+      }
       panZoomInstance?.resize()
     } catch {
       // SVG 已脱离文档(卸载 / 重渲染),resize 无意义,忽略
@@ -1065,10 +1079,9 @@
     flex: 1 1 auto;
   }
   .workflow-mermaid-graph {
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    display: block;
     width: 100%;
+    height: 420px;
     min-height: 420px;
     cursor: grab;
   }
@@ -1076,6 +1089,7 @@
     cursor: grabbing;
   }
   .workflow-mermaid-graph :deep(svg) {
+    display: block;
     width: 100%;
     height: 100%;
     max-width: none;

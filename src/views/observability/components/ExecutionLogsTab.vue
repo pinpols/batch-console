@@ -39,10 +39,10 @@
       </el-form-item>
     </ListPageQueryBar>
     <DataState
+      inline
       :loading="loadingExec"
       :error="loadExecError"
       :has-data="pagedExec.records.length > 0"
-      :empty-text="execEmptyText"
       :on-retry="loadExecutionLogs"
     >
       <el-table
@@ -50,10 +50,29 @@
         :data="pagedExec.records"
         stripe
         border
-        :empty-text="t('common.noData')"
         size="small"
         class="console-table"
       >
+        <template #empty>
+          <ListEmptyState
+            v-if="
+              execApplied.operationType.trim() ||
+              execApplied.result.trim() ||
+              execApplied.traceId.trim()
+            "
+            filtered
+            :filtered-description="
+              execApplied.traceId.trim() ? t('observability.execEmptyTrace') : undefined
+            "
+            @reset="resetFilter"
+          />
+          <EmptyState
+            v-else
+            variant="empty"
+            :description="t('observability.execEmptyDefault')"
+            :image-size="80"
+          />
+        </template>
         <el-table-column prop="id" label="ID" width="80" />
         <el-table-column
           prop="operationType"
@@ -150,6 +169,8 @@
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import { useListLoadState } from '@/composables/useListLoadState'
   import DataState from '@/components/common/DataState.vue'
+  import EmptyState from '@/components/common/EmptyState.vue'
+  import ListEmptyState from '@/components/common/ListEmptyState.vue'
   import RowActions, { type RowAction } from '@/components/common/RowActions.vue'
   import { structuredSummary } from '@/utils/structuredSummary'
   import { uniqueDisplayFieldValues } from '@/utils/queryFormOptions'
@@ -205,12 +226,6 @@
 
   const pagedExec = computed(() =>
     toPageResult(filteredExec.value, execPage.value, execPageSize.value),
-  )
-
-  const execEmptyText = computed(() =>
-    execApplied.traceId.trim()
-      ? t('observability.execEmptyTrace')
-      : t('observability.execEmptyDefault'),
   )
 
   const detailMetaRows = computed(() => {

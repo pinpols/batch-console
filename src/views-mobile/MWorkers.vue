@@ -62,7 +62,13 @@
 
       <MSkeleton v-if="loading && filtered.length === 0" :count="3" />
       <div v-else-if="!loadError && filtered.length === 0" class="m-empty">
-        {{ t('mobile.workers.empty') }}
+        {{
+          t(
+            keyword.trim() || filter !== 'all'
+              ? 'mobile.common.emptyForSearch'
+              : 'mobile.workers.empty',
+          )
+        }}
       </div>
 
       <div v-if="loadError" class="m-load-error" role="alert">

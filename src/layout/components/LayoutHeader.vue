@@ -95,8 +95,6 @@
           </button>
         </el-tooltip>
 
-        <DisplayTimezoneMenu />
-
         <button
           type="button"
           class="icon-button header-icon"
@@ -169,6 +167,7 @@
                 >
                   {{ t('nav.interfaceTour') }}
                 </el-dropdown-item>
+                <DisplayTimezoneMenu />
                 <el-dropdown-item
                   command="logout"
                   :icon="SwitchButton"

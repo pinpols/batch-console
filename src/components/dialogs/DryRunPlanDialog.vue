@@ -87,7 +87,7 @@
 
     <template #footer>
       <el-button @click="visible = false">{{ t('common.close') }}</el-button>
-      <el-button type="primary" :loading="running" @click="runDryRun">
+      <el-button type="primary" :icon="Play" :loading="running" @click="runDryRun">
         {{ t('dryRunDialog.submit') }}
       </el-button>
     </template>
@@ -98,6 +98,7 @@
   import CopyableText from '@/components/common/CopyableText.vue'
   import { ref, computed, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
+  import { Play } from '@lucide/vue'
   import { useTenantRequestScope } from '@/composables/useTenantRequestScope'
   import { ElMessage } from 'element-plus'
   import { todayBusinessDate } from '@/utils/datetime'

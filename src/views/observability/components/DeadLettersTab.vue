@@ -36,6 +36,7 @@
       </el-form-item>
     </ListPageQueryBar>
     <DataState
+      inline
       :loading="loadingDL"
       :error="loadDLError"
       :has-data="pagedDL.records.length > 0"
@@ -66,11 +67,20 @@
         :data="pagedDL.records"
         stripe
         border
-        :empty-text="t('common.noData')"
         size="small"
         class="console-table"
         @selection-change="bulk.onSelectionChange"
       >
+        <template #empty>
+          <ListEmptyState
+            v-if="
+              dlApplied.sourceType.trim() || dlApplied.sourceId.trim() || dlApplied.keyword.trim()
+            "
+            filtered
+            @reset="resetFilter"
+          />
+          <EmptyState v-else variant="empty" :description="t('common.noData')" :image-size="80" />
+        </template>
         <el-table-column
           v-if="canManageSystem"
           type="selection"
@@ -185,6 +195,8 @@
   import DetailDrawer from '@/components/common/DetailDrawer.vue'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import DataState from '@/components/common/DataState.vue'
+  import EmptyState from '@/components/common/EmptyState.vue'
+  import ListEmptyState from '@/components/common/ListEmptyState.vue'
   import RowActions, { type RowAction } from '@/components/common/RowActions.vue'
   import type { ConsoleDeadLetterTaskResponse } from '@/types/console-api'
   import { uniqueDisplayFieldValues } from '@/utils/queryFormOptions'

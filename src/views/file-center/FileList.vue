@@ -2,7 +2,7 @@
   <PageContainer>
     <PageHeader>
       <template #actions>
-        <el-button v-if="canMutateConfig" type="primary" @click="openUploadDialog">
+        <el-button v-if="canMutateConfig" type="primary" :icon="Upload" @click="openUploadDialog">
           {{ t('fileList.uploadAction') }}
         </el-button>
         <el-button @click="$router.push('/files/arrival-groups')">
@@ -411,7 +411,7 @@
             :on-change="onUploadFileChange"
             :on-remove="onUploadFileRemove"
           >
-            <el-button :disabled="uploading || uploadTenantId !== tenant.tenantId">
+            <el-button :icon="Upload" :disabled="uploading || uploadTenantId !== tenant.tenantId">
               {{ t('fileList.uploadChooseFile') }}
             </el-button>
           </el-upload>
@@ -464,6 +464,7 @@
         </el-button>
         <el-button
           type="primary"
+          :icon="Upload"
           :loading="uploading"
           :disabled="!canSubmitManualUpload"
           @click="submitManualUpload"
@@ -478,6 +479,7 @@
 <script setup lang="ts">
   import { computed, reactive, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
+  import { Upload } from '@lucide/vue'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import type { UploadFile, UploadUserFile } from 'element-plus'
 

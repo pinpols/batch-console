@@ -27,10 +27,10 @@
     </ListPageQueryBar>
 
     <DataState
+      inline
       :loading="loadingTags"
       :error="loadTagsError"
       :has-data="tagRows.length > 0"
-      :empty-text="canCreate ? '' : t('tagResourceTab.emptyNeedResource')"
       :on-retry="loadTags"
     >
       <el-table
@@ -39,9 +39,15 @@
         stripe
         border
         size="small"
-        :empty-text="t('common.noData')"
         class="console-table"
       >
+        <template #empty>
+          <EmptyState
+            variant="empty"
+            :description="canCreate ? t('common.noData') : t('tagResourceTab.emptyNeedResource')"
+            :image-size="80"
+          />
+        </template>
         <el-table-column
           prop="tagKey"
           :label="t('tagResourceTab.colTagKey')"
@@ -139,6 +145,7 @@
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import { useListLoadState } from '@/composables/useListLoadState'
   import DataState from '@/components/common/DataState.vue'
+  import EmptyState from '@/components/common/EmptyState.vue'
   import MetaSelect from '@/components/common/MetaSelect.vue'
   import { tagResourceIdentityMatches } from './tagResourceIdentity'
   import type { TagResourceIdentity } from './tagResourceIdentity'

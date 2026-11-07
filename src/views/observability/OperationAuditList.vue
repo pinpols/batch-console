@@ -25,6 +25,19 @@
         @change="load"
         :error="loadError"
         :on-retry="load"
+        :has-active-filters="
+          !!(
+            filters.action.trim() ||
+            filters.aggregateType ||
+            filters.aggregateId.trim() ||
+            filters.operatorId.trim() ||
+            filters.result ||
+            filters.traceId.trim() ||
+            filters.startTime ||
+            filters.endTime
+          )
+        "
+        @reset="reset"
       >
         <template #query>
           <ListPageQueryBar

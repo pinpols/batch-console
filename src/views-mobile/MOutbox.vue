@@ -32,7 +32,7 @@
         <button class="m-btn" type="button" @click="load">{{ t('common.retry') }}</button>
       </div>
       <div v-else-if="filtered.length === 0" class="m-empty">
-        {{ t('mobile.outbox.empty') }}
+        {{ t(filter !== 'all' ? 'mobile.common.emptyForSearch' : 'mobile.outbox.empty') }}
       </div>
 
       <div v-for="row in filtered" :key="row.id" class="m-card">

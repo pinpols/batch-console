@@ -293,6 +293,10 @@
             v-model:page="channelPage"
             v-model:page-size="channelPageSize"
             @change="sliceChannelPage"
+            :has-active-filters="
+              !!(channelFilters.channelCode.trim() || channelFilters.channelType.trim())
+            "
+            @reset="resetChannels"
           >
             <template #query>
               <ListPageQueryBar

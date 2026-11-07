@@ -13,6 +13,7 @@
       :error="loadError"
       :on-retry="load"
       :has-active-filters="hasActiveFilters"
+      @reset="reset"
       row-key="approvalNo"
       class="approval-table"
     >
@@ -76,6 +77,7 @@
               size="small"
               type="primary"
               plain
+              :icon="CircleCheck"
               :loading="running"
               :disabled="!canMutateConfig || writesFrozen"
               @click="runBatchApprove"
@@ -86,6 +88,7 @@
               size="small"
               type="danger"
               plain
+              :icon="CircleX"
               :loading="running"
               :disabled="!canMutateConfig || writesFrozen"
               @click="runBatchReject"
@@ -262,11 +265,11 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, ref, watch, reactive } from 'vue'
+  import { computed, ref, watch, reactive, h } from 'vue'
   import { useRoute } from 'vue-router'
   import { useI18n } from 'vue-i18n'
   import { ElMessage, ElMessageBox, ElNotification } from 'element-plus'
-  import { h } from 'vue'
+  import { CircleCheck, CircleX } from '@lucide/vue'
 
   const { t, te } = useI18n({ useScope: 'global' })
 

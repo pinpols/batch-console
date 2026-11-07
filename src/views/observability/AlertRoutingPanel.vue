@@ -56,7 +56,13 @@
 
       <el-table v-loading="loading" :data="rows" class="routing-table">
         <template #empty>
+          <ListEmptyState
+            v-if="kwApplied.trim() || enabledApplied !== undefined"
+            filtered
+            @reset="onReset"
+          />
           <EmptyState
+            v-else
             variant="tenant-empty"
             :title="t('alertRoutingPanel.emptyTitle')"
             :description="t('alertRoutingPanel.emptyDescription')"
@@ -270,6 +276,7 @@
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
+  import ListEmptyState from '@/components/common/ListEmptyState.vue'
   import MetaSelect from '@/components/common/MetaSelect.vue'
   import { usePermission } from '@/composables/usePermission'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'

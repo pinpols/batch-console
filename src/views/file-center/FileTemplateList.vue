@@ -35,6 +35,11 @@
           @change="load"
           :error="loadError"
           :on-retry="load"
+          :empty-text="t('fileTemplateList.emptyDescription')"
+          :has-active-filters="
+            !!(keyword.trim() || templateType.trim() || bizType.trim() || enabled !== undefined)
+          "
+          @reset="reset"
         >
           <template #query>
             <ListPageQueryBar
@@ -199,9 +204,12 @@
           border
           size="small"
           highlight-current-row
-          :empty-text="t('common.noData')"
           class="console-table"
         >
+          <template #empty>
+            <ListEmptyState v-if="channelFiltered" filtered @reset="resetChannels" />
+            <EmptyState v-else :description="t('fileTemplateList.channelEmptyDescription')" />
+          </template>
           <el-table-column
             prop="channelCode"
             :label="t('fileTemplateList.colChannelCode')"
@@ -484,6 +492,8 @@
   import PageHeader from '@/components/common/PageHeader.vue'
   import ListPageQueryBar from '@/components/table/ListPageQueryBar.vue'
   import ProTable from '@/components/table/ProTable.vue'
+  import EmptyState from '@/components/common/EmptyState.vue'
+  import ListEmptyState from '@/components/common/ListEmptyState.vue'
   import StatusSegment, { type StatusSegmentItem } from '@/components/table/StatusSegment.vue'
   import StatusTag from '@/components/common/StatusTag.vue'
   import FileChannelDrawers from './FileChannelDrawers.vue'
@@ -624,6 +634,9 @@
   const channelDetailVisible = ref(false)
   const channelDetailRow = ref<ConsoleFileChannelResponse | null>(null)
   const channelEnabled = ref<boolean | undefined>()
+  const channelFiltered = computed(
+    () => !!(channelKeyword.value.trim() || channelType.value) || channelEnabled.value != null,
+  )
   const enabledStatusSegmentItems = computed<StatusSegmentItem[]>(() => [
     { value: 'ALL', label: t('dateRangePicker.all'), tone: 'neutral' },
     {

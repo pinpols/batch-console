@@ -189,11 +189,11 @@ html.dark {
     border-color var(--motion-duration-sm) var(--motion-ease-standard);
 }
 
-/* 空态美化:默认插画在深色下像突兀暗盒 → 柔化(降透明度)+ 收紧留白 + 描述更轻 */
+/* 默认插画在深色下像一块暗盒，压低透明度。EmptyState 自绘图标不走这条。 */
 .el-empty {
   padding: 28px 0;
 }
-.el-empty__image {
+.el-empty__image:not(:has(.empty-state__image)) {
   opacity: 0.42;
   filter: saturate(0.6);
 }
@@ -350,16 +350,24 @@ html.dark {
     inset 0 -1px 0 0 color-mix(in srgb, var(--color-primary) 52%, transparent);
 }
 
-/* 表格右侧空白“gutter”列：在无纵向滚动条时会显得像空列 */
-.el-table__header-wrapper th.gutter,
-.el-table__body-wrapper td.gutter {
+/* 列宽之和小于容器时，表头表和表体表一起拉满。
+   横向滚动时保留组件算出的像素宽度，否则表头无法跟着表体滚动。 */
+.el-table:not(.el-table--scrollable-x) .el-table__header,
+.el-table:not(.el-table--scrollable-x) .el-table__body,
+.el-table:not(.el-table--scrollable-x) .el-table__footer {
+  width: 100% !important;
+}
+
+/* 无纵向滚动时 gutter 会显示成右侧空列；有纵向滚动时必须保留，表头才和表体对齐。 */
+.el-table:not(.el-table--scrollable-y) .el-table__header-wrapper th.gutter,
+.el-table:not(.el-table--scrollable-y) .el-table__body-wrapper td.gutter {
   width: 0 !important;
   padding: 0 !important;
   border: none !important;
 }
 
-.el-table__header-wrapper colgroup col[name='gutter'],
-.el-table__body-wrapper colgroup col[name='gutter'] {
+.el-table:not(.el-table--scrollable-y) .el-table__header-wrapper colgroup col[name='gutter'],
+.el-table:not(.el-table--scrollable-y) .el-table__body-wrapper colgroup col[name='gutter'] {
   width: 0 !important;
 }
 
