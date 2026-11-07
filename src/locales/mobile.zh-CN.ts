@@ -146,6 +146,7 @@ export default {
     countsUnavailable: '审批统计暂不可用，列表仍可查看。',
     searchPlaceholder: '搜索审批单号 / 提交人 / 目标',
     approve: '通过',
+    selfApprovalForbidden: '不能批准自己的申请',
     reject: '拒绝',
     approvedToast: '已通过',
     rejectedToast: '已拒绝',

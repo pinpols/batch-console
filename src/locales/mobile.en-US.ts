@@ -148,6 +148,7 @@ export default {
     countsUnavailable: 'Approval counts are unavailable; the list is still available.',
     searchPlaceholder: 'Search approval no / submitter / target',
     approve: 'Approve',
+    selfApprovalForbidden: 'You cannot approve your own request',
     reject: 'Reject',
     approvedToast: 'Approved',
     rejectedToast: 'Rejected',

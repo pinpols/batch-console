@@ -21,6 +21,7 @@ describe('approvalsApi', () => {
     await queryApprovalsPage('ta', 1, 15, {
       approvalStatus: 'PENDING',
       keyword: 'job-a',
+      excludeApprovalTypes: 'CATCH_UP',
     })
     expect(mockedGet).toHaveBeenCalledWith('/api/console/queries/approvals', {
       tenantId: 'ta',
@@ -28,6 +29,7 @@ describe('approvalsApi', () => {
       pageSize: 15,
       approvalStatus: 'PENDING',
       keyword: 'job-a',
+      excludeApprovalTypes: 'CATCH_UP',
     })
   })
 

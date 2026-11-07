@@ -19001,6 +19001,8 @@ export interface operations {
         approvalNo?: string
         /** @description 可选,按审批类型精确过滤(approvalType enum)。 */
         approvalType?: string
+        /** @description 可选,逗号分隔的审批类型排除列表,最多 8 个类型代码。普通审批列表传 CATCH_UP 去掉补跑单。与 approvalType 同时出现时两者都生效。 */
+        excludeApprovalTypes?: string
         /** @description 可选,按动作类型精确过滤。 */
         actionType?: string
         /** @description 可选,按审批状态精确过滤(approvalStatus enum)。 */
