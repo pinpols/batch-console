@@ -1657,7 +1657,7 @@ export default {
       BLOCKED: '已阻塞',
       ERROR: '出错',
       COMPLETE: '已完成',
-      UNREGISTERED: '已注销',
+      UNREGISTERED: '未启用调度',
     },
     tenantStatus: {
       ACTIVE: '正常',
@@ -3200,8 +3200,7 @@ export default {
     colError: '错误',
   },
   triggerList: {
-    pausedHint:
-      '暂停后触发器会从调度中移除，不再显示在此列表；恢复请到“自助服务 → 触发器暂停 / 恢复”按工作流编码操作，或在工作流设置里重新启用调度。',
+    pausedHint: '暂停或注销后不再按计划触发，状态显示为“未启用调度”；点“注册”即可重新启用。',
     degradedEmpty: '触发服务暂不可用，当前列表可能不完整。请稍后刷新。',
     workflowCodeLabel: '工作流编码',
     workflowCodePlaceholder: '搜索 Workflow 编码',
@@ -3338,6 +3337,7 @@ export default {
     claimedTaskStarted: '开始时间',
     claimedTaskUpdated: '更新时间',
     drainConfirmTitle: '平滑下线',
+    drainConfirmButton: '确认平滑下线',
     drainConfirmText: '确认让执行器 {code} 平滑下线？新任务将不再分配，已接收任务会继续执行。',
     drainSuccess: '已发起执行器 {code} 平滑下线',
     offlineWorkersNotice:
@@ -3345,11 +3345,12 @@ export default {
     moreOfflineWorkers: '另有 {count} 个',
     unknownWorker: '未命名执行器',
     takeoverConfirmTitle: '接管',
-    takeoverConfirmText: '接管 {code} 的任务?',
+    takeoverConfirmText: '接管该执行器正在处理的任务并让它退役；未能接管的任务由后续恢复流程处理。',
+    takeoverConfirmButton: '确认接管',
     takeoverSuccess: '已接管 {code}',
     warmupSuccess: '已对 {code} 发起预热',
     offlineVerb: '强制下线',
-    offlineTarget: 'Worker 「{code}」',
+    offlineTarget: '执行器「{code}」',
     offlineConsequence:
       '该 Worker 上正在跑的分片会被立即中断;系统会等心跳超时后才把分片重新分给其它 Worker,中间有 30s 左右真空期。',
     offlineSuccess: '已强制下线 {code}',

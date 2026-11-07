@@ -1593,7 +1593,7 @@ const messages: Messages = {
       BLOCKED: 'Blocked',
       ERROR: 'Error',
       COMPLETE: 'Complete',
-      UNREGISTERED: 'Unregistered',
+      UNREGISTERED: 'Scheduling off',
     },
     tenantStatus: {
       ACTIVE: 'Active',
@@ -3174,7 +3174,7 @@ const messages: Messages = {
   },
   triggerList: {
     pausedHint:
-      'Paused triggers are removed from the scheduler and no longer appear here. Resume one from Self-service → Trigger pause / resume by workflow code, or re-enable scheduling in the workflow settings.',
+      'Paused or unregistered triggers stop firing and show as "Scheduling off"; choose Register to turn scheduling back on.',
     degradedEmpty:
       'The trigger service is unavailable. This list may be incomplete; refresh later.',
     workflowCodeLabel: 'Workflow Code',
@@ -3314,6 +3314,7 @@ const messages: Messages = {
     claimedTaskStarted: 'Started at',
     claimedTaskUpdated: 'Updated at',
     drainConfirmTitle: 'Graceful shutdown',
+    drainConfirmButton: 'Drain',
     drainConfirmText:
       'Gracefully shut down executor {code}? It will stop receiving new tasks and finish tasks already accepted.',
     drainSuccess: 'Graceful shutdown started for executor {code}',
@@ -3322,7 +3323,9 @@ const messages: Messages = {
     moreOfflineWorkers: '+{count} more',
     unknownWorker: 'Unnamed executor',
     takeoverConfirmTitle: 'Takeover',
-    takeoverConfirmText: 'Take over {code} tasks?',
+    takeoverConfirmText:
+      'Take over the tasks this worker is running and retire it. Tasks that cannot be taken over are handled by later recovery.',
+    takeoverConfirmButton: 'Take over',
     takeoverSuccess: 'Took over {code}',
     warmupSuccess: 'Warm-up initiated for {code}',
     offlineVerb: 'force offline',
