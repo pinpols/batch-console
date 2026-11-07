@@ -1189,7 +1189,6 @@
   watch(activeTab, (tab) => {
     if (tab === 'channels' && allChannelRows.value.length === 0) void loadChannels()
   })
-
   useTenantReload(() => {
     void load()
     void loadChannels()

@@ -1192,7 +1192,6 @@
   .jr-trace-link:hover {
     color: var(--color-primary);
   }
-
   .jr-mono {
     font-family: var(--font-mono);
     font-size: 12px;
