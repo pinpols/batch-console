@@ -4,7 +4,7 @@
  *
  * 后端推送 payload 约定(JSON):
  *   {
- *     "title": "[CRITICAL] Job XXX failed",
+ *     "title": "[CRITICAL] Job ETL_01 failed",
  *     "body":  "tenant=ta · jobCode=ETL_01 · 2 retries exhausted",
  *     "tag":   "alert-1234",       // 同 tag 折叠为 1 条
  *     "url":   "/m/alerts?id=1234" // 点击通知后导航目标
