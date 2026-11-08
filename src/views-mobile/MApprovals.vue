@@ -255,10 +255,7 @@
   }
 
   function keywordFilter(value: string) {
-    return {
-      excludeApprovalTypes: 'CATCH_UP',
-      ...(value ? { keyword: value } : {}),
-    }
+    return value ? { keyword: value } : {}
   }
 
   function selfApprovalBlocked(row: ConsoleApprovalCommandResponse) {

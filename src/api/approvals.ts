@@ -22,9 +22,6 @@ export function queryApprovalsPage(
     pageSize,
     ...(filters?.approvalStatus ? { approvalStatus: filters.approvalStatus } : {}),
     ...(filters?.approvalType ? { approvalType: filters.approvalType } : {}),
-    ...(filters?.excludeApprovalTypes
-      ? { excludeApprovalTypes: filters.excludeApprovalTypes }
-      : {}),
     ...(filters?.actionType ? { actionType: filters.actionType } : {}),
     ...(filters?.requesterId ? { requesterId: filters.requesterId } : {}),
     ...(filters?.keyword ? { keyword: filters.keyword } : {}),

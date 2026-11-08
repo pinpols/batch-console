@@ -519,7 +519,6 @@
       const resp = await queryApprovalsPage(scope.tenantId, page.value, pageSize.value, {
         approvalStatus: (filters.status ?? '').trim() || undefined,
         approvalType: (filters.type ?? '').trim() || undefined,
-        excludeApprovalTypes: 'CATCH_UP',
         keyword: (filters.keyword ?? '').trim() || undefined,
         requesterId: (filters.requesterId ?? '').trim() || undefined,
       })
