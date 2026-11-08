@@ -4053,6 +4053,7 @@ export default {
     payloadTitle: '请求载荷',
     catchUpDetailTitle: '补跑申请详情',
     actionApprove: '通过',
+    selfApprovalForbidden: '不能批准自己的申请',
     actionReject: '拒绝',
     approveDialogTitle: '通过审批',
     approveDialogPrompt: '审批意见(可选)',

@@ -110,12 +110,18 @@
           </button>
           <button
             class="m-btn m-btn--primary"
-            :disabled="!canMutateConfig || writesFrozen || busyApproval !== null"
+            :disabled="
+              !canMutateConfig || writesFrozen || busyApproval !== null || selfApprovalBlocked(row)
+            "
             data-track="approvals.approve"
             @click="decide(row, 'approve')"
           >
             <CircleCheck :size="16" aria-hidden="true" />
-            {{ t('mobile.approvals.approve') }}
+            {{
+              selfApprovalBlocked(row)
+                ? t('mobile.approvals.selfApprovalForbidden')
+                : t('mobile.approvals.approve')
+            }}
           </button>
         </div>
       </div>
@@ -252,6 +258,12 @@
     return value ? { keyword: value } : {}
   }
 
+  function selfApprovalBlocked(row: ConsoleApprovalCommandResponse) {
+    const requester = row.requesterId ?? ''
+    const operator = auth.userInfo?.username ?? auth.userInfo?.userId ?? ''
+    return row.approvalType === 'SELF_SERVICE' && requester !== '' && requester === operator
+  }
+
   type QueryContext = { tenantId: string; filter: ApprovalFilter; keyword: string }
 
   async function refreshCounts(context: QueryContext) {
@@ -361,6 +373,7 @@
 
   async function decide(row: ConsoleApprovalCommandResponse, decision: 'approve' | 'reject') {
     if (!canMutateConfig.value || !ensureWriteAvailable() || busyApproval.value) return
+    if (decision === 'approve' && selfApprovalBlocked(row)) return
     const scope = actionScope.begin()
     const actor = auth.userInfo?.username ?? auth.userInfo?.userId
     const isCurrent = () =>

@@ -4003,6 +4003,7 @@ const messages: Messages = {
     payloadTitle: 'Request payload',
     catchUpDetailTitle: 'Catch-up request details',
     actionApprove: 'Approve',
+    selfApprovalForbidden: 'You cannot approve your own request',
     actionReject: 'Reject',
     approveDialogTitle: 'Approve',
     approveDialogPrompt: 'Approval comment (optional)',

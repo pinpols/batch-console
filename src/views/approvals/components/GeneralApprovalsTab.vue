@@ -433,7 +433,11 @@
     if (value !== 'CUSTOM') filters.status = value
   }
 
-  const approvalTypeOptions = computed(() => pickMetaEnumGroup(metaEnums.value, 'approvalType'))
+  const approvalTypeOptions = computed(() =>
+    pickMetaEnumGroup(metaEnums.value, 'approvalType').filter(
+      (option) => option.value !== 'CATCH_UP',
+    ),
+  )
 
   // 已执行（EXECUTED）同样是终态，不能再批准 / 拒绝或勾选批量
   const terminal = new Set(['APPROVED', 'EXECUTED', 'REJECTED', 'CLOSED', 'CANCELLED'])
@@ -447,6 +451,12 @@
     return !terminal.has(row.approvalStatus)
   }
 
+  function selfApprovalBlocked(row: ConsoleApprovalCommandResponse) {
+    const requester = row.requesterId ?? ''
+    const operator = auth.userInfo?.username ?? auth.userInfo?.userId ?? ''
+    return row.approvalType === 'SELF_SERVICE' && requester !== '' && requester === operator
+  }
+
   function approvalRowActions(row: ConsoleApprovalCommandResponse): RowAction[] {
     return [
       {
@@ -457,8 +467,14 @@
       },
       {
         key: 'approve',
-        label: t('approvals.actionApprove'),
-        disabled: batchRunning.value || !canMutateConfig.value || !isPending(row),
+        label: selfApprovalBlocked(row)
+          ? t('approvals.selfApprovalForbidden')
+          : t('approvals.actionApprove'),
+        disabled:
+          batchRunning.value ||
+          !canMutateConfig.value ||
+          !isPending(row) ||
+          selfApprovalBlocked(row),
         onClick: () => approveRow(row),
       },
       {
@@ -723,7 +739,11 @@
 
   async function runBatchApprove() {
     if (!ensureWriteAvailable() || batchRunning.value) return
-    const targets = [...selection.value]
+    const targets = selection.value.filter((row) => !selfApprovalBlocked(row))
+    if (targets.length === 0) {
+      ElMessage.warning(t('approvals.selfApprovalForbidden'))
+      return
+    }
     const context = captureApprovalAction(targets)
     if (!context.isCurrent()) return
     const nos = targets.map((r) => r.approvalNo)
