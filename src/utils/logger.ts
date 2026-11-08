@@ -28,7 +28,7 @@ export interface LogEntry {
   type: LogType
   /** 本地过滤/展示用;不发给后端 */
   level: LogLevel
-  /** 事件名(短文案:"页面切换:XXX" / "POST /api/xxx → 500") */
+  /** 事件名(短文案,如"页面切换:作业列表" / "POST /api/console/jobs → 500") */
   name: string
   /** 触发时所在路由 path+hash */
   page: string
