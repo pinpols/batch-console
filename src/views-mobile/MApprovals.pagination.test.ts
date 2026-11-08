@@ -31,6 +31,23 @@ beforeEach(() => {
 })
 
 describe('移动审批分页', () => {
+  it('所有状态列表与状态计数均排除补跑，包括已批准和已执行两条查询', async () => {
+    mocks.query.mockResolvedValue({ items: [], total: 0 })
+    const wrapper = shallowMount(MApprovals, {
+      global: { stubs: { MPullRefresh: { template: '<div><slot /></div>' } } },
+    })
+    await flushPromises()
+    for (const tab of wrapper.findAll('[role="tab"]')) {
+      await tab.trigger('click')
+      await flushPromises()
+    }
+    expect(mocks.query.mock.calls.filter((args) => args[2] === 1)).toHaveLength(20)
+    expect(mocks.query.mock.calls.filter((args) => args[2] === 30)).toHaveLength(5)
+    for (const args of mocks.query.mock.calls) {
+      expect(args[3]).toMatchObject({ excludeApprovalTypes: 'CATCH_UP' })
+    }
+  })
+
   it('下一页请求失败后重试同页，避免遗漏审批', async () => {
     let failedOnce = false
     mocks.query.mockImplementation((_tenant, page, size) => {
@@ -58,6 +75,9 @@ describe('移动审批分页', () => {
     await flushPromises()
     const pages = mocks.query.mock.calls.filter((args) => args[2] === 30).map((args) => args[1])
     expect(pages).toEqual([1, 2, 2])
+    for (const args of mocks.query.mock.calls) {
+      expect(args[3]).toMatchObject({ excludeApprovalTypes: 'CATCH_UP' })
+    }
     expect(wrapper.text()).toContain('APPROVAL-2')
   })
 

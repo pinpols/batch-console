@@ -20,6 +20,8 @@ describe('approvalsApi', () => {
     mockedGet.mockResolvedValue({ total: 0, pageNo: 1, pageSize: 15, items: [] })
     await queryApprovalsPage('ta', 1, 15, {
       approvalStatus: 'PENDING',
+      approvalType: 'SELF_SERVICE',
+      excludeApprovalTypes: 'CATCH_UP,DOWNLOAD',
       keyword: 'job-a',
     })
     expect(mockedGet).toHaveBeenCalledWith('/api/console/queries/approvals', {
@@ -27,9 +29,24 @@ describe('approvalsApi', () => {
       pageNo: 1,
       pageSize: 15,
       approvalStatus: 'PENDING',
+      approvalType: 'SELF_SERVICE',
+      excludeApprovalTypes: 'CATCH_UP,DOWNLOAD',
       keyword: 'job-a',
     })
   })
+
+  it.each([undefined, { excludeApprovalTypes: '' }])(
+    'queryApprovalsPage leaves exclusion optional: %s',
+    async (filters) => {
+      mockedGet.mockResolvedValue({ total: 0, pageNo: 1, pageSize: 15, items: [] })
+      await queryApprovalsPage('ta', 1, 15, filters)
+      expect(mockedGet).toHaveBeenCalledWith('/api/console/queries/approvals', {
+        tenantId: 'ta',
+        pageNo: 1,
+        pageSize: 15,
+      })
+    },
+  )
 
   it('approveOne POST with encoded approvalNo + body', async () => {
     mockedPost.mockResolvedValue('ok')

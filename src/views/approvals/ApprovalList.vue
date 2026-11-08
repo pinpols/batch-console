@@ -73,7 +73,10 @@
   async function loadCounts() {
     if (!tenant.tenantId) return
     const [g, c] = await Promise.allSettled([
-      queryApprovalsPage(tenant.tenantId, 1, 1, { approvalStatus: 'PENDING' }),
+      queryApprovalsPage(tenant.tenantId, 1, 1, {
+        approvalStatus: 'PENDING',
+        excludeApprovalTypes: 'CATCH_UP',
+      }),
       queryCatchUpApprovalsPage(tenant.tenantId, 1, 1),
     ])
     generalCount.value = g.status === 'fulfilled' ? Number(g.value.total ?? 0) : null

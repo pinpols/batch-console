@@ -277,6 +277,24 @@ describe('审批提交与读取范围', () => {
     await flushPromises()
     expect(action === 'approve' ? mocks.batchApprove : mocks.batchReject).not.toHaveBeenCalled()
   })
+  it('普通审批列表与翻页始终在服务端排除补跑', async () => {
+    const wrapper = renderApprovals()
+    await flushPromises()
+    expect(mocks.approvals).toHaveBeenLastCalledWith(
+      'tenant-a',
+      1,
+      15,
+      expect.objectContaining({ excludeApprovalTypes: 'CATCH_UP' }),
+    )
+    wrapper.findComponent(table).vm.$emit('update:page', 2)
+    await flushPromises()
+    expect(mocks.approvals).toHaveBeenLastCalledWith(
+      'tenant-a',
+      2,
+      15,
+      expect.objectContaining({ excludeApprovalTypes: 'CATCH_UP' }),
+    )
+  })
   it('旧租户读取晚到不覆盖当前审批列表', async () => {
     const old = pending<unknown>()
     mocks.approvals

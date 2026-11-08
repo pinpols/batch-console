@@ -254,8 +254,11 @@
     }
   }
 
-  function keywordFilter(value: string) {
-    return value ? { keyword: value } : {}
+  function generalApprovalFilters(value: string) {
+    return {
+      excludeApprovalTypes: 'CATCH_UP',
+      ...(value ? { keyword: value } : {}),
+    }
   }
 
   function selfApprovalBlocked(row: ConsoleApprovalCommandResponse) {
@@ -267,7 +270,7 @@
   type QueryContext = { tenantId: string; filter: ApprovalFilter; keyword: string }
 
   async function refreshCounts(context: QueryContext) {
-    const base = keywordFilter(context.keyword)
+    const base = generalApprovalFilters(context.keyword)
     const [all, pending, approved, executed, rejected] = await Promise.all([
       queryApprovalsPage(context.tenantId, 1, 1, base),
       queryApprovalsPage(context.tenantId, 1, 1, { ...base, approvalStatus: 'PENDING' }),
@@ -285,7 +288,7 @@
   }
 
   async function queryCurrentPage(requestedPage: number, context: QueryContext) {
-    const base = keywordFilter(context.keyword)
+    const base = generalApprovalFilters(context.keyword)
     if (context.filter === 'approved') {
       const [approved, executed] = await Promise.all([
         queryApprovalsPage(context.tenantId, requestedPage, pageSize, {
