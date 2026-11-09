@@ -3691,7 +3691,10 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** Query workflow runs */
+    /**
+     * Query workflow runs
+     * @description 按触发请求标识筛选时，只返回该租户由此请求创建的在线 Workflow 运行；请求等待容量或运行已归档时列表可能为空。
+     */
     get: operations['queryWorkflowRuns']
     put?: never
     post?: never
@@ -12801,6 +12804,16 @@ export interface components {
       workflowInserted: number
       /** Format: int32 */
       workflowUpdated: number
+      /**
+       * Format: int32
+       * @description 成功处理的作业监控策略行数，兼容旧服务端时可能缺省。
+       */
+      jobMonitoringPoliciesApplied?: number
+      /**
+       * Format: int32
+       * @description 成功处理的工作流监控策略行数，兼容旧服务端时可能缺省。
+       */
+      workflowMonitoringPoliciesApplied?: number
     }
     /** @description Business event subscription. Job SLA alert type codes are rejected with INVALID_ARGUMENT; use the alert centre channel. */
     CreateWebhookRequest: {
@@ -19857,10 +19870,14 @@ export interface operations {
         pageSize?: components['parameters']['PageSizeQuery']
         /** @description Filter by workflow definition ID */
         workflowDefinitionId?: components['parameters']['WorkflowDefinitionIdFilter']
+        /** @description 按工作流编码精确匹配，包含该编码的所有定义版本。 */
+        workflowCode?: string
         /** @description Filter by run status (exact match) */
         runStatus?: components['parameters']['RunStatusFilter']
         /** @description Filter by trace ID (partial match) */
         traceId?: components['parameters']['TraceIdFilter']
+        /** @description Trigger 受理响应中返回的请求标识，按精确值匹配。 */
+        requestId?: string
       }
       header?: never
       path?: never

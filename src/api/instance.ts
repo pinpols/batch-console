@@ -15,8 +15,10 @@ export type InstanceQuery = InstanceQueryParams
 
 export interface WorkflowRunQuery {
   tenantId?: string
-  /** 由 workflowCode 在页面侧解析为 definitionId 后传入 */
+  /** 按定义 ID 精确匹配 */
   workflowDefinitionId?: number
+  /** 按工作流编码精确匹配所有版本 */
+  workflowCode?: string
   /** 精确匹配 */
   runStatus?: string
   /** 模糊匹配 */
@@ -64,6 +66,7 @@ export const instanceApi = {
   },
 
   workflowRuns: async (query: WorkflowRunQuery) => {
+    const workflowCode = query.workflowCode?.trim()
     const runStatus = query.runStatus?.trim()
     const traceId = query.traceId?.trim()
     const pr = await get<PageResponse<ConsoleWorkflowRunResponse>>(
@@ -75,6 +78,7 @@ export const instanceApi = {
         ...(query.workflowDefinitionId != null
           ? { workflowDefinitionId: query.workflowDefinitionId }
           : {}),
+        ...(workflowCode ? { workflowCode } : {}),
         ...(runStatus ? { runStatus } : {}),
         ...(traceId ? { traceId } : {}),
       },

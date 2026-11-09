@@ -456,12 +456,31 @@
               >
                 <template #title>{{ t('tenantPackageImportWizard.applySucceededTitle') }}</template>
                 <template #default>
-                  <!-- 全 0(源为空或已是最新):空表会被误读为"渲染坏了",改显明确提示 -->
-                  <div v-if="applyBreakdownRows.length === 0" class="apply-no-change">
+                  <div v-if="showApplyNoChanges" class="apply-no-change">
                     {{ t('tenantPackageImportWizard.applyNoChanges') }}
                   </div>
+                  <div v-if="monitoringCountsUnavailable" class="apply-monitoring-summary">
+                    {{ t('tenantPackageImportWizard.monitoringCountsUnavailable') }}
+                  </div>
+                  <div v-if="jobMonitoringPoliciesApplied > 0" class="apply-monitoring-summary">
+                    {{
+                      t('tenantPackageImportWizard.jobMonitoringPoliciesApplied', {
+                        count: jobMonitoringPoliciesApplied,
+                      })
+                    }}
+                  </div>
+                  <div
+                    v-if="workflowMonitoringPoliciesApplied > 0"
+                    class="apply-monitoring-summary"
+                  >
+                    {{
+                      t('tenantPackageImportWizard.workflowMonitoringPoliciesApplied', {
+                        count: workflowMonitoringPoliciesApplied,
+                      })
+                    }}
+                  </div>
                   <el-table
-                    v-else
+                    v-if="applyBreakdownRows.length > 0"
                     class="apply-result-table"
                     :data="applyBreakdownRows"
                     size="small"
@@ -904,6 +923,26 @@
         })
         .filter((row) => row.inserted > 0 || row.updated > 0)
     },
+  )
+
+  const monitoringCountsUnavailable = computed(
+    () =>
+      applyResult.value !== null &&
+      (typeof applyResult.value.jobMonitoringPoliciesApplied !== 'number' ||
+        typeof applyResult.value.workflowMonitoringPoliciesApplied !== 'number'),
+  )
+  const jobMonitoringPoliciesApplied = computed(
+    () => applyResult.value?.jobMonitoringPoliciesApplied ?? 0,
+  )
+  const workflowMonitoringPoliciesApplied = computed(
+    () => applyResult.value?.workflowMonitoringPoliciesApplied ?? 0,
+  )
+  const showApplyNoChanges = computed(
+    () =>
+      !monitoringCountsUnavailable.value &&
+      applyBreakdownRows.value.length === 0 &&
+      jobMonitoringPoliciesApplied.value === 0 &&
+      workflowMonitoringPoliciesApplied.value === 0,
   )
 
   function resetWorkbookSession() {

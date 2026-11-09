@@ -117,6 +117,7 @@ describe('instanceApi', () => {
       await instanceApi.workflowRuns({
         tenantId: 'ta',
         workflowDefinitionId: 5,
+        workflowCode: ' WF ',
         runStatus: ' RUNNING ',
         traceId: 'trace-x',
         page: 2,
@@ -127,6 +128,7 @@ describe('instanceApi', () => {
         pageNo: 2,
         pageSize: 20,
         workflowDefinitionId: 5,
+        workflowCode: 'WF',
         runStatus: 'RUNNING',
         traceId: 'trace-x',
       })
@@ -136,6 +138,7 @@ describe('instanceApi', () => {
       mockedGet.mockResolvedValue({ items: [], total: 0 })
       await instanceApi.workflowRuns({
         tenantId: 'ta',
+        workflowCode: '   ',
         runStatus: '   ',
         traceId: '',
         page: 1,

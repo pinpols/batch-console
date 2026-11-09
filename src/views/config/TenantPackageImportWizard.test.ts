@@ -30,7 +30,10 @@ vi.mock('@/composables/useImportWizard', async (original) => {
 })
 vi.mock('vue-i18n', async (original) => ({
   ...(await original<typeof import('vue-i18n')>()),
-  useI18n: () => ({ t: (key: string) => key }),
+  useI18n: () => ({
+    t: (key: string, params?: { count?: number }) =>
+      typeof params?.count === 'number' ? `${key}: ${params.count}` : key,
+  }),
 }))
 vi.mock('@/stores/auth', () => ({ useAuthStore: () => ({ hasPermission: () => true }) }))
 vi.mock('@/stores/tenant', async (original) => {
@@ -370,6 +373,108 @@ describe('tenant package workbook identity', () => {
     expect(state.wizard!.step.value).toBe(0)
     wrapper.unmount()
   })
+
+  it('监控策略单独应用时显示已处理数量，不提示没有变化', async () => {
+    state.apply.mockResolvedValueOnce({
+      jobMonitoringPoliciesApplied: 1,
+      workflowMonitoringPoliciesApplied: 1,
+    })
+    const wrapper = mount(TenantPackageImportWizard, {
+      global: { stubs: { ...stubs, ElAlert: container }, directives: { loading: () => {} } },
+    })
+    state.wizard!.uploadToken.value = 'upload-a'
+    state.wizard!.previewRaw.value = {
+      previewToken: 'preview-a',
+      totalRows: 2,
+      validRows: 2,
+      invalidRows: 0,
+    }
+    state.wizard!.step.value = 2
+    await flushPromises()
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'excelMaintenanceWizard.btnApply')!
+      .trigger('click')
+    await flushPromises()
+
+    expect(state.apply).toHaveBeenCalledOnce()
+    expect(wrapper.find('.apply-no-change').exists()).toBe(false)
+    expect(wrapper.text()).toContain('tenantPackageImportWizard.jobMonitoringPoliciesApplied: 1')
+    expect(wrapper.text()).toContain(
+      'tenantPackageImportWizard.workflowMonitoringPoliciesApplied: 1',
+    )
+    wrapper.unmount()
+  })
+
+  it('旧服务端未提供策略计数时不将缺失明细当作没有变化', async () => {
+    state.apply.mockResolvedValueOnce({
+      uploadToken: 'upload-a',
+      tenantId: 'tenant-a',
+      resourceQueueInserted: 0,
+      resourceQueueUpdated: 0,
+      businessCalendarInserted: 0,
+      businessCalendarUpdated: 0,
+      batchWindowInserted: 0,
+      batchWindowUpdated: 0,
+      jobInserted: 0,
+      jobUpdated: 0,
+      channelInserted: 0,
+      channelUpdated: 0,
+      fileTemplateInserted: 0,
+      fileTemplateUpdated: 0,
+      workflowInserted: 0,
+      workflowUpdated: 0,
+    })
+    const wrapper = mount(TenantPackageImportWizard, {
+      global: { stubs: { ...stubs, ElAlert: container }, directives: { loading: () => {} } },
+    })
+    state.wizard!.uploadToken.value = 'upload-a'
+    state.wizard!.previewRaw.value = {
+      previewToken: 'preview-a',
+      totalRows: 1,
+      validRows: 1,
+      invalidRows: 0,
+    }
+    state.wizard!.step.value = 2
+    await flushPromises()
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'excelMaintenanceWizard.btnApply')!
+      .trigger('click')
+    await flushPromises()
+
+    expect(wrapper.find('.apply-no-change').exists()).toBe(false)
+    expect(wrapper.text()).toContain('tenantPackageImportWizard.monitoringCountsUnavailable')
+    wrapper.unmount()
+  })
+
+  it('服务端确认没有处理策略且其他计数为零时显示无变化', async () => {
+    state.apply.mockResolvedValueOnce({
+      jobMonitoringPoliciesApplied: 0,
+      workflowMonitoringPoliciesApplied: 0,
+    })
+    const wrapper = mount(TenantPackageImportWizard, {
+      global: { stubs: { ...stubs, ElAlert: container }, directives: { loading: () => {} } },
+    })
+    state.wizard!.uploadToken.value = 'upload-a'
+    state.wizard!.previewRaw.value = {
+      previewToken: 'preview-a',
+      totalRows: 0,
+      validRows: 0,
+      invalidRows: 0,
+    }
+    state.wizard!.step.value = 2
+    await flushPromises()
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'excelMaintenanceWizard.btnApply')!
+      .trigger('click')
+    await flushPromises()
+
+    expect(wrapper.find('.apply-no-change').exists()).toBe(true)
+    wrapper.unmount()
+  })
+
   it('cancels an apply confirmation when the selected workbook changes', async () => {
     let resolveConfirmation!: () => void
     state.confirm.mockReturnValueOnce(
