@@ -313,21 +313,19 @@ describe('Workflow 运行列表的筛选依赖', () => {
     await vi.waitFor(() => expect(ElMessage).toHaveBeenCalledOnce())
   })
 
-  it('深链首次加载等待定义编码解析，不能按全部 Workflow 发起查询', async () => {
+  it('按工作流编码筛选时保留所有定义版本', async () => {
     mocks.route.query = { workflowCode: 'WF', page: '3' }
-    let definitions!: (value: unknown) => void
-    mocks.defs.mockReturnValueOnce(
-      new Promise((resolve) => {
-        definitions = resolve
-      }),
-    )
+    mocks.defs.mockResolvedValueOnce([
+      { id: 2, workflowCode: 'WF', version: 2 },
+      { id: 1, workflowCode: 'WF', version: 1 },
+    ])
     const wrapper = shallowMount(WorkflowList, { global: { stubs } })
     await flushPromises()
-    expect(mocks.runs).not.toHaveBeenCalled()
-    definitions([{ id: 1, workflowCode: 'WF' }])
-    await flushPromises()
     expect(mocks.runs).toHaveBeenCalledWith(
-      expect.objectContaining({ tenantId: 'tenant-a', workflowDefinitionId: 1, page: 3 }),
+      expect.objectContaining({ tenantId: 'tenant-a', workflowCode: 'WF', page: 3 }),
+    )
+    expect(mocks.runs).not.toHaveBeenCalledWith(
+      expect.objectContaining({ workflowDefinitionId: 2 }),
     )
     wrapper.unmount()
   })

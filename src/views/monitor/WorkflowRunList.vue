@@ -307,13 +307,6 @@
     return fmtDuration(Date.parse(row.finishedAt) - Date.parse(row.startedAt))
   }
 
-  function resolveDefId(): number | undefined {
-    const code = workflowCode.value.trim()
-    if (!code) return undefined
-    const hit = cachedDefs.value.find((d) => d.workflowCode === code)
-    return hit?.id
-  }
-
   const loadError = ref<unknown>(null)
   async function load() {
     const scope = listScope.begin()
@@ -321,20 +314,13 @@
     loading.value = true
     loadError.value = null
     try {
-      if (workflowCode.value.trim()) await loadWorkflowCodes()
-      // 名称列只依赖缓存，失败不影响列表本身
-      else void loadWorkflowCodes().catch(() => undefined)
+      // 名称列只依赖缓存，失败不影响运行列表和服务端编码筛选。
+      void loadWorkflowCodes().catch(() => undefined)
       if (!listScope.isCurrent(scope)) return
-      const defId = resolveDefId()
       const code = workflowCode.value.trim()
-      if (code && defId === undefined) {
-        rows.value = []
-        total.value = 0
-        return
-      }
       const pr = await instanceApi.workflowRuns({
         tenantId: scope.tenantId,
-        workflowDefinitionId: defId,
+        workflowCode: code || undefined,
         runStatus: runStatus.value.trim() || undefined,
         traceId: traceId.value.trim() || undefined,
         page: page.value,

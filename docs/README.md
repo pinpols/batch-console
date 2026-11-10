@@ -6,7 +6,7 @@
 
 ## 当前待办统一索引
 
-前后端开放事项统一汇总在配对后端 [TODO Master 全部开放事项统一索引](../../file-batch-system/docs/plans/todo-master.md#2026-11-03全部开放事项统一索引)，本仓不另建重复索引。前端事项的状态、验收条件和证据仍维护在原文：[界面与菜单调整台账](backlog/frontend-ui-acceptance-2026-11-02.md)、[批量开户环境验收](backlog/bulk-user-provisioning.md)、[AI 与使用率待办](backlog/ai-and-usage-statistics-todo-2026-09-29.md)、[Workflow 实施方案](engineering/workflow-job-pipeline-unification-plan-2026-10-14.md)、[能力承接矩阵](engineering/backend-capability-alignment-plan-2026-10-25.md#关闭矩阵)、[Compose CD 目标环境验收](runbook/compose-cd-roadmap.md#目标环境待验收)和[上线准入清单](runbook/go-live-readiness-checklist.md)。
+前后端开放事项统一汇总在配对后端 [TODO Master 全部开放事项统一索引](../../file-batch-system/docs/plans/todo-master.md#2026-11-03全部开放事项统一索引)，本仓不另建重复索引。前端事项的状态、验收条件和证据仍维护在原文：[界面与菜单调整台账](backlog/frontend-ui-acceptance-2026-11-02.md)、[产品信息架构整改](engineering/product-ia-remediation-plan-2026-11-06.md)、[批量开户环境验收](backlog/bulk-user-provisioning.md)、[AI 与使用率待办](backlog/ai-and-usage-statistics-todo-2026-09-29.md)、[Workflow 实施方案](engineering/workflow-job-pipeline-unification-plan-2026-10-14.md)、[能力承接矩阵](engineering/backend-capability-alignment-plan-2026-10-25.md#关闭矩阵)、[Compose CD 目标环境验收](runbook/compose-cd-roadmap.md#目标环境待验收)和[上线准入清单](runbook/go-live-readiness-checklist.md)。
 
 ## 产品使用指南
 

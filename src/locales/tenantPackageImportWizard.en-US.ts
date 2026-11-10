@@ -108,6 +108,10 @@ const tenantPackageImportWizard = {
   applySucceededTitle: 'Apply succeeded',
   applyNoChanges:
     'No rows were added or updated. The source is empty or matches the current configuration.',
+  jobMonitoringPoliciesApplied: 'Processed {count} job monitoring policies.',
+  workflowMonitoringPoliciesApplied: 'Processed {count} workflow monitoring policies.',
+  monitoringCountsUnavailable:
+    'The server did not provide monitoring policy counts. Check the corresponding configuration.',
   btnRetryApply: 'Retry',
   btnResetWizard: 'Start over',
   colEntity: 'Entity',
