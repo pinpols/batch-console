@@ -1,0 +1,46 @@
+# 临时 workflow：用本仓库 Actions token 对 main 触发镜像构建。不要合并。
+name: Frontend / Dispatch build image on main once
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+
+permissions:
+  actions: write
+  contents: read
+
+jobs:
+  dispatch:
+    name: Dispatch build-image on main
+    if: github.event.pull_request.head.ref == 'cursor/dispatch-build-image-main-e790'
+    runs-on: ubuntu-26.04
+    timeout-minutes: 5
+    steps:
+      - name: Dispatch build-image on main
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TARGET_REF: main
+        run: |
+          set -euo pipefail
+          python3 - "$TARGET_REF" <<'PY'
+          import json
+          import os
+          import subprocess
+          import sys
+
+          payload = json.dumps({"ref": sys.argv[1]})
+          subprocess.run(
+              [
+                  "gh", "api", "--method", "POST",
+                  f"repos/{os.environ['GITHUB_REPOSITORY']}/actions/workflows/build-image.yml/dispatches",
+                  "--input", "-",
+              ],
+              input=payload,
+              text=True,
+              check=True,
+          )
+          print(f"dispatched build-image.yml ref={sys.argv[1]}")
+          PY
