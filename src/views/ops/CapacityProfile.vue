@@ -1,6 +1,7 @@
 <template>
   <PageContainer>
     <PageHeader />
+    <RelatedPageLinks :paths="['/reports', '/observability/usage']" />
 
     <!-- 还原设计:查询区直铺底色,无卡片壳 -->
     <div>
@@ -238,6 +239,7 @@
   import PageContainer from '@/components/common/PageContainer.vue'
   import CopyableText from '@/components/common/CopyableText.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
+  import RelatedPageLinks from '@/components/common/RelatedPageLinks.vue'
   import { fmtNumber } from '@/utils/number'
   import SectionCard from '@/components/common/SectionCard.vue'
   import EmptyState from '@/components/common/EmptyState.vue'

@@ -243,6 +243,7 @@
   import { useTenantRequestScope } from '@/composables/useTenantRequestScope'
   import { queryTraceSnapshot } from '@/api/observabilityQueries'
   import { buildTraceTimeline } from './traceTimeline'
+  import { jobLineageEvidenceLink } from './lineageLinks'
   import { fmtDatetime } from '@/utils/datetime'
 
   const { t } = useI18n({ useScope: 'global' })
@@ -430,7 +431,15 @@
           },
           { prop: 'jobCode', label: t('traceDiagnostic.colJobCode'), width: 180, inspect: true },
           { prop: 'instanceStatus', label: t('traceDiagnostic.colStatus'), width: 110 },
-          { prop: 'bizDate', label: t('traceDiagnostic.colBizDate'), width: 110 },
+          {
+            prop: 'bizDate',
+            label: t('traceDiagnostic.colBizDate'),
+            width: 110,
+            // 业务日链到该作业当日结果版本的血缘证据
+            linkTo: (row) =>
+              jobLineageEvidenceLink(String(row.jobCode ?? ''), String(row.bizDate ?? '')) ??
+              '/observability/lineage',
+          },
           { prop: 'startedAt', label: t('traceDiagnostic.colStartedAt'), width: 170 },
         ],
       },

@@ -12,6 +12,7 @@
         </div>
       </template>
     </PageHeader>
+    <RelatedPageLinks :paths="['/observability/usage', '/ops/capacity-profile']" />
 
     <!-- 照设计 proto-reports dump:pill 双 tab(趋势分析/导出中心) -->
     <div class="rp-tabs">
@@ -175,6 +176,7 @@
   import { useTenantReload } from '@/composables/useTenantReload'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
+  import RelatedPageLinks from '@/components/common/RelatedPageLinks.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
   import { fmtNumber } from '@/utils/number'

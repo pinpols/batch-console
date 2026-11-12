@@ -101,6 +101,7 @@ function mountHome() {
     global: {
       plugins: [createI18n({ legacy: false, locale: 'zh-CN', messages: { 'zh-CN': zhCN } })],
       stubs: {
+        RelatedPageLinks: true,
         PageContainer: slotStub,
         PageHeader: { template: '<div><slot name="actions" /><slot /></div>' },
         PrintButton: true,

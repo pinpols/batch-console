@@ -83,7 +83,7 @@
 | `/m/jobs` | [MJobInstances](../../../../src/views-mobile/MJobInstances.vue) | 移动运行查找 | 搜索、状态筛选、运行卡片 | 0 | 保留；当前阶段摘要可与桌面共享事实 |
 | `/m/jobs/:id` | [MJobInstanceDetail](../../../../src/views-mobile/MJobInstanceDetail.vue) | 移动作业详情 | 描述卡、步骤/分区/心跳进度 | 0 | 保留卡片；执行图/分母与桌面一致性待实查（U11） |
 | `/m/workflow/:id` | [MWorkflowViewer](../../../../src/views-mobile/MWorkflowViewer.vue) | 移动流程查看 | 概要卡、图例、DAG、节点信息 | 0 | 已有DAG；冻结执行快照和推送刷新与桌面对齐待核（U11） |
-| `/m/catchup` | [MCatchUp](../../../../src/views-mobile/MCatchUp.vue) | 移动补跑审批 | 列表卡片、处理动作 | 0 | 保留；原因与影响范围优先 |
+| `/m/catchup` | [MCatchUp](../../../../src/views-mobile/components/MCatchUpPanel.vue) | 移动补跑审批 | 列表卡片、处理动作 | 0 | 保留；原因与影响范围优先 |
 | `/m/files` | [MFileList](../../../../src/views-mobile/MFileList.vue) | 移动文件查找 | 文件卡片、下拉刷新 | 0 | 保留；文件状态到运行的上下文跳转 |
 | `/m/workers` | [MWorkers](../../../../src/views-mobile/MWorkers.vue) | 移动节点查看 | 搜索、Worker卡片 | 0 | 保留；不移植桌面宽表 |
 | `/m/outbox` | [MOutbox](../../../../src/views-mobile/MOutbox.vue) | 移动投递查看 | 投递卡片、下拉刷新 | 0 | 保留；失败原因与处理入口清晰 |

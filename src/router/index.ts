@@ -22,6 +22,7 @@ import { installRouterErrorHandler } from './errorHandler'
  * 移动端兜底首页：没有对应移动页时的最终回退目标。
  */
 const MOBILE_HOME = '/m/ops/summary'
+const MOBILE_CATCH_UP_APPROVALS = '/m/approvals?tab=catch-up'
 
 /**
  * 移动端覆盖 on-call 高频查看/审批路径。桌面其它路径默认保持桌面版；
@@ -77,9 +78,12 @@ const MOBILE_DEEPLINK_MAP: { prefix: string; to: string | MobileMapper }[] = [
   // 告警
   { prefix: '/observability/alerts', to: '/m/alerts' },
   { prefix: '/alerts', to: '/m/alerts' },
-  // 审批 / Catch-up
-  { prefix: '/scheduler/catch-up-approvals', to: '/m/catchup' },
-  { prefix: '/approvals', to: '/m/approvals' },
+  // 审批 / 补跑审批：桌面 tab=catch-up 对应手机审批中心的补跑分段
+  { prefix: '/scheduler/catch-up-approvals', to: MOBILE_CATCH_UP_APPROVALS },
+  {
+    prefix: '/approvals',
+    to: (to) => (to.query.tab === 'catch-up' ? MOBILE_CATCH_UP_APPROVALS : '/m/approvals'),
+  },
   // 投递失败 Outbox
   { prefix: '/observability/outbox', to: '/m/outbox' },
   // 执行日志（旧 /logs 与综合查询日志 Tab）
@@ -882,7 +886,7 @@ export const routes: RouteRecordRaw[] = [
   //
   // 应急深链(5 项,无 Tab 入口,只从外部链入,删之前先确认产品):
   //   /m/jobs/:id   ← Tab 点击 drill-down
-  //   /m/catchup    ← PWA push 通知 / 邮件
+  //   /m/catchup    ← PWA push 通知 / 邮件(重定向到 /m/approvals?tab=catch-up)
   //   /m/files      ← 扫码 / 上游链
   //   /m/outbox     ← PWA push 通知(投递失败)
   //   /m/logs       ← traceId 跨页跳转 / 错误链
@@ -939,15 +943,10 @@ export const routes: RouteRecordRaw[] = [
         component: () => import('@/views-mobile/MWorkflowViewer.vue'),
         meta: { title: 'Workflow DAG', minRole: 'VIEWER' },
       },
+      // 补跑审批已并入审批中心的“补跑审批”分段；保留旧地址供 PWA 推送与邮件链接
       {
         path: 'catchup',
-        name: 'm-catchup',
-        component: () => import('@/views-mobile/MCatchUp.vue'),
-        meta: {
-          title: 'Catch-up 审批',
-          minRole: 'OPERATOR',
-          permissions: ['ROLE_ADMIN', 'ROLE_TENANT_ADMIN'],
-        },
+        redirect: (to) => ({ path: '/m/approvals', query: { ...to.query, tab: 'catch-up' } }),
       },
       {
         path: 'files',

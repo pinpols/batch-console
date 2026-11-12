@@ -33,6 +33,9 @@
         <el-button v-if="row && canManageSystem" :loading="diagnosisLoading" @click="runDiagnosis">
           {{ t('monitor.detailDiagnose') }}
         </el-button>
+        <el-button v-if="lineageLink" @click="router.push(lineageLink)">
+          {{ t('monitor.detailLineage') }}
+        </el-button>
         <el-button
           v-if="canWriteSystem && row && isTerminal"
           type="warning"
@@ -515,6 +518,7 @@
   import { useTenantRequestScope } from '@/composables/useTenantRequestScope'
   import { useAuthStore } from '@/stores/auth'
   import { TERMINAL_INSTANCE_STATUSES } from './jobInstanceBulk'
+  import { jobLineageEvidenceLink } from '@/views/observability/lineageLinks'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
@@ -533,6 +537,7 @@
 
   const route = useRoute()
   const router = useRouter()
+  const lineageLink = computed(() => jobLineageEvidenceLink(row.value?.jobCode, row.value?.bizDate))
   const tenant = useTenantStore()
   const auth = useAuthStore()
   const { isMobile } = useResponsive()

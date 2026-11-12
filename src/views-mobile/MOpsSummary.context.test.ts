@@ -79,13 +79,13 @@ describe('mobile operations summary context', () => {
     [
       'ADMIN',
       ['/files/list', '/approvals', '/observability/outbox', '/workers/management'],
-      ['/m/files', '/m/catchup', '/m/outbox'],
+      ['/m/files', '/m/approvals?tab=catch-up', '/m/outbox'],
       true,
     ],
     [
       'TENANT_ADMIN',
       ['/files/list', '/approvals', '/observability/outbox', '/workers/management'],
-      ['/m/files', '/m/catchup', '/m/outbox'],
+      ['/m/files', '/m/approvals?tab=catch-up', '/m/outbox'],
       true,
     ],
     ['AUDITOR', ['/files/list'], ['/m/files'], false],
@@ -126,7 +126,7 @@ describe('mobile operations summary context', () => {
     mocks.getSummary.mockResolvedValue({ runningJobs: 11, pendingApprovals: 4, onlineWorkers: 2 })
     const wrapper = setup()
     await flushPromises()
-    expect(wrapper.find('.m-quick[href="/m/catchup"]').exists()).toBe(true)
+    expect(wrapper.find('.m-quick[href="/m/approvals?tab=catch-up"]').exists()).toBe(true)
     expect(wrapper.find('.m-metric[href="/m/approvals"]').exists()).toBe(true)
     mocks.permission.visibleGroups = []
     await wrapper.vm.$nextTick()

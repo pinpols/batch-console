@@ -298,7 +298,8 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, defineComponent, h, reactive, ref, watch, type PropType } from 'vue'
+  import { computed, defineComponent, h, onMounted, reactive, ref, watch, type PropType } from 'vue'
+  import { useRoute } from 'vue-router'
   import { useI18n } from 'vue-i18n'
   import { ElMessage, ElTable, ElTableColumn } from 'element-plus'
   import { RefreshCw as Refresh } from '@lucide/vue'
@@ -346,6 +347,7 @@
   }
 
   const tenant = useTenantStore()
+  const route = useRoute()
   const evidenceScope = useTenantRequestScope()
   const readinessScope = useTenantRequestScope()
   const activeTab = ref<'evidence' | 'readiness'>('evidence')
@@ -460,6 +462,23 @@
     },
     { flush: 'sync' },
   )
+  // 作业实例详情、链路诊断按 businessKey 或 resultVersionId 深链进入时直接查询
+  function applyEvidenceDeepLink() {
+    const { businessKey: linkedKey, resultVersionId: linkedVersion } = route.query
+    if (typeof linkedKey === 'string' && linkedKey.trim()) {
+      evidenceMode.value = 'businessKey'
+      businessKey.value = linkedKey.trim()
+    } else if (typeof linkedVersion === 'string' && Number(linkedVersion) > 0) {
+      evidenceMode.value = 'resultVersion'
+      resultVersionId.value = Number(linkedVersion)
+    } else {
+      return
+    }
+    activeTab.value = 'evidence'
+    void loadEvidence()
+  }
+  onMounted(applyEvidenceDeepLink)
+
   useTenantReload(() => {
     evidenceScope.begin()
     readinessScope.begin()

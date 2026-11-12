@@ -29,7 +29,7 @@ export const pageMetaByPath = {
   },
   '/reports': {
     title: '报表中心',
-    description: '导出常用运营、调度和审计报表。',
+    description: '按需导出运营、调度和审计报表文件，用于离线留存和对外报送。',
   },
   '/self-service': {
     title: '自助服务',
@@ -139,7 +139,7 @@ export const pageMetaByPath = {
   },
   '/observability/usage': {
     title: '使用统计',
-    description: '查看当前租户的日聚合使用趋势和功能指标。',
+    description: '查看当前租户按日聚合的平台使用量和功能采用趋势，用于了解租户怎么用平台。',
   },
   '/observability/outbox': {
     title: 'Outbox',
@@ -251,7 +251,7 @@ export const pageMetaByPath = {
   },
   '/ops/capacity-profile': {
     title: '容量画像',
-    description: '按租户、作业或 Worker 聚合运行耗时、吞吐和文件处理量。',
+    description: '按租户、作业或 Worker 聚合运行耗时、吞吐和文件处理量，用于容量评估和资源规划。',
   },
   '/ops/asset-freshness': {
     title: '资产新鲜度策略',

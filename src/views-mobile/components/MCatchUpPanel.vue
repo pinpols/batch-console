@@ -1,76 +1,69 @@
 <template>
-  <MPullRefresh :on-refresh="load">
-    <div class="m-page">
-      <div class="m-page__header">
+  <div class="m-catchup-panel">
+    <div v-if="!loading && (!loadError || rows.length)" class="m-page__subtitle">
+      {{ t('mobile.catchup.pendingCount', { n: pendingCount }) }}
+    </div>
+
+    <MSkeleton v-if="loading && rows.length === 0" :count="3" />
+    <div v-else-if="!loadError && rows.length === 0" class="m-empty">
+      {{ t('mobile.catchup.empty') }}
+    </div>
+    <div v-if="loadError" class="m-load-error" :class="{ 'm-empty': !rows.length }" role="alert">
+      <span>{{ rows.length ? t('mobile.catchup.stale') : t('mobile.common.loadFail') }}</span>
+      <button class="m-btn" type="button" @click="load">{{ t('common.retry') }}</button>
+    </div>
+
+    <div v-for="row in rows" :key="row.id" class="m-card">
+      <div class="m-card__row">
+        <div class="m-card__title m-catchup-title">
+          <span>{{ row.workflowCode }}</span>
+          <span class="m-catchup-title__date">{{ row.bizDate }}</span>
+        </div>
+        <span :class="['m-chip', statusChipClass(row.approvalStatus)]">
+          {{
+            row.approvalStatus
+              ? resolveEnumLabel('approvalStatus', row.approvalStatus)
+              : resolveEnumLabel('triggerRequestStatus', row.requestStatus)
+          }}
+        </span>
+      </div>
+      <div class="m-card__sub">{{ t('mobile.catchup.requestId') }}: {{ row.requestId }}</div>
+      <div class="m-card__meta">
         <div>
-          <div class="m-page__title">{{ t('mobile.catchup.title') }}</div>
-          <div v-if="!loading && (!loadError || rows.length)" class="m-page__subtitle">
-            {{ t('mobile.catchup.pendingCount', { n: pendingCount }) }}
-          </div>
+          <span class="m-card__meta-key">{{ t('mobile.tenants.created') }}</span>
+          {{ fmt(row.createdAt) }}
+        </div>
+        <div>
+          <span class="m-card__meta-key">{{ t('common.trace') }}</span
+          >{{ row.traceId }}
         </div>
       </div>
-
-      <MSkeleton v-if="loading && rows.length === 0" :count="3" />
-      <div v-else-if="!loadError && rows.length === 0" class="m-empty">
-        {{ t('mobile.catchup.empty') }}
-      </div>
-      <div v-if="loadError" class="m-load-error" :class="{ 'm-empty': !rows.length }" role="alert">
-        <span>{{ rows.length ? t('mobile.catchup.stale') : t('mobile.common.loadFail') }}</span>
-        <button class="m-btn" type="button" @click="load">{{ t('common.retry') }}</button>
-      </div>
-
-      <div v-for="row in rows" :key="row.id" class="m-card">
-        <div class="m-card__row">
-          <div class="m-card__title m-catchup-title">
-            <span>{{ row.workflowCode }}</span>
-            <span class="m-catchup-title__date">{{ row.bizDate }}</span>
-          </div>
-          <span :class="['m-chip', statusChipClass(row.approvalStatus)]">
-            {{
-              row.approvalStatus
-                ? resolveEnumLabel('approvalStatus', row.approvalStatus)
-                : resolveEnumLabel('triggerRequestStatus', row.requestStatus)
-            }}
-          </span>
-        </div>
-        <div class="m-card__sub">{{ t('mobile.catchup.requestId') }}: {{ row.requestId }}</div>
-        <div class="m-card__meta">
-          <div>
-            <span class="m-card__meta-key">{{ t('mobile.tenants.created') }}</span>
-            {{ fmt(row.createdAt) }}
-          </div>
-          <div>
-            <span class="m-card__meta-key">{{ t('common.trace') }}</span
-            >{{ row.traceId }}
-          </div>
-        </div>
-        <div v-if="canOperate && isActionable(row)" class="m-card__actions">
-          <button
-            class="m-btn m-btn--primary"
-            :disabled="writesFrozen || loading || loadError || busyKey !== null"
-            @click="decide(row, 'approve')"
-          >
-            <CircleCheck :size="16" aria-hidden="true" />
-            {{ t('mobile.catchup.approve') }}
-          </button>
-          <button
-            class="m-btn m-btn--plain-danger"
-            :disabled="writesFrozen || loading || loadError || busyKey !== null"
-            @click="decide(row, 'reject')"
-          >
-            <CircleX :size="16" aria-hidden="true" />
-            {{ t('mobile.catchup.reject') }}
-          </button>
-        </div>
-        <div
-          v-else-if="isPendingRequest(row.requestStatus) && !row.approvalNo"
-          class="m-card__notice"
+      <div v-if="canOperate && isActionable(row)" class="m-card__actions">
+        <button
+          class="m-btn m-btn--primary"
+          :disabled="writesFrozen || loading || loadError || busyKey !== null"
+          @click="decide(row, 'approve')"
         >
-          {{ t('mobile.catchup.legacyNoApprovalNo') }}
-        </div>
+          <CircleCheck :size="16" aria-hidden="true" />
+          {{ t('mobile.catchup.approve') }}
+        </button>
+        <button
+          class="m-btn m-btn--plain-danger"
+          :disabled="writesFrozen || loading || loadError || busyKey !== null"
+          @click="decide(row, 'reject')"
+        >
+          <CircleX :size="16" aria-hidden="true" />
+          {{ t('mobile.catchup.reject') }}
+        </button>
+      </div>
+      <div
+        v-else-if="isPendingRequest(row.requestStatus) && !row.approvalNo"
+        class="m-card__notice"
+      >
+        {{ t('mobile.catchup.legacyNoApprovalNo') }}
       </div>
     </div>
-  </MPullRefresh>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -84,7 +77,6 @@
   import { useTenantStore } from '@/stores/tenant'
   import { useAuthStore } from '@/stores/auth'
   import { useConsoleMetaEnumsQuery } from '@/composables/queries/useConsoleMeta'
-  import MPullRefresh from '@/layout-mobile/MPullRefresh.vue'
   import MSkeleton from '@/layout-mobile/MSkeleton.vue'
   import { fetchAllPageItems } from '@/api/adapters'
   import { approveOne, rejectOne } from '@/api/approvals'
@@ -229,6 +221,8 @@
   }
 
   useTenantReload(load)
+  // 下拉刷新由宿主页 MApprovals 统一处理，这里只暴露刷新入口
+  defineExpose({ load })
 </script>
 
 <style scoped>

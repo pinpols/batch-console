@@ -117,7 +117,11 @@
           <el-icon><Files /></el-icon>
           <span>{{ t('mobile.summary.filesQuick') }}</span>
         </router-link>
-        <router-link v-if="canOpenMobile('m-catchup')" to="/m/catchup" class="m-quick">
+        <router-link
+          v-if="canOpenMobile('m-approvals')"
+          to="/m/approvals?tab=catch-up"
+          class="m-quick"
+        >
           <el-icon><Memo /></el-icon>
           <span>{{ t('mobile.summary.catchupQuick') }}</span>
         </router-link>

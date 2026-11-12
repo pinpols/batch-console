@@ -1,6 +1,7 @@
 <template>
   <PageContainer>
     <PageHeader />
+    <RelatedPageLinks :paths="['/reports', '/ops/capacity-profile']" />
 
     <div class="usage-filters">
       <el-form :inline="true" @submit.prevent="load">
@@ -168,6 +169,7 @@
   import CopyableText from '@/components/common/CopyableText.vue'
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
+  import RelatedPageLinks from '@/components/common/RelatedPageLinks.vue'
   import { useTenantReload } from '@/composables/useTenantReload'
   import { useAppStore } from '@/stores/app'
   import { useTenantStore } from '@/stores/tenant'

@@ -191,6 +191,7 @@ export default {
   detailCancelBtn: 'Cancel run',
   detailCancelRequestBtn: 'Request cancellation',
   detailTerminateBtn: 'Terminate run',
+  detailLineage: 'Lineage evidence',
   detailDiagnose: 'Diagnose run',
   detailRetryFailedPartitions: 'Retry failed partitions',
   detailRetryFailedPartitionsTarget: 'failed partitions of instance "{no}"',

@@ -826,6 +826,7 @@ const messages: Messages = {
     more: 'More',
   },
   pageHeader: {
+    relatedPages: 'Related pages',
     backTooltip: 'Back',
     backLabel: 'Back',
     forwardTooltip: 'Forward',
@@ -999,6 +1000,7 @@ const messages: Messages = {
     switchToThemeLight: 'Switch to light theme',
     switchToThemeDark: 'Switch to dark theme',
     switchToThemeSystem: 'Match system theme',
+    myAccount: 'My account',
     permissionAudit: 'Permission audit',
     onboardingCenter: 'Activation center',
     interfaceTour: 'Interface tour',
@@ -1144,7 +1146,11 @@ const messages: Messages = {
       title: 'Approvals',
       description: 'Centralized approvals for releases, reruns and catch-up.',
     },
-    reports: { title: 'Reports', description: 'Export common ops, scheduler and audit reports.' },
+    reports: {
+      title: 'Reports',
+      description:
+        'Export ops, scheduler and audit report files for offline retention and external filing.',
+    },
     selfService: {
       title: 'Self-service',
       description: 'Check quotas and usage; submit reruns, retries and quota requests.',
@@ -1246,7 +1252,8 @@ const messages: Messages = {
     },
     observabilityUsage: {
       title: 'Usage',
-      description: 'View daily aggregate usage trends and feature metrics for the current tenant.',
+      description:
+        'View daily platform usage and feature adoption for the current tenant, to understand how the tenant uses the platform.',
     },
     observabilityOutbox: {
       title: 'Outbox',
@@ -1376,7 +1383,7 @@ const messages: Messages = {
     opsCapacityProfile: {
       title: 'Capacity profile',
       description:
-        'Aggregate runtime duration, throughput and file volume by tenant, job or worker.',
+        'Aggregate runtime duration, throughput and file volume by tenant, job or worker for capacity assessment and planning.',
     },
     opsAssetFreshness: {
       title: 'Asset freshness policies',
@@ -3513,7 +3520,6 @@ const messages: Messages = {
     maintainQueue: 'Maintain queue',
     maintainQuota: 'Maintain quota',
     maintainWorkflowDefinition: 'Maintain workflow definition',
-    maintainAlertRouting: 'View alert routing',
     viewAll: 'View all',
     triggerPromptMessage: 'Confirm manual trigger parameters',
     triggerPromptTitle: 'Trigger {code}',

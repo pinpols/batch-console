@@ -2,7 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { enableAutoUnmount, flushPromises, shallowMount } from '@vue/test-utils'
 import { computed, reactive } from 'vue'
-import MCatchUp from './MCatchUp.vue'
+import MCatchUpPanel from './MCatchUpPanel.vue'
 
 const mocks = vi.hoisted(() => ({
   tenant: null as unknown as { tenantId: string },
@@ -55,17 +55,7 @@ beforeEach(() => {
   mocks.success.mockReset()
 })
 function render() {
-  return shallowMount(MCatchUp, {
-    global: {
-      stubs: {
-        MPullRefresh: {
-          props: ['onRefresh'],
-          template:
-            '<div><button class="refresh" @click="onRefresh">refresh</button><slot /></div>',
-        },
-      },
-    },
-  })
+  return shallowMount(MCatchUpPanel)
 }
 
 describe('移动补跑审批上下文', () => {
@@ -85,7 +75,7 @@ describe('移动补跑审批上下文', () => {
     const wrapper = render()
     await flushPromises()
     mocks.query.mockRejectedValueOnce(new Error('network error'))
-    await wrapper.get('.refresh').trigger('click')
+    await (wrapper.vm as unknown as { load: () => Promise<void> }).load()
     await flushPromises()
     expect(wrapper.text()).toContain('request-a')
     expect(wrapper.text()).toContain('mobile.catchup.stale')

@@ -1,5 +1,11 @@
 <template>
-  <nav v-if="tabs.length" class="mobile-tab-bar" role="navigation" :aria-label="t('nav.mobileTab.ariaLabel')" :style="{ gridTemplateColumns: `repeat(${tabs.length}, 1fr)` }">
+  <nav
+    v-if="tabs.length"
+    class="mobile-tab-bar"
+    role="navigation"
+    :aria-label="t('nav.mobileTab.ariaLabel')"
+    :style="{ gridTemplateColumns: `repeat(${tabs.length}, 1fr)` }"
+  >
     <router-link
       v-for="tab in tabs"
       :key="tab.path"
@@ -56,7 +62,7 @@
    *
    * 另外 5 个路由(/m/catchup、/m/files、/m/outbox、/m/logs、/m/jobs/:id)在 router
    * 里注册但**不放 Tab**,设计为**应急深链入口**:
-   *   - PWA 推送通知点开 → /m/catchup、/m/outbox
+   *   - PWA 推送通知点开 → /m/catchup(重定向到审批中心补跑分段)、/m/outbox
    *   - 扫码 / 邮件 / 上游链接 → /m/files、/m/logs
    *   - Tab 点击作业 → drill 到 /m/jobs/:id
    *
@@ -103,7 +109,11 @@
   ]
 
   const tabs = computed(() => {
-    const visiblePaths = new Set(permission.visibleGroups.flatMap((group) => group.children.map((item) => item.path.split('?')[0])))
+    const visiblePaths = new Set(
+      permission.visibleGroups.flatMap((group) =>
+        group.children.map((item) => item.path.split('?')[0]),
+      ),
+    )
     return allTabs.filter((tab) => visiblePaths.has(mobileMenuAccess[tab.routeName]))
   })
 
