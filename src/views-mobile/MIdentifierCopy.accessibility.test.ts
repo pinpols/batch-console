@@ -45,7 +45,10 @@ vi.mock('@/api/workers', () => ({
   warmupWorker: vi.fn(),
 }))
 vi.mock('@/layout-mobile/MActionSheet', () => ({ confirmActionSheet: vi.fn() }))
-vi.mock('vue-router', () => ({ useRoute: () => ({ query: {} }) }))
+vi.mock('vue-router', () => ({
+  useRoute: () => ({ query: {} }),
+  useRouter: () => ({ replace: vi.fn() }),
+}))
 vi.mock('vue-i18n', async (original) => ({
   ...(await original<typeof import('vue-i18n')>()),
   useI18n: () => ({ t: (key: string) => key, te: () => false }),

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { enableAutoUnmount, flushPromises, shallowMount } from '@vue/test-utils'
-import MCatchUp from './MCatchUp.vue'
+import MCatchUpPanel from './MCatchUpPanel.vue'
 
 const mocks = vi.hoisted(() => ({ query: vi.fn() }))
 vi.mock('@/stores/tenant', () => ({ useTenantStore: () => ({ tenantId: 'tenant-a' }) }))
@@ -56,13 +56,7 @@ beforeEach(() =>
 
 describe('移动补跑审批状态', () => {
   it('按审批状态展示待审批数量和操作，并对旧记录显示只读原因', async () => {
-    const wrapper = shallowMount(MCatchUp, {
-      global: {
-        stubs: {
-          MPullRefresh: { template: '<div><slot /></div>' },
-        },
-      },
-    })
+    const wrapper = shallowMount(MCatchUpPanel)
     await flushPromises()
     expect(wrapper.text()).toContain('mobile.catchup.pendingCount:1')
     const cards = wrapper.findAll('.m-card')

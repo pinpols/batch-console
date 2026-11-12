@@ -188,6 +188,7 @@ export default {
   detailCancelBtn: '取消实例',
   detailCancelRequestBtn: '请求取消',
   detailTerminateBtn: '终止实例',
+  detailLineage: '血缘证据',
   detailDiagnose: '诊断实例',
   detailRetryFailedPartitions: '重试失败分区',
   detailRetryFailedPartitionsTarget: '实例「{no}」的失败分区',

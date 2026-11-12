@@ -952,6 +952,7 @@ export default {
     more: '更多',
   },
   pageHeader: {
+    relatedPages: '相关页面',
     backTooltip: '上一个界面',
     backLabel: '返回',
     forwardTooltip: '下一个界面',
@@ -1121,6 +1122,7 @@ export default {
     switchToThemeLight: '切换浅色',
     switchToThemeDark: '切换深色',
     switchToThemeSystem: '跟随系统',
+    myAccount: '我的账户',
     permissionAudit: '权限自查',
     onboardingCenter: '业务引导中心',
     interfaceTour: '界面导览',
@@ -1263,7 +1265,10 @@ export default {
       description: '当前租户运行概览、SLA 趋势与待处理事项。',
     },
     approvals: { title: '审批中心', description: '集中处理配置发布、重跑与补跑审批申请。' },
-    reports: { title: '报表中心', description: '导出常用运营、调度和审计报表。' },
+    reports: {
+      title: '报表中心',
+      description: '按需导出运营、调度和审计报表文件，用于离线留存和对外报送。',
+    },
     selfService: { title: '自助服务', description: '查询配额与用量,提交重跑、补偿与配额申请。' },
     jobsDefinitions: { title: '作业定义', description: '维护作业定义、执行模式和调度规则。' },
     observabilityJobMonitoringPolicies: {
@@ -1339,7 +1344,7 @@ export default {
     },
     observabilityUsage: {
       title: '使用统计',
-      description: '查看当前租户的日聚合使用趋势和功能指标。',
+      description: '查看当前租户按日聚合的平台使用量和功能采用趋势，用于了解租户怎么用平台。',
     },
     observabilityOutbox: { title: 'Outbox', description: '查看 Outbox 投递状态与重试记录。' },
     observabilityTrace: {
@@ -1439,7 +1444,7 @@ export default {
     },
     opsCapacityProfile: {
       title: '容量画像',
-      description: '按租户、作业或 Worker 聚合运行耗时、吞吐和文件处理量。',
+      description: '按租户、作业或 Worker 聚合运行耗时、吞吐和文件处理量，用于容量评估和资源规划。',
     },
     opsAssetFreshness: {
       title: '资产新鲜度策略',
@@ -3530,7 +3535,6 @@ export default {
     maintainQueue: '维护队列',
     maintainQuota: '维护配额',
     maintainWorkflowDefinition: '维护工作流定义',
-    maintainAlertRouting: '查看告警路由',
     viewAll: '查看全部',
     triggerPromptMessage: '确认本次手工触发参数',
     triggerPromptTitle: '触发 {code}',

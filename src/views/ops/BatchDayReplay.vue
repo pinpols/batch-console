@@ -818,24 +818,26 @@
         </el-table>
       </div>
       <template #footer>
+        <!-- 批准是唯一主操作放最右；取消重放属于危险次操作，用描边避免两个实心按钮抢视线 -->
         <el-button @click="detailDrawerOpen = false">{{ t('common.close') }}</el-button>
-        <el-button
-          v-if="canApprove"
-          type="success"
-          :loading="approving"
-          :disabled="writesFrozen"
-          @click="doApprove"
-        >
-          {{ t('batchDayReplay.approveBtn') }}
-        </el-button>
         <el-button
           v-if="canCancel"
           type="danger"
+          plain
           :loading="cancelling"
           :disabled="writesFrozen"
           @click="doCancel"
         >
           {{ t('batchDayReplay.cancelBtn') }}
+        </el-button>
+        <el-button
+          v-if="canApprove"
+          type="primary"
+          :loading="approving"
+          :disabled="writesFrozen"
+          @click="doApprove"
+        >
+          {{ t('batchDayReplay.approveBtn') }}
         </el-button>
       </template>
     </el-drawer>

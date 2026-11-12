@@ -135,6 +135,9 @@ export default {
     outboxQuick: 'Outbox',
   },
   approvals: {
+    sectionLabel: '审批分类',
+    sectionGeneral: '普通审批',
+    sectionCatchUp: '补跑审批',
     title: '审批中心',
     pendingCount: '待我审批 {n} 条',
     filterAll: '全部',

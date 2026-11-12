@@ -5,7 +5,13 @@ import { flushPromises, shallowMount } from '@vue/test-utils'
 import LineageEvidence from './LineageEvidence.vue'
 import CopyableText from '@/components/common/CopyableText.vue'
 
-const mocks = vi.hoisted(() => ({ load: vi.fn(), tenant: null as unknown as { tenantId: string } }))
+const mocks = vi.hoisted(() => ({
+  load: vi.fn(),
+  loadByVersion: vi.fn(),
+  tenant: null as unknown as { tenantId: string },
+  route: { query: {} as Record<string, string> },
+}))
+vi.mock('vue-router', () => ({ useRoute: () => mocks.route }))
 vi.mock('vue-i18n', async (original) => ({
   ...(await original<typeof import('vue-i18n')>()),
   useI18n: () => ({ t: (key: string) => key }),
@@ -15,7 +21,7 @@ vi.mock('@/composables/useTenantReload', () => ({ useTenantReload: vi.fn() }))
 vi.mock('@/api/lineage', () => ({
   getAssetPartitionReadiness: vi.fn(),
   getLineageEvidenceByBusinessKey: mocks.load,
-  getLineageEvidenceByResultVersion: vi.fn(),
+  getLineageEvidenceByResultVersion: mocks.loadByVersion,
 }))
 vi.mock('element-plus', async (original) => ({
   ...(await original<typeof import('element-plus')>()),
@@ -53,6 +59,8 @@ function renderPage() {
 beforeEach(() => {
   mocks.tenant = reactive({ tenantId: 'tenant-a' })
   mocks.load.mockReset()
+  mocks.loadByVersion.mockReset()
+  mocks.route.query = {}
 })
 
 describe('LineageEvidence', () => {
@@ -223,4 +231,33 @@ describe('LineageEvidence', () => {
       wrapper.unmount()
     },
   )
+})
+
+describe('LineageEvidence 深链', () => {
+  it('带 businessKey 打开时直接按业务键查询', async () => {
+    mocks.route.query = { businessKey: 'job:DAILY_EXPORT:2026-11-01' }
+    mocks.load.mockResolvedValue({ resultVersion: {}, coverage: {} })
+    renderPage()
+    await flushPromises()
+
+    expect(mocks.load).toHaveBeenCalledWith('job:DAILY_EXPORT:2026-11-01', 'tenant-a')
+  })
+
+  it('带 resultVersionId 打开时按结果版本查询', async () => {
+    mocks.route.query = { resultVersionId: '42' }
+    mocks.loadByVersion.mockResolvedValue({ resultVersion: {}, coverage: {} })
+    renderPage()
+    await flushPromises()
+
+    expect(mocks.loadByVersion).toHaveBeenCalledWith(42, 'tenant-a')
+    expect(mocks.load).not.toHaveBeenCalled()
+  })
+
+  it('没有深链参数时不自动查询', async () => {
+    renderPage()
+    await flushPromises()
+
+    expect(mocks.load).not.toHaveBeenCalled()
+    expect(mocks.loadByVersion).not.toHaveBeenCalled()
+  })
 })

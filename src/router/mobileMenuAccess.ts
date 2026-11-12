@@ -7,7 +7,6 @@ export const mobileMenuAccess: Record<string, string> = {
   'm-job-detail': '/monitor/job-instances',
   'm-workflow-run': '/monitor/workflow-runs',
   'm-workflow-viewer': '/workflow/definitions',
-  'm-catchup': '/approvals',
   'm-files': '/files/list',
   'm-workers': '/workers/management',
   'm-outbox': '/observability/outbox',

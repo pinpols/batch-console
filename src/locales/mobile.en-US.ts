@@ -137,6 +137,9 @@ export default {
     outboxQuick: 'Outbox',
   },
   approvals: {
+    sectionLabel: 'Approval category',
+    sectionGeneral: 'General',
+    sectionCatchUp: 'Catch-up',
     title: 'Approvals',
     pendingCount: '{n} awaiting your decision',
     filterAll: 'All',

@@ -154,6 +154,13 @@
             <template #dropdown>
               <el-dropdown-menu>
                 <el-dropdown-item
+                  command="account"
+                  :icon="UserRound"
+                  :aria-label="t('nav.myAccount')"
+                >
+                  {{ t('nav.myAccount') }}
+                </el-dropdown-item>
+                <el-dropdown-item
                   command="profile"
                   :icon="Key"
                   :aria-label="t('nav.permissionAudit')"
@@ -202,6 +209,7 @@
     SlidersHorizontal as UtilityIcon,
     Sun as Sunny,
     LogOut as SwitchButton,
+    UserRound,
     Wrench,
   } from '@lucide/vue'
   import TenantSelect from '@/components/common/TenantSelect.vue'
@@ -331,6 +339,10 @@
   useAutoRefresh(() => badges.refresh(), 30_000)
 
   async function onUserCommand(command: string) {
+    if (command === 'account') {
+      void router.push('/system/me')
+      return
+    }
     if (command === 'profile') {
       void router.push('/system/users')
       return

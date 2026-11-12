@@ -12,6 +12,7 @@
         <PrintButton />
       </template>
     </PageHeader>
+    <RelatedPageLinks :paths="['/reports', '/observability/usage']" />
 
     <!-- 时刻表方向：先回答“今天跑到哪了、该处理什么”，指标与图表保留在下方页签 -->
     <div v-if="tenant.tenantId" class="ops-today">
@@ -99,6 +100,7 @@
   const { t } = useI18n({ useScope: 'global' })
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
+  import RelatedPageLinks from '@/components/common/RelatedPageLinks.vue'
   import PrintButton from '@/components/common/PrintButton.vue'
   import SectionCard from '@/components/common/SectionCard.vue'
   import EmptyState from '@/components/common/EmptyState.vue'

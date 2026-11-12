@@ -1,9 +1,10 @@
 <template>
-  <MPullRefresh :on-refresh="load">
+  <MPullRefresh :on-refresh="refreshCurrent">
     <div class="m-page">
       <div class="m-page__header">
         <div class="m-page__title">{{ t('mobile.approvals.title') }}</div>
         <button
+          v-if="section === 'general'"
           type="button"
           class="m-page__title-action"
           :class="{ 'm-page__title-action--active': searchOpen }"
@@ -14,130 +15,156 @@
         </button>
       </div>
 
-      <!-- 4 tab + 搜索框,与 告警/Worker 一套交互 -->
-      <div class="m-tabs" role="tablist">
-        <button
-          v-for="opt in filterOptions"
-          :key="opt.value"
-          type="button"
-          role="tab"
-          :aria-selected="filter === opt.value"
-          class="m-tab"
-          :class="{ 'm-tab--active': filter === opt.value }"
-          @click="filter = opt.value as ApprovalFilter"
-        >
-          <span class="m-tab__label">{{ opt.label }}</span>
-          <span v-if="counts[opt.value] > 0" class="m-tab__badge" :class="badgeToneFor(opt.value)">
-            {{ counts[opt.value] > 99 ? '99+' : counts[opt.value] }}
-          </span>
-        </button>
-      </div>
-
-      <MSearchBar
-        v-if="searchOpen"
-        ref="searchBarRef"
-        v-model="keyword"
-        :placeholder="t('mobile.approvals.searchPlaceholder')"
+      <!-- 普通审批 / 补跑审批，取值与桌面 /approvals?tab= 一致 -->
+      <el-segmented
+        v-model="section"
+        class="m-approvals-section"
+        :options="sectionOptions"
+        block
+        :aria-label="t('mobile.approvals.sectionLabel')"
       />
 
-      <MSkeleton v-if="loading && filtered.length === 0" :count="3" />
-      <div v-else-if="!loadError && filtered.length === 0" class="m-empty">
-        {{
-          keyword
-            ? t('mobile.common.emptyForSearch')
-            : t(filter === 'pending' ? 'mobile.approvals.noPending' : 'mobile.approvals.noMatched')
-        }}
-      </div>
-      <div v-if="loadError" class="m-empty m-load-error" role="alert">
-        <span>{{ t('mobile.common.loadFail') }}</span>
-        <button class="m-btn" type="button" @click="load()">{{ t('common.retry') }}</button>
-      </div>
-      <div v-if="countsError" class="m-count-error" role="status">
-        {{ t('mobile.approvals.countsUnavailable') }}
-        <button class="m-btn" type="button" @click="load()">{{ t('common.retry') }}</button>
-      </div>
+      <MCatchUpPanel v-if="section === 'catch-up'" ref="catchUpPanelRef" />
 
-      <div v-for="row in filtered" :key="row.approvalNo" class="m-card">
-        <div class="m-card__row">
-          <div class="m-card__title">
-            {{ resolveEnumLabel('approvalType', row.approvalType) }}
-            <template v-if="row.actionType && row.actionType !== row.approvalType">
-              · {{ resolveEnumLabel('approvalActionType', row.actionType) }}
-            </template>
-          </div>
-          <span :class="['m-chip', statusChipClass(row.approvalStatus)]">
-            {{ resolveEnumLabel('approvalStatus', row.approvalStatus) }}
-          </span>
-        </div>
-        <div class="m-card__sub">
-          {{ t('mobile.approvals.approvalNo') }}:
+      <template v-else>
+        <!-- 4 tab + 搜索框,与 告警/Worker 一套交互 -->
+        <div class="m-tabs" role="tablist">
           <button
+            v-for="opt in filterOptions"
+            :key="opt.value"
             type="button"
-            class="m-copy-text"
-            :aria-label="`${t('common.copy')} ${t('mobile.approvals.approvalNo')} ${row.approvalNo}`"
-            @click.stop="copy(row.approvalNo, 'approvalNo')"
+            role="tab"
+            :aria-selected="filter === opt.value"
+            class="m-tab"
+            :class="{ 'm-tab--active': filter === opt.value }"
+            @click="filter = opt.value as ApprovalFilter"
           >
-            {{ row.approvalNo }}
+            <span class="m-tab__label">{{ opt.label }}</span>
+            <span
+              v-if="counts[opt.value] > 0"
+              class="m-tab__badge"
+              :class="badgeToneFor(opt.value)"
+            >
+              {{ counts[opt.value] > 99 ? '99+' : counts[opt.value] }}
+            </span>
           </button>
         </div>
-        <div class="m-card__meta">
-          <div>
-            <span class="m-card__meta-key">{{ t('mobile.approvals.target') }}</span
-            >{{ resolveEnumLabel('approvalTargetType', row.targetType) }}/{{ row.targetId || '—' }}
+
+        <MSearchBar
+          v-if="searchOpen"
+          ref="searchBarRef"
+          v-model="keyword"
+          :placeholder="t('mobile.approvals.searchPlaceholder')"
+        />
+
+        <MSkeleton v-if="loading && filtered.length === 0" :count="3" />
+        <div v-else-if="!loadError && filtered.length === 0" class="m-empty">
+          {{
+            keyword
+              ? t('mobile.common.emptyForSearch')
+              : t(
+                  filter === 'pending'
+                    ? 'mobile.approvals.noPending'
+                    : 'mobile.approvals.noMatched',
+                )
+          }}
+        </div>
+        <div v-if="loadError" class="m-empty m-load-error" role="alert">
+          <span>{{ t('mobile.common.loadFail') }}</span>
+          <button class="m-btn" type="button" @click="load()">{{ t('common.retry') }}</button>
+        </div>
+        <div v-if="countsError" class="m-count-error" role="status">
+          {{ t('mobile.approvals.countsUnavailable') }}
+          <button class="m-btn" type="button" @click="load()">{{ t('common.retry') }}</button>
+        </div>
+
+        <div v-for="row in filtered" :key="row.approvalNo" class="m-card">
+          <div class="m-card__row">
+            <div class="m-card__title">
+              {{ resolveEnumLabel('approvalType', row.approvalType) }}
+              <template v-if="row.actionType && row.actionType !== row.approvalType">
+                · {{ resolveEnumLabel('approvalActionType', row.actionType) }}
+              </template>
+            </div>
+            <span :class="['m-chip', statusChipClass(row.approvalStatus)]">
+              {{ resolveEnumLabel('approvalStatus', row.approvalStatus) }}
+            </span>
           </div>
-          <div>
-            <span class="m-card__meta-key">{{ t('mobile.approvals.submitter') }}</span>
-            {{ row.requesterId || '—' }}
+          <div class="m-card__sub">
+            {{ t('mobile.approvals.approvalNo') }}:
+            <button
+              type="button"
+              class="m-copy-text"
+              :aria-label="`${t('common.copy')} ${t('mobile.approvals.approvalNo')} ${row.approvalNo}`"
+              @click.stop="copy(row.approvalNo, 'approvalNo')"
+            >
+              {{ row.approvalNo }}
+            </button>
           </div>
-          <div>
-            <span class="m-card__meta-key">{{ t('mobile.tenants.created') }}</span>
-            {{ fmt(row.createdAt) }}
+          <div class="m-card__meta">
+            <div>
+              <span class="m-card__meta-key">{{ t('mobile.approvals.target') }}</span
+              >{{ resolveEnumLabel('approvalTargetType', row.targetType) }}/{{
+                row.targetId || '—'
+              }}
+            </div>
+            <div>
+              <span class="m-card__meta-key">{{ t('mobile.approvals.submitter') }}</span>
+              {{ row.requesterId || '—' }}
+            </div>
+            <div>
+              <span class="m-card__meta-key">{{ t('mobile.tenants.created') }}</span>
+              {{ fmt(row.createdAt) }}
+            </div>
+            <div v-if="row.rejectionReason">
+              <span class="m-card__meta-key">{{ t('mobile.approvals.rejectionReason') }}</span
+              >{{ row.rejectionReason }}
+            </div>
           </div>
-          <div v-if="row.rejectionReason">
-            <span class="m-card__meta-key">{{ t('mobile.approvals.rejectionReason') }}</span
-            >{{ row.rejectionReason }}
+          <div v-if="isPending(row)" class="m-card__actions">
+            <button
+              class="m-btn m-btn--plain-danger"
+              :disabled="!canMutateConfig || writesFrozen || busyApproval !== null"
+              data-track="approvals.reject"
+              @click="decide(row, 'reject')"
+            >
+              <CircleX :size="16" aria-hidden="true" />
+              {{ t('mobile.approvals.reject') }}
+            </button>
+            <button
+              class="m-btn m-btn--primary"
+              :disabled="
+                !canMutateConfig ||
+                writesFrozen ||
+                busyApproval !== null ||
+                selfApprovalBlocked(row)
+              "
+              data-track="approvals.approve"
+              @click="decide(row, 'approve')"
+            >
+              <CircleCheck :size="16" aria-hidden="true" />
+              {{
+                selfApprovalBlocked(row)
+                  ? t('mobile.approvals.selfApprovalForbidden')
+                  : t('mobile.approvals.approve')
+              }}
+            </button>
           </div>
         </div>
-        <div v-if="isPending(row)" class="m-card__actions">
-          <button
-            class="m-btn m-btn--plain-danger"
-            :disabled="!canMutateConfig || writesFrozen || busyApproval !== null"
-            data-track="approvals.reject"
-            @click="decide(row, 'reject')"
-          >
-            <CircleX :size="16" aria-hidden="true" />
-            {{ t('mobile.approvals.reject') }}
-          </button>
-          <button
-            class="m-btn m-btn--primary"
-            :disabled="
-              !canMutateConfig || writesFrozen || busyApproval !== null || selfApprovalBlocked(row)
-            "
-            data-track="approvals.approve"
-            @click="decide(row, 'approve')"
-          >
-            <CircleCheck :size="16" aria-hidden="true" />
+        <div v-if="filtered.length > 0" class="m-load-more">
+          <div v-if="loadMoreError" role="alert">{{ t('mobile.common.loadFail') }}</div>
+          <button v-if="hasMore" class="m-btn" :disabled="loading" @click="loadMore">
             {{
-              selfApprovalBlocked(row)
-                ? t('mobile.approvals.selfApprovalForbidden')
-                : t('mobile.approvals.approve')
+              loading
+                ? t('mobile.common.loadingMore')
+                : loadMoreError
+                  ? t('common.retry')
+                  : t('mobile.common.loadMore')
             }}
           </button>
+          <span v-else>{{ t('mobile.common.noMore') }}</span>
         </div>
-      </div>
-      <div v-if="filtered.length > 0" class="m-load-more">
-        <div v-if="loadMoreError" role="alert">{{ t('mobile.common.loadFail') }}</div>
-        <button v-if="hasMore" class="m-btn" :disabled="loading" @click="loadMore">
-          {{
-            loading
-              ? t('mobile.common.loadingMore')
-              : loadMoreError
-                ? t('common.retry')
-                : t('mobile.common.loadMore')
-          }}
-        </button>
-        <span v-else>{{ t('mobile.common.noMore') }}</span>
-      </div>
+      </template>
     </div>
   </MPullRefresh>
 </template>
@@ -148,6 +175,7 @@
   import { useTenantRequestScope } from '@/composables/useTenantRequestScope'
   import { usePermission } from '@/composables/usePermission'
   import { useI18n } from 'vue-i18n'
+  import { useRoute, useRouter } from 'vue-router'
   import { CircleCheck, CircleX, Search } from '@lucide/vue'
   import { ElMessage } from 'element-plus'
   import { confirmActionSheet } from '@/layout-mobile/MActionSheet'
@@ -158,6 +186,7 @@
   import MPullRefresh from '@/layout-mobile/MPullRefresh.vue'
   import MSkeleton from '@/layout-mobile/MSkeleton.vue'
   import MSearchBar from '@/layout-mobile/MSearchBar.vue'
+  import MCatchUpPanel from './components/MCatchUpPanel.vue'
   import { queryApprovalsPage, approveOne, rejectOne } from '@/api/approvals'
   import type { ConsoleApprovalCommandResponse } from '@/types/console-api'
   import { fmtDatetime } from '@/utils/datetime'
@@ -171,6 +200,26 @@
   const actionScope = useTenantRequestScope()
   const { copy } = useCopy()
   const { writesFrozen, ensureWriteAvailable } = useWriteAvailability()
+
+  type ApprovalSection = 'general' | 'catch-up'
+  const route = useRoute()
+  const router = useRouter()
+  const sectionOptions = computed(() => [
+    { value: 'general', label: t('mobile.approvals.sectionGeneral') },
+    { value: 'catch-up', label: t('mobile.approvals.sectionCatchUp') },
+  ])
+  const section = computed<ApprovalSection>({
+    get: () => (route.query.tab === 'catch-up' ? 'catch-up' : 'general'),
+    set: (value) => {
+      const { tab: _tab, ...rest } = route.query
+      void router.replace({ query: value === 'catch-up' ? { ...rest, tab: value } : rest })
+    },
+  })
+  const catchUpPanelRef = ref<{ load: () => Promise<void> } | null>(null)
+  async function refreshCurrent() {
+    if (section.value === 'catch-up') await catchUpPanelRef.value?.load()
+    else await load()
+  }
 
   const { data: metaEnums } = useConsoleMetaEnumsQuery()
   function resolveEnumLabel(group: string, value?: string | null): string {
@@ -469,6 +518,10 @@
 </script>
 
 <style scoped>
+  .m-approvals-section {
+    margin-bottom: 12px;
+  }
+
   .m-load-error,
   .m-count-error {
     display: flex;

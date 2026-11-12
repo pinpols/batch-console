@@ -43,6 +43,7 @@ function renderPage() {
       plugins: [createI18n({ legacy: false, locale: 'zh-CN', messages: { 'zh-CN': zhCN } })],
       directives: { loading: () => {} },
       stubs: {
+        RelatedPageLinks: true,
         PageContainer: slotStub,
         PageHeader: true,
         SectionCard: slotStub,

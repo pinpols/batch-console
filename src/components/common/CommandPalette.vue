@@ -116,9 +116,8 @@
   import { workflowApi } from '@/api/workflow'
   import { fileApi } from '@/api/file'
   import { useTenantStore } from '@/stores/tenant'
-  import { usePermissionStore } from '@/stores/permission'
+  import { useRouteAccess } from '@/composables/useRouteAccess'
   import { useAuthStore } from '@/stores/auth'
-  import type { Role } from '@/types'
   import { parseCommandPaletteJump } from './commandPaletteJumps'
   import type {
     ConsoleFileRecordResponse,
@@ -181,41 +180,9 @@
 
   const router = useRouter()
   const tenant = useTenantStore()
-  const permission = usePermissionStore()
   const auth = useAuthStore()
   const shortcutLabel = /Mac|iPhone|iPod|iPad/i.test(navigator.platform ?? '') ? '⌘K' : 'Ctrl+K'
-  const permittedPaths = computed(
-    () =>
-      new Set(
-        props.groups.flatMap((group) => group.children.map((item) => displayPath(item.path))),
-      ),
-  )
-
-  function canOpenPath(path: string): boolean {
-    const target = router.resolve(path)
-    if (!target.matched.length || target.name === 'not-found') return false
-    const meta = target.meta
-    if (meta.minRole && !permission.canAccessRole(meta.minRole as Role)) return false
-    if (meta.permissions && !permission.canAccessPermissions(meta.permissions as string[]))
-      return false
-    if (
-      meta.capabilities &&
-      !(meta.capabilities as string[]).some((value) => auth.hasCapability(value))
-    )
-      return false
-    if (
-      target.path === '/system/me' ||
-      target.path === '/system/users' ||
-      target.path.startsWith('/m/')
-    )
-      return true
-    if (target.path === '/system/ai-chat' && auth.hasCapability('AI_ASSISTANT_USE')) return true
-    const candidates = [
-      String(meta.activeMenu || target.path),
-      ...((meta.menuAccessFallbacks as string[] | undefined) ?? []),
-    ]
-    return candidates.some((candidate) => permittedPaths.value.has(displayPath(candidate)))
-  }
+  const { canOpenPath, permittedPaths } = useRouteAccess(() => props.groups)
 
   // ─── 实体匹配(BE 服务端搜) ─────────────────────────────
   // 触发条件:term 长度 ≥ 2,不是纯数字/纯 hex(那些已走 jump 项)。

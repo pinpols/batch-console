@@ -394,11 +394,6 @@
                   </template>
                 </el-table-column>
               </el-table>
-              <div v-if="canActOnJob" class="panel-actions">
-                <el-button @click="router.push('/observability/alert-routings')">
-                  {{ t('jobDefinitionDetail.maintainAlertRouting') }}
-                </el-button>
-              </div>
             </div>
           </el-tab-pane>
 

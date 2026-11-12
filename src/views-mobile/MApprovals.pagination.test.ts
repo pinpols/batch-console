@@ -4,6 +4,10 @@ import { enableAutoUnmount, flushPromises, shallowMount } from '@vue/test-utils'
 import MApprovals from './MApprovals.vue'
 
 const mocks = vi.hoisted(() => ({ query: vi.fn() }))
+vi.mock('vue-router', () => ({
+  useRoute: () => ({ query: {} }),
+  useRouter: () => ({ replace: vi.fn() }),
+}))
 vi.mock('@/stores/tenant', () => ({ useTenantStore: () => ({ tenantId: 'tenant-a' }) }))
 vi.mock('@/stores/auth', () => ({ useAuthStore: () => ({ userInfo: { username: 'operator' } }) }))
 vi.mock('@/composables/usePermission', () => ({
