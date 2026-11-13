@@ -3121,7 +3121,10 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** Query console operation audits (general user-action audit, written by @AuditAction Aspect) */
+    /**
+     * Query console operation audits (general user-action audit, written by @AuditAction Aspect)
+     * @description 仅 ROLE_ADMIN、ROLE_TENANT_ADMIN、ROLE_AUDITOR 可调用，与菜单「操作审计」一致；ROLE_TENANT_USER 返回 403。
+     */
     get: operations['queryOperationAudits']
     put?: never
     post?: never
