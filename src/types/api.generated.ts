@@ -2521,6 +2521,26 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/console/tasks/{taskId}/execution-audit': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Effective parameters (shell command, SQL text, ...) and outcome of a task, masked
+     * @description 取证用途，仅 ROLE_ADMIN、ROLE_AUDITOR 可调用；ROLE_TENANT_ADMIN、ROLE_TENANT_USER 返回 403。`env`、`headers` 只保留键名，`auth` 与敏感键整体遮蔽，其余文本遮蔽端点与凭据表达式。
+     */
+    get: operations['getTaskExecutionAudit']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/console/workers/{workerCode}/drain': {
     parameters: {
       query?: never
@@ -17909,6 +17929,70 @@ export interface operations {
             }
           }
         }
+      }
+      /** @description Task not found for tenant */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+    }
+  }
+  getTaskExecutionAudit: {
+    parameters: {
+      query?: {
+        tenantId?: string
+      }
+      header?: never
+      path: {
+        taskId: number
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Masked execution audit of the task */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': {
+            code?: string
+            message?: string
+            data?: {
+              /** Format: int64 */
+              taskId?: number
+              /** Format: int64 */
+              jobInstanceId?: number
+              jobCode?: string
+              taskStatus?: string
+              effectiveParameters?: {
+                [key: string]: unknown
+              } | null
+              outcome?: {
+                assignedWorkerCode?: string | null
+                /** Format: date-time */
+                startedAt?: string | null
+                /** Format: date-time */
+                finishedAt?: string | null
+                resultSummary?: {
+                  [key: string]: unknown
+                } | null
+                errorCode?: string | null
+                errorMessage?: string | null
+              }
+            }
+          }
+        }
+      }
+      /** @description Caller is not ADMIN or AUDITOR */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
       }
       /** @description Task not found for tenant */
       404: {

@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-11-14 任务执行审计接口类型
+
+- API 类型由后端 main 的 OpenAPI 重新生成：新增 `GET /api/console/tasks/{taskId}/execution-audit`（任务生效参数与执行结果，已脱敏，仅 ADMIN、AUDITOR）。前端页面暂未接入，调用与菜单不变。
+
 ## 2026-11-14 Outbox 与补跑审批接口角色说明同步
 
 - API 类型由后端 main 的 OpenAPI 重新生成：Outbox 查询与实时流、补跑审批查询补充说明只对 ADMIN、TENANT_ADMIN 开放，与菜单「Outbox」「审批中心」及移动端路由一致。仅类型注释，前端调用与菜单可见性不变。
