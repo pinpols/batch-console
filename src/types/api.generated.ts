@@ -714,7 +714,10 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** Subscribe to outbox retry realtime events */
+    /**
+     * Subscribe to outbox retry realtime events
+     * @description 仅 ROLE_ADMIN、ROLE_TENANT_ADMIN 可调用，与菜单「Outbox」一致；ROLE_AUDITOR、ROLE_TENANT_USER 返回 403。
+     */
     get: operations['streamOutboxRetryEvents']
     put?: never
     post?: never
@@ -731,7 +734,10 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** Subscribe to outbox delivery realtime events */
+    /**
+     * Subscribe to outbox delivery realtime events
+     * @description 仅 ROLE_ADMIN、ROLE_TENANT_ADMIN 可调用，与菜单「Outbox」一致；ROLE_AUDITOR、ROLE_TENANT_USER 返回 403。
+     */
     get: operations['streamOutboxDeliveryEvents']
     put?: never
     post?: never
@@ -3300,7 +3306,10 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** Query outbox retry logs */
+    /**
+     * Query outbox retry logs
+     * @description 仅 ROLE_ADMIN、ROLE_TENANT_ADMIN 可调用，与菜单「Outbox」一致；ROLE_AUDITOR、ROLE_TENANT_USER 返回 403。
+     */
     get: operations['queryOutboxRetries']
     put?: never
     post?: never
@@ -3317,7 +3326,10 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** Query outbox delivery logs */
+    /**
+     * Query outbox delivery logs
+     * @description 仅 ROLE_ADMIN、ROLE_TENANT_ADMIN 可调用，与菜单「Outbox」一致；ROLE_AUDITOR、ROLE_TENANT_USER 返回 403。
+     */
     get: operations['queryOutboxDeliveries']
     put?: never
     post?: never
@@ -3838,7 +3850,7 @@ export interface paths {
     }
     /**
      * Query catch-up approvals
-     * @description 每个补跑请求返回一行；同一请求有多张审批单时显示按审批 ID 最新创建的一张。
+     * @description 每个补跑请求返回一行；同一请求有多张审批单时显示按审批 ID 最新创建的一张。仅 ROLE_ADMIN、ROLE_TENANT_ADMIN 可调用，与菜单「审批中心」一致；ROLE_AUDITOR、ROLE_TENANT_USER 返回 403。
      */
     get: operations['queryCatchUpApprovals']
     put?: never

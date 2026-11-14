@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-11-14 Outbox 与补跑审批接口角色说明同步
+
+- API 类型由后端 main 的 OpenAPI 重新生成：Outbox 查询与实时流、补跑审批查询补充说明只对 ADMIN、TENANT_ADMIN 开放，与菜单「Outbox」「审批中心」及移动端路由一致。仅类型注释，前端调用与菜单可见性不变。
+
 ## 2026-11-14 操作审计接口角色说明同步
 
 - API 类型由后端 main 的 OpenAPI 重新生成：`/queries/operation-audits` 补充说明只对 ADMIN、TENANT_ADMIN、AUDITOR 开放，与菜单「操作审计」一致。仅类型注释，前端调用与菜单可见性不变。
