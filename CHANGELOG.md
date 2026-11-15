@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-11-15 Console 响应字段类型同步
+
+- API 类型由后端 main 的 OpenAPI 重新生成：`ConsoleJobDefinitionResponse` 新增 `bizType`、`dagEnabled`、`priority`、`version`、`description`；`ConsoleTenantResponse` 新增 `id`、`createdBy`；`ConsoleAlertRoutingResponse` 新增 `createdBy`、`updatedBy`、`isDeleted`；`ConsoleJobStepInstanceResponse` 的 `skipReasonCode`、`skipReason` 标记为 deprecated。仅生成类型变化，前端调用与页面行为不变。
+
 ## 2026-11-14 任务执行审计接口类型
 
 - API 类型由后端 main 的 OpenAPI 重新生成：新增 `GET /api/console/tasks/{taskId}/execution-audit`（任务生效参数与执行结果，已脱敏，仅 ADMIN、AUDITOR）。前端页面暂未接入，调用与菜单不变。
