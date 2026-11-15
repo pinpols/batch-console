@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  executionEdgeTypes,
   executionGraph,
   executionNodeDisplayStatus,
   executionTotals,
@@ -86,5 +87,18 @@ describe('executionGraph', () => {
     expect(executionGraph([node('b', 'NOT_EXECUTED')], [], (n) => n.nodeStatus)).toContain(
       'class n0 cancelled',
     )
+  })
+
+  it('keeps edge type order aligned with rendered edges and drops dangling edges', () => {
+    const nodes = [node('a', 'SUCCESS'), node('b', 'SUCCESS'), node('c', 'SKIPPED')]
+    const edges = [
+      { fromNodeCode: 'a', toNodeCode: 'b', edgeType: 'SUCCESS' },
+      { fromNodeCode: 'a', toNodeCode: 'c', edgeType: 'FAILURE' },
+      { fromNodeCode: 'b', toNodeCode: 'c', edgeType: 'CONDITION' },
+      { fromNodeCode: 'a', toNodeCode: 'missing', edgeType: 'ALWAYS' },
+      { fromNodeCode: 'c', toNodeCode: 'a' },
+    ]
+    expect(executionEdgeTypes(nodes, edges)).toEqual(['SUCCESS', 'FAILURE', 'CONDITION', 'ALWAYS'])
+    expect(executionGraph(nodes, edges, (n) => n.nodeCode)).not.toContain('missing')
   })
 })

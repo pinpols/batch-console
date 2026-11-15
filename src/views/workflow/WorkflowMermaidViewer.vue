@@ -378,6 +378,8 @@
   import JsonPreview from '@/components/common/JsonPreview.vue'
   import { clearTrustedSvg, setTrustedMermaidSvg } from '@/utils/trustedMermaidSvg'
   import { expandSvgViewBoxToContent } from './expandSvgViewBox'
+  import './workflowMermaidGraphStatus.css'
+  import { applyMermaidEdgeTypeClasses } from '@/utils/mermaidEdgeTypeClasses'
   import { workflowApi } from '@/api/workflow'
   import { injectCrossDayEdges, describeCrossDayDeps } from '@/utils/crossDayMermaid'
   import { queryWorkflowNodeRuns } from '@/api/workflowQueries'
@@ -742,6 +744,7 @@
       const { svg } = await mermaid.render(renderId, text)
       await nextTick()
       setTrustedMermaidSvg(graphRef.value, svg)
+      if (graphRef.value) applyMermaidEdgeTypeClasses(graphRef.value)
       // 销毁旧 pan-zoom 实例(reload 时 svg 元素被替换,旧实例引用悬挂)
       if (panZoomInstance) {
         try {

@@ -60,6 +60,7 @@
             :max-height="520"
             :node-options="nodeOptions"
             :selected-node="selectedNode"
+            :edge-types="edgeTypes"
             @select-node="selectedNode = $event"
           />
           <p class="execution-progress__hint">{{ t('workflowProgress.selectHint') }}</p>
@@ -144,6 +145,7 @@
   import ExecutionAttentionLinks from './ExecutionAttentionLinks.vue'
   import { useWorkflowExecutionProgress } from '@/composables/useWorkflowExecutionProgress'
   import {
+    executionEdgeTypes,
     executionGraph,
     executionNodeDisplayStatus,
     executionTotals,
@@ -175,7 +177,11 @@
   watch([() => tenant.tenantId, () => props.runId], () => {
     selectedNode.value = null
   })
+  const edgeTypes = computed(() =>
+    executionEdgeTypes(progress.value?.nodes ?? [], progress.value?.edges ?? []),
+  )
   const totals = computed(() => executionTotals(progress.value?.nodes ?? []))
+
   const nodeOptions = computed(() =>
     (progress.value?.nodes ?? []).map((node) => ({
       code: node.nodeCode,

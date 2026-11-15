@@ -56,6 +56,17 @@ export function executionTotals(nodes: readonly DeepReadonly<Node>[]) {
   }
 }
 
+/** 与 executionGraph 渲染出的连线顺序一致，供运行图按 edgeType 着色。 */
+export function executionEdgeTypes(
+  nodes: readonly DeepReadonly<Node>[],
+  edges: readonly Readonly<Edge>[],
+) {
+  const codes = new Set(nodes.map((node) => node.nodeCode))
+  return edges
+    .filter((edge) => codes.has(edge.fromNodeCode) && codes.has(edge.toNodeCode))
+    .map((edge) => (edge.edgeType || 'ALWAYS').toUpperCase())
+}
+
 /** 节点标识使用位置索引，业务编码仅作转义文本，避免符号替换后的ID碰撞。 */
 export function executionGraph(
   nodes: readonly DeepReadonly<Node>[],
