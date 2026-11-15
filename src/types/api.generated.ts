@@ -10372,6 +10372,7 @@ export interface components {
       jobDependencyRules?: components['schemas']['JobDependencyRuleResponse'][]
       jobName: string
       jobType: string
+      bizType?: string
       queueCode: string
       workerGroup: string
       scheduleType: string
@@ -10385,6 +10386,7 @@ export interface components {
        * @enum {string}
        */
       triggerMode: 'SCHEDULED' | 'API' | 'MANUAL' | 'EVENT' | 'MIXED'
+      dagEnabled?: boolean
       retryPolicy: string
       /** Format: int32 */
       retryMaxCount: number
@@ -10440,7 +10442,12 @@ export interface components {
       executionHandler: string
       paramSchema: string
       defaultParams: string
+      /** Format: int32 */
+      priority?: number
+      /** Format: int64 */
+      version?: number
       enabled: boolean
+      description?: string
       /** Format: date-time */
       createdAt: string
       /** Format: date-time */
@@ -10528,9 +10535,15 @@ export interface components {
       resultSummary: string
       errorCode: string
       errorMessage: string
-      /** @description Stable reason category when the node status is SKIPPED. */
+      /**
+       * @deprecated
+       * @description 后端响应 record 不返回该字段，仅为兼容既有生成类型保留；新代码勿读取。
+       */
       skipReasonCode?: string
-      /** @description Operator-supplied explanation for a manual skip, when present. */
+      /**
+       * @deprecated
+       * @description 后端响应 record 不返回该字段，仅为兼容既有生成类型保留；新代码勿读取。
+       */
       skipReason?: string
       /**
        * Format: int64
@@ -11874,7 +11887,11 @@ export interface components {
       /** Format: int64 */
       id: number
       tenantId: string
-      /** Format: int64 */
+      /**
+       * Format: int64
+       * @deprecated
+       * @description 后端响应 record 不返回该字段，仅为兼容既有生成类型保留；新代码勿读取。
+       */
       pipelineDefinitionId: number
       jobCode: string
       pipelineType: string
@@ -12128,6 +12145,9 @@ export interface components {
       repeatIntervalSeconds?: number
       enabled: boolean
       description?: string
+      createdBy?: string
+      updatedBy?: string
+      isDeleted?: boolean
       /** Format: date-time */
       createdAt?: string
       /** Format: date-time */
@@ -12201,9 +12221,12 @@ export interface components {
     ConsoleResourceQueueExcelApplyResponse: components['schemas']['ExcelApplyResponse']
     ConsoleResourceQueueExcelRowIssueResponse: components['schemas']['ExcelRowIssue']
     ConsoleTenantResponse: {
+      /** Format: int64 */
+      id?: number
       tenantId: string
       tenantName: string
       description?: string | null
+      createdBy?: string
       /** @enum {string} */
       status: 'ACTIVE' | 'SUSPENDED'
       /** Format: date-time */
