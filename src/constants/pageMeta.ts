@@ -276,9 +276,28 @@ export function pageKey(path: PageMetaPath): string {
 /**
  * 统一生成页面标题的 i18n key；显式 pathKey 由路由元数据提供，未提供时按纯 path 推导。
  */
-export function pageTitleKey(path: string, explicitPathKey?: string): string {
+/** 把带动态段的详情路径归一到 pageMetaByPath 中登记的最长基础路径。 */
+function resolvePageBasePath(path: string): string {
   const normalizedPath = path.split(/[?#]/, 1)[0] || path
-  return `page.${explicitPathKey ?? pathToKey(normalizedPath)}.title`
+  let matched = normalizedPath
+  let matchedLength = 0
+  for (const candidate of Object.keys(pageMetaByPath)) {
+    if (
+      (normalizedPath === candidate || normalizedPath.startsWith(`${candidate}/`)) &&
+      candidate.length > matchedLength
+    ) {
+      matched = candidate
+      matchedLength = candidate.length
+    }
+  }
+  return matched
+}
+
+export function pageTitleKey(path: string, explicitPathKey?: string): string {
+  if (explicitPathKey) {
+    return `page.${explicitPathKey}.title`
+  }
+  return `page.${pathToKey(resolvePageBasePath(path))}.title`
 }
 
 /**

@@ -4,6 +4,12 @@
 
 - API 类型由后端 main 的 OpenAPI 重新生成：`ConsoleJobDefinitionResponse` 新增 `bizType`、`dagEnabled`、`priority`、`version`、`description`；`ConsoleTenantResponse` 新增 `id`、`createdBy`；`ConsoleAlertRoutingResponse` 新增 `createdBy`、`updatedBy`、`isDeleted`；`ConsoleJobStepInstanceResponse` 的 `skipReasonCode`、`skipReason` 标记为 deprecated。仅生成类型变化，前端调用与页面行为不变。
 
+## 2026-11-15 工作流 DAG 状态颜色与动态页签标题
+
+- 运行 DAG 的节点按状态着色；连线按类型着色：成功后绿色、失败后红色虚线、条件满足琥珀色、始终灰色，标签使用对应的淡色底和文字色。
+- 完整 DAG 视图恢复被通用灰色规则覆盖的节点状态色，并按标签类型着色。
+- 命令面板和页签的详情路径回退到所属基础页面标题 key，英文界面不再把 `/monitor/job-instances/12514` 等动态页签显示成中文。
+
 ## 2026-11-14 任务执行审计接口类型
 
 - API 类型由后端 main 的 OpenAPI 重新生成：新增 `GET /api/console/tasks/{taskId}/execution-audit`（任务生效参数与执行结果，已脱敏，仅 ADMIN、AUDITOR）。前端页面暂未接入，调用与菜单不变。

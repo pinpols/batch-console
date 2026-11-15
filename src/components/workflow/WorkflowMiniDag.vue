@@ -74,6 +74,8 @@
     emptyText?: string
     nodeOptions?: { code: string; label: string }[]
     selectedNode?: string | null
+    /** 与 mermaidText 中连线顺序一致的 edgeType 列表，用于按类型给连线/标签着色 */
+    edgeTypes?: string[]
   }>()
   const emit = defineEmits<{ selectNode: [code: string] }>()
 
@@ -163,6 +165,24 @@
     )
   }
 
+  function applyEdgeTypes() {
+    const types = props.edgeTypes ?? []
+    if (!types.length || !graphRef.value) return
+    const paths = graphRef.value.querySelectorAll<SVGPathElement>('path.flowchart-link')
+    const labels = graphRef.value.querySelectorAll<SVGGElement>('.edgeLabel')
+    const classSuffix: Record<string, string> = {
+      SUCCESS: 'success',
+      FAILURE: 'failure',
+      CONDITION: 'condition',
+      ALWAYS: 'always',
+    }
+    types.forEach((type, index) => {
+      const suffix = classSuffix[(type || '').toUpperCase()] ?? 'always'
+      paths[index]?.classList.add(`edge-type--${suffix}`)
+      labels[index]?.classList.add(`edge-label--${suffix}`)
+    })
+  }
+
   function applyZoom() {
     if (!props.interactive || !intrinsicWidth) return
     const svg = graphRef.value?.querySelector('svg')
@@ -204,6 +224,7 @@
         renderedOptions = options
         renderedId = renderId
         updateSelectableNodes()
+        applyEdgeTypes()
         intrinsicWidth = graphRef.value?.querySelector('svg')?.viewBox.baseVal.width ?? 0
         if (props.autoFit) fitGraph()
         else applyZoom()
@@ -215,7 +236,7 @@
 
   onMounted(render)
   watch(
-    () => [props.mermaidText, props.nodeRuns, props.nodeOptions],
+    () => [props.mermaidText, props.nodeRuns, props.nodeOptions, props.edgeTypes],
     () => void render(),
     { deep: true },
   )
@@ -340,6 +361,37 @@
   }
   .mini-dag__graph :deep(.edgeLabel rect) {
     fill: var(--el-bg-color);
+  }
+  .mini-dag__graph :deep(path.flowchart-link.edge-type--success) {
+    stroke: var(--workflow-run-success-fill);
+  }
+  .mini-dag__graph :deep(path.flowchart-link.edge-type--failure) {
+    stroke: var(--workflow-run-failed-fill);
+    stroke-dasharray: 4px;
+  }
+  .mini-dag__graph :deep(path.flowchart-link.edge-type--condition) {
+    stroke: var(--color-warning);
+  }
+  .mini-dag__graph :deep(.edgeLabel.edge-label--success rect) {
+    fill: color-mix(in srgb, var(--workflow-run-success-fill) 18%, var(--el-bg-color));
+    stroke: var(--workflow-run-success-fill);
+  }
+  .mini-dag__graph :deep(.edgeLabel.edge-label--failure rect) {
+    fill: color-mix(in srgb, var(--workflow-run-failed-fill) 18%, var(--el-bg-color));
+    stroke: var(--workflow-run-failed-fill);
+  }
+  .mini-dag__graph :deep(.edgeLabel.edge-label--condition rect) {
+    fill: color-mix(in srgb, var(--color-warning) 18%, var(--el-bg-color));
+    stroke: var(--color-warning);
+  }
+  .mini-dag__graph :deep(.edgeLabel.edge-label--success text) {
+    fill: var(--workflow-run-success-fill);
+  }
+  .mini-dag__graph :deep(.edgeLabel.edge-label--failure text) {
+    fill: var(--workflow-run-failed-fill);
+  }
+  .mini-dag__graph :deep(.edgeLabel.edge-label--condition text) {
+    fill: var(--color-warning);
   }
   .mini-dag__footer {
     display: flex;

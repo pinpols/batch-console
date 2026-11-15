@@ -8,6 +8,14 @@ describe('applyPageMetaToRoutes', () => {
     expect(pageTitleKey('/legacy', 'opsSummary')).toBe('page.opsSummary.title')
   })
 
+  it('动态详情路径归一到已登记的基础页面 key', () => {
+    expect(pageTitleKey('/monitor/job-instances/12514')).toBe('page.monitorJobInstances.title')
+    expect(pageTitleKey('/monitor/workflow-runs/39546?tab=graph')).toBe(
+      'page.monitorWorkflowRuns.title',
+    )
+    expect(pageTitleKey('/files/list')).toBe('page.filesList.title')
+  })
+
   it('registers the independent job monitoring policy page metadata', () => {
     expect(pageMetaByPath['/observability/job-monitoring-policies']).toMatchObject({
       title: '作业监控策略',

@@ -1,0 +1,99 @@
+/* 运行 DAG 状态色：可信 SVG 渲染移除内联样式后，由此文件恢复节点与连线语义色。 */
+.workflow-mermaid-graph .node.success rect,
+.workflow-mermaid-graph .node.success polygon,
+.workflow-mermaid-graph .node.success path {
+  fill: var(--workflow-run-success-fill);
+  stroke: var(--workflow-run-success-stroke);
+}
+
+.workflow-mermaid-graph .node.running rect,
+.workflow-mermaid-graph .node.running polygon,
+.workflow-mermaid-graph .node.running path {
+  fill: var(--workflow-run-running-fill);
+  stroke: var(--workflow-run-running-stroke);
+}
+
+.workflow-mermaid-graph .node.failed rect,
+.workflow-mermaid-graph .node.failed polygon,
+.workflow-mermaid-graph .node.failed path {
+  fill: var(--workflow-run-failed-fill);
+  stroke: var(--workflow-run-failed-stroke);
+}
+
+.workflow-mermaid-graph .node.waiting rect,
+.workflow-mermaid-graph .node.waiting polygon,
+.workflow-mermaid-graph .node.waiting path {
+  fill: var(--workflow-run-waiting-fill);
+  stroke: var(--workflow-run-waiting-stroke);
+}
+
+.workflow-mermaid-graph .node.cancelled rect,
+.workflow-mermaid-graph .node.cancelled polygon,
+.workflow-mermaid-graph .node.cancelled path {
+  fill: var(--workflow-run-cancelled-fill);
+  stroke: var(--workflow-run-cancelled-stroke);
+}
+
+.workflow-mermaid-graph .node.success text {
+  fill: var(--workflow-run-success-text);
+}
+
+.workflow-mermaid-graph .node.running text {
+  fill: var(--workflow-run-running-text);
+}
+
+.workflow-mermaid-graph .node.failed text {
+  fill: var(--workflow-run-failed-text);
+}
+
+.workflow-mermaid-graph .node.waiting text {
+  fill: var(--workflow-run-waiting-text);
+}
+
+.workflow-mermaid-graph .node.cancelled text {
+  fill: var(--workflow-run-cancelled-text);
+}
+
+.workflow-mermaid-graph
+  :is(.node.success, .node.running, .node.failed, .node.waiting, .node.cancelled) .nodeLabel {
+  color: var(--color-on-status);
+}
+
+.workflow-mermaid-graph path.flowchart-link.edge-type--success {
+  stroke: var(--workflow-run-success-fill);
+}
+
+.workflow-mermaid-graph path.flowchart-link.edge-type--failure {
+  stroke: var(--workflow-run-failed-fill);
+}
+
+.workflow-mermaid-graph path.flowchart-link.edge-type--condition {
+  stroke: var(--color-warning);
+}
+
+.workflow-mermaid-graph .edgeLabel.edge-label--success rect {
+  fill: color-mix(in srgb, var(--workflow-run-success-fill) 18%, var(--el-bg-color));
+  stroke: var(--workflow-run-success-fill);
+}
+
+.workflow-mermaid-graph .edgeLabel.edge-label--failure rect {
+  fill: color-mix(in srgb, var(--workflow-run-failed-fill) 18%, var(--el-bg-color));
+  stroke: var(--workflow-run-failed-fill);
+}
+
+.workflow-mermaid-graph .edgeLabel.edge-label--condition rect {
+  fill: color-mix(in srgb, var(--color-warning) 18%, var(--el-bg-color));
+  stroke: var(--color-warning);
+}
+
+.workflow-mermaid-graph .edgeLabel.edge-label--success text {
+  fill: var(--workflow-run-success-fill);
+}
+
+.workflow-mermaid-graph .edgeLabel.edge-label--failure text {
+  fill: var(--workflow-run-failed-fill);
+}
+
+.workflow-mermaid-graph .edgeLabel.edge-label--condition text {
+  fill: var(--color-warning);
+}

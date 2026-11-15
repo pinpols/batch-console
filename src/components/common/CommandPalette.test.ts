@@ -188,6 +188,21 @@ describe('CommandPalette', () => {
     wrapper.unmount()
   })
 
+  it('动态详情页签按基础页面 key 使用当前语言', () => {
+    mocks.translations = { 'page.monitorJobInstances.title': 'Job runs' }
+    const wrapper = render([
+      {
+        key: '/monitor/job-instances/12514',
+        path: '/monitor/job-instances/12514',
+        title: '作业运行',
+        lastAccessAt: 1,
+      },
+    ])
+    expect(wrapper.text()).toContain('Job runs')
+    expect(wrapper.text()).not.toContain('作业运行')
+    wrapper.unmount()
+  })
+
   it('filters only permitted sidebar-hidden pages and keeps keyboard selection', async () => {
     const wrapper = render([
       { key: 'private', path: '/system/tenants', title: 'Private', lastAccessAt: 2 },
