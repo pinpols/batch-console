@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# 用途：前端全链路验收。
+# 用法：bash scripts/local/fe-acceptance.sh。
 # =========================================================
 # 前端验收脚本 fe-acceptance.sh
 #

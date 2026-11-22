@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# 用途：构建前后端统一 VitePress 站点。
+# 用法：bash scripts/docs-build.sh。
 # =========================================================
 # docs-build.sh — 构建前后端统一 VitePress 站点
 #

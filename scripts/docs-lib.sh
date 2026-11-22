@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# 用途：统一文档站路径与端口清理，供其他脚本 source。
+# 用法：source scripts/docs-lib.sh。
 # =========================================================
 # docs-lib.sh — 统一文档站路径与端口清理
 # 被 docs-build.sh / docs-serve.sh / dev-server.sh source。

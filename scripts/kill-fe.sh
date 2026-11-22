@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# 用途：终止前端 dev 服务。
+# 用法：bash scripts/kill-fe.sh [端口...]。
 # =========================================================
 # kill-fe.sh — kill 所有前端 dev 服务(SPA + 文档 + preview 各端口)
 # 用法:scripts/kill-fe.sh [端口...]   不传则用默认全集

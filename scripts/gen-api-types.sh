@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# 用途：从后端 OpenAPI 生成前端类型。
+# 用法：bash scripts/gen-api-types.sh。
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

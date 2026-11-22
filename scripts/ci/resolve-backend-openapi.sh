@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# 用途：解析配对后端 OpenAPI 契约来源。
+# 用法：bash scripts/ci/resolve-backend-openapi.sh <ref>。
 # 为拉取请求解析配对后端契约；找不到配对分支时回退到 main。
 set -euo pipefail
 

@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# 用途：启动 E2E 用例独占的临时 Worker。
+# 用法：由 Node 测试通过 spawn 传入路径与参数后执行。
 # 启动本例独占的临时 Worker：路径和参数全部由调用方显式传入，脚本只负责加载配对后端的本地
 # 环境变量并 exec Java。调用方用 `spawn('bash', [start-worker.sh, ...])` 传参，避免把绝对路径
 # 拼进 `bash -c` 命令串（CodeQL js/shell-command-injection-from-environment）。

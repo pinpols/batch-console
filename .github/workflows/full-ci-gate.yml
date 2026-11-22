@@ -122,7 +122,10 @@ jobs:
         id: unit-tests
         run: |
           mkdir -p build/ci-test-reports
-          bash scripts/ci/run-gate.sh FE_UNIT "Vitest 单测与覆盖率" -- npm run test:unit -- --coverage --reporter=default --reporter=json --outputFile.json=build/ci-test-reports/vitest.json
+          bash scripts/ci/run-gate.sh FE_UNIT "Vitest 单测与覆盖率" -- npm run test:unit -- --coverage --coverage.reporter=json --coverage.reportsDirectory=build/ci-test-reports/coverage --reporter=default --reporter=json --outputFile.json=build/ci-test-reports/vitest.json
+
+      - name: Diff coverage (changed lines)
+        run: bash scripts/ci/run-gate.sh --group testing FE_DIFF_COVERAGE "增量覆盖率" -- node scripts/check-diff-coverage.mjs --coverage build/ci-test-reports/coverage/coverage-final.json
 
       # 完整 build(vue-tsc + i18n + vite build),验证生产产物可生成
       - run: bash scripts/ci/run-gate.sh FE_BUILD "完整生产构建" -- npm run build
@@ -176,6 +179,12 @@ jobs:
           ref: main
           path: backend-docs-source
           persist-credentials: false
+
+      - name: Lint Dockerfile
+        uses: hadolint/hadolint-action@06be81baf89a55ffd0e24b8f04a4185738dd3387 # v3.5.0
+        with:
+          dockerfile: Dockerfile
+          failure-threshold: warning
 
       - name: Build Docker image
         run: docker build --build-context backend-docs=./backend-docs-source/docs -t batch-console:ci-${{ github.sha }} .
@@ -263,6 +272,15 @@ jobs:
           node-version-file: '.node-version'
           cache: npm
       - run: npm ci --no-audit --no-fund
+
+      - name: Secret scan
+        shell: bash
+        run: |
+          GITLEAKS_VERSION=8.30.1
+          curl -fsSL -o /tmp/gitleaks.tar.gz "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          tar -xzf /tmp/gitleaks.tar.gz -C /tmp gitleaks
+          sudo mv /tmp/gitleaks /usr/local/bin/gitleaks
+          bash scripts/ci/run-gate.sh --group security FE_SECRET_SCAN "密钥泄漏扫描" -- gitleaks detect --source . --redact --no-banner --exit-code 1
 
       # 全量 audit(含 dev),CRITICAL 挡 build,其他 report-only
       - name: npm audit (all deps, critical only blocks)

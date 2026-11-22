@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# 用途：本地无后端静态门禁总入口。
+# 用法：bash scripts/ci.sh。
 # 本地无后端门禁：与 PR 静态检查保持同一口径，不修改工作区，也不伪装真实环境验收。
 set -euo pipefail
 

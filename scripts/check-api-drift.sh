@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# 用途：检查后端 OpenAPI 与前端生成类型是否漂移。
+# 用法：bash scripts/check-api-drift.sh。
 # 检查后端 OpenAPI yaml 与前端生成的 src/types/api.generated.ts 是否漂移。
 #
 # 用法:

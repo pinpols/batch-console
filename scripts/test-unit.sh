@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# 用途：运行 Vitest 单测。
+# 用法：bash scripts/test-unit.sh。
 
 set -euo pipefail
 

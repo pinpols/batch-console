@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# 用途：前端基建健康检查。
+# 用法：bash scripts/local/health-check.sh。
 # =========================================================
 # health-check.sh (FE 侧基建健康检查)
 #

@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# 用途：校验前后端运行时版本对齐。
+# 用法：bash scripts/check-version-alignment.sh。
 
 set -euo pipefail
 
