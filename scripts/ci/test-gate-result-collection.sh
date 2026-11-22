@@ -19,6 +19,10 @@ export GITHUB_STEP_SUMMARY="$tmp_dir/summary.md"
 gate_reset_collected
 wrapper_output="$(bash "$ROOT/scripts/ci/run-gate.sh" --group localization TEST_WRAPPER "包装器分组" -- true)"
 [[ "$wrapper_output" == "✅ 通过 | code=TEST_WRAPPER | gate=包装器分组 | group=localization | mode=enforce | exit_code=0 | action=none" ]]
+disabled_upper_output="$(BATCH_GATE_ENABLED=FALSE bash "$ROOT/scripts/ci/run-gate.sh" --group build TEST_DISABLED_UPPER "总开关大写" -- false)"
+[[ "$disabled_upper_output" == *"mode=ignore"* ]]
+enabled_upper_output="$(BATCH_GATE_ENABLED=On bash "$ROOT/scripts/ci/run-gate.sh" --group build TEST_ENABLED_UPPER "总开关开启" -- true)"
+[[ "$enabled_upper_output" == *"mode=enforce"* ]]
 report_output="$(bash "$ROOT/scripts/ci/run-gate.sh" --group quality --mode report TEST_REPORT "报告模式" -- bash -c 'exit 7' 2>&1)"
 [[ "$report_output" == *"⚠️ 报告 | code=TEST_REPORT | gate=报告模式 | group=quality | mode=report | exit_code=7 | action=review_report"* ]]
 legacy_output="$(bash "$ROOT/scripts/ci/run-gate.sh" --group quality TEST_LEGACY "旧状态格式" -- bash -c 'printf "详情保留\n✅ 通过 | code=OLD_CHILD | gate=旧状态\n✅ 通过 | code=NESTED | gate=嵌套门禁 | group=testing | mode=enforce | exit_code=0 | action=none\n"' 2>&1)"
