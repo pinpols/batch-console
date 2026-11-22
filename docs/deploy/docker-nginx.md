@@ -4,7 +4,7 @@
 
 ## 制品内容
 
-镜像由 Node.js 24.21.0 / Alpine 3.24 构建阶段和 Nginx 1.30.5 / Alpine 3.24 运行阶段组成，包含 Vue SPA 与从配对后端权威文档构建的 `/docs/`。基础镜像使用完整版本标签；文档通过 BuildKit named context 注入，缺少文档源时构建直接失败，不生成占位页。
+镜像由 Node.js 24.21.0 / Alpine 3.24 构建阶段和 Nginx 1.30.7 / Alpine 3.24 运行阶段组成，包含 Vue SPA 与从配对后端权威文档构建的 `/docs/`。基础镜像使用完整版本标签；文档通过 BuildKit named context 注入，缺少文档源时构建直接失败，不生成占位页。
 
 运行阶段创建并使用固定 `batch:batch`（UID/GID 10001）启动 master 和 worker，与后端应用镜像一致；容器内监听 8080，Compose 默认将宿主 8080 映射到容器 8080。只有 `/etc/nginx/conf.d` 和 Nginx 临时目录可由该用户写入，静态制品与模板保持 root 所有、只读。构建阶段需要 root 安装依赖，不属于运行时进程。
 

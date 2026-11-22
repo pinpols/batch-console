@@ -90,7 +90,7 @@ PR 主门禁使用同一 `.node-version`，已覆盖版本检查、fixture 治�
 
 每周定时运行是低频 runner、依赖和门禁漂移检查，不是每日重复回归；日常代码变更由 PR 和 main push 覆盖。
 
-PR 进入 workflow 后先执行 `Detect change scope`。仅包含 Markdown、`docs/**` 或 `.agents/**` 的 PR 会跳过 `Static checks + Unit` 和 `Security audit (full)` 两个重 job；required check 以 skipped-success 状态回报，不改变 main push / 每周定时 / 手动运行的全量门禁。包含 workflow、脚本、配置、源码、依赖或部署文件的 PR 仍完整执行。
+PR 进入 workflow 后先执行 `Detect change scope`。仅包含 Markdown、`docs/**` 或 `.agents/**` 的 PR 会跳过 `Static checks + Unit` 和 `Security audit (full)`；镜像构建、Trivy 和 Lighthouse 依赖静态检查成功，因此一并跳过。required check 以 skipped-success 状态回报，不改变 main push / 每周定时 / 手动运行的全量门禁。包含 workflow、脚本、配置、源码、依赖或部署文件的 PR 仍完整执行，包括 Docker build、Trivy 和 Lighthouse。
 
 ```mermaid
 %%{init: {"flowchart":{"curve":"linear","nodeSpacing":32,"rankSpacing":48},"sequence":{"mirrorActors":false}}}%%
@@ -99,8 +99,8 @@ flowchart TB
   SCOPE -->|"需要完整检查"| STATIC["static-and-unit<br/>静态检查 / 单测 / 完整构建"]
   SCOPE -->|"需要完整检查"| SECURITY["security-audit<br/>全量 npm audit / 报告"]
   STATIC --> DIST["dist artifact"]
-  DIST -->|"非 PR"| DOCKER["docker-and-scan<br/>镜像构建 / Trivy"]
-  DIST -->|"非 PR"| LH["lighthouse<br/>下载产物 / 预览 / 性能预算"]
+  DIST --> DOCKER["docker-and-scan<br/>镜像构建 / Trivy"]
+  DIST --> LH["lighthouse<br/>下载产物 / 预览 / 性能预算"]
 ```
 
 ## staging-gate 详情

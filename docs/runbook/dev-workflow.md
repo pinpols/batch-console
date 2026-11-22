@@ -79,7 +79,7 @@ npm run build:fast     # vite build
 | Workflow | 触发 | 做什么 | 阻断 PR? |
 |---|---|---|---|
 | **pr-gate** | PR → main / push main / 手动 | 单 job 跑 lint + typecheck + i18n + api-drift + unit + build + audit | ✓ |
-| **full-ci-gate** | PR → main / push main / 每周一 02:00 UTC / 手动 | PR 上执行范围适配的回归与审计；Docker build/Trivy/Lighthouse 仅在非 PR 事件运行。**main 守底** | — |
+| **full-ci-gate** | PR → main / push main / 每周一 02:00 UTC / 手动 | PR 上执行范围适配的回归与审计；静态检查成功后跑 Docker build/Trivy/Lighthouse，纯文档 PR 跳过。**main 守底** | — |
 | **staging-gate** | tag `v*` push + 手动 | 对真 staging URL 跑 Playwright 真环境 e2e + Lighthouse | — |
 | **prepare-platform-release** | 后端仓库手动触发 | 创建两仓同版本 Release PR；不打 tag、不发布 | 需配置 GitHub App |
 | **renovate** | 季度依赖盘点 | 只读 dry-run，不自动创建依赖 PR | — |
