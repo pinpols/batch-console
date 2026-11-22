@@ -173,3 +173,27 @@
 ### 移动端
 
 保持 `.m-empty` 短文字。`MWorkers.vue`、`MAlerts.vue`、`MOutbox.vue`、`MFileList.vue` 在偏离默认范围的筛选下改为「没有匹配项」。审批和作业运行的筛选空态原本已分开。
+
+## 2026-11-22 本地真实后端验收（自动化）
+
+环境：前端 `main` `f0a2fc8a3`，后端 `main` `f165aab52`（运行包为 2026-11-18 构建），本地 `18080` Console API + `5173` Vite，Chromium，租户 `ta/tb/tc` 夹具。为启动宿主 JVM，接受了两次一次性有状态后端切换（`quota-runtime-state`、`object-storage`），当前绑定为本机 `localhost:16379` 与 `http://localhost:19000`；容器方式启动需要再次接受反向切换。
+
+### 通过项
+
+- 前端本地门禁 `fe-acceptance.sh --steps=2,3,4,5,6,7`：typecheck、lint、i18n（6801 key）、API 漂移、单测与覆盖率、构建与体积预算全部 PASS。
+- IA 批次 1 定向单测 10/10：用户菜单“我的账户”、移动审批分段与深链、相关页链接按权限过滤。
+- 真实后端 E2E 共 133 项通过、20 项失败、1 项跳过。通过覆盖导航与命令面板、列表空态、审批动作、移动端 `/m/*` 九个入口、主操作按钮（作业定义、队列、配额、API Key、系统参数）、页面标题与跨页跳转主链路。
+
+### 发现
+
+1. **待处理角标对比度不足（serious，全站）**：`99+` 角标前景 `#fbfbfb`、背景 `#fefcfb`，对比度 1.01:1。存在待处理数据时每个页面都会命中 axe `color-contrast`。
+2. **改密提示按钮对比度临界不足**：`前往修改` 前景 `#b45309`、背景 `#f7f1e9`，4.47:1，低于 AA 4.5:1。
+3. `e2e/smoke.spec.ts` 期望告警页标题“告警事件”，当前实现为“事件告警”，用例过期。
+4. `e2e/user-batch-provisioning.spec.ts` 只桩 `auth/me` 权限，未提供菜单 allowlist；#394 的路由菜单守卫把 `/system/user-accounts` 重定向到 `/system/me`，用例需补菜单夹具。
+5. `e2e/system-pages.spec.ts` 的租户列表与系统参数在 `ta` 租户下返回 403；平台级页面需改用 `system` 租户身份或用例约定。
+6. 跨租户复制配置、执行日志 `traceId` 预填、工作流设计器快速节点三项的选择器或交互期望与当前实现不一致，待逐项复核是产品回归还是用例漂移。
+7. 新手引导的 `driver-overlay` 在自动验收中拦截导航点击；用例需在进入页面前清理引导状态。
+
+### 边界
+
+未覆盖 staging/目标环境、四角色人工验收、AI 真实 provider、OIDC、真实外部 SFTP/API、Firefox/WebKit 与视觉回归基线。首次全量 smoke 曾因 PostgreSQL 崩溃恢复中断（同一时段 `recovery mode`），结果已作废，上表数据取自恢复后的重跑。后端运行包早于 `main` 4 天，Trigger 日志提示数据库 schema（387）新于运行包（386），本次结论不代表当前主干与最新 schema 的组合。
