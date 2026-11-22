@@ -38,6 +38,7 @@
     "test:diff-coverage": "node --test scripts/tests/test-diff-coverage.test.mjs",
     "test:test-quarantine": "node --test scripts/tests/test-test-quarantine.test.mjs",
     "test:flaky-results": "node --test scripts/tests/test-flaky-results.test.mjs",
+    "test:gitleaks-scan": "node --test scripts/tests/test-gitleaks-scan.test.mjs",
     "check:changelog": "node scripts/check-changelog-sync.mjs",
     "verify:governance": "bash scripts/verify-governance.sh",
     "verify:local": "bash scripts/ci.sh",

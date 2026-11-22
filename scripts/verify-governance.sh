@@ -36,6 +36,7 @@ gate_run FE_SHELL_PORTABILITY "Shell 跨平台兼容性" npm run check:shell:por
 BATCH_GATE_GROUP=testing gate_run FE_SHELL_PORTABILITY_TEST "Shell 兼容门禁正反例" npm run test:shell-portability
 gate_run FE_SCRIPT_METADATA "脚本头与索引" npm run check:script:metadata
 gate_run FE_SCRIPT_METADATA_TEST "脚本头门禁正反例" npm run test:script-metadata
+BATCH_GATE_GROUP=testing gate_run FE_GITLEAKS_SCAN_TEST "密钥扫描范围正反例" npm run test:gitleaks-scan
 BATCH_GATE_GROUP=testing gate_run FE_TEST_QUARANTINE "测试隔离治理" npm run check:test:quarantine
 BATCH_GATE_GROUP=testing gate_run FE_TEST_QUARANTINE_TEST "测试隔离门禁正反例" npm run test:test-quarantine
 BATCH_GATE_GROUP=testing gate_run FE_DIFF_COVERAGE_TEST "增量覆盖率门禁正反例" npm run test:diff-coverage

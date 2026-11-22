@@ -18,6 +18,7 @@
 | `scripts/ci/check-backend-validation-coverage.sh` | 校验后端验证覆盖证据。                             |
 | `scripts/ci/resolve-backend-openapi.sh`           | 解析配对后端 OpenAPI 契约来源。                    |
 | `scripts/ci/run-gate.sh`                          | 按分组与模式执行门禁并传播结果。                   |
+| `scripts/ci/gitleaks-scan.sh`                     | 在可解析的提交范围内运行 gitleaks。                |
 | `scripts/ci/test-gate-result-collection.sh`       | 门禁结果与聚合模式自测。                           |
 | `scripts/verify-governance.sh`                    | 本地治理门禁总入口。                               |
 
