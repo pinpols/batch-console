@@ -395,7 +395,7 @@ E2E_USAGE_DB_RECONCILIATION=1 E2E_SKIP_GLOBAL_SETUP=1 E2E_BASE_URL=http://127.0.
 | Workflow           | 触发                                     | 内容                                                                                                            |
 | ------------------ | ---------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
 | `pr-gate.yml`      | PR / push main                           | lint / typecheck / i18n / api-drift / **unit** / build / audit                                                  |
-| `full-ci-gate.yml` | PR / push main / 每周一 02:00 UTC / 手动 | PR 运行范围适配的静态、单测与安全检查；非 PR 事件再跑 Docker/Trivy + Lighthouse                                 |
+| `full-ci-gate.yml` | PR / push main / 每周一 02:00 UTC / 手动 | PR 运行范围适配的静态、单测与安全检查；静态检查成功后跑 Docker/Trivy + Lighthouse，纯文档 PR 跳过               |
 | `staging-gate.yml` | `v*` tag / 手动                          | Playwright against explicitly configured staging frontend/API origins + required-scenario report and Lighthouse |
 
 **关键**:Playwright e2e **只在 staging-gate**跑。该 workflow 不部署到 staging；必须配置前端/API origin 与测试凭据，发布必验场景缺失或跳过会失败，可选场景跳过会进入报告。E2E 失败阻断该 staging 验收 job，不 block PR 合并。配置契约可用 `npm run test:e2e:config` 本地验证；只有目标 staging 上的实际运行才能证明真实环境验收通过。
