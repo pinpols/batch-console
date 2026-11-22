@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-11-22 运行镜像 Nginx 安全更新
+
+- 运行阶段基础镜像从 Nginx 1.30.5 / Alpine 3.24 升到 Nginx 1.30.7 / Alpine 3.24，镜像内包为 `nginx 1.30.7-r1`。这覆盖已发布修复的 CRITICAL 漏洞 CVE-2026-113425、CVE-2026-121810、CVE-2026-123007、CVE-2026-123633 和 CVE-2026-97205。重新构建并部署镜像后生效。
+
 ## 2026-11-15 Console 响应字段类型同步
 
 - API 类型由后端 main 的 OpenAPI 重新生成：`ConsoleJobDefinitionResponse` 新增 `bizType`、`dagEnabled`、`priority`、`version`、`description`；`ConsoleTenantResponse` 新增 `id`、`createdBy`；`ConsoleAlertRoutingResponse` 新增 `createdBy`、`updatedBy`、`isDeleted`；`ConsoleJobStepInstanceResponse` 的 `skipReasonCode`、`skipReason` 标记为 deprecated。仅生成类型变化，前端调用与页面行为不变。
