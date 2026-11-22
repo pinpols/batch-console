@@ -131,6 +131,10 @@ jobs:
           mkdir -p build/ci-test-reports
           if [[ -f playwright-report/results.json ]]; then cp playwright-report/results.json build/ci-test-reports/full.json; fi
 
+      - name: Flaky results gate
+        if: always()
+        run: bash scripts/ci/run-gate.sh --group testing FE_FLAKY_RESULTS "flaky 结果治理" -- node scripts/check-flaky-results.mjs build/ci-test-reports/full.json
+
       - name: Visual regression baseline
         id: e2e-visual
         env:

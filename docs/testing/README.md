@@ -448,3 +448,15 @@ E2E_USAGE_DB_RECONCILIATION=1 E2E_SKIP_GLOBAL_SETUP=1 E2E_BASE_URL=http://127.0.
 ## Nginx运行时路由回归
 
 `npm run test:nginx-routing`执行`scripts/tests/nginx-routing.test.mjs`，以Dockerfile声明的不可变基础镜像加载真实Nginx配置。验证静态存在性、history回退、固定名称缓存、相对跳转、文档和API状态；鉴权由本例替身提供，未执行真实登录或后端业务。需要本机Docker，可拉取声明的镜像；测试创建独占临时目录/容器和随机回环端口，并按本例标签精确清理。命令独立运行，未新增提交/发布阻断策略。
+
+`node --test scripts/tests/dockerfile-healthcheck.test.mjs`要求`HEALTHCHECK`为 JSON exec 形式且保留`${NGINX_PORT}`，再在本机临时端口执行该命令：端口一致时`/healthz`返回`ok`，端口不一致时失败。不构建镜像，也不替代 Full CI 的 hadolint 与镜像构建。
+
+## 11. 测试隔离与 flaky 治理
+
+- 无条件跳过（`test.skip('...')`、`test.skip()`、`test.fixme()`）必须在前一行或同一行声明
+  `// quarantine: issue=#编号 owner=@责任人 expires=YYYY-MM-DD`，到期后门禁失败。
+- 提交中禁止保留 `.only`；Playwright 条件跳过（`test.skip(condition, reason)`）不受此约束。
+- flaky 用例（重试后通过）必须在 `scripts/flaky-quarantine.json` 登记同一完整标题及
+  `issue`、`@owner`、`expires`，未登记或过期由 staging 门禁拦截。
+- 本地执行：`npm run check:test:quarantine`、`npm run test:test-quarantine`、
+  `npm run test:flaky-results`。

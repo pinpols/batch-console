@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# 用途：前端全链路验收。
+# 用法：bash scripts/local/fe-acceptance.sh。
 # =========================================================
 # 前端验收脚本 fe-acceptance.sh
 #
@@ -132,8 +134,9 @@ should_run() {
   return 0
 }
 
-declare -A RESULTS
-declare -A DURATIONS
+# 步骤号为数字键，使用索引数组以兼容 macOS 自带的 Bash 3.2。
+declare -a RESULTS
+declare -a DURATIONS
 FAILED_STEP=0
 
 run_step() {

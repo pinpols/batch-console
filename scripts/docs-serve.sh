@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# 用途：启动统一文档站。
+# 用法：bash scripts/docs-serve.sh。
 # =========================================================
 # docs-serve.sh — 启动统一文档站(kill 端口 → build → preview)
 #

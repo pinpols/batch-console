@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# 用途：构建文档后由 SPA 同进程提供 /docs/。
+# 用法：bash scripts/dev-stack.sh。
 # =========================================================
 # dev-stack.sh — 构建文档后由 SPA Vite 同进程提供 /docs/
 #

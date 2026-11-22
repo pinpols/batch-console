@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# 用途：运行 Playwright E2E。
+# 用法：bash scripts/test-e2e.sh。
 
 set -euo pipefail
 

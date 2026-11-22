@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# 用途：启动前端开发服务器。
+# 用法：bash scripts/dev-server.sh。
 
 set -euo pipefail
 

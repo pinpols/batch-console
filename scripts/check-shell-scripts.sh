@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# 用途：校验 Shell 语法与 ShellCheck 告警。
+# 用法：bash scripts/check-shell-scripts.sh。
 # Shell 脚本统一使用 Bash/sh，避免依赖开发机未必安装的 zsh。
 set -euo pipefail
 

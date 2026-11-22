@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-11-22 脚本与测试治理门禁
+
+- 新增 Shell 跨平台兼容门禁：拦截 BSD/macOS 专属命令、缺少 Linux 回退的 `shasum`，以及 macOS Bash 3.2 不支持的语法；`scripts/check-*` 与 `.husky` 钩子纳入检查范围。
+- 新增脚本头与索引门禁：`scripts/**` 必须声明“用途/用法”，并登记到 `scripts/README.md`。
+- 新增增量覆盖率门禁：按 diff 新增行统计 statement 覆盖率，低于 70% 阻断合并。
+- 新增测试隔离治理：禁止 `.only`；无条件跳过必须声明 issue、owner 与到期日；staging 的 flaky 重试须在 `scripts/flaky-quarantine.json` 登记。
+- PR/Full CI 增加 gitleaks 密钥扫描，Docker 构建前增加 hadolint 检查。
+- Dockerfile 清理 hadolint 告警：BuildKit named context 显式豁免 DL3022；APK 版本固定规则按基础镜像 digest 管理并记录在 `.hadolint.yaml`。
+- 容器 HEALTHCHECK 改为 JSON exec 形式，并由 `sh` 在运行时展开 `NGINX_PORT` 后请求 `/healthz`，消除 hadolint DL3025，同时保持端口可覆盖。
+
 ## 2026-11-22 可访问性对比度与首访引导修复
 
 - 顶栏待处理角标改用更深的警示底色并配白色文字，浅色主题下 10px 角标达到 AA；深色主题保持深色文字。

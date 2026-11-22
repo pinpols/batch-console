@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# 用途：只读核验保留输入文件及配置包快照契约。
+# 用法：bash e2e-data/verify-data.sh。
 # verify-data.sh — 只读核验保留输入文件及配置包快照契约；不证明 API/业务验收
 # 用法:  ./verify-data.sh
 
