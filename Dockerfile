@@ -53,8 +53,8 @@ FROM nginx:1.30.7-alpine3.24@sha256:caf4e1e032a20f9c3c5e28fc7f25ffd768ad8677b497
 ENV LANG=C.UTF-8 \
     LC_ALL=C.UTF-8
 
-# 固定基础镜像上的 Brotli 修复版本下限，并安装 healthcheck 和时区工具。
-RUN apk add --no-cache 'brotli-libs>=1.2.1-r0' curl tzdata && \
+# 固定基础镜像上已有修复版本的包下限，并安装 healthcheck 和时区工具。
+RUN apk add --no-cache 'brotli-libs>=1.2.1-r0' 'libxml2>=2.13.9-r3' curl tzdata && \
     cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
     echo "Asia/Shanghai" > /etc/timezone && \
     apk del tzdata
