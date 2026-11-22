@@ -7,6 +7,11 @@ tools/docs-bridge/frontend/content/
 *.local
 .env.local
 .env.*.local
+# 本地环境变量；仓库只保留 .env.development / .env.production 模板
+.env
+.env.*
+!.env.development
+!.env.production
 src/types/auto-imports.d.ts
 src/types/components.d.ts
 
@@ -48,7 +53,17 @@ test-results-full/
 # vitest coverage output
 coverage/
 /.openidea/
-/output/playwright/
+# Playwright 及其他本地输出
+/output/
+
+# 工具缓存与调试日志
+.eslintcache
+.stylelintcache
+*.tsbuildinfo
+.cache/
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
 
 # IDE、编辑器和本地工具状态。不提交个人配置。
 .idea/
