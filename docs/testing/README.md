@@ -109,6 +109,8 @@ Vite 配置继承 Vue 的基础编译配置，并显式加载 Node 类型；应�
 通过，再分别注入 TS、Vue 和 Vite 配置类型错误并断言阻断。测试结束删除自有临时目录，
 不向应用源码写入探针。该正反例已接入 PR/Full Gate 的治理检查。
 
+`npm run test:gitleaks-scan` 用临时仓库和 gitleaks 替身验证扫描范围：没有父提交或 `depth 1` 浅克隆时失败且不调用扫描器；完整历史的非 PR 扫描使用 `--log-opts=-1`；PR 在 `origin/<base>` 缺失时失败，存在时扫描 `origin/<base>..HEAD`。扫描器的非零退出码原样传出。该正反例由 `verify-governance.sh` 接入 PR 与 Full Gate。
+
 ### 测试配置事实来源
 
 - 应用持久化键由 `src/constants/storageKeys.json` 唯一维护；应用代码从 `src/constants/storageKeys.ts` 引用，Playwright 通过 `e2e/support/storage.ts` 的 `seedBrowserStorage` / `readBrowserStorage` 操作。改动时同步应用事实源和调用方，不在测试内复制字符串。`src/constants/storageKeys.test.ts` 是兼容性契约测试，字面量是有意保留的预期值。

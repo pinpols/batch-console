@@ -55,12 +55,7 @@ jobs:
           curl -fsSL -o /tmp/gitleaks.tar.gz "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
           tar -xzf /tmp/gitleaks.tar.gz -C /tmp gitleaks
           sudo mv /tmp/gitleaks /usr/local/bin/gitleaks
-          if [ -n "${GITHUB_BASE_REF:-}" ]; then
-            GITLEAKS_RANGE="origin/${GITHUB_BASE_REF}..HEAD"
-          else
-            GITLEAKS_RANGE="-1"
-          fi
-          bash scripts/ci/run-gate.sh --group security FE_SECRET_SCAN "密钥泄漏扫描" -- gitleaks git . --log-opts="$GITLEAKS_RANGE" --redact --no-banner --exit-code 1
+          bash scripts/ci/run-gate.sh --group security FE_SECRET_SCAN "密钥泄漏扫描" -- bash scripts/ci/gitleaks-scan.sh
 
       - name: Check package version alignment
         run: bash scripts/ci/run-gate.sh FE_VERSION "版本对齐" -- npm run check:version

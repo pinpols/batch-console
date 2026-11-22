@@ -267,6 +267,11 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          # 密钥扫描要解析 PR 基线 origin/<base>..HEAD，以及 push/schedule 上 HEAD 的父提交。
+          # 默认浅克隆无法提供这些对象，扫描范围会失真。
+          fetch-depth: 0
+          persist-credentials: false
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version-file: '.node-version'
@@ -280,12 +285,7 @@ jobs:
           curl -fsSL -o /tmp/gitleaks.tar.gz "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
           tar -xzf /tmp/gitleaks.tar.gz -C /tmp gitleaks
           sudo mv /tmp/gitleaks /usr/local/bin/gitleaks
-          if [ -n "${GITHUB_BASE_REF:-}" ]; then
-            GITLEAKS_RANGE="origin/${GITHUB_BASE_REF}..HEAD"
-          else
-            GITLEAKS_RANGE="-1"
-          fi
-          bash scripts/ci/run-gate.sh --group security FE_SECRET_SCAN "密钥泄漏扫描" -- gitleaks git . --log-opts="$GITLEAKS_RANGE" --redact --no-banner --exit-code 1
+          bash scripts/ci/run-gate.sh --group security FE_SECRET_SCAN "密钥泄漏扫描" -- bash scripts/ci/gitleaks-scan.sh
 
       # 全量 audit(含 dev),CRITICAL 挡 build,其他 report-only
       - name: npm audit (all deps, critical only blocks)

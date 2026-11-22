@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-11-22 密钥扫描范围修正
+
+- Full CI 的 Security audit 改为完整检出历史后再扫描。PR 扫描 `origin/<base>..HEAD`，push、定时和手动触发只扫描最新提交。
+- 基线或父提交无法解析时，密钥扫描直接失败。
+
 ## 2026-11-22 脚本与测试治理门禁
 
 - 新增 Shell 跨平台兼容门禁：拦截 BSD/macOS 专属命令、缺少 Linux 回退的 `shasum`，以及 macOS Bash 3.2 不支持的语法；`scripts/check-*` 与 `.husky` 钩子纳入检查范围。
