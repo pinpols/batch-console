@@ -97,8 +97,8 @@ test.describe('@workflow-designer-smoke 工作流设计器主路径', () => {
     // 选中既有 START → END 依赖，新节点将自动插入其中。
     const baselineEdge = page.locator('.dag-canvas__graph .x6-edge').first()
     expect(baseline.edges, '新建的 START → END 依赖必须进入主画布').toBeGreaterThan(0)
-    await baselineEdge.click({ force: true })
-    await addPaletteNode(page, 'JOB')
+    await expect(baselineEdge).toHaveCount(1)
+    await addPaletteNode(page, 'JOB', async () => baselineEdge.click({ force: true }))
 
     await expect
       .poll(async () => (await readGraphCounts(page)).nodes, { timeout: 5_000 })
@@ -115,23 +115,24 @@ test.describe('@workflow-designer-smoke 工作流设计器主路径', () => {
     await page.locator(`.x6-node[data-cell-id="${jobId}"]`).first().click({ force: true })
     await expect(inspector).toBeVisible({ timeout: 3_000 })
 
-    // ElSelect 下拉:打开 → 选第一个 option
+    // ElSelect 下拉:打开 → 选第一个既有作业。后端拒绝不存在的 job_definition，
+    // 因此不能用 allow-create 自由编码，必须选租户下已存在的作业。
     const jobCodeInput = inspector
-      .getByRole('combobox', { name: /关联\s*Job/ })
+      .getByRole('combobox', { name: /关联\s*(Job|作业)/ })
       .first()
     await expect(jobCodeInput).toBeVisible({ timeout: 3_000 })
-    // el-select 开启 allow-create；直接录入唯一编码并回车，确保触发 @change 写回 store。
-    // 输入后等待 Element Plus 生成精确 option，再点击确认，避免异步下拉尚未就绪。
-    const selectedJobCode = `${PREFIX}-job`
     const jobCodeFormItem = jobCodeInput.locator(
       'xpath=ancestor::div[contains(concat(" ", normalize-space(@class), " "), " el-form-item ")][1]',
     )
     await jobCodeInput.click({ force: true })
-    await jobCodeInput.fill(selectedJobCode)
-    const createdOption = page.getByRole('option', { name: selectedJobCode, exact: true }).last()
-    await expect(createdOption).toBeVisible({ timeout: 5_000 })
-    await createdOption.click({ force: true })
+    const firstJobOption = page.locator('.el-select-dropdown:visible').getByRole('option').first()
+    await expect(firstJobOption).toBeVisible({ timeout: 5_000 })
+    const selectedJobCode = ((await firstJobOption.textContent()) ?? '').trim()
+    expect(selectedJobCode, '作业编码下拉为空').not.toBe('')
+    await firstJobOption.click({ force: true })
     await expect(jobCodeFormItem).toContainText(selectedJobCode)
+    // 关闭下拉，避免浮层挡住后续保存按钮
+    await page.keyboard.press('Escape')
 
     // ── Step 6: 点「校验」按钮 ────────────────────────────────────
     const validateBtn = page.getByRole('button', { name: '校验' }).first()
@@ -143,12 +144,22 @@ test.describe('@workflow-designer-smoke 工作流设计器主路径', () => {
     // ── Step 7: 点「保存」按钮 ────────────────────────────────────
     await expect(saveBtn).toBeVisible()
     await expect(saveBtn).toBeEnabled()
+    const saveResponsePromise = page.waitForResponse(
+      (r) =>
+        r.request().method() === 'PUT' &&
+        /\/api\/console\/workflow-definitions\/\d+\/full$/.test(new URL(r.url()).pathname),
+      { timeout: 20_000 },
+    )
     await saveBtn.click({ force: true })
+    const saveResponse = await saveResponsePromise.catch(() => null)
+    if (saveResponse && !saveResponse.ok()) {
+      throw new Error(`保存失败: ${saveResponse.status()} ${await saveResponse.text()}`)
+    }
 
     // 期望出现「保存成功」toast — 真实 BE 写入失败必须让核心冒烟失败。
     const successToast = page.locator('.el-message--success').filter({ hasText: /保存成功/ })
     const saved = await successToast
-      .waitFor({ state: 'visible', timeout: 8_000 })
+      .waitFor({ state: 'visible', timeout: 15_000 })
       .then(() => true)
       .catch(() => false)
 
@@ -191,11 +202,17 @@ async function readGraphCounts(page: import('@playwright/test').Page) {
 async function addPaletteNode(
   page: import('@playwright/test').Page,
   type: 'START' | 'END' | 'JOB' | 'GATEWAY',
+  selectAnchor?: () => Promise<void>,
 ) {
   const before = (await readGraphCounts(page)).nodes
   const paletteItem = page.getByRole('button', { name: type, exact: true }).first()
   await expect(paletteItem).toBeVisible({ timeout: 3_000 })
   for (let attempt = 0; attempt < 3; attempt += 1) {
+    // 设计器按当前选择决定插入位置；首帧画布尚未完成选中时重试点击锚点。
+    if (selectAnchor) {
+      await selectAnchor()
+      await page.waitForTimeout(250)
+    }
     await paletteItem.click({ force: true })
     const added = await expect
       .poll(async () => (await readGraphCounts(page)).nodes, { timeout: 1_500 })

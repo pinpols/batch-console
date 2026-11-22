@@ -1,5 +1,6 @@
 import { STORAGE_KEYS } from './support/storage'
 import { installE2eLocale } from './support/i18n'
+import { adminMenus } from './support/app'
 import { expect, test } from '@playwright/test'
 
 test.use({ storageState: { cookies: [], origins: [] }, serviceWorkers: 'block' })
@@ -14,7 +15,7 @@ test.beforeEach(async ({ page }) => {
   await page.route('**/api/console/**', async (route) => {
     const path = new URL(route.request().url()).pathname
     const data = path === '/api/console/auth/me'
-      ? { username: 'batch-admin', tenantId: 'ta', authorities: ['ROLE_ADMIN'] }
+      ? { username: 'batch-admin', tenantId: 'ta', authorities: ['ROLE_ADMIN'], menus: adminMenus }
       : path === '/api/console/tenants'
         ? { items: [{ tenantId: 'ta', tenantName: 'Tenant A', status: 'ACTIVE' }], total: 1, pageNo: 1, pageSize: 15 }
         : { items: [], total: 0, pageNo: 1, pageSize: 15 }

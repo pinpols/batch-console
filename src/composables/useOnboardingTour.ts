@@ -61,6 +61,9 @@ function defaultSteps(): TourStep[] {
 }
 
 export function shouldShowOnboarding(identity: OnboardingTourIdentity): boolean {
+  // 全局跳过标记：自动化验收与支持场景用它一次关闭所有身份的首访引导，
+  // 不需要预先知道用户名和租户再拼完成键。
+  if (localStorage.getItem(STORAGE_KEY) === '1') return false
   const storageKey = completionKey(identity)
   const completionMarker = localStorage.getItem(storageKey)
   return completionMarker !== '1'

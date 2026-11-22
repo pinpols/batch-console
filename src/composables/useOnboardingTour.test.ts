@@ -53,7 +53,10 @@ beforeEach(() => {
   driverConstructorMock.mockReset()
   driverDriveMock.mockReset()
   driverDestroyMock.mockReset()
-  driverConstructorMock.mockImplementation(() => ({ drive: driverDriveMock, destroy: driverDestroyMock }))
+  driverConstructorMock.mockImplementation(() => ({
+    drive: driverDriveMock,
+    destroy: driverDestroyMock,
+  }))
 })
 
 describe('useOnboardingTour', () => {
@@ -78,6 +81,13 @@ describe('useOnboardingTour', () => {
     expect(shouldShowOnboarding(identity)).toBe(false)
     expect(shouldShowOnboarding({ userId: 'user-1', tenantId: 'tenant-b' })).toBe(true)
     expect(shouldShowOnboarding({ userId: 'user-2', tenantId: 'tenant-a' })).toBe(true)
+  })
+
+  it('全局跳过标记关闭所有身份的首访引导', () => {
+    storage.set(STORAGE_KEYS.onboardingDone, '1')
+
+    expect(shouldShowOnboarding(identity)).toBe(false)
+    expect(shouldShowOnboarding({ userId: 'user-2', tenantId: 'tenant-b' })).toBe(false)
   })
 
   it('startOnboarding:启动 driver 并调 drive()', () => {

@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test'
 import { STORAGE_KEYS } from './support/storage'
 import { installE2eLocale } from './support/i18n'
-import { adminMenus } from './support/app'
+import { adminMenus, dismissOnboardingOverlay } from './support/app'
 
 test.use({ storageState: { cookies: [], origins: [] }, serviceWorkers: 'block' })
 
@@ -50,6 +50,9 @@ test.describe('navigation and tabs', () => {
     await page.goto('/ops/summary')
     await expect(page).toHaveURL(/\/ops\/summary/)
     await expect(page.locator('.page-header .title').first()).toBeVisible()
+    // 引导层可能晚于首屏再挂载；先兜底移除，并让它即使重绘也不拦截点击。
+    await dismissOnboardingOverlay(page)
+    await page.addStyleTag({ content: '.driver-overlay { pointer-events: none !important; }' })
   })
 
   test('侧边栏导航可切换到关键页面', async ({ page }) => {
