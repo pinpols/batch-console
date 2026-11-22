@@ -1,5 +1,6 @@
 import { AxeBuilder } from '@axe-core/playwright'
 import { test, expect } from './support/app'
+import { installE2eLocale } from './support/i18n'
 import type { Page } from '@playwright/test'
 
 /**
@@ -18,6 +19,11 @@ const SEVERITY_TO_FAIL = ['critical', 'serious'] as const
 const GLOBAL_DISABLE_RULES: string[] = []
 
 async function runAxe(page: Page, exclude: string[] = [], extraDisable: string[] = []) {
+  // 扫描前统一关闭过渡/动画：入场动画中的半透明元素会被 axe 混合成接近 0 的对比度，
+  // 这不是稳定样式。固定到终态后再扫描，避免把动画帧误判成可访问性问题。
+  await page.addStyleTag({
+    content: '*, *::before, *::after { transition: none !important; animation: none !important; }',
+  })
   let builder = new AxeBuilder({ page })
     .withTags(['wcag2aa', 'best-practice'])
     .disableRules([...GLOBAL_DISABLE_RULES, ...extraDisable])
@@ -38,6 +44,18 @@ async function gotoStable(page: Page, route: string): Promise<void> {
     : page.locator('.page-header .title').first()
   await expect(content).toBeVisible()
   await expect(page.locator('.route-progress')).toBeHidden()
+  // 顶栏待处理角标由异步数据触发进入动画；动画首帧半透明会被 axe 计成近似 0 的对比度。
+  // 等进入动画结束后再扫描，避免把过渡态当成稳定样式。
+  await page
+    .waitForFunction(
+      () =>
+        !document.querySelector(
+          '.el-badge__content.is-zoom-in-center-enter-active, .el-badge__content.is-zoom-in-center-enter-to',
+        ),
+      undefined,
+      { timeout: 5_000 },
+    )
+    .catch(() => undefined)
 }
 
 // @slow lane:axe 本身 ~2s/页,但 10 页 × (页加载 + 1.5s 缓冲 + 重试)在 4-worker 并发下
@@ -52,6 +70,7 @@ test.describe('@slow @cross-browser a11y baseline (C 档):P0 10 页 axe critical
     const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } })
     const page = await ctx.newPage()
     try {
+      await installE2eLocale(page)
       await gotoStable(page, '/login')
       const { blockers, all } = await runAxe(page)
       if (blockers.length > 0) console.error('A11y blockers:', JSON.stringify(blockers, null, 2))

@@ -156,6 +156,8 @@
   }
 
   .notif-center__badge :deep(.el-badge__content--warning) {
+    /* 角标只用 10px 粗体，必须显式压深底色才满足 4.5:1 */
+    background-color: var(--el-color-warning-dark-2);
     color: var(--color-on-warning);
   }
 

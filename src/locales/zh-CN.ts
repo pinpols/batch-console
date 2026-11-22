@@ -3958,7 +3958,7 @@ export default {
   alertList: {
     groupMore: '另有 {count} 条同类告警',
     groupCollapse: '收起同类告警',
-    pageTitle: '事件告警',
+    pageTitle: '告警事件',
     pageDescription: '查看并处理运行告警',
     tabOpen: '未处理',
     tabAcked: '已确认',

@@ -140,6 +140,11 @@ export async function enterDemoApp(page: Page, locale: E2eLocale = E2E_DEFAULT_L
   })
 
   // 兜底:如 driver overlay 已经渲染就移除
+  await dismissOnboardingOverlay(page)
+}
+
+/** 首次登录引导的 driver.js 覆盖层会拦截点击；本地自动化用例在进入页面后调用移除。 */
+export async function dismissOnboardingOverlay(page: Page): Promise<void> {
   await page.evaluate(() => {
     document
       .querySelectorAll('.driver-overlay, .driver-popover, .driver-active-element')

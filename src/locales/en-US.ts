@@ -3906,7 +3906,7 @@ const messages: Messages = {
   alertList: {
     groupMore: '{count} more similar alerts',
     groupCollapse: 'Hide similar alerts',
-    pageTitle: 'Event alerts',
+    pageTitle: 'Alert events',
     pageDescription: 'View and manage alert events',
     tabOpen: 'Open',
     tabAcked: 'Acked',

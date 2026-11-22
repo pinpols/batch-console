@@ -34,7 +34,7 @@
   --color-brand-mark-bg: #1f4fd1;
   /* 品牌标志底色：纯色，不用渐变与高光，与扁平的界面一致 */
   --brand-mark-fill: linear-gradient(var(--color-brand-mark-bg), var(--color-brand-mark-bg));
-  --color-on-warning: #1b1e26;
+  --color-on-warning: #ffffff;
   /* 状态色（成功/失败/运行中等）实底上的文字 */
   --color-on-status: #ffffff;
   /* 主色文字：用于主色浅底上的文字（激活页签、主色标签等），深色主题提亮以保证对比度 */
@@ -42,7 +42,7 @@
 
   --color-text-primary: #132232;
   --color-text-secondary: #4a5a6b;
-  --color-text-tertiary: #5f6e7e;
+  --color-text-tertiary: #596878;
 
   --color-bg-page: #e9edf1;
   --color-bg-canvas: #e1e6eb;
@@ -140,6 +140,8 @@ html.dark {
 
   --color-success: #4cc38a;
   --color-warning: #f2b246;
+  /* 深色主题的警示底色偏亮，文字改回深色以满足 AA 对比度 */
+  --color-on-warning: #1b1e26;
   --color-danger: #ff6b62;
   --color-info: #5b8cff;
 

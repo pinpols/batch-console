@@ -78,12 +78,13 @@ test.describe('tenant copy config dialog (跨租户复制配置)', () => {
 
   test('复制配置对话框可打开并展示完整表单', async ({ page }) => {
     await page.getByRole('button', { name: '复制配置' }).click()
-    await expect(page.getByText('跨租户复制配置')).toBeVisible()
-    // 源租户 & 目标租户
-    await expect(page.getByText('源租户').first()).toBeVisible()
-    await expect(page.getByText('目标租户').first()).toBeVisible()
-    // 配置类型 checkbox
-    await expect(page.getByText('JOB_DEFINITION')).toBeVisible()
+    const drawer = page.locator('.el-drawer:visible')
+    await expect(drawer.getByText('跨租户复制配置')).toBeVisible()
+    // 源租户 & 目标租户：限定抽屉内精确标签，避免命中试运行提示里的同名文字
+    await expect(drawer.getByText('源租户', { exact: true }).first()).toBeVisible()
+    await expect(drawer.getByText('目标租户', { exact: true }).first()).toBeVisible()
+    // 配置类型 checkbox（按界面文案断言，原始枚举码只在提交体里出现）
+    await expect(drawer.getByText('作业定义', { exact: true }).first()).toBeVisible()
     // 写入模式(label 改成中文了:仅补缺失项 / 覆盖更新已有)
     await expect(page.getByText('仅补缺失项').first()).toBeVisible()
     // 2026-05 后试运行从 switch 改成独立按钮

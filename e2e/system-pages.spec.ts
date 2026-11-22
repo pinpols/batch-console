@@ -1,9 +1,23 @@
 import { expect, test } from './support/app'
 import { enterDemoApp, expectPageTitle, grantAiCapability } from './support/app'
+import { STORAGE_KEYS } from './support/storage'
+
+/** 平台级页面（租户列表、系统参数等）的后端查询要求 system 租户上下文。 */
+async function useSystemTenant(page: import('@playwright/test').Page) {
+  await page.addInitScript((key) => localStorage.setItem(key, 'system'), STORAGE_KEYS.tenantId)
+  await page.reload()
+  await expect(page.locator('.page-header .title').first()).toBeVisible({ timeout: 15_000 })
+  await page.evaluate(() => {
+    document
+      .querySelectorAll('.driver-overlay, .driver-popover, .driver-active-element')
+      .forEach((el) => el.remove())
+  })
+}
 
 test.describe('tenant management (租户管理)', () => {
   test.beforeEach(async ({ page }) => {
     await enterDemoApp(page)
+    await useSystemTenant(page)
   })
 
   test('租户列表可打开并展示表格与操作列', async ({ page }) => {
@@ -11,7 +25,7 @@ test.describe('tenant management (租户管理)', () => {
     await expectPageTitle(page, '租户实例')
     // 设计稿查询区无独立刷新按钮;TENANT 列头对齐 proto
     await expect(page.getByRole('button', { name: '搜索' }).first()).toBeVisible()
-    await expect(page.getByRole('columnheader', { name: 'TENANT' })).toBeVisible()
+    await expect(page.getByRole('columnheader', { name: '租户 ID' })).toBeVisible()
   })
 })
 
@@ -67,6 +81,7 @@ test.describe('trigger management (Trigger 管理)', () => {
 test.describe('system parameters (系统参数)', () => {
   test.beforeEach(async ({ page }) => {
     await enterDemoApp(page)
+    await useSystemTenant(page)
   })
 
   test('系统参数页面可打开并展示表格与新增按钮', async ({ page }) => {
@@ -74,16 +89,16 @@ test.describe('system parameters (系统参数)', () => {
     await expectPageTitle(page, '系统参数')
     await expect(page.getByRole('button', { name: '新增参数' }).first()).toBeVisible()
     await expect(page.getByRole('button', { name: '刷新' }).first()).toBeVisible()
-    await expect(page.getByRole('columnheader', { name: 'Key' })).toBeVisible()
-    await expect(page.getByRole('columnheader', { name: 'Value' })).toBeVisible()
+    await expect(page.getByRole('columnheader', { name: '参数键' })).toBeVisible()
+    await expect(page.getByRole('columnheader', { name: '参数值' })).toBeVisible()
   })
 
   test('点击新增参数弹出对话框', async ({ page }) => {
     await page.goto('/system/parameters')
     await page.getByRole('button', { name: '新增参数' }).first().click()
     await expect(page.getByText('新增参数').first()).toBeVisible()
-    await expect(page.getByLabel('Key')).toBeVisible()
-    await expect(page.getByLabel('Value')).toBeVisible()
+    await expect(page.getByLabel('参数键')).toBeVisible()
+    await expect(page.getByLabel('参数值')).toBeVisible()
     await expect(page.getByRole('button', { name: '保存' })).toBeVisible()
     await expect(page.getByRole('button', { name: '取消' })).toBeVisible()
   })

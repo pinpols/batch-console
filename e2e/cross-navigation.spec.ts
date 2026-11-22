@@ -182,7 +182,11 @@ test.describe('query parameter pre-fill (查询参数预填)', () => {
   test('执行日志通过 traceId 参数预填搜索条件', async ({ page }) => {
     await page.goto('/logs?traceId=test-trace-123')
     await expectPageTitle(page, /综合查询/)
-    const traceInput = page.locator('.el-form-item').filter({ hasText: /trace/i }).getByRole('textbox').first()
+    const traceInput = page
+      .locator('.el-form-item')
+      .filter({ hasText: '链路 ID' })
+      .getByRole('textbox')
+      .first()
     await expect(traceInput).toHaveValue('test-trace-123', { timeout: 15_000 })
   })
 })
