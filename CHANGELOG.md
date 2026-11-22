@@ -7,6 +7,7 @@
 - 新增增量覆盖率门禁：按 diff 新增行统计 statement 覆盖率，低于 70% 阻断合并。
 - 新增测试隔离治理：禁止 `.only`；无条件跳过必须声明 issue、owner 与到期日；staging 的 flaky 重试须在 `scripts/flaky-quarantine.json` 登记。
 - PR/Full CI 增加 gitleaks 密钥扫描，Docker 构建前增加 hadolint 检查。
+- Dockerfile 清理 hadolint 告警：BuildKit named context 显式豁免 DL3022；APK 版本固定规则按基础镜像 digest 管理并记录在 `.hadolint.yaml`。
 
 ## 2026-11-22 可访问性对比度与首访引导修复
 

@@ -44,6 +44,8 @@ ENV VITE_TEMPO_URL=$VITE_TEMPO_URL
 RUN npm run ${BUILD_MODE}
 
 # 后端文档通过 BuildKit named context 只读注入；与本仓 docs/ 构建为一个站点。
+# backend-docs 是 BuildKit named context，不是构建阶段；hadolint 无法识别。
+# hadolint ignore=DL3022
 COPY --from=backend-docs . /file-batch-system/docs
 RUN test -f /file-batch-system/docs/README.md && \
     FRONTEND_DOCS_ROOT=/app/docs BACKEND_DOCS_ROOT=/file-batch-system/docs npm run docs:build
