@@ -449,7 +449,7 @@ E2E_USAGE_DB_RECONCILIATION=1 E2E_SKIP_GLOBAL_SETUP=1 E2E_BASE_URL=http://127.0.
 
 `npm run test:nginx-routing`执行`scripts/tests/nginx-routing.test.mjs`，以Dockerfile声明的不可变基础镜像加载真实Nginx配置。验证静态存在性、history回退、固定名称缓存、相对跳转、文档和API状态；鉴权由本例替身提供，未执行真实登录或后端业务。需要本机Docker，可拉取声明的镜像；测试创建独占临时目录/容器和随机回环端口，并按本例标签精确清理。命令独立运行，未新增提交/发布阻断策略。
 
-## 10. 测试隔离与 flaky 治理
+## 11. 测试隔离与 flaky 治理
 
 - 无条件跳过（`test.skip('...')`、`test.skip()`、`test.fixme()`）必须在前一行或同一行声明
   `// quarantine: issue=#编号 owner=@责任人 expires=YYYY-MM-DD`，到期后门禁失败。
