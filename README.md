@@ -1,5 +1,7 @@
 # batch-console
 
+[English](README.en.md) | **中文**
+
 > File Batch System 的自托管运维控制台：把「配置 → 编排 → 运行 → 观测 → 治理」统一成面向多租户批处理平台的桌面端与移动端操作界面。
 
 [![PR Gate](https://github.com/pinpols/batch-console/actions/workflows/pr-gate.yml/badge.svg)](https://github.com/pinpols/batch-console/actions/workflows/pr-gate.yml)
@@ -8,18 +10,7 @@
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 [![Node](https://img.shields.io/badge/Node.js-24-339933.svg?logo=node.js&logoColor=white)](https://nodejs.org/)
 
-[用户指南](docs/user-guide/README.md) · [快速开始](#快速开始) · [核心能力](#核心能力) · [工程结构](#工程结构) · [文档索引](docs/README.md) · [贡献指南](CONTRIBUTING.md) · [配对后端](https://github.com/pinpols/file-batch-system) · [English](#english)
-
-## English
-
-Batch Console (BC) is the self-hosted operations console for [File Batch System](https://github.com/pinpols/file-batch-system). It is the control-plane frontend: it manages platform configuration and run operations through `batch-console-api` and does not schedule jobs, execute workers, or persist run state.
-
-- Configure, publish, replay, and approve jobs, DAG workflows, file pipelines, and batch days.
-- Inspect instances, alerts, Outbox events, workers, capacity, and audit trails, with cross-page Trace ID lookup.
-- Provide a full desktop console and a lightweight mobile surface under tenant and permission boundaries.
-- Generate API types from the backend OpenAPI spec and keep contract drift checks in CI.
-
-The console UI is available in Chinese and English; switch languages from the top-right control, including on the login screen. The rest of this document is written in Chinese.
+[用户指南](docs/user-guide/README.md) · [快速开始](#快速开始) · [核心能力](#核心能力) · [工程结构](#工程结构) · [文档索引](docs/README.md) · [贡献指南](CONTRIBUTING.md) · [配对后端](https://github.com/pinpols/file-batch-system)
 
 ## 这是什么？
 
