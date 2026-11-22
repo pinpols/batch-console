@@ -85,9 +85,10 @@ USER batch:batch
 
 EXPOSE 8080
 
-# 健康检查:5s 内返 200 即活着
+# JSON exec 形式满足 hadolint DL3025。显式调用 sh，让 ${NGINX_PORT} 在检查时展开，
+# 与 Nginx 模板的运行时监听端口一致；不要改成不经 shell 的 curl 参数。
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-    CMD curl -fs http://127.0.0.1:${NGINX_PORT}/healthz || exit 1
+    CMD ["sh", "-c", "curl -fs \"http://127.0.0.1:${NGINX_PORT}/healthz\" || exit 1"]
 
 # nginx 1.19+ 自带 envsubst on 启动 entry,会读 /etc/nginx/templates/*.template
 # 输出到 /etc/nginx/conf.d/*.conf,把 ${BACKEND_UPSTREAM_HOST} / ${NGINX_PORT} 替换掉
