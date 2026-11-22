@@ -1,5 +1,7 @@
 # batch-console
 
+[English](README.en.md) | **中文**
+
 > File Batch System 的自托管运维控制台：把「配置 → 编排 → 运行 → 观测 → 治理」统一成面向多租户批处理平台的桌面端与移动端操作界面。
 
 [![PR Gate](https://github.com/pinpols/batch-console/actions/workflows/pr-gate.yml/badge.svg)](https://github.com/pinpols/batch-console/actions/workflows/pr-gate.yml)
