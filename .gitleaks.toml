@@ -1,0 +1,13 @@
+[extend]
+useDefault = true
+
+# 只放行既有测试夹具与验收快照中的固定 UUID，避免把已确认的假阳性当成密钥；
+# 其他凭据仍由默认规则拦截。
+[allowlist]
+description = "已知测试夹具 UUID"
+regexTarget = "match"
+regexes = [
+  '''1d439bf0-10e3-43d3-91c1-b4daebd76eb4''',
+  '''bca27e36-bb52-4a8b-9957-c899e42ebf7a''',
+  '''a7c9b5fd-7b64-4c03-9e85-df045fcedd83''',
+]
