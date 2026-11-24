@@ -16,6 +16,7 @@
 | `scripts/check-version-alignment.sh`              | 校验前后端运行时版本对齐。                         |
 | `scripts/ci.sh`                                   | 本地无后端静态门禁总入口。                         |
 | `scripts/ci/check-backend-validation-coverage.sh` | 校验后端验证覆盖证据。                             |
+| `scripts/ci/nightly-sim-gate.mjs`                 | 按北京时间调度档关联 nightly 镜像与后端 sim。      |
 | `scripts/ci/resolve-backend-openapi.sh`           | 解析配对后端 OpenAPI 契约来源。                    |
 | `scripts/ci/run-gate.sh`                          | 按分组与模式执行门禁并传播结果。                   |
 | `scripts/ci/gitleaks-scan.sh`                     | 在可解析的提交范围内运行 gitleaks。                |

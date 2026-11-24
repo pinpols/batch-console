@@ -5,8 +5,10 @@ name: Frontend / Build and publish image
 # tag(v*) push:等待同 commit 的 staging-gate 成功后，只给既有 sha 镜像增加 release tag，
 # 不重新构建，保证 staging 验收与发布制品 digest 一致。
 #
-# nightly:按北京时间前一日的前后端代码变更决定是否构建；后端有变更时，
-#          必须等待配对后端 daily-sim-strict-validation 的 sim-and-strict 成功。
+# nightly:按本次 19:00 UTC 调度所属的北京时间前一日检查前后端代码变更。
+#          后端有变更时，只接受该日前端所等待的后端 13:31 UTC 档期
+#          （含延迟跨过 UTC 或北京时间午夜的启动）以及该北京时间当日的手动重跑。
+#          sim-and-strict 必须成功且覆盖目标提交；更早的成功结果不能放行。
 # 注意:main push/tag 发布路径不改变；feature 分支可用 workflow_dispatch 手动验证。
 on:
   push:
@@ -78,6 +80,11 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
+      - name: Set up Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version-file: '.node-version'
+
       - name: Check daily changes and backend sim-strict
         id: gate
         env:
@@ -88,79 +95,93 @@ jobs:
         run: |
           set -euo pipefail
 
-          validation_day=$(TZ=Asia/Shanghai date -d 'yesterday' +%F)
-          next_day=$(TZ=Asia/Shanghai date -d "${validation_day} +1 day" +%F)
-          since="${validation_day} 00:00:00 +0800"
-          until="${next_day} 00:00:00 +0800"
-
-          has_code_changes() {
+          code_changed() {
             local repo="$1"
-            git -C "$repo" log --since="$since" --until="$until" \
-              --format= --name-only --no-renames HEAD \
-              | awk 'NF && $0 !~ /(^|\/)([^/]+\.(md|rst)|LICENSE|NOTICE)$/ { found=1 } END { exit found ? 0 : 1 }'
+            set +e
+            node scripts/ci/nightly-sim-gate.mjs changed --repo "$repo" --since "$since" --until "$until"
+            local status=$?
+            set -e
+            if [[ "$status" -eq 0 ]]; then
+              return 0
+            fi
+            if [[ "$status" -eq 1 ]]; then
+              return 1
+            fi
+            exit "$status"
           }
+
+          now=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          plan=$(node scripts/ci/nightly-sim-gate.mjs plan --now "$now")
+          validation_day=$(jq -r '.validationDay' <<<"$plan")
+          since=$(jq -r '.since' <<<"$plan")
+          until=$(jq -r '.until' <<<"$plan")
+          list_since=$(jq -r '.listSince' <<<"$plan")
 
           frontend_changed=false
           backend_changed=false
-          has_code_changes . && frontend_changed=true || true
-          has_code_changes backend-sim-source && backend_changed=true || true
+          code_changed . && frontend_changed=true || true
+          code_changed backend-sim-source && backend_changed=true || true
 
           target_sha=$(git -C backend-sim-source rev-parse HEAD)
           echo "backend_sha=${target_sha}" >> "$GITHUB_OUTPUT"
           echo "validation day: ${validation_day}"
+          echo "code window: ${since} .. ${until}"
+          echo "backend slot list since: ${list_since}"
           echo "frontend code changed: ${frontend_changed}"
           echo "backend code changed: ${backend_changed}"
 
-          if [[ "$frontend_changed" == false && "$backend_changed" == false ]]; then
-            echo "当天没有前后端代码/配置变更，跳过 nightly 前端镜像构建。"
-            echo 'should_build=false' >> "$GITHUB_OUTPUT"
+          if [[ "$backend_changed" == false ]]; then
+            if [[ "$frontend_changed" == false ]]; then
+              echo "当天没有前后端代码/配置变更，跳过 nightly 前端镜像构建。"
+              echo 'should_build=false' >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            echo 'should_build=true' >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
-          if [[ "$backend_changed" == true ]]; then
-            echo "等待 ${BACKEND_REPOSITORY} 当天 daily sim-strict 完成..."
-            sim_run_id=''
-            jq_filter=$(printf '.[] | select(.createdAt | startswith("%s")) | .databaseId' "$validation_day")
-            for _ in $(seq 1 60); do
-              sim_run_id=$(gh run list --repo "$BACKEND_REPOSITORY" \
-                --workflow "$BACKEND_WORKFLOW" --limit 30 \
-                --json databaseId,createdAt \
-                --jq "$jq_filter" \
-                2>/dev/null | head -n 1 || true)
-              [[ -n "$sim_run_id" ]] && break
+          echo "等待 ${BACKEND_REPOSITORY} 验证日 ${validation_day} 的 daily sim-strict..."
+          decision=''
+          for _ in $(seq 1 60); do
+            if ! runs=$(gh run list --repo "$BACKEND_REPOSITORY" \
+              --workflow "$BACKEND_WORKFLOW" --limit 50 \
+              --created ">=${list_since}" \
+              --json databaseId,createdAt,event,status,conclusion,headSha,attempt,url); then
+              echo "查询后端 sim run 失败，稍后重试。"
               sleep 60
-            done
-            [[ -n "$sim_run_id" ]] || {
-              echo "::error::未找到后端 ${validation_day} 的 daily sim-strict run。"
-              exit 1
-            }
-
-            for _ in $(seq 1 60); do
-              job_state=$(gh api --paginate \
-                "repos/${BACKEND_REPOSITORY}/actions/runs/${sim_run_id}/jobs?per_page=100" \
-                --jq '.jobs[] | select(.name == "sim-and-strict" or .name == "Run simulation and strict validation") | [.status, .conclusion] | @tsv' \
-                2>/dev/null | tail -n 1 || true)
-              status=$(printf '%s' "$job_state" | cut -f1)
-              conclusion=$(printf '%s' "$job_state" | cut -f2)
-              if [[ "$status" == completed ]]; then
-                [[ "$conclusion" == success ]] || {
-                  echo "::error::后端 daily sim-strict 未成功: run=${sim_run_id}, conclusion=${conclusion:-unknown}"
-                  exit 1
-                }
-                break
-              fi
+              continue
+            fi
+            if ! enriched=$(node scripts/ci/nightly-sim-gate.mjs enrich --repo "$BACKEND_REPOSITORY" <<<"$runs"); then
+              echo "读取后端 sim job 失败，稍后重试。"
               sleep 60
-            done
+              continue
+            fi
+            decision=$(node scripts/ci/nightly-sim-gate.mjs decide \
+              --now "$now" \
+              --target-sha "$target_sha" \
+              --frontend-changed "$frontend_changed" \
+              --backend-changed "$backend_changed" \
+              --repo backend-sim-source <<<"$enriched")
+            action=$(jq -r '.action' <<<"$decision")
+            echo "sim gate $(jq -r '[.action, .code, (.runId // "none")] | @tsv' <<<"$decision")"
+            [[ "$action" == wait ]] || break
+            sleep 60
+          done
 
-            [[ "$status" == completed && "$conclusion" == success ]] || {
-              echo "::error::后端 daily sim-strict 等待超时: run=${sim_run_id}"
-              exit 1
-            }
-
-            validated_sha=$(gh run view "$sim_run_id" --repo "$BACKEND_REPOSITORY" --json headSha --jq '.headSha')
-            bash scripts/ci/check-backend-validation-coverage.sh backend-sim-source "$validated_sha" "$target_sha"
+          if [[ -z "$decision" ]]; then
+            echo "::error::查询后端 ${validation_day} daily sim-strict 失败。"
+            exit 1
           fi
-
+          action=$(jq -r '.action' <<<"$decision")
+          if [[ "$action" == wait ]]; then
+            decision=$(node scripts/ci/nightly-sim-gate.mjs conclude <<<"$decision")
+            action=$(jq -r '.action' <<<"$decision")
+          fi
+          if [[ "$action" != build ]]; then
+            echo "::error::$(jq -r '.message' <<<"$decision")"
+            exit 1
+          fi
+          jq -r '.message' <<<"$decision"
           echo 'should_build=true' >> "$GITHUB_OUTPUT"
 
   release-acceptance:

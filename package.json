@@ -26,7 +26,7 @@
     "test:baseline-expansion": "node --test scripts/tests/governance-baseline-expansion.test.mjs scripts/tests/staging-e2e-config.test.mjs scripts/tests/playwright-release-report.test.mjs",
     "check:test-fixture-sources": "node scripts/check-test-fixture-sources.mjs",
     "check:ui-complexity": "node scripts/check-ui-complexity.mjs",
-    "check:workflows": "node scripts/check-workflows.mjs && node --test scripts/tests/backend-validation-coverage.test.mjs",
+    "check:workflows": "node scripts/check-workflows.mjs && node --test scripts/tests/backend-validation-coverage.test.mjs scripts/tests/nightly-sim-gate.test.mjs",
     "check:shell": "bash scripts/check-shell-scripts.sh",
     "check:shell:portability": "node scripts/check-shell-portability.mjs",
     "check:script:metadata": "node scripts/check-script-metadata.mjs",
