@@ -8,7 +8,7 @@ name: Frontend / Build and publish image
 # nightly:按本次 19:00 UTC 调度所属的北京时间前一日检查前后端代码变更。
 #          后端有变更时，只接受该日前端所等待的后端 13:31 UTC 档期
 #          （含延迟跨过 UTC 或北京时间午夜的启动）以及该北京时间当日的手动重跑。
-#          sim-and-strict 必须成功且覆盖目标提交；更早的成功结果不能放行。
+#          sim-and-strict 必须成功且覆盖验证日结束前的后端主干提交，构建固定到实际验证的 SHA。
 # 注意:main push/tag 发布路径不改变；feature 分支可用 workflow_dispatch 手动验证。
 on:
   push:
@@ -122,8 +122,9 @@ jobs:
           code_changed . && frontend_changed=true || true
           code_changed backend-sim-source && backend_changed=true || true
 
-          target_sha=$(git -C backend-sim-source rev-parse HEAD)
-          echo "backend_sha=${target_sha}" >> "$GITHUB_OUTPUT"
+          target_sha=$(node scripts/ci/nightly-sim-gate.mjs snapshot \
+            --repo backend-sim-source --before "$until")
+          echo "target backend commit: ${target_sha}"
           echo "validation day: ${validation_day}"
           echo "code window: ${since} .. ${until}"
           echo "backend slot list since: ${list_since}"
@@ -136,6 +137,7 @@ jobs:
               echo 'should_build=false' >> "$GITHUB_OUTPUT"
               exit 0
             fi
+            echo "backend_sha=${target_sha}" >> "$GITHUB_OUTPUT"
             echo 'should_build=true' >> "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -144,7 +146,7 @@ jobs:
           decision=''
           for _ in $(seq 1 60); do
             if ! runs=$(gh run list --repo "$BACKEND_REPOSITORY" \
-              --workflow "$BACKEND_WORKFLOW" --limit 50 \
+              --workflow "$BACKEND_WORKFLOW" --branch main --limit 50 \
               --created ">=${list_since}" \
               --json databaseId,createdAt,event,status,conclusion,headSha,attempt,url); then
               echo "查询后端 sim run 失败，稍后重试。"
@@ -182,6 +184,8 @@ jobs:
             exit 1
           fi
           jq -r '.message' <<<"$decision"
+          validated_sha=$(jq -er '.headSha' <<<"$decision")
+          echo "backend_sha=${validated_sha}" >> "$GITHUB_OUTPUT"
           echo 'should_build=true' >> "$GITHUB_OUTPUT"
 
   release-acceptance:

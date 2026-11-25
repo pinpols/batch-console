@@ -2,6 +2,7 @@
 // 用途：按北京时间调度档关联 nightly 前端镜像与后端 daily sim-strict。
 // 用法：node scripts/ci/nightly-sim-gate.mjs plan --now <ISO>
 //       node scripts/ci/nightly-sim-gate.mjs changed --repo <目录> --since <时间> --until <时间>
+//       node scripts/ci/nightly-sim-gate.mjs snapshot --repo <目录> --before <时间>
 //       node scripts/ci/nightly-sim-gate.mjs enrich --repo <owner/name>
 //       node scripts/ci/nightly-sim-gate.mjs decide --now <ISO> --target-sha <sha> --frontend-changed <bool> --backend-changed <bool> [--repo <目录>]
 //       node scripts/ci/nightly-sim-gate.mjs conclude
@@ -113,12 +114,25 @@ export function frontendValidationPlan(now) {
   }
 }
 
+function lastSecondBefore(instant) {
+  return new Date(asDate(instant).getTime() - 1000).toISOString()
+}
+
+function snapshotBefore(repo, instant) {
+  const sha = execFileSync('git', [
+    '-C', repo, 'rev-list', '--first-parent', '--max-count=1',
+    `--before=${lastSecondBefore(instant)}`, 'HEAD',
+  ], { encoding: 'utf8' }).trim()
+  if (!sha) throw new Error(`缺少 ${instant} 之前的后端主干提交`)
+  return sha
+}
+
 export function hasRelevantCodeChanges(repo, since, until) {
   const output = execFileSync('git', [
     '-C', repo,
     'log',
     `--since=${since}`,
-    `--until=${until}`,
+    `--until=${lastSecondBefore(until)}`,
     '--format=',
     '--name-only',
     '--no-renames',
@@ -289,6 +303,14 @@ function enrichRuns(runs, repository) {
 }
 
 function coversWithRepo(repo, validated, target) {
+  const isAncestor = (older, newer) => spawnSync('git', [
+    '-C', repo, 'merge-base', '--is-ancestor', older, newer,
+  ], { stdio: 'ignore' }).status === 0
+
+  if (!validated || !isAncestor(validated, 'HEAD')) return false
+  // 调度延迟后，实际验证的主干提交可能比验证日快照更新。镜像使用实际验证的提交。
+  if (isAncestor(target, validated)) return true
+
   const resultStatus = spawnSync('bash', [
     resolve('scripts/ci/check-backend-validation-coverage.sh'),
     repo,
@@ -307,6 +329,10 @@ function main() {
   if (command === 'changed') {
     const changed = hasRelevantCodeChanges(option('--repo'), option('--since'), option('--until'))
     return changed ? 0 : 1
+  }
+  if (command === 'snapshot') {
+    process.stdout.write(`${snapshotBefore(option('--repo'), option('--before'))}\n`)
+    return 0
   }
   if (command === 'enrich') {
     const runs = JSON.parse(readStdin() || '[]')

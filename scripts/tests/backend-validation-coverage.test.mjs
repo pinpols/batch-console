@@ -1,9 +1,13 @@
-import { test } from 'node:test'
+import { before, test } from 'node:test'
 import { strict as assert } from 'node:assert'
 import { execFileSync, spawnSync } from 'node:child_process'
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
+
+import { clearInheritedGitEnvironment } from './helpers/git-environment.mjs'
+
+before(clearInheritedGitEnvironment)
 
 const script = resolve('scripts/ci/check-backend-validation-coverage.sh')
 

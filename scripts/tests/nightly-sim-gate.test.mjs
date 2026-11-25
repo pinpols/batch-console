@@ -1,4 +1,4 @@
-import { test } from 'node:test'
+import { before, test } from 'node:test'
 import { strict as assert } from 'node:assert'
 import { execFileSync } from 'node:child_process'
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
@@ -13,6 +13,10 @@ import {
   hasRelevantCodeChanges,
   scheduleValidationDay,
 } from '../ci/nightly-sim-gate.mjs'
+
+import { clearInheritedGitEnvironment } from './helpers/git-environment.mjs'
+
+before(clearInheritedGitEnvironment)
 
 const script = resolve('scripts/ci/nightly-sim-gate.mjs')
 const TARGET = 'df5a875673d5ddd970e8d7468d53450eb9f15a7b'
@@ -318,9 +322,16 @@ test('代码窗口只认北京时间验证日，跨日提交与纯文档不触�
     assert.equal(hasRelevantCodeChanges(first.dir, plan.since, plan.until), false)
     first.commit('inside.java', 'inside', '2026-11-22T16:00:00Z')
     assert.equal(hasRelevantCodeChanges(first.dir, plan.since, plan.until), true)
+    first.commit('last.java', 'last', '2026-11-23T15:59:59Z')
+    const last = first.git(['rev-parse', 'HEAD']).trim()
+    first.commit('midnight.java', 'next day', '2026-11-23T16:00:00Z')
+    const snapshot = execFileSync(process.execPath, [
+      script, 'snapshot', '--repo', first.dir, '--before', plan.until,
+    ], { encoding: 'utf8' }).trim()
+    assert.equal(snapshot, last)
 
     second.git(['init'])
-    second.commit('after.java', 'after', '2026-11-23T16:00:01Z')
+    second.commit('after.java', 'after', '2026-11-23T16:00:00Z')
     assert.equal(hasRelevantCodeChanges(second.dir, plan.since, plan.until), false)
   } finally {
     rmSync(first.dir, { recursive: true, force: true })
@@ -336,7 +347,7 @@ test('plan CLI 返回同一套验证日、代码窗口和后端档期', () => {
   assert.deepEqual(plan, frontendValidationPlan('2026-11-24T04:15:00Z'))
 })
 
-test('decide CLI 用覆盖脚本拒绝未覆盖目标的成功 sim', () => {
+test('decide CLI 拒绝未覆盖目标的验证，并接受覆盖同日目标的更新主干提交', () => {
   const dir = mkdtempSync(join(tmpdir(), 'nightly-sim-coverage-'))
   const git = (args, env = {}) => execFileSync('git', ['-C', dir, ...args], {
     stdio: 'pipe',
@@ -372,6 +383,15 @@ test('decide CLI 用覆盖脚本拒绝未覆盖目标的成功 sim', () => {
     }))
     assert.equal(runDecide(base).code, 'SIM_STALE')
     assert.equal(runDecide(target).code, 'SIM_COVERS')
+    writeFileSync(join(dir, 'app.java'), 'changed after midnight')
+    git(['commit', '-am', 'after midnight'])
+    const validated = git(['rev-parse', 'HEAD']).trim()
+    const decision = runDecide(validated)
+    assert.equal(decision.code, 'SIM_COVERS')
+    assert.equal(decision.headSha, validated)
+
+    git(['switch', '--detach', target])
+    assert.equal(runDecide(validated).code, 'SIM_STALE')
   } finally {
     rmSync(dir, { recursive: true, force: true })
   }
