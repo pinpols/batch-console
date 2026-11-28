@@ -22,8 +22,10 @@ import maintenanceSettings from './maintenanceSettings.en-US.ts'
 import sidebarOperationalStatus from './sidebarOperationalStatus.en-US.ts'
 
 import mobile from './mobile.en-US.ts'
+import iaCenters from './iaCenters.json' with { type: 'json' }
 
 const messages: Messages = {
+  ...iaCenters.enUS,
   dailyProgress,
   opsToday,
   dependencyWaits,
@@ -986,10 +988,14 @@ const messages: Messages = {
     moreTools: 'More tools',
     toolsMenu: 'Tools menu',
     operationsToolkit: 'Operations tools',
-    menuJobMonitoring: 'Job monitoring policies',
+    menuJobMonitoring: 'Alert policies',
     menuNotificationDelivery: 'Notifications & delivery',
     menuConfigurationImport: 'Configuration import',
     menuFreshnessPolicies: 'Asset freshness policies',
+    subGroup: {
+      schedulingRuntime: 'Scheduling runtime',
+      schedulingRules: 'Resource rules',
+    },
     foldSidebar: 'Collapse sidebar',
     expandSidebar: 'Expand sidebar',
     openDocs: 'System documentation',
@@ -1001,6 +1007,7 @@ const messages: Messages = {
     switchToThemeDark: 'Switch to dark theme',
     switchToThemeSystem: 'Match system theme',
     myAccount: 'My account',
+    myApiKeys: 'My API keys',
     permissionAudit: 'Permission audit',
     onboardingCenter: 'Activation center',
     interfaceTour: 'Interface tour',
@@ -1241,8 +1248,12 @@ const messages: Messages = {
       title: 'Alert routing (reserved)',
       description: 'View reserved routing records; runtime alert delivery does not consume them.',
     },
+    observabilityAudit: {
+      title: 'Audit',
+      description: 'Search console operation audits and file operation audits in one place.',
+    },
     observabilityAudits: {
-      title: 'Audit log',
+      title: 'File audit',
       description: 'Query platform key actions and trace user/API behavior.',
     },
     observabilityOperationAudits: {
@@ -1323,6 +1334,11 @@ const messages: Messages = {
       title: 'My account',
       description: 'Review the signed-in identity and manage account security.',
     },
+    systemSettings: {
+      title: 'Platform settings',
+      description:
+        'Access system parameters, tag management, atomic task types, maintenance settings, and shards.',
+    },
     systemParameters: {
       title: 'System parameters',
       description: 'Maintain system-level key-value params for platform switches.',
@@ -1345,9 +1361,8 @@ const messages: Messages = {
       description: 'Diagnose Kafka, Outbox and cluster health.',
     },
     opsShardCatalog: {
-      title: 'Shard catalog',
-      description:
-        'Register the biz database shard topology (location / status) as the source of truth for tenant placement.',
+      title: 'Shards',
+      description: 'Manage biz database shard catalog and tenant placement mappings.',
     },
     opsTenantPlacements: {
       title: 'Tenant placements',
@@ -1396,6 +1411,8 @@ const messages: Messages = {
     },
   },
   myAccount: {
+    tabAccount: 'Account & security',
+    tabPermissions: 'Permissions & menus',
     sectionTitle: 'Current account',
     changePasswordTitle: 'Change password',
     changePasswordDescription: 'Update the password for your account.',
@@ -3182,44 +3199,6 @@ const messages: Messages = {
     colTrace: 'Trace ID',
     colParams: 'Params snapshot',
     colError: 'Error',
-  },
-  triggerList: {
-    pausedHint:
-      'Paused or unregistered triggers stop firing and show as "Scheduling off"; choose Register to turn scheduling back on.',
-    degradedEmpty:
-      'The trigger service is unavailable. This list may be incomplete; refresh later.',
-    workflowCodeLabel: 'Workflow Code',
-    workflowCodePlaceholder: 'Search Workflow Code',
-    colWorkflowCode: 'Workflow Code',
-    colType: 'Type',
-    colStatus: 'Status',
-    colCron: 'Cron expression',
-    colNextFire: 'Next fire',
-    colActions: 'Actions',
-    actionRegister: 'Register',
-    actionUnregister: 'Unregister',
-    actionPause: 'Pause',
-    actionResume: 'Resume',
-    registerTitle: 'Confirm register',
-    registerText: 'Register trigger {code}?',
-    registerConfirmVerb: 'Register',
-    confirmTarget: 'trigger "{code}"',
-    registerConfirmConsequence: 'The trigger will be registered with the scheduler',
-    registerConfirmButton: 'Confirm register',
-    registerSuccess: 'Registered',
-    unregisterTitle: 'Confirm unregister',
-    unregisterText: 'Unregister trigger {code}?',
-    unregisterConfirmVerb: 'Unregister',
-    unregisterConfirmConsequence: 'The trigger will be removed from the scheduler',
-    unregisterConfirmButton: 'Confirm unregister',
-    unregisterSuccess: 'Unregistered',
-    pauseTitle: 'Confirm pause',
-    pauseText: 'Pause trigger {code}?',
-    pauseConfirmVerb: 'Pause',
-    pauseConfirmConsequence: 'While paused, this trigger no longer starts runs automatically.',
-    pauseConfirmButton: 'Confirm pause',
-    pauseSuccess: 'Paused',
-    resumeSuccess: 'Resumed',
   },
   apiKeyList: {
     scopeWorkerRead: 'Worker read',
@@ -5886,16 +5865,9 @@ const messages: Messages = {
     tabSync: 'Config sync',
     tabSyncLogs: 'Sync logs',
   },
-  notificationManagement: {
-    tabRoutePreview: 'Route preview',
-    tabTerminalDeliveries: 'Terminal delivery recovery',
-    eventCatalogAction: 'Event catalog',
-    tabChannels: 'Channels',
-    tabRules: 'Subscriptions',
-    tabWebhooks: 'Webhooks',
-    tabDeliveryLogs: 'Delivery logs',
-  },
   selfServicePanel: {
+    viewAllInAudit: 'View all in Audit',
+    cardCtaDirectOperate: 'Open directly',
     navAria: 'Self-service entries',
     tabQuota: 'My quota usage',
     tabQuotaChange: 'Quota changes',

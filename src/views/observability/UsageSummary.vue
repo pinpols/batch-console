@@ -1,7 +1,7 @@
 <template>
-  <PageContainer>
-    <PageHeader />
-    <RelatedPageLinks :paths="['/reports', '/ops/capacity-profile']" />
+  <component :is="embedded ? 'div' : PageContainer" :class="{ 'embedded-tab-pane': embedded }">
+    <PageHeader v-if="!embedded" />
+    <RelatedPageLinks v-if="!embedded" :paths="['/reports', '/ops/capacity-profile']" />
 
     <div class="usage-filters">
       <el-form :inline="true" @submit.prevent="load">
@@ -153,10 +153,11 @@
       />
       <p class="usage-note">{{ t('usageSummary.disclaimer') }}</p>
     </template>
-  </PageContainer>
+  </component>
 </template>
 
 <script setup lang="ts">
+  defineProps<{ embedded?: boolean }>()
   import '@/charts/echarts'
   import dayjs from 'dayjs'
   import { computed, ref, watch } from 'vue'

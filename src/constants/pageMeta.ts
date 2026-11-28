@@ -112,8 +112,8 @@ export const pageMetaByPath = {
     description: '查看告警事件,并执行确认、静默和关闭。',
   },
   '/observability/job-monitoring-policies': {
-    title: '作业监控策略',
-    description: '按作业维护耗时过久、到期未启动和到期未结束的告警阈值与等级。',
+    title: '告警策略',
+    description: '集中维护作业监控阈值策略与资产新鲜度 SLA 策略。',
   },
   '/observability/alert-routings': {
     title: '告警路由（预留）',
@@ -127,6 +127,10 @@ export const pageMetaByPath = {
   '/observability/lineage': {
     title: '血缘证据',
     description: '按 result_version 或 businessKey 查询证据链,同时校验资产分区就绪状态。',
+  },
+  '/observability/audit': {
+    title: '审计',
+    description: '集中检索控制台操作审计与文件操作审计记录。',
   },
   '/observability/audits': {
     title: '文件审计',
@@ -197,6 +201,10 @@ export const pageMetaByPath = {
     title: '我的账户',
     description: '查看当前登录身份并管理账号安全。',
   },
+  '/system/settings': {
+    title: '平台设置',
+    description: '集中进入系统参数、标签管理、原子节点配置、维护设置与分片管理。',
+  },
   '/system/parameters': {
     title: '系统参数',
     description: '维护系统级参数键值,控制平台运行开关。',
@@ -218,8 +226,8 @@ export const pageMetaByPath = {
     description: '排查 Kafka、Outbox 和集群健康问题。',
   },
   '/ops/shard-catalog': {
-    title: '分片目录',
-    description: '登记 biz 数据库分片拓扑(位置 / 状态),作为租户分片指派的权威源。',
+    title: '分片管理',
+    description: '集中维护 biz 数据库分片目录与租户分片指派映射。',
   },
   '/ops/tenant-placements': {
     title: '租户分片',

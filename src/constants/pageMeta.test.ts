@@ -18,7 +18,7 @@ describe('applyPageMetaToRoutes', () => {
 
   it('registers the independent job monitoring policy page metadata', () => {
     expect(pageMetaByPath['/observability/job-monitoring-policies']).toMatchObject({
-      title: '作业监控策略',
+      title: '告警策略',
     })
   })
 

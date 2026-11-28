@@ -478,7 +478,7 @@
   import { isScheduled } from '@/utils/workflowScheduleValidation'
   import WorkflowTriggerDialog from './WorkflowTriggerDialog.vue'
   import { computed, reactive, ref, watch } from 'vue'
-  import { useRouter } from 'vue-router'
+  import { useRoute, useRouter } from 'vue-router'
   import { useDrawerAutoClose } from '@/composables/useDrawerAutoClose'
   import { useResponsive } from '@/composables/useResponsive'
   import { useI18n } from 'vue-i18n'
@@ -539,6 +539,7 @@
     WorkflowDefinitionDetailResponse,
   } from '@/types/console-api'
 
+  const route = useRoute()
   const router = useRouter()
   const { isMobile } = useResponsive()
   const tenant = useTenantStore()
@@ -642,7 +643,7 @@
   )
   const filters = reactive({
     tenantId: tenant.tenantId,
-    workflowCode: '',
+    workflowCode: typeof route.query.workflowCode === 'string' ? route.query.workflowCode : '',
     workflowName: '',
     enabled: undefined as boolean | undefined,
     workflowType: '',

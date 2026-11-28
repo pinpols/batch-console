@@ -1,6 +1,6 @@
 <template>
-  <PageContainer>
-    <PageHeader>
+  <component :is="embedded ? 'div' : PageContainer" :class="{ 'embedded-tab-pane': embedded }">
+    <PageHeader v-if="!embedded">
       <template #actions>
         <el-switch
           v-model="autoRefreshOn"
@@ -13,6 +13,17 @@
         </el-button>
       </template>
     </PageHeader>
+    <div v-else class="embedded-tab-actions">
+      <el-switch
+        v-model="autoRefreshOn"
+        :active-text="t('workerFingerprintBoard.autoRefreshOn')"
+        :inactive-text="t('workerFingerprintBoard.autoRefreshOff')"
+        inline-prompt
+      />
+      <el-button :icon="Refresh" :loading="loading" @click="load">
+        {{ t('common.refresh') }}
+      </el-button>
+    </div>
 
     <SectionCard>
       <template #header>
@@ -182,10 +193,11 @@
         </el-table-column>
       </ProTable>
     </SectionCard>
-  </PageContainer>
+  </component>
 </template>
 
 <script setup lang="ts">
+  defineProps<{ embedded?: boolean }>()
   import { ref, computed } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { RefreshCw as Refresh } from '@lucide/vue'

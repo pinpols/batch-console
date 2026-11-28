@@ -37,11 +37,7 @@
 
     <!-- 还原设计:tabs 与内容直铺底色,无外层卡片壳 -->
     <div>
-      <el-tabs
-        v-model="activeTab"
-        class="pill-tabs"
-        :class="{ 'wk-tabs--worker-only': !canUseWorkerChannelFallback }"
-      >
+      <el-tabs v-model="activeTab" class="pill-tabs">
         <el-tab-pane :label="t('workerManagement.tabWorkers')" name="workers">
           <ListPageQueryBar
             :model="workerFilters"
@@ -379,6 +375,12 @@
             </el-table-column>
           </ProTable>
         </el-tab-pane>
+        <el-tab-pane :label="t('page.opsWorkerFingerprints.title')" name="fingerprints" lazy>
+          <WorkerFingerprintBoard embedded />
+        </el-tab-pane>
+        <el-tab-pane :label="t('page.opsCustomTaskTypes.title')" name="customTaskTypes" lazy>
+          <CustomTaskTypeList embedded />
+        </el-tab-pane>
       </el-tabs>
     </div>
 
@@ -493,7 +495,9 @@
   const { t, te } = useI18n({ useScope: 'global' })
   import { confirmDanger } from '@/composables/useDangerConfirm'
   import { useQueryClient } from '@tanstack/vue-query'
-  import { useRoute } from 'vue-router'
+  import { useRoute, useRouter } from 'vue-router'
+  import WorkerFingerprintBoard from '@/views/ops/WorkerFingerprintBoard.vue'
+  import CustomTaskTypeList from '@/views/ops/CustomTaskTypeList.vue'
   import { useListFilterFeedback } from '@/composables/useListFilterFeedback'
   import { useResponsive } from '@/composables/useResponsive'
 
@@ -552,6 +556,12 @@
   const actionScope = useTenantRequestScope()
   const channelScope = useTenantRequestScope()
   const queryClient = useQueryClient()
+  const router = useRouter()
+  const WORKER_TABS = ['workers', 'channels', 'fingerprints', 'customTaskTypes'] as const
+  function resolveWorkerTab(value: unknown): string {
+    if (value === 'channels' && !canUseWorkerChannelFallback.value) return 'workers'
+    return (WORKER_TABS as readonly string[]).includes(String(value)) ? String(value) : 'workers'
+  }
   const activeTab = ref('workers')
   const canReadWorkers = computed(
     () =>
@@ -1082,7 +1092,9 @@
     ],
     () => {
       channelScope.begin()
-      if (!canUseWorkerChannelFallback.value) activeTab.value = 'workers'
+      if (!canUseWorkerChannelFallback.value && activeTab.value === 'channels') {
+        activeTab.value = 'workers'
+      }
       allChannelRows.value = []
       channelRows.value = []
       channelTypeOptions.value = []
@@ -1107,6 +1119,20 @@
     },
     { immediate: true },
   )
+  watch(
+    () => route.query.tab,
+    (tab) => {
+      const next = resolveWorkerTab(tab)
+      if (next !== activeTab.value) activeTab.value = next
+    },
+    { immediate: true },
+  )
+  watch(activeTab, (tab) => {
+    if (tab === 'workers' && !route.query.tab) return
+    if (route.query.tab !== tab && typeof router?.replace === 'function') {
+      void router.replace({ query: { ...route.query, tab } })
+    }
+  })
 </script>
 
 <style scoped src="./WorkerManagement.css"></style>

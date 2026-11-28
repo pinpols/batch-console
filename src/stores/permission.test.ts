@@ -102,23 +102,20 @@ describe('permission navigation filtering', () => {
       '/workflow/designer',
       '/config/tenant-package',
     ])
-    expect(scheduling?.children.map((item) => item.path)).toContain('/ops/capacity-profile')
-    expect(scheduling?.children.map((item) => item.path)).toContain('/ops/asset-freshness')
-
-    const runs = groupFor('monitor')?.children.find((item) => item.path === '/runs')
-    expect(runs?.hidden).toBe(true)
+    expect(scheduling?.children.map((item) => item.path)).toContain('/scheduler/snapshot')
+    expect(scheduling?.children.map((item) => item.path)).toContain('/governance/quota')
+    expect(groupFor('monitor')?.children.find((item) => item.path === '/runs')).toBeUndefined()
 
     for (const path of [
       '/monitor/job-steps',
       '/files/pipeline-obs',
       '/files/channels',
-      '/observability/operation-audits',
-      '/ops/diagnostic',
       '/workflow/designer',
       '/config/tenant-package',
       '/files/arrival-groups',
       '/ops/batch-day-replay',
-      '/system/event-catalog',
+      '/system/maintenance',
+      '/ops/shard-catalog',
     ]) {
       const item = navigationGroups
         .flatMap((group) => group.children)
@@ -129,13 +126,17 @@ describe('permission navigation filtering', () => {
     const visiblePaths = navigationGroups.flatMap((group) =>
       group.children.filter((item) => !item.hidden).map((item) => item.path),
     )
-    expect(visiblePaths).toHaveLength(31)
-    expect(visiblePaths).toContain('/system/maintenance')
+    expect(visiblePaths).toHaveLength(32)
+    expect(visiblePaths).toContain('/system/settings')
+    expect(visiblePaths).toContain('/observability/audit')
+    expect(visiblePaths).toContain('/ops/diagnostic')
+    expect(visiblePaths).toContain('/governance/quota')
+    expect(visiblePaths).not.toContain('/system/maintenance')
     expect(new Set(visiblePaths).size).toBe(visiblePaths.length)
 
     const hiddenPaths = navigationGroups.flatMap((group) =>
       group.children.filter((item) => item.hidden).map((item) => item.path),
     )
-    expect(hiddenPaths).toHaveLength(25)
+    expect(hiddenPaths).toHaveLength(16)
   })
 })

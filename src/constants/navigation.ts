@@ -45,7 +45,6 @@ import {
   // 按设计源逐项对齐的专用图标(从 .dc.html DOM 抠出的每个 nav 项真实图标)
   Check,
   Zap,
-  CirclePlay,
   Play,
   Server,
   Building2,
@@ -67,6 +66,8 @@ export interface NavigationItem {
   menuAccessFallbacks?: string[]
   /** 隐藏出现在侧边栏,但 Command Palette / 内嵌跳转 仍可达 */
   hidden?: boolean
+  /** 侧栏同组内的小标题标识（对应 nav.subGroup.<key>） */
+  subGroup?: string
   /**
    * 显式 i18n 标题 key(覆盖按 path 推导的 page.<pathKey>.title)。
    * path 带 query(如 Catch-up = /approvals?tab=catch-up)且标题不等同基础路由时，
@@ -160,14 +161,6 @@ const navigationGroupsByKey = {
         minRole: 'VIEWER',
         icon: Promotion,
       },
-      // 保留兼容深链和命令面板入口,侧栏统一使用工作流运行监控入口。
-      {
-        title: pageTitle('/runs'),
-        path: '/runs',
-        minRole: 'VIEWER',
-        icon: CirclePlay,
-        hidden: true,
-      },
       // 「执行日志」入口改为「综合查询」直达(用户反馈:点执行日志落到标题为综合查询的
       // tab 页,导航高亮与页标题对不上);/logs 路由 redirect 保留兼容旧深链。
       {
@@ -194,7 +187,6 @@ const navigationGroupsByKey = {
         path: '/ops/diagnostic',
         minRole: 'ADMIN',
         icon: Tools,
-        hidden: true,
       },
       {
         title: pageTitle('/observability/lineage'),
@@ -222,7 +214,7 @@ const navigationGroupsByKey = {
         path: '/observability/job-monitoring-policies',
         titleKey: 'nav.menuJobMonitoring',
         minRole: 'OPERATOR',
-        authorities: ['ROLE_ADMIN', 'ROLE_TENANT_ADMIN'],
+        menuAccessFallbacks: ['/ops/asset-freshness'],
         icon: Timer,
       },
       {
@@ -332,28 +324,32 @@ const navigationGroupsByKey = {
     minRole: 'VIEWER',
     children: [
       {
-        title: pageTitle('/workers/management'),
-        path: '/workers/management',
-        minRole: 'OPERATOR',
-        icon: Server,
-      },
-      {
-        title: pageTitle('/system/triggers'),
-        path: '/system/triggers',
-        minRole: 'OPERATOR',
-        icon: Timer,
-      },
-      {
         title: pageTitle('/scheduler/snapshot'),
         path: '/scheduler/snapshot',
         minRole: 'VIEWER',
+        subGroup: 'schedulingRuntime',
         icon: TrendCharts,
       },
       {
         title: pageTitle('/scheduler/batch-days'),
         path: '/scheduler/batch-days',
         minRole: 'VIEWER',
+        subGroup: 'schedulingRuntime',
         icon: CalendarCheck,
+      },
+      {
+        title: pageTitle('/system/triggers'),
+        path: '/system/triggers',
+        minRole: 'OPERATOR',
+        subGroup: 'schedulingRuntime',
+        icon: Timer,
+      },
+      {
+        title: pageTitle('/workers/management'),
+        path: '/workers/management',
+        minRole: 'OPERATOR',
+        subGroup: 'schedulingRuntime',
+        icon: Server,
       },
       {
         title: pageTitle('/ops/batch-day-replay'),
@@ -363,75 +359,33 @@ const navigationGroupsByKey = {
         hidden: true,
       },
       {
-        title: pageTitle('/ops/capacity-profile'),
-        path: '/ops/capacity-profile',
-        minRole: 'VIEWER',
-        icon: PieChart,
-        hidden: true,
-      },
-      {
-        title: pageTitle('/ops/asset-freshness'),
-        path: '/ops/asset-freshness',
-        titleKey: 'nav.menuFreshnessPolicies',
-        minRole: 'OPERATOR',
-        icon: Timer,
-        hidden: true,
-      },
-      // 「Catch-up 审批」入口已去重(用户反馈):与工作台「审批中心」的 catch-up tab
-      // 指向同一页面,双入口重复;审批统一从审批中心进。
-      {
         title: pageTitle('/governance/calendars'),
         path: '/governance/calendars',
         minRole: 'OPERATOR',
         authorities: ['ROLE_ADMIN', 'ROLE_TENANT_ADMIN'],
+        subGroup: 'schedulingRules',
         icon: Calendar,
       },
       {
         title: pageTitle('/governance/windows'),
         path: '/governance/windows',
         minRole: 'ADMIN',
+        subGroup: 'schedulingRules',
         icon: Clock,
-      },
-      {
-        title: pageTitle('/governance/quota'),
-        path: '/governance/quota',
-        minRole: 'ADMIN',
-        icon: Briefcase,
-        hidden: true,
       },
       {
         title: pageTitle('/governance/queues'),
         path: '/governance/queues',
         minRole: 'ADMIN',
+        subGroup: 'schedulingRules',
         icon: Tools,
       },
       {
-        title: pageTitle('/ops/custom-task-types'),
-        path: '/ops/custom-task-types',
-        minRole: 'OPERATOR',
-        icon: Grid,
-        hidden: true,
-      },
-      {
-        title: pageTitle('/ops/worker-fingerprints'),
-        path: '/ops/worker-fingerprints',
-        minRole: 'OPERATOR',
-        icon: Aim,
-        hidden: true,
-      },
-      {
-        title: pageTitle('/ops/shard-catalog'),
-        path: '/ops/shard-catalog',
+        title: pageTitle('/governance/quota'),
+        path: '/governance/quota',
         minRole: 'ADMIN',
-        icon: Coin,
-        hidden: true,
-      },
-      {
-        title: pageTitle('/ops/tenant-placements'),
-        path: '/ops/tenant-placements',
-        minRole: 'ADMIN',
-        icon: Collection,
-        hidden: true,
+        subGroup: 'schedulingRules',
+        icon: Briefcase,
       },
     ],
   },
@@ -455,13 +409,6 @@ const navigationGroupsByKey = {
         icon: UserCog,
       },
       {
-        title: pageTitle('/system/users'),
-        path: '/system/users',
-        minRole: 'VIEWER',
-        authorities: ['ROLE_ADMIN', 'ROLE_AUDITOR', 'ROLE_TENANT_ADMIN', 'ROLE_TENANT_USER'],
-        icon: ShieldCheck,
-      },
-      {
         title: pageTitle('/config/releases'),
         path: '/config/releases',
         minRole: 'VIEWER',
@@ -476,26 +423,19 @@ const navigationGroupsByKey = {
         icon: Operation,
       },
       {
-        title: pageTitle('/observability/audits'),
-        path: '/observability/audits',
+        title: pageTitle('/observability/audit'),
+        path: '/observability/audit',
         minRole: 'VIEWER',
         authorities: ['ROLE_ADMIN', 'ROLE_TENANT_ADMIN', 'ROLE_AUDITOR'],
+        menuAccessFallbacks: ['/observability/audits', '/observability/operation-audits'],
         icon: Memo,
       },
       {
-        title: pageTitle('/observability/operation-audits'),
-        path: '/observability/operation-audits',
-        minRole: 'VIEWER',
-        authorities: ['ROLE_ADMIN', 'ROLE_TENANT_ADMIN', 'ROLE_AUDITOR'],
-        icon: Document,
-        hidden: true,
-      },
-      {
-        title: pageTitle('/system/event-catalog'),
-        path: '/system/event-catalog',
-        minRole: 'VIEWER',
-        icon: Collection,
-        hidden: true,
+        title: pageTitle('/system/settings'),
+        path: '/system/settings',
+        minRole: 'OPERATOR',
+        menuAccessFallbacks: ['/system/parameters', '/system/tags', '/system/atomic-task-types'],
+        icon: Setting,
       },
       {
         title: pageTitle('/system/tags'),
@@ -534,12 +474,21 @@ const navigationGroupsByKey = {
         authorities: ['ROLE_ADMIN'],
         icon: Tools,
         menuAccessFallbacks: ['/system/parameters'],
+        hidden: true,
       },
       {
         title: pageTitle('/system/atomic-task-types'),
         path: '/system/atomic-task-types',
         minRole: 'OPERATOR',
         icon: Box,
+        hidden: true,
+      },
+      {
+        title: pageTitle('/ops/shard-catalog'),
+        path: '/ops/shard-catalog',
+        minRole: 'ADMIN',
+        menuAccessFallbacks: ['/ops/tenant-placements'],
+        icon: Coin,
         hidden: true,
       },
     ],

@@ -1658,3 +1658,19 @@ html.dark .pill-tabs .el-tabs__item.is-active:hover {
 ::selection {
   background: color-mix(in srgb, var(--color-primary) 26%, transparent);
 }
+
+/* 合并页签内嵌子页的容器与操作栏 */
+.embedded-tab-pane {
+  display: flex;
+  flex-direction: column;
+  gap: var(--page-section-gap, 16px);
+  min-width: 0;
+}
+
+.embedded-tab-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-sm, 8px);
+}

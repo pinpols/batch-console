@@ -14,7 +14,13 @@ const hiddenParents: Record<string, string> = {
   '/observability/lineage': '/observability/trace',
   '/workflow/designer': '/workflow/definitions',
   '/ops/batch-day-replay': '/scheduler/batch-days',
-  '/observability/operation-audits': '/observability/audits',
+  '/observability/operation-audits': '/observability/audit',
+  '/observability/audits': '/observability/audit',
+  '/system/parameters': '/system/settings',
+  '/system/tags': '/system/settings',
+  '/system/atomic-task-types': '/system/settings',
+  '/system/maintenance': '/system/settings',
+  '/ops/shard-catalog': '/system/settings',
 }
 
 export function resolveSidebarActiveMenu(

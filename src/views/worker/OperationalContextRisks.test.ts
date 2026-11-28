@@ -218,18 +218,18 @@ describe('Worker 操作的租户身份', () => {
 
   it('文件中心有权访问时隐藏重复渠道入口；仅有 Worker 权限时保留只读渠道', async () => {
     const wrapper = renderWorkers()
-    expect(wrapper.findAllComponents({ name: 'ElTabPane' })).toHaveLength(2)
+    expect(wrapper.findAllComponents({ name: 'ElTabPane' })).toHaveLength(4)
     wrapper.findComponent({ name: 'ElTabs' }).vm.$emit('update:modelValue', 'channels')
     mocks.state.fileMenu = ['/files/templates']
     await flushPromises()
-    expect(wrapper.findAllComponents({ name: 'ElTabPane' })).toHaveLength(1)
+    expect(wrapper.findAllComponents({ name: 'ElTabPane' })).toHaveLength(3)
     expect(wrapper.findComponent({ name: 'ElTabs' }).props('modelValue')).toBe('workers')
     mocks.state.fileMenu = ['/files/channels']
     await flushPromises()
-    expect(wrapper.findAllComponents({ name: 'ElTabPane' })).toHaveLength(1)
+    expect(wrapper.findAllComponents({ name: 'ElTabPane' })).toHaveLength(3)
     mocks.state.fileMenu = []
     await flushPromises()
-    expect(wrapper.findAllComponents({ name: 'ElTabPane' })).toHaveLength(2)
+    expect(wrapper.findAllComponents({ name: 'ElTabPane' })).toHaveLength(4)
   })
 
   it('实际标签组件在菜单权限变化时切回 Worker 并保留查询回退', async () => {

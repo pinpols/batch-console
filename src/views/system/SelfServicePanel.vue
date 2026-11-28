@@ -66,7 +66,6 @@
       <SelfServiceQuotaChangeTab v-if="drawerKey === 'quotaChange'" />
       <SelfServiceRerunTab v-else-if="drawerKey === 'rerun'" />
       <SelfServiceCompensationTab v-else-if="drawerKey === 'compensation'" />
-      <SelfServiceFailedJobsTab v-else-if="drawerKey === 'failedJobs'" />
       <SelfServiceNotifSubsTab v-else-if="drawerKey === 'notifSubs'" />
       <SelfServiceMyAuditsTab v-else-if="drawerKey === 'myAudits'" />
       <SelfServiceTriggerPauseTab v-else-if="drawerKey === 'triggerPause'" />
@@ -98,7 +97,6 @@
   import SelfServiceQuotaChangeTab from './components/SelfServiceQuotaChangeTab.vue'
   import SelfServiceRerunTab from './components/SelfServiceRerunTab.vue'
   import SelfServiceCompensationTab from './components/SelfServiceCompensationTab.vue'
-  import SelfServiceFailedJobsTab from './components/SelfServiceFailedJobsTab.vue'
   import SelfServiceNotifSubsTab from './components/SelfServiceNotifSubsTab.vue'
   import SelfServiceMyAuditsTab from './components/SelfServiceMyAuditsTab.vue'
   import SelfServiceTriggerPauseTab from './components/SelfServiceTriggerPauseTab.vue'
@@ -115,6 +113,10 @@
   const tenant = useTenantStore()
   const auth = useAuthStore()
   const { canManageSystem } = usePermission()
+  // 平台管理员和租户管理员拥有直接操作权限，重跑/补偿/暂停卡片直达操作页，仅租户用户走申请
+  const canOperateDirectly = computed(
+    () => auth.hasPermission('ROLE_ADMIN') || auth.hasPermission('ROLE_TENANT_ADMIN'),
+  )
 
   /**
    * 卡片类型:
@@ -148,6 +150,7 @@
     selfServiceAction?: 'RERUN' | 'COMPENSATION'
     cta: { icon: Component; label: string }
     linkTo?: string
+    linkQuery?: Record<string, string>
   }
 
   const cards = computed<ServiceCard[]>(() => [
@@ -168,24 +171,44 @@
       kind: 'request',
       cta: { icon: EditPen, label: t('selfServicePanel.cardCtaRequest') },
     },
-    {
-      key: 'rerun',
-      icon: RefreshRight,
-      title: t('selfServicePanel.tabRerun'),
-      desc: t('selfServicePanel.descRerun'),
-      kind: 'request',
-      selfServiceAction: 'RERUN',
-      cta: { icon: RefreshRight, label: t('selfServicePanel.cardCtaRequest') },
-    },
-    {
-      key: 'compensation',
-      icon: SetUp,
-      title: t('selfServicePanel.tabCompensation'),
-      desc: t('selfServicePanel.descCompensation'),
-      kind: 'request',
-      selfServiceAction: 'COMPENSATION',
-      cta: { icon: SetUp, label: t('selfServicePanel.cardCtaRequest') },
-    },
+    canOperateDirectly.value
+      ? {
+          key: 'rerun',
+          icon: RefreshRight,
+          title: t('selfServicePanel.tabRerun'),
+          desc: t('selfServicePanel.descRerun'),
+          kind: 'link-out',
+          cta: { icon: RefreshRight, label: t('selfServicePanel.cardCtaDirectOperate') },
+          linkTo: '/monitor/job-instances',
+        }
+      : {
+          key: 'rerun',
+          icon: RefreshRight,
+          title: t('selfServicePanel.tabRerun'),
+          desc: t('selfServicePanel.descRerun'),
+          kind: 'request',
+          selfServiceAction: 'RERUN',
+          cta: { icon: RefreshRight, label: t('selfServicePanel.cardCtaRequest') },
+        },
+    canOperateDirectly.value
+      ? {
+          key: 'compensation',
+          icon: SetUp,
+          title: t('selfServicePanel.tabCompensation'),
+          desc: t('selfServicePanel.descCompensation'),
+          kind: 'link-out',
+          cta: { icon: SetUp, label: t('selfServicePanel.cardCtaDirectOperate') },
+          linkTo: '/monitor/job-instances',
+        }
+      : {
+          key: 'compensation',
+          icon: SetUp,
+          title: t('selfServicePanel.tabCompensation'),
+          desc: t('selfServicePanel.descCompensation'),
+          kind: 'request',
+          selfServiceAction: 'COMPENSATION',
+          cta: { icon: SetUp, label: t('selfServicePanel.cardCtaRequest') },
+        },
     // --- 第二批 5 张 ---
     {
       key: 'apiKey',
@@ -201,8 +224,10 @@
       icon: Warning,
       title: t('selfServicePanel.tabFailedJobs'),
       desc: t('selfServicePanel.descFailedJobs'),
-      kind: 'view-drawer',
+      kind: 'link-out',
       cta: { icon: Warning, label: t('selfServicePanel.cardCtaFailedJobs') },
+      linkTo: '/monitor/job-instances',
+      linkQuery: { statuses: 'FAILED,PARTIAL_FAILED', range: 'all' },
     },
     {
       key: 'notifSubs',
@@ -220,7 +245,7 @@
       kind: 'view-drawer',
       cta: { icon: Memo, label: t('selfServicePanel.cardCtaMyAudits') },
     },
-    // 触发器暂停 / 恢复接口仅平台管理员可用，其他角色不显示，避免提交后 403
+    // 触发器暂停 / 恢复接口仅平台管理员可用，直接跳转到触发器页操作
     ...(canManageSystem.value
       ? [
           {
@@ -228,8 +253,9 @@
             icon: Timer,
             title: t('selfServicePanel.tabTriggerPause'),
             desc: t('selfServicePanel.descTriggerPause'),
-            kind: 'request' as const,
-            cta: { icon: Timer, label: t('selfServicePanel.cardCtaTriggerPause') },
+            kind: 'link-out' as const,
+            cta: { icon: Timer, label: t('selfServicePanel.cardCtaDirectOperate') },
+            linkTo: '/system/triggers',
           },
         ]
       : []),
@@ -294,7 +320,7 @@
       return
     }
     if (card.kind === 'link-out' && card.linkTo) {
-      void router.push({ path: card.linkTo })
+      void router.push({ path: card.linkTo, ...(card.linkQuery ? { query: card.linkQuery } : {}) })
       return
     }
     // request 或 view-drawer
@@ -364,17 +390,24 @@
 
   function syncFromRoute() {
     const a = route.query.action as CardKey | undefined
-    const drawerCards: CardKey[] = [
-      'quotaChange',
-      'rerun',
-      'compensation',
-      'failedJobs',
-      'notifSubs',
-      'myAudits',
-      'triggerPause',
-    ]
-    // 深链只打开当前角色看得到的卡片（如触发器暂停仅平台管理员）
-    if (a && drawerCards.includes(a) && cards.value.some((card) => card.key === a)) {
+    if (a === 'failedJobs') {
+      void router.replace({
+        path: '/monitor/job-instances',
+        query: { statuses: 'FAILED,PARTIAL_FAILED', range: 'all' },
+      })
+      return
+    }
+    const targetCard = a ? cards.value.find((card) => card.key === a) : undefined
+    if (targetCard?.kind === 'link-out' && targetCard.linkTo) {
+      void router.replace({
+        path: targetCard.linkTo,
+        ...(targetCard.linkQuery ? { query: targetCard.linkQuery } : {}),
+      })
+      return
+    }
+    const drawerCards: CardKey[] = ['quotaChange', 'rerun', 'compensation', 'notifSubs', 'myAudits']
+    // 深链只打开当前角色看得到的抽屉卡片
+    if (a && drawerCards.includes(a) && targetCard) {
       drawerKey.value = a
       drawerOpen.value = true
     }
