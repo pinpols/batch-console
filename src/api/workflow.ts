@@ -37,6 +37,8 @@ export interface WorkflowTriggerRequest {
 }
 
 export type WorkflowScheduleUpdateRequest = components['schemas']['WorkflowScheduleUpdateRequest']
+export type WorkflowActiveRunLimitPatchRequest =
+  components['schemas']['WorkflowActiveRunLimitPatchRequest']
 export type ScheduledOccurrenceCatchUpRequest =
   components['schemas']['ScheduledOccurrenceCatchUpRequest']
 export type ScheduledOccurrenceCatchUpResponse =
@@ -122,6 +124,16 @@ export const workflowApi = {
     body: WorkflowScheduleUpdateRequest,
   ): Promise<WorkflowDefinitionDetailResponse> =>
     put<WorkflowDefinitionDetailResponse>(`/api/console/workflow-definitions/${id}/schedule`, body),
+
+  /** 设置同租户、Workflow、业务日及运行模式下的活跃运行上限（1..64）；降额遇高槽活跃返回 409。 */
+  updateActiveRunLimit: (
+    id: number,
+    body: WorkflowActiveRunLimitPatchRequest,
+  ): Promise<WorkflowDefinitionDetailResponse> =>
+    patch<WorkflowDefinitionDetailResponse>(
+      `/api/console/workflow-definitions/${id}/active-run-limit`,
+      body,
+    ),
 
   /** 以顶层运行启动 Workflow；客户端负责注入幂等键。 */
   trigger: (id: number, body: WorkflowTriggerRequest, idempotencyKey?: string): Promise<string> => {

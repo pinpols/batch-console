@@ -85,6 +85,13 @@ export default {
   detailType: 'Workflow type',
   detailVersion: 'Version',
   detailEnabled: 'Enabled',
+  detailActiveRunLimit: 'Active run limit / day',
+  actionActiveRunLimit: 'Active run limit',
+  activeRunLimitTitle: 'Active run limit · {code}',
+  activeRunLimitLabel: 'Max active runs per business date',
+  activeRunLimitHint:
+    'Applies per tenant, workflow, business date, and execution mode (production and dry-run counted separately). Range 1–64, default 1. Lowering returns a conflict if an active run occupies a higher slot; retry after it finishes.',
+  activeRunLimitSaved: 'Active run limit updated to {limit}',
   actionDag: 'DAG',
   actionEnable: 'Enable',
   actionDisable: 'Disable',

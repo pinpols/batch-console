@@ -285,6 +285,9 @@
             <el-descriptions-item :label="t('workflowDefinitionList.detailEnabled')">
               {{ detailRow.enabled ? t('common.yes') : t('common.no') }}
             </el-descriptions-item>
+            <el-descriptions-item :label="t('workflowDefinitionList.detailActiveRunLimit')">
+              {{ detailRow.maxActiveRunsPerBizDate ?? 1 }}
+            </el-descriptions-item>
             <el-descriptions-item :label="t('common.tenantId')">{{
               detailRow.tenantId
             }}</el-descriptions-item>
@@ -398,6 +401,46 @@
       :busy="triggerBusy"
       @submit="submitTrigger"
     />
+
+    <el-dialog
+      v-model="activeRunLimitVisible"
+      :title="
+        t('workflowDefinitionList.activeRunLimitTitle', {
+          code: activeRunLimitTarget?.workflowCode ?? '',
+        })
+      "
+      width="min(520px, calc(100% - 32px))"
+    >
+      <el-form label-position="top">
+        <el-form-item :label="t('workflowDefinitionList.activeRunLimitLabel')">
+          <el-input-number
+            v-model="activeRunLimitValue"
+            :min="1"
+            :max="64"
+            :step="1"
+            :precision="0"
+            controls-position="right"
+          />
+        </el-form-item>
+      </el-form>
+      <el-alert
+        type="info"
+        :title="t('workflowDefinitionList.activeRunLimitHint')"
+        show-icon
+        :closable="false"
+      />
+      <template #footer>
+        <el-button @click="activeRunLimitVisible = false">{{ t('common.cancel') }}</el-button>
+        <el-button
+          type="primary"
+          :loading="activeRunLimitBusy"
+          :disabled="!canMutateConfig"
+          @click="submitActiveRunLimit"
+        >
+          {{ t('common.confirm') }}
+        </el-button>
+      </template>
+    </el-dialog>
 
     <el-dialog
       v-model="validateVisible"
@@ -569,6 +612,11 @@
   const triggerBusy = ref(false)
   const triggerTarget = ref<ConsoleWorkflowDefinitionResponse | null>(null)
   const triggerBizDate = ref('')
+
+  const activeRunLimitVisible = ref(false)
+  const activeRunLimitBusy = ref(false)
+  const activeRunLimitTarget = ref<ConsoleWorkflowDefinitionResponse | null>(null)
+  const activeRunLimitValue = ref(1)
 
   const detailVisible = ref(false)
   const detailRow = ref<WorkflowDefinitionDetailResponse | null>(null)
@@ -754,6 +802,13 @@
         onClick: () => openDetail(row),
       },
       {
+        key: 'active-run-limit',
+        label: t('workflowDefinitionList.actionActiveRunLimit'),
+        disabled: !canMutateConfig.value,
+        loading: actingIds.value.has(row.id),
+        onClick: () => openActiveRunLimit(row),
+      },
+      {
         key: 'toggle',
         // VIEWER 角色看不写权限时,行内按钮通过 disabled 灰显(RowActions 已有 disabled 渲染样式),
         // label 后缀 *(无权限)* 让用户秒懂(避免 tooltip 在 dropdown 项里实现复杂)。
@@ -793,6 +848,41 @@
           ]
         : []),
     ]
+  }
+
+  function openActiveRunLimit(row: ConsoleWorkflowDefinitionResponse) {
+    if (!canMutateConfig.value) return
+    activeRunLimitTarget.value = row
+    activeRunLimitValue.value = row.maxActiveRunsPerBizDate ?? 1
+    activeRunLimitVisible.value = true
+  }
+
+  async function submitActiveRunLimit() {
+    const target = activeRunLimitTarget.value
+    if (!target || activeRunLimitBusy.value || !canMutateConfig.value) return
+    const nextLimit = Math.trunc(Number(activeRunLimitValue.value))
+    if (!Number.isInteger(nextLimit) || nextLimit < 1 || nextLimit > 64) return
+    activeRunLimitBusy.value = true
+    try {
+      const updated = await workflowApi.updateActiveRunLimit(target.id, {
+        tenantId: target.tenantId ?? tenant.tenantId,
+        maxActiveRunsPerBizDate: nextLimit,
+      })
+      activeRunLimitVisible.value = false
+      if (detailRow.value?.id === target.id) {
+        detailRow.value = updated
+      }
+      ElMessage.success(
+        t('workflowDefinitionList.activeRunLimitSaved', {
+          limit: updated.maxActiveRunsPerBizDate ?? nextLimit,
+        }),
+      )
+      await load()
+    } catch (err: unknown) {
+      ElMessage.error(userErrorMessage(err))
+    } finally {
+      activeRunLimitBusy.value = false
+    }
   }
 
   async function toggleScheduleRow(row: ConsoleWorkflowDefinitionResponse) {

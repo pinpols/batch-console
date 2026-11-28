@@ -4230,6 +4230,26 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/console/workflow-definitions/{id}/active-run-limit': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    /**
+     * Update Workflow active run limit per business date
+     * @description Updates max_active_runs_per_biz_date (1..64). Returns 409 when lowering the limit while any active run occupies a slot above the requested limit.
+     */
+    patch: operations['patchWorkflowActiveRunLimit']
+    trace?: never
+  }
   '/api/console/workflow-definitions/{id}/monitoring-policy': {
     parameters: {
       query?: never
@@ -10600,6 +10620,11 @@ export interface components {
       enabled: boolean
       /** @description Whether scheduled fires are enabled, independent from workflow enabled state. */
       scheduleEnabled?: boolean | null
+      /**
+       * Format: int32
+       * @description Maximum concurrent active runs (CREATED/RUNNING) per tenant, workflow, business date and execution mode.
+       */
+      maxActiveRunsPerBizDate?: number
       description: string
       /** Format: date-time */
       createdAt: string
@@ -10939,6 +10964,16 @@ export interface components {
       updatedAt?: string
       nodes: components['schemas']['ConsoleWorkflowNodeResponse'][]
       edges: components['schemas']['ConsoleWorkflowEdgeResponse'][]
+      /**
+       * Format: int32
+       * @description Maximum concurrent active runs (CREATED/RUNNING) per tenant, workflow, business date and execution mode.
+       */
+      maxActiveRunsPerBizDate?: number
+    }
+    WorkflowActiveRunLimitPatchRequest: {
+      tenantId: string
+      /** Format: int32 */
+      maxActiveRunsPerBizDate: number
     }
     ConsoleDeadLetterTaskResponse: {
       /** Format: int64 */
@@ -20804,6 +20839,39 @@ export interface operations {
         content: {
           'application/json': components['schemas']['CommonResponseWorkflowDefinitionDetailResponse']
         }
+      }
+    }
+  }
+  patchWorkflowActiveRunLimit: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        id: number
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['WorkflowActiveRunLimitPatchRequest']
+      }
+    }
+    responses: {
+      /** @description Updated Workflow definition detail */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CommonResponseWorkflowDefinitionDetailResponse']
+        }
+      }
+      /** @description Active run occupies a slot above the requested limit */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
       }
     }
   }

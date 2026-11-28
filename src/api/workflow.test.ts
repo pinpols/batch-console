@@ -101,4 +101,20 @@ describe('workflowApi', () => {
       expect.objectContaining({ expectedVersion: 3, scheduleType: 'CRON' }),
     )
   })
+
+  it('updates active run limit through the dedicated patch endpoint', async () => {
+    const detail = { id: 7, maxActiveRunsPerBizDate: 4 }
+    mockedPatch.mockResolvedValue(detail)
+
+    const result = await workflowApi.updateActiveRunLimit(7, {
+      tenantId: 'tenant-a',
+      maxActiveRunsPerBizDate: 4,
+    })
+
+    expect(mockedPatch).toHaveBeenCalledWith(
+      '/api/console/workflow-definitions/7/active-run-limit',
+      { tenantId: 'tenant-a', maxActiveRunsPerBizDate: 4 },
+    )
+    expect(result).toEqual(detail)
+  })
 })
