@@ -83,6 +83,13 @@ export default {
   detailType: '工作流类型',
   detailVersion: '版本',
   detailEnabled: '启用状态',
+  detailActiveRunLimit: '单日活跃运行上限',
+  actionActiveRunLimit: '活跃运行上限',
+  activeRunLimitTitle: '设置单日活跃运行上限 · {code}',
+  activeRunLimitLabel: '同业务日最大活跃运行数',
+  activeRunLimitHint:
+    '作用于同租户、当前 Workflow、同业务日及同一运行模式（正式与预检分别计数），范围 1–64，默认 1。降额时若仍有高槽位运行中将返回冲突提示，等待其结束后可重试。',
+  activeRunLimitSaved: '已更新活跃运行上限为 {limit}',
   actionDag: 'DAG',
   actionEnable: '启用',
   actionDisable: '停用',
