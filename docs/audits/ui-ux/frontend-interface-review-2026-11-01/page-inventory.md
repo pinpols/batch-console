@@ -33,7 +33,7 @@
 | `/workflow/viewer/:id` | [WorkflowMermaidViewer](../../../../src/views/workflow/WorkflowMermaidViewer.vue) | 只读流程与执行状态 | Mermaid DAG、节点详情、执行面板 | 0 | 保留DAG；与执行节点选择联动（U01） |
 | `/workflow/designer/:id?` | [WorkflowDesigner](../../../../src/views/workflow/designer/WorkflowDesigner.vue) | 编排工作流 | 画布、节点面板、属性检查器 | 0 | 保留；本身不是表格式交互 |
 | `/workflow/designer/:id/diff/:fromVersion/:toVersion` | [WorkflowDesignerDiff](../../../../src/views/workflow/designer/diff/WorkflowDesignerDiff.vue) | 比较工作流版本 | 并排差异视图 | 1 | 保留；需补真实大图/长名称浏览器复核 |
-| `/runs` | [RunsOverview](../../../../src/views/runs/RunsOverview.vue) | 快速浏览近期运行 | 作业/工作流分段、紧凑运行行 | 0 | 保留入口职责，避免与两类完整运行列表重复扩张 |
+| `/runs` | `src/views/runs/RunsOverview.vue`（已于 2026-11-28 下线并重定向至 `/monitor/job-instances`） | 快速浏览近期运行 | 作业/工作流分段、紧凑运行行 | 0 | 保留入口职责，避免与两类完整运行列表重复扩张 |
 | `/monitor/job-instances` | [JobInstanceList](../../../../src/views/monitor/JobInstanceList.vue) | 定位作业运行 | 状态筛选、ProTable、批量动作 | 2 | 保留；行摘要提供当前阶段和阻塞，详情呈现图（U01） |
 | `/monitor/job-instances/:id` | [JobInstanceDetail](../../../../src/views/monitor/JobInstanceDetail.vue) | 作业执行定位 | 执行DAG、进度、步骤/心跳/近期运行页签 | 2 | 已有图；强化节点选择→详情联动，收敛重复明细（U01） |
 | `/monitor/job-instances/:id/partitions` | [PartitionView](../../../../src/views/monitor/PartitionView.vue) | 分区核查与重试 | 状态筛选、分区表格 | 1 | 保留精确表格；大量分区可补状态概览条，不能推测分母 |

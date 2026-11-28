@@ -31,6 +31,9 @@ vi.mock('element-plus', async (original) => ({
 vi.mock('vue-router', () => ({
   useRouter: () => ({ back: vi.fn(), forward: vi.fn(), push: vi.fn() }),
 }))
+vi.mock('@/composables/useRouteAccess', () => ({
+  useRouteAccess: () => ({ canOpenPath: () => true }),
+}))
 vi.mock('@/layout/composables/useHeaderLogic', () => ({
   useHeaderLogic: () => ({
     app: mocks.app,

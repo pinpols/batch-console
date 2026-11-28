@@ -161,11 +161,12 @@
                   {{ t('nav.myAccount') }}
                 </el-dropdown-item>
                 <el-dropdown-item
-                  command="profile"
+                  v-if="canOpenApiKeys"
+                  command="api-keys"
                   :icon="Key"
-                  :aria-label="t('nav.permissionAudit')"
+                  :aria-label="t('nav.myApiKeys')"
                 >
-                  {{ t('nav.permissionAudit') }}
+                  {{ t('nav.myApiKeys') }}
                 </el-dropdown-item>
                 <el-dropdown-item
                   command="onboarding-tour"
@@ -219,6 +220,7 @@
   import { computed, defineAsyncComponent, nextTick, onMounted, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { useLocale } from '@/composables/useLocale'
+  import { useRouteAccess } from '@/composables/useRouteAccess'
   import { useMobileBadgesStore } from '@/stores/mobileBadges'
   import { useTenantStore } from '@/stores/tenant'
   import { useAutoRefresh } from '@/composables/useAutoRefresh'
@@ -316,6 +318,8 @@
   }
 
   const router = useRouter()
+  const { canOpenPath } = useRouteAccess()
+  const canOpenApiKeys = computed(() => canOpenPath('/system/api-keys'))
   const {
     app,
     auth,
@@ -343,8 +347,8 @@
       void router.push('/system/me')
       return
     }
-    if (command === 'profile') {
-      void router.push('/system/users')
+    if (command === 'api-keys') {
+      void router.push('/system/api-keys')
       return
     }
     if (command === 'onboarding-tour') {

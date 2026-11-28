@@ -1,6 +1,6 @@
 <template>
-  <PageContainer>
-    <PageHeader>
+  <component :is="embedded ? 'div' : PageContainer" :class="{ 'embedded-tab-pane': embedded }">
+    <PageHeader v-if="!embedded">
       <template #actions>
         <el-button :icon="Refresh" :loading="loading" @click="load">
           {{ t('assetFreshness.refresh') }}
@@ -10,6 +10,14 @@
         </el-button>
       </template>
     </PageHeader>
+    <div v-else class="embedded-tab-actions">
+      <el-button :icon="Refresh" :loading="loading" @click="load">
+        {{ t('assetFreshness.refresh') }}
+      </el-button>
+      <el-button type="primary" :icon="Plus" :disabled="writesFrozen" @click="openCreate">
+        {{ t('assetFreshness.create') }}
+      </el-button>
+    </div>
 
     <!-- 还原设计:查询区与表格直铺底色,无卡片壳 -->
     <div>
@@ -193,10 +201,11 @@
         </FormSection>
       </el-form>
     </FormDrawer>
-  </PageContainer>
+  </component>
 </template>
 
 <script setup lang="ts">
+  defineProps<{ embedded?: boolean }>()
   import FormSection from '@/components/common/FormSection.vue'
   import FormDrawer from '@/components/common/FormDrawer.vue'
   import { reactive, ref } from 'vue'

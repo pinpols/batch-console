@@ -186,48 +186,32 @@ export const routes: RouteRecordRaw[] = [
       },
       {
         path: 'ops/custom-task-types',
-        name: 'custom-task-types',
-        component: () => import('@/views/ops/CustomTaskTypeList.vue'),
-        meta: {
-          title: '自定义任务类型',
-          description: '查看租户 SDK 上报的自定义任务类型。',
-          activeMenu: '/ops/custom-task-types',
-          minRole: 'OPERATOR',
-        },
-      },
+        redirect: (to: RouteLocationNormalized) => ({
+          path: '/workers/management',
+          query: { ...to.query, tab: 'customTaskTypes' },
+        }),
+      } as RouteRecordRaw,
       {
         path: 'ops/worker-fingerprints',
-        name: 'worker-fingerprints',
-        component: () => import('@/views/ops/WorkerFingerprintBoard.vue'),
-        meta: {
-          title: 'Worker 指纹看板',
-          description: '按 buildId / sdkVersion 查看本租户活跃 Worker，辅助灰度切流与故障定位。',
-          activeMenu: '/ops/worker-fingerprints',
-          minRole: 'OPERATOR',
-        },
-      },
+        redirect: (to: RouteLocationNormalized) => ({
+          path: '/workers/management',
+          query: { ...to.query, tab: 'fingerprints' },
+        }),
+      } as RouteRecordRaw,
       {
         path: 'ops/capacity-profile',
-        name: 'ops-capacity-profile',
-        component: () => import('@/views/ops/CapacityProfile.vue'),
-        meta: {
-          title: '容量画像',
-          description: '按租户、作业或 Worker 聚合运行耗时、吞吐和文件处理量。',
-          activeMenu: '/ops/capacity-profile',
-          minRole: 'VIEWER',
-        },
-      },
+        redirect: (to: RouteLocationNormalized) => ({
+          path: '/observability/usage',
+          query: { ...to.query, tab: 'capacity' },
+        }),
+      } as RouteRecordRaw,
       {
         path: 'ops/asset-freshness',
-        name: 'ops-asset-freshness',
-        component: () => import('@/views/ops/AssetFreshnessPolicies.vue'),
-        meta: {
-          title: '资产新鲜度策略',
-          description: '管理作业资产新鲜度 SLA 策略，驱动缺失和过期告警。',
-          activeMenu: '/ops/asset-freshness',
-          minRole: 'OPERATOR',
-        },
-      },
+        redirect: (to: RouteLocationNormalized) => ({
+          path: '/observability/job-monitoring-policies',
+          query: { ...to.query, tab: 'freshness' },
+        }),
+      } as RouteRecordRaw,
       {
         path: 'system/atomic-task-types',
         name: 'atomic-task-types',
@@ -377,14 +361,11 @@ export const routes: RouteRecordRaw[] = [
       },
       {
         path: 'runs',
-        name: 'runs-overview',
-        component: () => import('@/views/runs/RunsOverview.vue'),
-        meta: {
-          title: '全部运行',
-          activeMenu: '/runs',
-          minRole: 'VIEWER',
-        },
-      },
+        redirect: (to: RouteLocationNormalized) => ({
+          path: '/monitor/job-instances',
+          query: { ...to.query },
+        }),
+      } as RouteRecordRaw,
       {
         path: 'monitor/job-instances',
         name: 'job-instance-list',
@@ -461,12 +442,12 @@ export const routes: RouteRecordRaw[] = [
       {
         path: 'observability/job-monitoring-policies',
         name: 'job-monitoring-policies',
-        component: () => import('@/views/observability/JobMonitoringPolicies.vue'),
+        component: () => import('@/views/observability/AlertPolicyCenter.vue'),
         meta: {
-          title: '作业监控策略',
+          title: '告警策略',
           activeMenu: '/observability/job-monitoring-policies',
+          menuAccessFallbacks: ['/ops/asset-freshness'],
           minRole: 'OPERATOR',
-          permissions: ['ROLE_ADMIN', 'ROLE_TENANT_ADMIN'],
         },
       },
       {
@@ -512,37 +493,40 @@ export const routes: RouteRecordRaw[] = [
         },
       },
       {
-        path: 'observability/audits',
-        name: 'observability-audits',
-        component: () => import('@/views/observability/AuditList.vue'),
+        path: 'observability/audit',
+        name: 'observability-audit',
+        component: () => import('@/views/observability/AuditCenter.vue'),
         meta: {
-          title: '文件审计',
-          activeMenu: '/observability/audits',
+          title: '审计',
+          activeMenu: '/observability/audit',
+          menuAccessFallbacks: ['/observability/audits', '/observability/operation-audits'],
           minRole: 'VIEWER',
           permissions: ['ROLE_ADMIN', 'ROLE_TENANT_ADMIN', 'ROLE_AUDITOR'],
         },
       },
       {
+        path: 'observability/audits',
+        redirect: (to: RouteLocationNormalized) => ({
+          path: '/observability/audit',
+          query: { ...to.query, tab: 'file' },
+        }),
+      } as RouteRecordRaw,
+      {
         path: 'observability/operation-audits',
-        name: 'observability-operation-audits',
-        component: () => import('@/views/observability/OperationAuditList.vue'),
-        meta: {
-          title: '操作审计',
-          description: '控制台用户写操作留痕(@AuditAction 切面)',
-          activeMenu: '/observability/audits',
-          minRole: 'VIEWER',
-          permissions: ['ROLE_ADMIN', 'ROLE_TENANT_ADMIN', 'ROLE_AUDITOR'],
-        },
-      },
+        redirect: (to: RouteLocationNormalized) => ({
+          path: '/observability/audit',
+          query: { ...to.query, tab: 'operation' },
+        }),
+      } as RouteRecordRaw,
       {
         path: 'observability/usage',
         name: 'observability-usage',
-        component: () => import('@/views/observability/UsageSummary.vue'),
+        component: () => import('@/views/observability/UsageAnalyticsCenter.vue'),
         meta: {
           title: '使用统计',
           activeMenu: '/observability/usage',
+          menuAccessFallbacks: ['/ops/capacity-profile'],
           minRole: 'VIEWER',
-          permissions: ['ROLE_ADMIN', 'ROLE_TENANT_ADMIN', 'ROLE_AUDITOR'],
         },
       },
       {
@@ -680,13 +664,26 @@ export const routes: RouteRecordRaw[] = [
       },
       {
         path: 'system/users',
-        name: 'user-role',
-        component: () => import('@/views/system/UserRole.vue'),
+        redirect: (to: RouteLocationNormalized) => ({
+          path: '/system/me',
+          query: { ...to.query, tab: 'permissions' },
+        }),
+      } as RouteRecordRaw,
+      {
+        path: 'system/settings',
+        name: 'platform-settings',
+        component: () => import('@/views/system/PlatformSettingsHub.vue'),
         meta: {
-          title: '权限自查',
-          activeMenu: '/system/users',
-          minRole: 'VIEWER',
-          permissions: ['ROLE_ADMIN', 'ROLE_AUDITOR', 'ROLE_TENANT_ADMIN', 'ROLE_TENANT_USER'],
+          title: '平台设置',
+          activeMenu: '/system/settings',
+          menuAccessFallbacks: [
+            '/system/parameters',
+            '/system/tags',
+            '/system/atomic-task-types',
+            '/system/maintenance',
+            '/ops/shard-catalog',
+          ],
+          minRole: 'OPERATOR',
         },
       },
       {
@@ -766,14 +763,11 @@ export const routes: RouteRecordRaw[] = [
       },
       {
         path: 'system/event-catalog',
-        name: 'event-catalog',
-        component: () => import('@/views/observability/EventCatalog.vue'),
-        meta: {
-          title: '事件目录',
-          activeMenu: '/system/event-catalog',
-          minRole: 'VIEWER',
-        },
-      },
+        redirect: (to: RouteLocationNormalized) => ({
+          path: '/system/notifications',
+          query: { ...to.query, tab: 'eventCatalog' },
+        }),
+      } as RouteRecordRaw,
       {
         path: 'config/management',
         name: 'config-management',
@@ -812,23 +806,21 @@ export const routes: RouteRecordRaw[] = [
       {
         path: 'ops/shard-catalog',
         name: 'shard-catalog',
-        component: () => import('@/views/ops/ShardCatalogList.vue'),
+        component: () => import('@/views/ops/ShardManagementCenter.vue'),
         meta: {
-          title: '分片目录',
+          title: '分片管理',
           activeMenu: '/ops/shard-catalog',
+          menuAccessFallbacks: ['/ops/tenant-placements'],
           minRole: 'ADMIN',
         },
       },
       {
         path: 'ops/tenant-placements',
-        name: 'tenant-placements',
-        component: () => import('@/views/ops/TenantPlacementList.vue'),
-        meta: {
-          title: '租户分片',
-          activeMenu: '/ops/tenant-placements',
-          minRole: 'ADMIN',
-        },
-      },
+        redirect: (to: RouteLocationNormalized) => ({
+          path: '/ops/shard-catalog',
+          query: { ...to.query, tab: 'placements' },
+        }),
+      } as RouteRecordRaw,
       { path: 'ops/toolbox', redirect: '/ops/diagnostic' },
       { path: 'system/cluster-diagnostic', redirect: '/ops/diagnostic' },
       {
@@ -849,7 +841,8 @@ export const routes: RouteRecordRaw[] = [
         meta: {
           title: '通知与投递',
           activeMenu: '/system/notifications',
-          minRole: 'OPERATOR',
+          menuAccessFallbacks: ['/system/event-catalog'],
+          minRole: 'VIEWER',
         },
       },
       {

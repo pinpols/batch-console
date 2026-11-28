@@ -1,10 +1,13 @@
 <template>
-  <PageContainer>
-    <PageHeader>
+  <component :is="embedded ? 'div' : PageContainer" :class="{ 'embedded-tab-pane': embedded }">
+    <PageHeader v-if="!embedded">
       <template #actions>
         <el-segmented v-model="viewMode" :options="viewModeOptions" />
       </template>
     </PageHeader>
+    <div v-else class="embedded-tab-actions">
+      <el-segmented v-model="viewMode" :options="viewModeOptions" />
+    </div>
 
     <el-alert
       v-if="activeTab === 'eventTypes'"
@@ -236,10 +239,11 @@
       :meta-rows="detailMetaRows"
       :raw="detailRow"
     />
-  </PageContainer>
+  </component>
 </template>
 
 <script setup lang="ts">
+  defineProps<{ embedded?: boolean }>()
   import { Eye } from '@lucide/vue'
   import { computed, onMounted, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'

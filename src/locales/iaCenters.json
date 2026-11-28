@@ -1,0 +1,136 @@
+{
+  "zhCN": {
+    "notificationManagement": {
+      "tabRoutePreview": "路由模拟",
+      "tabTerminalDeliveries": "终态通知恢复",
+      "tabEventCatalog": "事件目录",
+      "eventCatalogAction": "事件目录",
+      "tabChannels": "通知渠道",
+      "tabRules": "订阅规则",
+      "tabWebhooks": "Webhook",
+      "tabDeliveryLogs": "投递日志"
+    },
+    "alertPolicyCenter": {
+      "tabJobMonitoring": "作业监控策略",
+      "tabFreshness": "资产新鲜度策略"
+    },
+    "shardManagementCenter": {
+      "tabCatalog": "分片目录",
+      "tabPlacements": "租户分片"
+    },
+    "platformSettingsHub": {
+      "openEntry": "进入设置",
+      "emptyDescription": "当前账号暂无可访问的平台设置项。"
+    },
+    "triggerList": {
+      "pausedHint": "暂停或注销后不再按计划触发，状态显示为“未启用调度”；点“注册”即可重新启用。",
+      "degradedEmpty": "触发服务暂不可用，当前列表可能不完整。请稍后刷新。",
+      "workflowCodeLabel": "工作流编码",
+      "workflowCodePlaceholder": "搜索 Workflow 编码",
+      "colWorkflowCode": "工作流编码",
+      "colType": "类型",
+      "colStatus": "状态",
+      "colCron": "Cron 表达式",
+      "colNextFire": "下次触发",
+      "colActions": "操作",
+      "actionRegister": "注册",
+      "actionUnregister": "注销",
+      "actionPause": "暂停",
+      "actionResume": "恢复",
+      "actionEnableSchedule": "开启调度",
+      "actionPauseSchedule": "暂停调度",
+      "actionScheduleSettings": "调度设置",
+      "enableConfirmVerb": "开启调度",
+      "enableConfirmConsequence": "开启后该工作流将按当前调度设置自动触发执行。",
+      "enableConfirmButton": "确认开启",
+      "enableSuccess": "已开启调度",
+      "registerTitle": "注册确认",
+      "registerText": "注册触发器「{code}」？",
+      "registerConfirmVerb": "注册",
+      "confirmTarget": "触发器「{code}」",
+      "registerConfirmConsequence": "注册后将纳入调度器管理",
+      "registerConfirmButton": "确认注册",
+      "registerSuccess": "已注册",
+      "unregisterTitle": "注销确认",
+      "unregisterText": "注销触发器「{code}」？",
+      "unregisterConfirmVerb": "注销",
+      "unregisterConfirmConsequence": "注销后将从调度器移除",
+      "unregisterConfirmButton": "确认注销",
+      "unregisterSuccess": "已注销",
+      "pauseTitle": "暂停确认",
+      "pauseText": "暂停触发器「{code}」？",
+      "pauseConfirmVerb": "暂停",
+      "pauseConfirmConsequence": "暂停期间该触发器不再自动发起运行。",
+      "pauseConfirmButton": "确认暂停",
+      "pauseSuccess": "已暂停",
+      "resumeSuccess": "已恢复"
+    }
+  },
+  "enUS": {
+    "notificationManagement": {
+      "tabRoutePreview": "Route preview",
+      "tabTerminalDeliveries": "Terminal delivery recovery",
+      "tabEventCatalog": "Event catalog",
+      "eventCatalogAction": "Event catalog",
+      "tabChannels": "Channels",
+      "tabRules": "Subscriptions",
+      "tabWebhooks": "Webhooks",
+      "tabDeliveryLogs": "Delivery logs"
+    },
+    "alertPolicyCenter": {
+      "tabJobMonitoring": "Job monitoring policies",
+      "tabFreshness": "Asset freshness policies"
+    },
+    "shardManagementCenter": {
+      "tabCatalog": "Shard catalog",
+      "tabPlacements": "Tenant placements"
+    },
+    "platformSettingsHub": {
+      "openEntry": "Open settings",
+      "emptyDescription": "No platform settings are available for your current role."
+    },
+    "triggerList": {
+      "pausedHint": "Paused or unregistered triggers stop firing and show as \"Scheduling off\"; choose Register to turn scheduling back on.",
+      "degradedEmpty": "The trigger service is unavailable. This list may be incomplete; refresh later.",
+      "workflowCodeLabel": "Workflow Code",
+      "workflowCodePlaceholder": "Search Workflow Code",
+      "colWorkflowCode": "Workflow Code",
+      "colType": "Type",
+      "colStatus": "Status",
+      "colCron": "Cron expression",
+      "colNextFire": "Next fire",
+      "colActions": "Actions",
+      "actionRegister": "Register",
+      "actionUnregister": "Unregister",
+      "actionPause": "Pause",
+      "actionResume": "Resume",
+      "actionEnableSchedule": "Enable schedule",
+      "actionPauseSchedule": "Pause schedule",
+      "actionScheduleSettings": "Schedule settings",
+      "enableConfirmVerb": "Enable schedule",
+      "enableConfirmConsequence": "Once enabled, this workflow will automatically trigger runs on its configured schedule.",
+      "enableConfirmButton": "Confirm enable",
+      "enableSuccess": "Schedule enabled",
+      "registerTitle": "Confirm register",
+      "registerText": "Register trigger {code}?",
+      "registerConfirmVerb": "Register",
+      "confirmTarget": "trigger \"{code}\"",
+      "registerConfirmConsequence": "The trigger will be registered with the scheduler",
+      "registerConfirmButton": "Confirm register",
+      "registerSuccess": "Registered",
+      "unregisterTitle": "Confirm unregister",
+      "unregisterText": "Unregister trigger {code}?",
+      "unregisterConfirmVerb": "Unregister",
+      "unregisterConfirmConsequence": "The trigger will be removed from the scheduler",
+      "unregisterConfirmButton": "Confirm unregister",
+      "unregisterSuccess": "Unregistered",
+      "pauseTitle": "Confirm pause",
+      "pauseText": "Pause trigger {code}?",
+      "pauseConfirmVerb": "Pause",
+      "pauseConfirmConsequence": "While paused, this trigger no longer starts runs automatically.",
+      "pauseConfirmButton": "Confirm pause",
+      "pauseSuccess": "Paused",
+      "resumeSuccess": "Resumed"
+    }
+  }
+}

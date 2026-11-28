@@ -60,23 +60,35 @@
           </el-icon>
         </button>
         <div v-show="isOpen(group.key)" class="nav__items">
-          <RouterLink
-            v-for="item in group.children.filter((c) => !c.hidden)"
-            :key="item.path"
-            :to="item.path"
-            class="nav__item"
-            :class="{ 'is-active': activeMenu === item.path }"
-            :title="resolveItemTitle(item)"
-            @mouseenter="prefetchRouteComponent(item.path)"
-            @focus="prefetchRouteComponent(item.path)"
+          <template
+            v-for="(section, sectionIdx) in groupSections(group)"
+            :key="`${group.key}:${section.key ?? sectionIdx}`"
           >
-            <el-icon v-if="item.icon" class="nav__icon">
-              <component :is="item.icon" />
-            </el-icon>
-            <span v-if="!app.sidebarCollapsed" class="nav__label">{{
-              resolveItemTitle(item)
-            }}</span>
-          </RouterLink>
+            <div
+              v-if="section.key && !app.sidebarCollapsed"
+              class="nav__subgroup-title"
+              role="presentation"
+            >
+              {{ resolveSubGroupTitle(section.key) }}
+            </div>
+            <RouterLink
+              v-for="item in section.items"
+              :key="item.path"
+              :to="item.path"
+              class="nav__item"
+              :class="{ 'is-active': activeMenu === item.path }"
+              :title="resolveItemTitle(item)"
+              @mouseenter="prefetchRouteComponent(item.path)"
+              @focus="prefetchRouteComponent(item.path)"
+            >
+              <el-icon v-if="item.icon" class="nav__icon">
+                <component :is="item.icon" />
+              </el-icon>
+              <span v-if="!app.sidebarCollapsed" class="nav__label">{{
+                resolveItemTitle(item)
+              }}</span>
+            </RouterLink>
+          </template>
         </div>
       </div>
     </nav>
@@ -168,6 +180,25 @@
   function resolveItemTitle(item: NavigationItem): string {
     const key = navigationItemTitleKey(item)
     return te(key) ? t(key) : item.title
+  }
+
+  function resolveSubGroupTitle(subGroupKey: string): string {
+    const key = `nav.subGroup.${subGroupKey}`
+    return te(key) ? t(key) : subGroupKey
+  }
+
+  function groupSections(group: NavigationGroup): Array<{ key?: string; items: NavigationItem[] }> {
+    const visible = group.children.filter((c) => !c.hidden)
+    const sections: Array<{ key?: string; items: NavigationItem[] }> = []
+    for (const item of visible) {
+      const last = sections[sections.length - 1]
+      if (last && last.key === item.subGroup) {
+        last.items.push(item)
+      } else {
+        sections.push({ key: item.subGroup, items: [item] })
+      }
+    }
+    return sections
   }
 
   const visibleGroups = computed(() =>
@@ -339,6 +370,19 @@
     padding-bottom: 12px;
   }
 
+  .nav__subgroup-title {
+    padding: 8px 8px 4px;
+    color: var(--layout-sidebar-text-muted);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    opacity: 0.85;
+  }
+
+  .nav__subgroup-title:first-child {
+    padding-top: 2px;
+  }
+
   /* 组标题行:11.5px #9aa1ae + 右侧 chevron(收起 › / 展开 ⌄) */
   .nav__group-hd {
     display: flex;
@@ -493,7 +537,8 @@
   .sidebar-foot__status {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: 7px;
+    padding: 4px 2px 4px 4px;
     overflow: hidden;
     white-space: nowrap;
   }

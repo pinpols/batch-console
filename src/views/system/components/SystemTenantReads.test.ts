@@ -29,6 +29,9 @@ vi.mock('@/stores/auth', () => ({
   useAuthStore: () => ({ canAccess: () => false, userInfo: { userId: 'operator' } }),
 }))
 vi.mock('vue-router', () => ({ useRouter: () => ({ push: vi.fn() }) }))
+vi.mock('@/composables/useRouteAccess', () => ({
+  useRouteAccess: () => ({ canOpenPath: () => false }),
+}))
 vi.mock('vue-i18n', async (original) => ({
   ...(await original<typeof import('vue-i18n')>()),
   useI18n: () => ({ t: (key: string) => key }),

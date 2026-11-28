@@ -1,12 +1,17 @@
 <template>
-  <PageContainer>
-    <PageHeader>
+  <component :is="embedded ? 'div' : PageContainer" :class="{ 'embedded-tab-pane': embedded }">
+    <PageHeader v-if="!embedded">
       <template #actions>
         <el-button :icon="Refresh" :loading="loading" @click="load">
           {{ t('common.refresh') }}
         </el-button>
       </template>
     </PageHeader>
+    <div v-else class="embedded-tab-actions">
+      <el-button :icon="Refresh" :loading="loading" @click="load">
+        {{ t('common.refresh') }}
+      </el-button>
+    </div>
 
     <SectionCard>
       <template #header>
@@ -170,10 +175,11 @@
         />
       </div>
     </el-drawer>
-  </PageContainer>
+  </component>
 </template>
 
 <script setup lang="ts">
+  defineProps<{ embedded?: boolean }>()
   import { ref, computed } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { RefreshCw as Refresh } from '@lucide/vue'

@@ -178,15 +178,42 @@ html.dark {
   border: 1px solid var(--color-border-light);
 }
 
-/* 表格：与全局 token 对齐，略抬表头与斑马纹，圆角与卡片一致。
+/* 表格：去竖线网格与重斑马纹，保留外框 1px 描边 + 内部柔和横线 + 呼吸感表头。
  * .console-table / .pro-table__table 为全站列表统一挂载类（对齐 /monitor/job-instances） */
 .el-table {
+  --el-table-border-color: var(--color-border-light);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-content);
+  box-shadow: var(--shadow-card);
   overflow: hidden;
   width: 100%;
-  transition:
-    box-shadow var(--motion-duration-md) var(--motion-ease-standard),
-    border-color var(--motion-duration-sm) var(--motion-ease-standard);
+}
+
+/* 去掉 border 表格的内部竖线与冗余外伪元素，仅保留清爽水平分割线 */
+.el-table--border .el-table__inner-wrapper::after,
+.el-table--border::after,
+.el-table--border::before,
+.el-table__inner-wrapper::before {
+  display: none;
+}
+
+.el-table--border .el-table__cell,
+.el-table--border th.el-table__cell,
+.el-table--border td.el-table__cell {
+  border-right: none;
+}
+
+.el-table__body tr:last-child > td.el-table__cell {
+  border-bottom: none;
+}
+
+/* 去掉重斑马纹，保持统一清爽底色，把视觉焦点留给行 Hover 与选中态 */
+.el-table--striped .el-table__body tr.el-table__row--striped td.el-table__cell {
+  background-color: var(--el-table-tr-bg-color);
+}
+
+.el-table__body tr:hover > td.el-table__cell {
+  background-color: var(--table-row-hover-bg) !important;
 }
 
 /* 默认插画在深色下像一块暗盒，压低透明度。EmptyState 自绘图标不走这条。 */
@@ -209,35 +236,34 @@ html.dark {
   min-width: 100%;
 }
 
-/**
- * 列表表格：外侧阴影易被 .layout-main__body overflow 裁切，hover 叠加内描边保证四边可见。
- * 弹层内表格同理（抽屉/对话框常 teleport 到 body）。
- */
-.layout-main__content .el-table:hover,
-.el-dialog__body .el-table:hover,
-.el-drawer__body .el-table:hover {
-  box-shadow: var(--shadow-surface-hover), var(--surface-hover-edge-inset);
-  border-color: color-mix(in srgb, var(--color-border) 72%, var(--color-primary) 28%);
-}
-
-/* 时刻表方向：表头为次级灰、中等字重，与正文仅差一档字号 */
+/* 表头：纯色柔和底、次级字重，与正文留出清晰层次 */
 .el-table .el-table__header-wrapper th.el-table__cell {
-  font-weight: 500;
-  font-size: var(--font-size-sm);
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: 0.01em;
   color: var(--color-text-secondary);
+  background-color: var(--table-header-bg);
   /* 不做大写转换：表头里的英文缩写保持原样，避免 “JOB CODE” 这种写法 */
 }
 
 .el-table .el-table__cell .cell {
-  padding-left: 10px;
-  padding-right: 10px;
-  line-height: 1.22;
+  padding-left: 14px;
+  padding-right: 14px;
+  line-height: 1.45;
   padding-top: 3px;
   padding-bottom: 3px;
   /* 大多数列表字段更适合单行收敛；需要多行展示的列请在列上显式处理 */
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.el-table .el-table__cell:first-child .cell {
+  padding-left: 16px;
+}
+
+.el-table .el-table__cell:last-child .cell {
+  padding-right: 16px;
 }
 
 .console-table {
@@ -264,18 +290,26 @@ html.dark {
   max-width: 100%;
 }
 
-/* 还原设计(02-audit 样张):数据行宽松(~48px),不再极限压行 */
+/* 数据行适度呼吸感，表头纯色柔和底 + 上下 10px 内边距 */
 .console-table.el-table .el-table__cell {
-  padding-top: 10px;
-  padding-bottom: 10px;
+  padding-top: 11px;
+  padding-bottom: 11px;
 }
 
 .console-table.el-table .el-table__cell .cell {
-  line-height: 1.35;
+  line-height: 1.45;
   padding-top: 0;
   padding-bottom: 0;
-  padding-left: 10px;
-  padding-right: 10px;
+  padding-left: 14px;
+  padding-right: 14px;
+}
+
+.console-table.el-table .el-table__cell:first-child .cell {
+  padding-left: 16px;
+}
+
+.console-table.el-table .el-table__cell:last-child .cell {
+  padding-right: 16px;
 }
 
 .console-table.el-table .el-table__header-wrapper .el-table-column--selection > .cell,
@@ -288,13 +322,10 @@ html.dark {
 }
 
 .console-table .el-table__header-wrapper th.el-table__cell {
-  padding-top: 4px;
-  padding-bottom: 4px;
-  background-image: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--el-table-header-bg-color) 92%, #fff 8%) 0%,
-    var(--el-table-header-bg-color) 100%
-  );
+  padding-top: 10px;
+  padding-bottom: 10px;
+  background-color: var(--table-header-bg);
+  background-image: none;
 }
 
 /* 序号列（type="index"）统一视觉：更紧凑、居中、等宽数字 */

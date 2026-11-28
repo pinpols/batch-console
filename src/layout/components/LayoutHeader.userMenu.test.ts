@@ -4,7 +4,7 @@ import { ref } from 'vue'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import LayoutHeader from './LayoutHeader.vue'
 
-const mocks = vi.hoisted(() => ({ push: vi.fn() }))
+const mocks = vi.hoisted(() => ({ push: vi.fn(), canOpenPath: vi.fn(() => true) }))
 
 vi.mock('vue-i18n', async (original) => ({
   ...(await original<typeof import('vue-i18n')>()),
@@ -12,6 +12,9 @@ vi.mock('vue-i18n', async (original) => ({
 }))
 vi.mock('vue-router', () => ({
   useRouter: () => ({ back: vi.fn(), forward: vi.fn(), push: mocks.push }),
+}))
+vi.mock('@/composables/useRouteAccess', () => ({
+  useRouteAccess: () => ({ canOpenPath: mocks.canOpenPath }),
 }))
 vi.mock('@/layout/composables/useHeaderLogic', () => ({
   useHeaderLogic: () => ({
@@ -65,9 +68,12 @@ function mountHeader() {
 }
 
 describe('LayoutHeader user menu', () => {
-  beforeEach(() => mocks.push.mockReset())
+  beforeEach(() => {
+    mocks.push.mockReset()
+    mocks.canOpenPath.mockReset().mockReturnValue(true)
+  })
 
-  it('lists "my account" first, ahead of the permission self-check', () => {
+  it('lists "my account" first and includes "my API keys" without legacy permission self-check', () => {
     const wrapper = mountHeader()
     const userMenu = wrapper
       .findAll('.user-menu-list')
@@ -75,16 +81,31 @@ describe('LayoutHeader user menu', () => {
     const items = userMenu!.findAll('.menu-item').map((item) => item.attributes('command'))
 
     expect(items[0]).toBe('account')
-    expect(items).toContain('profile')
+    expect(items).toContain('api-keys')
+    expect(items).not.toContain('profile')
   })
 
-  it('opens /system/me from "my account" so users can reach password change', async () => {
+  it('hides "my API keys" when current role cannot open /system/api-keys', () => {
+    mocks.canOpenPath.mockReturnValue(false)
+    const wrapper = mountHeader()
+    const userMenu = wrapper
+      .findAll('.user-menu-list')
+      .find((menu) => menu.text().includes('nav.logout'))
+    const items = userMenu!.findAll('.menu-item').map((item) => item.attributes('command'))
+
+    expect(items[0]).toBe('account')
+    expect(items).not.toContain('api-keys')
+  })
+
+  it('opens /system/me from "my account" and /system/api-keys from "my API keys"', async () => {
     const wrapper = mountHeader()
     for (const dropdown of wrapper.findAllComponents({ name: 'ElDropdown' })) {
       dropdown.vm.$emit('command', 'account')
+      dropdown.vm.$emit('command', 'api-keys')
     }
     await flushPromises()
 
     expect(mocks.push).toHaveBeenCalledWith('/system/me')
+    expect(mocks.push).toHaveBeenCalledWith('/system/api-keys')
   })
 })
