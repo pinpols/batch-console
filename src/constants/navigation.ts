@@ -241,7 +241,7 @@ const navigationGroupsByKey = {
   },
   definitions: {
     key: 'definitions',
-    title: '准备作业',
+    title: '作业编排',
     icon: Management,
     minRole: 'VIEWER',
     children: [

@@ -10,13 +10,15 @@
         </div>
       </div>
 
-      <div class="login-hero__body">
-        <h1 class="login-hero__title">{{ t('login.heroTitle') }}</h1>
-        <p class="login-hero__desc">{{ t('login.heroDesc') }}</p>
-      </div>
+      <div class="login-hero__main">
+        <div class="login-hero__body">
+          <h1 class="login-hero__title">{{ t('login.heroTitle') }}</h1>
+          <p class="login-hero__desc">{{ t('login.heroDesc') }}</p>
+        </div>
 
-      <div class="login-hero__visual" aria-hidden="true">
-        <img src="/images/login-batch-pipeline.png" alt="" />
+        <div class="login-hero__visual" aria-hidden="true">
+          <img src="/images/login-batch-pipeline.png" alt="" />
+        </div>
       </div>
 
       <div class="login-hero__foot">© 2026 Batch Console · v{{ appVersion }}</div>
@@ -338,18 +340,25 @@
     flex: 1 1 56%;
     display: flex;
     flex-direction: column;
-    justify-content: flex-start;
-    padding: 44px 56px 24px;
+    justify-content: space-between;
+    padding: 40px 56px 24px;
     min-width: 0;
   }
 
+  .login-hero__main {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 600px;
+    margin: auto;
+  }
+
   .login-hero__body {
-    max-width: 460px;
-    margin-top: clamp(28px, 5vh, 60px);
+    max-width: 560px;
   }
 
   .login-hero__title {
-    margin: 0 0 16px;
+    margin: 0 0 14px;
     font-size: 28px;
     font-weight: 700;
     line-height: 1.4;
@@ -359,16 +368,15 @@
   }
 
   .login-hero__desc {
-    margin: 0 0 36px;
+    margin: 0 0 28px;
     font-size: 14px;
     line-height: 1.7;
     color: var(--color-text-secondary);
   }
 
   .login-hero__visual {
-    width: min(100%, 540px, 74vh);
+    width: min(100%, 600px, 74vh);
     aspect-ratio: 2 / 1;
-    margin-top: clamp(16px, 2.5vh, 28px);
     overflow: hidden;
     border: 1px solid color-mix(in srgb, var(--color-primary) 24%, var(--color-border));
     border-radius: var(--radius-content);

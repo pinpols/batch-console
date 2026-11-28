@@ -537,7 +537,8 @@
   .sidebar-foot__status {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: 7px;
+    padding: 4px 2px 4px 4px;
     overflow: hidden;
     white-space: nowrap;
   }

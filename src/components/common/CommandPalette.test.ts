@@ -86,7 +86,7 @@ describe('CommandPalette', () => {
       groups: [
         {
           key: 'definitions',
-          title: '准备作业',
+          title: '作业编排',
           icon: { render: () => null },
           children: [
             {
@@ -151,6 +151,7 @@ describe('CommandPalette', () => {
     const wrapper = render([
       { key: 'jobs', path: '/monitor/job-instances?status=FAILED', title: 'Jobs', lastAccessAt: 1 },
     ])
+    await wrapper.get('.cp-filter').trigger('click')
     expect(wrapper.findAll('[role="option"]')).toHaveLength(1)
     expect(wrapper.get('input').attributes('aria-activedescendant')).toBe(
       'command-palette-option-0',
@@ -180,6 +181,7 @@ describe('CommandPalette', () => {
         },
       ],
     })
+    await wrapper.get('.cp-filter').trigger('click')
     expect(wrapper.text()).toContain('Account')
     expect(wrapper.text()).toContain('Permissions')
     expect(wrapper.text()).toContain('Assistant')
@@ -188,7 +190,7 @@ describe('CommandPalette', () => {
     wrapper.unmount()
   })
 
-  it('动态详情页签按基础页面 key 使用当前语言', () => {
+  it('动态详情页签按基础页面 key 使用当前语言', async () => {
     mocks.translations = { 'page.monitorJobInstances.title': 'Job runs' }
     const wrapper = render([
       {
@@ -198,12 +200,13 @@ describe('CommandPalette', () => {
         lastAccessAt: 1,
       },
     ])
+    await wrapper.get('.cp-filter').trigger('click')
     expect(wrapper.text()).toContain('Job runs')
     expect(wrapper.text()).not.toContain('作业运行')
     wrapper.unmount()
   })
 
-  it('filters only permitted sidebar-hidden pages and keeps keyboard selection', async () => {
+  it('默认仅展示侧栏隐藏项，输入搜索词可检索并展示非隐藏项与实体', async () => {
     const wrapper = render([
       { key: 'private', path: '/system/tenants', title: 'Private', lastAccessAt: 2 },
       { key: 'channel', path: '/files/channels', title: 'Channel', lastAccessAt: 1 },
@@ -228,20 +231,31 @@ describe('CommandPalette', () => {
     expect(filter.element.parentElement?.classList.contains('cp-header')).toBe(true)
     expect(filter.element.nextElementSibling?.classList.contains('cp-kbd--close')).toBe(true)
     expect(wrapper.find('.cp-filters').exists()).toBe(false)
-    expect(filter.attributes('aria-pressed')).toBe('false')
-    expect(wrapper.find('[role="img"][aria-label="palette.sidebarHidden"]').exists()).toBe(true)
-    await filter.trigger('click')
+    // 默认开启仅看侧栏隐藏项
     expect(filter.attributes('aria-pressed')).toBe('true')
+    expect(wrapper.find('[role="img"][aria-label="palette.sidebarHidden"]').exists()).toBe(true)
     expect(wrapper.findAll('[role="option"]')).toHaveLength(1)
     expect(wrapper.text()).toContain('Channel')
+    expect(wrapper.text()).not.toContain('Templates')
     expect(wrapper.text()).not.toContain('Private')
-    await wrapper.get('input').setValue('Chan')
+
+    // 输入搜索词后可搜出非隐藏菜单和服务端实体
+    mocks.jobs.mockResolvedValueOnce({ records: [] })
+    await wrapper.get('input').setValue('Templates')
     await vi.advanceTimersByTimeAsync(300)
-    expect(mocks.jobs).not.toHaveBeenCalled()
+    expect(wrapper.text()).toContain('Templates')
+    expect(mocks.jobs).toHaveBeenCalledOnce()
+
+    // 搜索隐藏项同样可达
+    await wrapper.get('input').setValue('Chan')
     await wrapper.get('input').trigger('keydown.enter')
     expect(mocks.push).toHaveBeenCalledWith('/files/channels')
+
+    // 手动关闭过滤后空搜索也展示全部项
+    await wrapper.get('input').setValue('')
     await filter.trigger('click')
     expect(filter.attributes('aria-pressed')).toBe('false')
+    expect(wrapper.text()).toContain('Templates')
     wrapper.unmount()
   })
 })

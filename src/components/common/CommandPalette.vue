@@ -249,7 +249,8 @@
   const inputRef = ref<{ focus: () => void } | null>(null)
   const resultsRef = ref<HTMLElement | null>(null)
   const q = ref('')
-  const hiddenOnly = ref(false)
+  // 默认打开仅展示侧栏隐藏入口；输入搜索词后自动检索并展示全部（含非隐藏）页面与实体
+  const hiddenOnly = ref(true)
   const activeIndex = ref(0)
 
   const recentItems = computed((): Omit<PaletteItem, 'globalIndex'>[] => {
@@ -368,7 +369,7 @@
       base.push(...entityItems.value, ...recentItems.value, ...menuItems.value)
     }
 
-    const scoped = hiddenOnly.value ? base.filter((it) => it.sidebarHidden) : base
+    const scoped = !term && hiddenOnly.value ? base.filter((it) => it.sidebarHidden) : base
     const filtered = term
       ? scoped.filter((it) => {
           if (isJump && it.source === 'jump') return true
@@ -435,7 +436,7 @@
   function onClosed() {
     if (open.value) return
     q.value = ''
-    hiddenOnly.value = false
+    hiddenOnly.value = true
     activeIndex.value = 0
     invalidateSearch()
   }
@@ -444,15 +445,14 @@
     [
       open,
       q,
-      hiddenOnly,
       () => tenant.tenantId,
       () => [...permittedPaths.value].sort().join('|'),
       () => auth.userInfo,
     ],
-    ([isOpen, term, onlyHidden, tenantId]) => {
+    ([isOpen, term, tenantId]) => {
       activeIndex.value = 0
       invalidateSearch()
-      if (!isOpen || onlyHidden || !tenantId || !shouldSearchEntity(term.trim())) return
+      if (!isOpen || !tenantId || !shouldSearchEntity(term.trim())) return
       const generation = activeSearchGen
       debounceTimer = setTimeout(() => {
         debounceTimer = null

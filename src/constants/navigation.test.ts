@@ -14,7 +14,7 @@ describe('navigation role authorities', () => {
   it('侧栏按核心用户任务命名且保留任务入口', () => {
     expect(navigationGroups.map((group) => group.title)).toEqual([
       '工作台',
-      '准备作业',
+      '作业编排',
       '文件管理',
       '调度资源',
       '运行监控',

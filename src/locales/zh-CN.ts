@@ -1154,7 +1154,7 @@ export default {
       workspace: '工作台',
       monitor: '运行监控',
       alerting: '告警投递',
-      definitions: '准备作业',
+      definitions: '作业编排',
       files: '文件管理',
       scheduling: '调度资源',
       system: '平台管理',
