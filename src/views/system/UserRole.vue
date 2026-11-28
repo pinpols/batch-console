@@ -1,6 +1,6 @@
 <template>
-  <PageContainer>
-    <PageHeader>
+  <component :is="embedded ? 'div' : PageContainer" :class="{ 'embedded-tab-pane': embedded }">
+    <PageHeader v-if="!embedded">
       <template #actions>
         <el-button
           :icon="Refresh"
@@ -11,6 +11,15 @@
         </el-button>
       </template>
     </PageHeader>
+    <div v-else class="embedded-tab-actions">
+      <el-button
+        :icon="Refresh"
+        :loading="refreshing || refreshAction.loading.value"
+        @click="refreshAction.run(refreshProfile)"
+      >
+        {{ t('userRole.btnRefreshLogin') }}
+      </el-button>
+    </div>
 
     <div class="access-overview">
       <SectionCard class="access-overview__card">
@@ -150,10 +159,11 @@
         </el-tree>
       </SectionCard>
     </div>
-  </PageContainer>
+  </component>
 </template>
 
 <script setup lang="ts">
+  defineProps<{ embedded?: boolean }>()
   import { computed, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'

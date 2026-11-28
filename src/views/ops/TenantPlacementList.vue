@@ -1,6 +1,6 @@
 <template>
-  <PageContainer>
-    <PageHeader>
+  <component :is="embedded ? 'div' : PageContainer" :class="{ 'embedded-tab-pane': embedded }">
+    <PageHeader v-if="!embedded">
       <template #actions>
         <el-button
           v-if="canManage"
@@ -16,6 +16,20 @@
         </el-button>
       </template>
     </PageHeader>
+    <div v-else class="embedded-tab-actions">
+      <el-button
+        v-if="canManage"
+        type="primary"
+        :icon="Plus"
+        :disabled="writesFrozen"
+        @click="openCreate"
+      >
+        {{ t('common.create') }}
+      </el-button>
+      <el-button :icon="Refresh" :loading="loading" @click="load">
+        {{ t('common.refresh') }}
+      </el-button>
+    </div>
 
     <SectionCard>
       <template #header>
@@ -120,10 +134,11 @@
         </el-form-item>
       </el-form>
     </FormDrawer>
-  </PageContainer>
+  </component>
 </template>
 
 <script setup lang="ts">
+  defineProps<{ embedded?: boolean }>()
   import FormDrawer from '@/components/common/FormDrawer.vue'
   import { ref, reactive, computed } from 'vue'
   import { useI18n } from 'vue-i18n'

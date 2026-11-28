@@ -1,5 +1,10 @@
 <template>
   <div class="my-audits">
+    <div v-if="canViewAllAudits" class="my-audits__toolbar">
+      <router-link to="/observability/audit" class="my-audits__link">
+        {{ t('selfServicePanel.viewAllInAudit') }} →
+      </router-link>
+    </div>
     <ProTable
       :data="rows"
       :loading="loading"
@@ -78,7 +83,7 @@
 
 <script setup lang="ts">
   import CopyableText from '@/components/common/CopyableText.vue'
-  import { ref, watch } from 'vue'
+  import { computed, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import ProTable from '@/components/table/ProTable.vue'
   import EmptyState from '@/components/common/EmptyState.vue'
@@ -87,12 +92,15 @@
   import { useAuthStore } from '@/stores/auth'
   import { useTenantReload } from '@/composables/useTenantReload'
   import { useTenantRequestScope } from '@/composables/useTenantRequestScope'
+  import { useRouteAccess } from '@/composables/useRouteAccess'
   import { queryAuditsPage } from '@/api/observabilityQueries'
   import type { ConsoleAuditLogResponse } from '@/types/console-api'
 
   const { t } = useI18n({ useScope: 'global' })
   const tenant = useTenantStore()
   const auth = useAuthStore()
+  const { canOpenPath } = useRouteAccess()
+  const canViewAllAudits = computed(() => canOpenPath('/observability/audit'))
 
   const loading = ref(false)
   const error = ref(false)
@@ -130,6 +138,23 @@
 </script>
 
 <style scoped>
+  .my-audits__toolbar {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: var(--space-sm, 8px);
+  }
+
+  .my-audits__link {
+    color: var(--color-primary);
+    font-size: var(--font-size-sm, 13px);
+    text-decoration: none;
+  }
+
+  .my-audits__link:hover,
+  .my-audits__link:focus-visible {
+    text-decoration: underline;
+  }
+
   .trace-short {
     font-family: var(--font-mono, monospace);
     font-size: 12px;

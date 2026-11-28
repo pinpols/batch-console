@@ -1,7 +1,7 @@
 <template>
-  <PageContainer>
-    <PageHeader />
-    <RelatedPageLinks :paths="['/reports', '/observability/usage']" />
+  <component :is="embedded ? 'div' : PageContainer" :class="{ 'embedded-tab-pane': embedded }">
+    <PageHeader v-if="!embedded" />
+    <RelatedPageLinks v-if="!embedded" :paths="['/reports', '/observability/usage']" />
 
     <!-- 还原设计:查询区直铺底色,无卡片壳 -->
     <div>
@@ -217,10 +217,11 @@
       <template #header>{{ t('capacityProfile.coverageTitle') }}</template>
       <JsonPreview :data="report.coverage" />
     </SectionCard>
-  </PageContainer>
+  </component>
 </template>
 
 <script setup lang="ts">
+  defineProps<{ embedded?: boolean }>()
   import '@/charts/echarts'
   import { computed, reactive, ref } from 'vue'
   import { useI18n } from 'vue-i18n'

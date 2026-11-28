@@ -1,6 +1,6 @@
 <template>
-  <PageContainer>
-    <PageHeader>
+  <component :is="embedded ? 'div' : PageContainer" :class="{ 'embedded-tab-pane': embedded }">
+    <PageHeader v-if="!embedded">
       <template #actions>
         <RouterLink to="/observability/usage">
           <el-button :icon="ChartNoAxesCombined">{{
@@ -190,10 +190,11 @@
         </el-table-column>
       </ProTable>
     </SectionCard>
-  </PageContainer>
+  </component>
 </template>
 
 <script setup lang="ts">
+  defineProps<{ embedded?: boolean }>()
   import { reactive, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { RouterLink, useRoute } from 'vue-router'

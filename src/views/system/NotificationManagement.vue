@@ -2,9 +2,6 @@
   <PageContainer>
     <PageHeader>
       <template #actions>
-        <el-button @click="$router.push('/system/event-catalog')">
-          {{ t('notificationManagement.eventCatalogAction') }}
-        </el-button>
         <el-button
           v-if="activeCreateAction"
           type="primary"
@@ -27,13 +24,25 @@
 
     <div>
       <el-tabs v-model="activeTab" class="pill-tabs">
-        <el-tab-pane :label="t('notificationManagement.tabChannels')" name="channels">
+        <el-tab-pane
+          v-if="canManageNotifications"
+          :label="t('notificationManagement.tabChannels')"
+          name="channels"
+        >
           <NotificationChannelsTab ref="channelsTabRef" />
         </el-tab-pane>
-        <el-tab-pane :label="t('notificationManagement.tabRules')" name="rules">
+        <el-tab-pane
+          v-if="canManageNotifications"
+          :label="t('notificationManagement.tabRules')"
+          name="rules"
+        >
           <NotificationRulesTab ref="rulesTabRef" />
         </el-tab-pane>
-        <el-tab-pane :label="t('notificationManagement.tabWebhooks')" name="webhooks">
+        <el-tab-pane
+          v-if="canManageNotifications"
+          :label="t('notificationManagement.tabWebhooks')"
+          name="webhooks"
+        >
           <NotificationWebhooksTab ref="webhooksTabRef" />
         </el-tab-pane>
         <el-tab-pane
@@ -44,14 +53,22 @@
         >
           <NotificationRoutePreview />
         </el-tab-pane>
-        <el-tab-pane :label="t('notificationManagement.tabDeliveryLogs')" name="deliveryLogs">
+        <el-tab-pane
+          v-if="canManageNotifications"
+          :label="t('notificationManagement.tabDeliveryLogs')"
+          name="deliveryLogs"
+        >
           <NotificationDeliveryLogsTab />
         </el-tab-pane>
         <el-tab-pane
+          v-if="canManageNotifications"
           :label="t('notificationManagement.tabTerminalDeliveries')"
           name="terminalDeliveries"
         >
           <NotificationTerminalDeliveriesTab />
+        </el-tab-pane>
+        <el-tab-pane :label="t('notificationManagement.tabEventCatalog')" name="eventCatalog" lazy>
+          <EventCatalog embedded />
         </el-tab-pane>
       </el-tabs>
     </div>
@@ -71,47 +88,58 @@
   import NotificationDeliveryLogsTab from './components/NotificationDeliveryLogsTab.vue'
   import NotificationTerminalDeliveriesTab from './components/NotificationTerminalDeliveriesTab.vue'
   import NotificationRoutePreview from './components/NotificationRoutePreview.vue'
+  import EventCatalog from '@/views/observability/EventCatalog.vue'
   import { useAuthStore } from '@/stores/auth'
+  import { usePermissionStore } from '@/stores/permission'
 
   const { t } = useI18n({ useScope: 'global' })
   type NotificationTab =
-    'channels' | 'rules' | 'webhooks' | 'routePreview' | 'deliveryLogs' | 'terminalDeliveries'
+    | 'channels'
+    | 'rules'
+    | 'webhooks'
+    | 'routePreview'
+    | 'deliveryLogs'
+    | 'terminalDeliveries'
+    | 'eventCatalog'
   type CreateTabExpose = {
     openChannelCreate?: () => void
     openRuleCreate?: () => void
     openWebhookCreate?: () => void
   }
 
-  const TABS: readonly NotificationTab[] = [
-    'channels',
-    'rules',
-    'webhooks',
-    'routePreview',
-    'deliveryLogs',
-    'terminalDeliveries',
-  ]
   const route = useRoute()
   const router = useRouter()
-
-  /** 页签与 URL 的 tab 参数双向同步，深链能直接落到对应页签与其新增入口 */
-  function tabFromQuery(value: unknown): NotificationTab {
-    return TABS.includes(value as NotificationTab) ? (value as NotificationTab) : 'channels'
-  }
-  const activeTab = ref<NotificationTab>(tabFromQuery(route.query.tab))
-  watch(
-    () => route.query.tab,
-    (tab) => {
-      const selected = tabFromQuery(tab)
-      if (selected !== activeTab.value) activeTab.value = selected
-    },
-  )
-  watch(activeTab, (tab) => {
-    if (route.query.tab !== tab) void router.replace({ query: { ...route.query, tab } })
-  })
   const auth = useAuthStore()
+  const permission = usePermissionStore()
+  const canManageNotifications = computed(() => permission.canAccessRole('OPERATOR'))
   const canPreviewRoute = computed(
     () => auth.hasPermission('ROLE_ADMIN') || auth.hasPermission('ROLE_TENANT_ADMIN'),
   )
+  const availableTabs = computed<NotificationTab[]>(() => {
+    const tabs: NotificationTab[] = []
+    if (canManageNotifications.value) {
+      tabs.push('channels', 'rules', 'webhooks')
+      if (canPreviewRoute.value) tabs.push('routePreview')
+      tabs.push('deliveryLogs', 'terminalDeliveries')
+    }
+    tabs.push('eventCatalog')
+    return tabs
+  })
+
+  /** 页签与 URL 的 tab 参数双向同步，深链能直接落到对应页签与其新增入口 */
+  function tabFromQuery(value: unknown): NotificationTab {
+    const tabs = availableTabs.value
+    if (tabs.includes(value as NotificationTab)) return value as NotificationTab
+    return tabs[0] ?? 'eventCatalog'
+  }
+  const activeTab = ref<NotificationTab>(tabFromQuery(route.query.tab))
+  watch([() => route.query.tab, availableTabs], ([tab]) => {
+    const selected = tabFromQuery(tab)
+    if (selected !== activeTab.value) activeTab.value = selected
+  })
+  watch(activeTab, (tab) => {
+    if (route.query.tab !== tab) void router.replace({ query: { ...route.query, tab } })
+  })
   const channelsTabRef = ref<CreateTabExpose | null>(null)
   const rulesTabRef = ref<CreateTabExpose | null>(null)
   const webhooksTabRef = ref<CreateTabExpose | null>(null)

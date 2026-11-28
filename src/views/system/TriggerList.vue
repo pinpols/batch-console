@@ -76,39 +76,13 @@
         <DatetimeColumn prop="nextFireTime" :label="t('triggerList.colNextFire')" width="160" />
         <el-table-column
           :label="t('triggerList.colActions')"
-          width="280"
+          width="260"
           :fixed="isMobile ? false : 'right'"
         >
           <template #default="{ row }">
             <div class="table-actions">
               <el-button
-                v-if="canRegister(row)"
-                size="small"
-                plain
-                type="primary"
-                :icon="CirclePlay"
-                :disabled="!canOperateTriggers"
-                :title="canOperateTriggers ? undefined : t('common.permissionDenied')"
-                v-track-click="{ action: 'register trigger', workflowCode: row.workflowCode }"
-                @click="doRegister(row)"
-              >
-                {{ t('triggerList.actionRegister') }}
-              </el-button>
-              <el-button
-                v-if="canUnregister(row)"
-                size="small"
-                plain
-                type="danger"
-                :icon="CircleStop"
-                :disabled="!canOperateTriggers"
-                :title="canOperateTriggers ? undefined : t('common.permissionDenied')"
-                v-track-click="{ action: 'unregister trigger', workflowCode: row.workflowCode }"
-                @click="doUnregister(row)"
-              >
-                {{ t('triggerList.actionUnregister') }}
-              </el-button>
-              <el-button
-                v-if="canPause(row)"
+                v-if="isScheduleActive(row)"
                 size="small"
                 plain
                 type="warning"
@@ -116,22 +90,32 @@
                 :disabled="!canOperateTriggers"
                 :title="canOperateTriggers ? undefined : t('common.permissionDenied')"
                 v-track-click="{ action: 'pause trigger', workflowCode: row.workflowCode }"
-                @click="doPause(row)"
+                @click="doPauseSchedule(row)"
               >
-                {{ t('triggerList.actionPause') }}
+                {{ t('triggerList.actionPauseSchedule') }}
               </el-button>
               <el-button
-                v-if="canResume(row)"
+                v-else
                 size="small"
                 plain
-                type="success"
+                type="primary"
                 :icon="Play"
                 :disabled="!canOperateTriggers"
                 :title="canOperateTriggers ? undefined : t('common.permissionDenied')"
-                v-track-click="{ action: 'resume trigger', workflowCode: row.workflowCode }"
-                @click="doResume(row)"
+                v-track-click="{ action: 'enable trigger', workflowCode: row.workflowCode }"
+                @click="doEnableSchedule(row)"
               >
-                {{ t('triggerList.actionResume') }}
+                {{ t('triggerList.actionEnableSchedule') }}
+              </el-button>
+              <el-button
+                v-if="row.workflowCode"
+                size="small"
+                link
+                type="primary"
+                :icon="SlidersHorizontal"
+                @click="openWorkflowScheduleSettings(String(row.workflowCode))"
+              >
+                {{ t('triggerList.actionScheduleSettings') }}
               </el-button>
             </div>
           </template>
@@ -142,8 +126,9 @@
 </template>
 
 <script setup lang="ts">
-  import { CirclePlay, CircleStop, Pause, Play } from '@lucide/vue'
+  import { Pause, Play, SlidersHorizontal } from '@lucide/vue'
   import { ref, computed } from 'vue'
+  import { useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
   import { confirmDanger } from '@/composables/useDangerConfirm'
@@ -152,6 +137,7 @@
   import { useResponsive } from '@/composables/useResponsive'
 
   const { t, te } = useI18n({ useScope: 'global' })
+  const router = useRouter()
   const { writesFrozen, ensureWriteAvailable } = useWriteAvailability()
   const { canManageSystem } = usePermission()
   // 后端 /api/console/ops/triggers 的注册、注销、暂停、恢复仅平台管理员可用，其他角色只读
@@ -169,32 +155,23 @@
     return String(row.tenantId || tenant.tenantId)
   }
 
-  // 破坏性动作按行状态门控:未注册只显示"注册";已注册显示"注销";
-  // 运行中(NORMAL/REGISTERED)才可"暂停";仅"已暂停"可"恢复"。
+  // 后端注册与恢复同源（均开启 schedule_enabled 并注册 Quartz），注销与暂停同源；
+  // 每行只展示与当前状态相反的一个启停按钮。
   function triggerStatusOf(row: Record<string, unknown>): string {
     const rawStatus = String(row.triggerStatus ?? row.status ?? '')
     return rawStatus.toUpperCase()
   }
-  function canRegister(row: Record<string, unknown>): boolean {
-    const s = triggerStatusOf(row)
-    return !s || s === 'UNREGISTERED'
-  }
-  function canUnregister(row: Record<string, unknown>): boolean {
-    const s = triggerStatusOf(row)
-    return !!s && s !== 'UNREGISTERED'
-  }
-  function canPause(row: Record<string, unknown>): boolean {
+  function isScheduleActive(row: Record<string, unknown>): boolean {
     const status = triggerStatusOf(row)
     return ['NORMAL', 'REGISTERED'].includes(status)
   }
-  function canResume(row: Record<string, unknown>): boolean {
-    return triggerStatusOf(row) === 'PAUSED'
+  function openWorkflowScheduleSettings(workflowCode: string) {
+    void router.push({ path: '/workflow/definitions', query: { workflowCode } })
   }
   import {
     listTriggers,
     type TriggerStatusResponse,
     registerTrigger,
-    unregisterTrigger,
     pauseTrigger,
     resumeTrigger,
   } from '@/api/triggers'
@@ -270,79 +247,42 @@
     }
   }
 
-  async function doRegister(row: Record<string, unknown>) {
+  async function doEnableSchedule(row: Record<string, unknown>) {
     if (!canManageSystem.value || !ensureWriteAvailable()) return
     try {
-      const confirmVerb = t('triggerList.registerConfirmVerb')
       const workflowCode = String(row.workflowCode)
-      const confirmTarget = t('triggerList.confirmTarget', { code: workflowCode })
-      const confirmConsequence = t('triggerList.registerConfirmConsequence')
-      const confirmButtonText = t('triggerList.registerConfirmButton')
-      await confirmDanger({
-        verb: confirmVerb,
-        target: confirmTarget,
-        consequence: confirmConsequence,
-        confirmButtonText,
-      })
-      await registerTrigger(String(row.workflowCode), rowTenant(row))
-      ElMessage.success(t('triggerList.registerSuccess'))
-      await load()
-    } catch {
-      /* cancel */
-    }
-  }
-
-  async function doUnregister(row: Record<string, unknown>) {
-    if (!canManageSystem.value || !ensureWriteAvailable()) return
-    try {
-      const confirmVerb = t('triggerList.unregisterConfirmVerb')
-      const workflowCode = String(row.workflowCode)
-      const confirmTarget = t('triggerList.confirmTarget', { code: workflowCode })
-      const confirmConsequence = t('triggerList.unregisterConfirmConsequence')
-      const confirmButtonText = t('triggerList.unregisterConfirmButton')
-      await confirmDanger({
-        verb: confirmVerb,
-        target: confirmTarget,
-        consequence: confirmConsequence,
-        irreversible: true,
-        confirmButtonText,
-      })
-      await unregisterTrigger(String(row.workflowCode), rowTenant(row))
-      ElMessage.success(t('triggerList.unregisterSuccess'))
-      await load()
-    } catch {
-      /* cancel */
-    }
-  }
-
-  async function doPause(row: Record<string, unknown>) {
-    if (!canManageSystem.value || !ensureWriteAvailable()) return
-    try {
-      const confirmVerb = t('triggerList.pauseConfirmVerb')
-      const workflowCode = String(row.workflowCode)
-      const confirmTarget = t('triggerList.confirmTarget', { code: workflowCode })
-      const confirmConsequence = t('triggerList.pauseConfirmConsequence')
-      const confirmButtonText = t('triggerList.pauseConfirmButton')
       await confirmDanger({
         reversible: true,
-        verb: confirmVerb,
-        target: confirmTarget,
-        consequence: confirmConsequence,
-        confirmButtonText,
+        verb: t('triggerList.enableConfirmVerb'),
+        target: t('triggerList.confirmTarget', { code: workflowCode }),
+        consequence: t('triggerList.enableConfirmConsequence'),
+        confirmButtonText: t('triggerList.enableConfirmButton'),
       })
-      await pauseTrigger(String(row.workflowCode), rowTenant(row))
-      ElMessage.success(t('triggerList.pauseSuccess'))
+      if (triggerStatusOf(row) === 'PAUSED') {
+        await resumeTrigger(workflowCode, rowTenant(row))
+      } else {
+        await registerTrigger(workflowCode, rowTenant(row))
+      }
+      ElMessage.success(t('triggerList.enableSuccess'))
       await load()
     } catch {
       /* cancel */
     }
   }
 
-  async function doResume(row: Record<string, unknown>) {
+  async function doPauseSchedule(row: Record<string, unknown>) {
     if (!canManageSystem.value || !ensureWriteAvailable()) return
     try {
-      await resumeTrigger(String(row.workflowCode), rowTenant(row))
-      ElMessage.success(t('triggerList.resumeSuccess'))
+      const workflowCode = String(row.workflowCode)
+      await confirmDanger({
+        reversible: true,
+        verb: t('triggerList.pauseConfirmVerb'),
+        target: t('triggerList.confirmTarget', { code: workflowCode }),
+        consequence: t('triggerList.pauseConfirmConsequence'),
+        confirmButtonText: t('triggerList.pauseConfirmButton'),
+      })
+      await pauseTrigger(workflowCode, rowTenant(row))
+      ElMessage.success(t('triggerList.pauseSuccess'))
       await load()
     } catch {
       /* cancel */

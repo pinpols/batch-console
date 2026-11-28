@@ -43,24 +43,67 @@ describe('route inventory', () => {
     ])
   })
 
-  it('旧同步链接保留查询参数并打开同步面板', () => {
-    const redirect = inventory.find((item) => item.path === '/config/sync')?.route.redirect
-    expect(typeof redirect).toBe('function')
-    expect(
-      (redirect as (to: unknown) => unknown)({ query: { tenantId: 'tenant-a', tab: 'logs' } }),
-    ).toEqual({
-      path: '/config/management',
-      query: { tenantId: 'tenant-a', tab: 'sync' },
+  it('旧路径重定向保留查询参数并落到目标页签', () => {
+    const cases: Array<{ from: string; toPath: string; tab: string }> = [
+      { from: '/config/sync', toPath: '/config/management', tab: 'sync' },
+      { from: '/observability/audits', toPath: '/observability/audit', tab: 'file' },
+      { from: '/observability/operation-audits', toPath: '/observability/audit', tab: 'operation' },
+      {
+        from: '/ops/asset-freshness',
+        toPath: '/observability/job-monitoring-policies',
+        tab: 'freshness',
+      },
+      { from: '/system/event-catalog', toPath: '/system/notifications', tab: 'eventCatalog' },
+      { from: '/ops/capacity-profile', toPath: '/observability/usage', tab: 'capacity' },
+      { from: '/ops/worker-fingerprints', toPath: '/workers/management', tab: 'fingerprints' },
+      { from: '/ops/custom-task-types', toPath: '/workers/management', tab: 'customTaskTypes' },
+      { from: '/ops/tenant-placements', toPath: '/ops/shard-catalog', tab: 'placements' },
+      { from: '/system/users', toPath: '/system/me', tab: 'permissions' },
+    ]
+
+    for (const item of cases) {
+      const redirect = inventory.find((entry) => entry.path === item.from)?.route.redirect
+      expect(typeof redirect, `${item.from} redirect`).toBe('function')
+      expect(
+        (redirect as (to: unknown) => unknown)({ query: { tenantId: 'tenant-a', tab: 'old' } }),
+      ).toEqual({
+        path: item.toPath,
+        query: { tenantId: 'tenant-a', tab: item.tab },
+      })
+    }
+
+    const runsRedirect = inventory.find((entry) => entry.path === '/runs')?.route.redirect
+    expect(typeof runsRedirect, '/runs redirect').toBe('function')
+    expect((runsRedirect as (to: unknown) => unknown)({ query: { status: 'FAILED' } })).toEqual({
+      path: '/monitor/job-instances',
+      query: { status: 'FAILED' },
     })
+  })
+
+  it('新合并的中心页路由均指向可加载组件', async () => {
+    const centerPaths = [
+      '/observability/job-monitoring-policies',
+      '/observability/audit',
+      '/observability/usage',
+      '/system/settings',
+      '/ops/shard-catalog',
+    ]
+    for (const path of centerPaths) {
+      const route = inventory.find((entry) => entry.path === path)?.route
+      expect(typeof route?.component, `${path} lazy loader`).toBe('function')
+      const loaded = await (route!.component as () => Promise<unknown>)()
+      expect(loaded).toBeTruthy()
+    }
   })
 
   it('keeps every backend-menu path backed by a frontend route', () => {
     const navigationItems = navigationGroups.flatMap((group) => group.children)
     const navigationPaths = navigationItems.map((item) => item.path)
 
-    expect(navigationPaths).toHaveLength(56)
-    expect(navigationItems.filter((item) => !item.hidden)).toHaveLength(31)
-    expect(navigationItems.filter((item) => item.hidden)).toHaveLength(25)
+    expect(navigationPaths).toHaveLength(48)
+    expect(navigationItems.filter((item) => !item.hidden)).toHaveLength(32)
+    expect(navigationItems.filter((item) => item.hidden)).toHaveLength(16)
+    expect(navigationPaths).not.toContain('/runs')
     expect(navigationPaths.filter((path) => !routePaths.has(path))).toEqual([])
     expect(navigationPaths).not.toContain('/jobs/pipelines')
     expect(inventory.find((item) => item.path === '/jobs/pipelines')).toBeUndefined()

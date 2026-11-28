@@ -7,9 +7,15 @@ const state = vi.hoisted(() => ({
   query: {} as Record<string, string>,
   replace: vi.fn(),
   openWebhook: vi.fn(),
+  canManageNotifications: true,
 }))
 
-vi.mock('@/stores/auth', () => ({ useAuthStore: () => ({ hasPermission: () => true }) }))
+vi.mock('@/stores/auth', () => ({
+  useAuthStore: () => ({ hasPermission: () => state.canManageNotifications }),
+}))
+vi.mock('@/stores/permission', () => ({
+  usePermissionStore: () => ({ canAccessRole: () => state.canManageNotifications }),
+}))
 vi.mock('vue-router', () => ({
   useRoute: () => ({ query: state.query }),
   useRouter: () => ({ replace: state.replace, push: vi.fn() }),
@@ -46,6 +52,7 @@ function mountPage() {
         NotificationDeliveryLogsTab: true,
         NotificationTerminalDeliveriesTab: true,
         NotificationRoutePreview: true,
+        EventCatalog: { template: '<div class="event-catalog-tab" />' },
       },
     },
   })
@@ -53,6 +60,7 @@ function mountPage() {
 
 afterEach(() => {
   state.query = {}
+  state.canManageNotifications = true
   vi.clearAllMocks()
 })
 
@@ -73,5 +81,17 @@ describe('通知与投递页签与新增入口', () => {
     await flushPromises()
     const create = wrapper.findAll('button').find((b) => b.text().includes('dialogTitleCreate'))!
     expect(create.text()).toBe('notificationChannelsTab.dialogTitleCreate')
+  })
+
+  it('只读角色仅能看到事件目录页签，不显示通知配置页签和新增按钮', async () => {
+    state.canManageNotifications = false
+    state.query = { tab: 'webhooks' }
+    const wrapper = mountPage()
+    await flushPromises()
+    expect(wrapper.find('.event-catalog-tab').exists()).toBe(true)
+    expect(wrapper.find('.webhooks-tab').exists()).toBe(false)
+    expect(
+      wrapper.findAll('button').filter((b) => b.text().includes('dialogTitleCreate')),
+    ).toHaveLength(0)
   })
 })

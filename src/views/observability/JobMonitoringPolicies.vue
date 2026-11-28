@@ -1,6 +1,6 @@
 <template>
-  <PageContainer>
-    <PageHeader />
+  <component :is="embedded ? 'div' : PageContainer" :class="{ 'embedded-tab-pane': embedded }">
+    <PageHeader v-if="!embedded" />
 
     <ListPageQueryBar
       :cols="3"
@@ -182,10 +182,11 @@
         />
       </el-form>
     </FormDrawer>
-  </PageContainer>
+  </component>
 </template>
 
 <script setup lang="ts">
+  defineProps<{ embedded?: boolean }>()
   import { useRoute } from 'vue-router'
   import FormDrawer from '@/components/common/FormDrawer.vue'
   import { computed, reactive, ref, watch } from 'vue'

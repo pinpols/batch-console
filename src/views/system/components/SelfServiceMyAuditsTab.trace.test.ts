@@ -12,6 +12,9 @@ vi.mock('vue-i18n', async (importOriginal) => ({
 vi.mock('@/stores/tenant', () => ({ useTenantStore: () => reactive({ tenantId: 'tenant-a' }) }))
 vi.mock('@/stores/auth', () => ({ useAuthStore: () => ({ userInfo: { userId: 'operator' } }) }))
 vi.mock('@/composables/useTenantReload', () => ({ useTenantReload: () => {} }))
+vi.mock('@/composables/useRouteAccess', () => ({
+  useRouteAccess: () => ({ canOpenPath: () => false }),
+}))
 
 function render() {
   return mount(SelfServiceMyAuditsTab, {

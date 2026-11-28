@@ -1,6 +1,6 @@
 <template>
-  <PageContainer>
-    <PageHeader>
+  <component :is="embedded ? 'div' : PageContainer" :class="{ 'embedded-tab-pane': embedded }">
+    <PageHeader v-if="!embedded">
       <template #actions>
         <el-button :icon="ChartNoAxesCombined" @click="router.push('/observability/usage')">
           {{ t('page.observabilityUsage.title') }}
@@ -132,10 +132,11 @@
         </el-table-column>
       </ProTable>
     </SectionCard>
-  </PageContainer>
+  </component>
 </template>
 
 <script setup lang="ts">
+  defineProps<{ embedded?: boolean }>()
   import StatusTag from '@/components/common/StatusTag.vue'
   import { computed, reactive, ref, watch } from 'vue'
   import { useI18n } from 'vue-i18n'

@@ -3,156 +3,167 @@
     <div class="me-page">
       <PageHeader />
 
-      <section v-if="showPasswordReminder" class="me-notice" role="status">
-        <div class="me-notice__icon" aria-hidden="true"><ShieldCheck :size="19" /></div>
-        <div class="me-notice__content">
-          <div class="me-notice__heading">
-            <el-tag type="warning" effect="plain" size="small">
-              {{ t('myAccount.securityRequired') }}
-            </el-tag>
-            <h2>{{ t('myAccount.mustChangeTitle') }}</h2>
-          </div>
-          <p>{{ t('myAccount.mustChangeDescription') }}</p>
-        </div>
-      </section>
-
-      <div class="me-layout">
-        <section class="me-panel me-panel--context">
-          <div class="me-panel__header">
-            <div>
-              <h2>{{ t('myAccount.accountContextTitle') }}</h2>
-              <p>{{ t('myAccount.accountContextDescription') }}</p>
-            </div>
-          </div>
-
-          <div class="me-identity">
-            <div class="me-identity__avatar" aria-hidden="true"><UserRound :size="21" /></div>
-            <div class="me-identity__details">
-              <span class="me-identity__label">{{ t('myAccount.fieldUsername') }}</span>
-              <strong>{{ auth.userInfo?.username || '—' }}</strong>
-              <span class="me-identity__role">{{ formalRoleLabel }}</span>
-            </div>
-          </div>
-
-          <dl class="me-facts">
-            <div class="me-fact">
-              <dt>{{ t('myAccount.fieldTenant') }}</dt>
-              <dd>{{ tenant.tenantId || '—' }}</dd>
-            </div>
-          </dl>
-
-          <div class="me-permissions">
-            <span class="me-permissions__label">{{ t('myAccount.fieldPermissions') }}</span>
-            <div class="me-permissions__list">
-              <el-tag
-                v-for="p in visiblePermissions"
-                :key="p"
-                size="small"
-                effect="plain"
-                class="me-perm-tag"
-              >
-                {{ p }}
-              </el-tag>
-              <span v-if="hiddenPermissionCount > 0" class="me-permissions__more">
-                {{ t('myAccount.permissionsMore', { count: hiddenPermissionCount }) }}
-              </span>
-              <span v-if="visiblePermissions.length === 0" class="me-permissions__more">—</span>
-            </div>
-          </div>
-
-          <el-alert
-            v-if="!showPasswordReminder && isPasswordExpiringSoon"
-            type="warning"
-            :title="t('myAccount.expiringTitle', { days: auth.userInfo?.passwordExpiringIn })"
-            show-icon
-            :closable="false"
-            class="me-alert"
-          />
-        </section>
-
-        <section class="me-panel me-panel--form" aria-labelledby="change-password-title">
-          <div class="me-panel__header">
-            <div>
-              <h2 id="change-password-title">{{ t('myAccount.changePasswordTitle') }}</h2>
-              <p>{{ t('myAccount.changePasswordDescription') }}</p>
-            </div>
-            <KeyRound :size="19" aria-hidden="true" />
-          </div>
-
-          <el-form
-            ref="formRef"
-            :model="form"
-            :rules="formRules"
-            label-position="top"
-            hide-required-asterisk
-            class="me-form"
-            @submit.prevent="submit"
-          >
-            <el-form-item :label="t('myAccount.fieldOldPassword')" prop="oldPassword">
-              <el-input
-                v-model="form.oldPassword"
-                type="password"
-                show-password
-                :placeholder="t('myAccount.placeholderOldPassword')"
-                maxlength="256"
-                autocomplete="current-password"
-              />
-            </el-form-item>
-
-            <el-form-item :label="t('myAccount.fieldNewPassword')" prop="newPassword">
-              <StrongPasswordInput
-                v-model="form.newPassword"
-                :placeholder="t('myAccount.placeholderNewPassword')"
-                :show-strength="false"
-                actions-outside
-                @generated="onGen"
-              />
-              <div class="field-hint">
-                {{ t('myAccount.hintNewPassword') }}
-                <span
-                  v-if="form.newPassword"
-                  class="me-strength"
-                  :class="`me-strength--${strength}`"
-                >
-                  {{ getPasswordStrengthLabel(strength) }}
-                </span>
+      <el-tabs v-model="activeTab" class="pill-tabs">
+        <el-tab-pane :label="t('myAccount.tabAccount')" name="account">
+          <div class="me-page">
+            <section v-if="showPasswordReminder" class="me-notice" role="status">
+              <div class="me-notice__icon" aria-hidden="true"><ShieldCheck :size="19" /></div>
+              <div class="me-notice__content">
+                <div class="me-notice__heading">
+                  <el-tag type="warning" effect="plain" size="small">
+                    {{ t('myAccount.securityRequired') }}
+                  </el-tag>
+                  <h2>{{ t('myAccount.mustChangeTitle') }}</h2>
+                </div>
+                <p>{{ t('myAccount.mustChangeDescription') }}</p>
               </div>
-            </el-form-item>
+            </section>
 
-            <el-form-item :label="t('myAccount.fieldConfirmPassword')" prop="confirmPassword">
-              <el-input
-                v-model="form.confirmPassword"
-                type="password"
-                show-password
-                :placeholder="t('myAccount.placeholderConfirmPassword')"
-                maxlength="256"
-                autocomplete="new-password"
-              />
-            </el-form-item>
+            <div class="me-layout">
+              <section class="me-panel me-panel--context">
+                <div class="me-panel__header">
+                  <div>
+                    <h2>{{ t('myAccount.accountContextTitle') }}</h2>
+                    <p>{{ t('myAccount.accountContextDescription') }}</p>
+                  </div>
+                </div>
 
-            <el-form-item class="form-actions">
-              <el-button native-type="button" :disabled="submitting" @click="onReset">
-                {{ t('common.reset') }}
-              </el-button>
-              <el-button
-                type="primary"
-                :icon="Send"
-                native-type="submit"
-                :loading="submitting"
-                class="me-submit"
-              >
-                {{ t('myAccount.btnSubmit') }}
-              </el-button>
-            </el-form-item>
-          </el-form>
-        </section>
-      </div>
+                <div class="me-identity">
+                  <div class="me-identity__avatar" aria-hidden="true"><UserRound :size="21" /></div>
+                  <div class="me-identity__details">
+                    <span class="me-identity__label">{{ t('myAccount.fieldUsername') }}</span>
+                    <strong>{{ auth.userInfo?.username || '—' }}</strong>
+                    <span class="me-identity__role">{{ formalRoleLabel }}</span>
+                  </div>
+                </div>
+
+                <dl class="me-facts">
+                  <div class="me-fact">
+                    <dt>{{ t('myAccount.fieldTenant') }}</dt>
+                    <dd>{{ tenant.tenantId || '—' }}</dd>
+                  </div>
+                </dl>
+
+                <div class="me-permissions">
+                  <span class="me-permissions__label">{{ t('myAccount.fieldPermissions') }}</span>
+                  <div class="me-permissions__list">
+                    <el-tag
+                      v-for="p in visiblePermissions"
+                      :key="p"
+                      size="small"
+                      effect="plain"
+                      class="me-perm-tag"
+                    >
+                      {{ p }}
+                    </el-tag>
+                    <span v-if="hiddenPermissionCount > 0" class="me-permissions__more">
+                      {{ t('myAccount.permissionsMore', { count: hiddenPermissionCount }) }}
+                    </span>
+                    <span v-if="visiblePermissions.length === 0" class="me-permissions__more"
+                      >—</span
+                    >
+                  </div>
+                </div>
+
+                <el-alert
+                  v-if="!showPasswordReminder && isPasswordExpiringSoon"
+                  type="warning"
+                  :title="t('myAccount.expiringTitle', { days: auth.userInfo?.passwordExpiringIn })"
+                  show-icon
+                  :closable="false"
+                  class="me-alert"
+                />
+              </section>
+
+              <section class="me-panel me-panel--form" aria-labelledby="change-password-title">
+                <div class="me-panel__header">
+                  <div>
+                    <h2 id="change-password-title">{{ t('myAccount.changePasswordTitle') }}</h2>
+                    <p>{{ t('myAccount.changePasswordDescription') }}</p>
+                  </div>
+                  <KeyRound :size="19" aria-hidden="true" />
+                </div>
+
+                <el-form
+                  ref="formRef"
+                  :model="form"
+                  :rules="formRules"
+                  label-position="top"
+                  hide-required-asterisk
+                  class="me-form"
+                  @submit.prevent="submit"
+                >
+                  <el-form-item :label="t('myAccount.fieldOldPassword')" prop="oldPassword">
+                    <el-input
+                      v-model="form.oldPassword"
+                      type="password"
+                      show-password
+                      :placeholder="t('myAccount.placeholderOldPassword')"
+                      maxlength="256"
+                      autocomplete="current-password"
+                    />
+                  </el-form-item>
+
+                  <el-form-item :label="t('myAccount.fieldNewPassword')" prop="newPassword">
+                    <StrongPasswordInput
+                      v-model="form.newPassword"
+                      :placeholder="t('myAccount.placeholderNewPassword')"
+                      :show-strength="false"
+                      actions-outside
+                      @generated="onGen"
+                    />
+                    <div class="field-hint">
+                      {{ t('myAccount.hintNewPassword') }}
+                      <span
+                        v-if="form.newPassword"
+                        class="me-strength"
+                        :class="`me-strength--${strength}`"
+                      >
+                        {{ getPasswordStrengthLabel(strength) }}
+                      </span>
+                    </div>
+                  </el-form-item>
+
+                  <el-form-item :label="t('myAccount.fieldConfirmPassword')" prop="confirmPassword">
+                    <el-input
+                      v-model="form.confirmPassword"
+                      type="password"
+                      show-password
+                      :placeholder="t('myAccount.placeholderConfirmPassword')"
+                      maxlength="256"
+                      autocomplete="new-password"
+                    />
+                  </el-form-item>
+
+                  <el-form-item class="form-actions">
+                    <el-button native-type="button" :disabled="submitting" @click="onReset">
+                      {{ t('common.reset') }}
+                    </el-button>
+                    <el-button
+                      type="primary"
+                      :icon="Send"
+                      native-type="submit"
+                      :loading="submitting"
+                      class="me-submit"
+                    >
+                      {{ t('myAccount.btnSubmit') }}
+                    </el-button>
+                  </el-form-item>
+                </el-form>
+              </section>
+            </div>
+          </div>
+        </el-tab-pane>
+        <el-tab-pane :label="t('myAccount.tabPermissions')" name="permissions" lazy>
+          <UserRole embedded />
+        </el-tab-pane>
+      </el-tabs>
     </div>
   </PageContainer>
 </template>
 
 <script setup lang="ts">
-  import { computed, reactive, ref } from 'vue'
+  import { computed, reactive, ref, watch } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import { useI18n } from 'vue-i18n'
   import { ElMessage } from 'element-plus'
@@ -165,13 +176,33 @@
   import PageContainer from '@/components/common/PageContainer.vue'
   import PageHeader from '@/components/common/PageHeader.vue'
   import StrongPasswordInput from '@/components/common/StrongPasswordInput.vue'
+  import UserRole from './UserRole.vue'
   import { authorityRoleLabelKeyMap, resolveAuthorityRole } from '@/constants/role'
+
+  type AccountTab = 'account' | 'permissions'
+  const TABS: readonly AccountTab[] = ['account', 'permissions']
 
   const { t } = useI18n({ useScope: 'global' })
   const route = useRoute()
   const router = useRouter()
   const auth = useAuthStore()
   const tenant = useTenantStore()
+
+  function resolveTab(value: unknown): AccountTab {
+    return TABS.includes(value as AccountTab) ? (value as AccountTab) : 'account'
+  }
+  const activeTab = ref<AccountTab>(resolveTab(route.query.tab))
+  watch(
+    () => route.query.tab,
+    (tab) => {
+      const next = resolveTab(tab)
+      if (next !== activeTab.value) activeTab.value = next
+    },
+  )
+  watch(activeTab, (tab) => {
+    if (tab === 'account' && !route.query.tab) return
+    if (route.query.tab !== tab) void router.replace({ query: { ...route.query, tab } })
+  })
 
   const formRef = ref<FormInstance>()
   const form = reactive({ oldPassword: '', newPassword: '', confirmPassword: '' })
