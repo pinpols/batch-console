@@ -80,6 +80,22 @@ describe('route inventory', () => {
     })
   })
 
+  it('新合并的中心页路由均指向可加载组件', async () => {
+    const centerPaths = [
+      '/observability/job-monitoring-policies',
+      '/observability/audit',
+      '/observability/usage',
+      '/system/settings',
+      '/ops/shard-catalog',
+    ]
+    for (const path of centerPaths) {
+      const route = inventory.find((entry) => entry.path === path)?.route
+      expect(typeof route?.component, `${path} lazy loader`).toBe('function')
+      const loaded = await (route!.component as () => Promise<unknown>)()
+      expect(loaded).toBeTruthy()
+    }
+  })
+
   it('keeps every backend-menu path backed by a frontend route', () => {
     const navigationItems = navigationGroups.flatMap((group) => group.children)
     const navigationPaths = navigationItems.map((item) => item.path)
