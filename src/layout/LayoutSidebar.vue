@@ -11,7 +11,7 @@
       <BatchMark class="brand__logo" :size="38" />
       <div v-if="!app.sidebarCollapsed" class="brand__text">
         <div class="brand__title">{{ t('nav.appTitle') }}</div>
-        <div class="brand__subtitle">Batch Console</div>
+        <div class="brand__subtitle">{{ t('login.appDesc') }}</div>
       </div>
       <button
         v-if="!app.sidebarCollapsed"
@@ -65,12 +65,10 @@
             :key="`${group.key}:${section.key ?? sectionIdx}`"
           >
             <div
-              v-if="section.key && !app.sidebarCollapsed"
-              class="nav__subgroup-title"
-              role="presentation"
-            >
-              {{ resolveSubGroupTitle(section.key) }}
-            </div>
+              v-if="sectionIdx > 0 && section.key"
+              class="nav__subgroup-divider"
+              role="separator"
+            />
             <RouterLink
               v-for="item in section.items"
               :key="item.path"
@@ -180,11 +178,6 @@
   function resolveItemTitle(item: NavigationItem): string {
     const key = navigationItemTitleKey(item)
     return te(key) ? t(key) : item.title
-  }
-
-  function resolveSubGroupTitle(subGroupKey: string): string {
-    const key = `nav.subGroup.${subGroupKey}`
-    return te(key) ? t(key) : subGroupKey
   }
 
   function groupSections(group: NavigationGroup): Array<{ key?: string; items: NavigationItem[] }> {
@@ -309,6 +302,8 @@
     font-size: 12px;
     line-height: 1.3;
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   /* ── 导航 ── */
@@ -370,17 +365,11 @@
     padding-bottom: 12px;
   }
 
-  .nav__subgroup-title {
-    padding: 8px 8px 4px;
-    color: var(--layout-sidebar-text-muted);
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.02em;
-    opacity: 0.85;
-  }
-
-  .nav__subgroup-title:first-child {
-    padding-top: 2px;
+  .nav__subgroup-divider {
+    height: 1px;
+    margin: 6px 8px;
+    background: var(--layout-sidebar-border);
+    opacity: 0.7;
   }
 
   /* 组标题行:11.5px #9aa1ae + 右侧 chevron(收起 › / 展开 ⌄) */

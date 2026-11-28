@@ -1987,7 +1987,7 @@ const messages: Messages = {
     },
   },
   login: {
-    appDesc: 'Batch scheduling console',
+    appDesc: 'File & Job Orchestration',
     heroTitle: 'One control plane for batch jobs\nfrom trigger to delivery',
     heroDesc:
       'Connect jobs, workflows, files, and workers across scheduling, execution, retry, and delivery.',
