@@ -62,22 +62,31 @@ afterEach(() => {
 })
 
 describe('登录页主题', () => {
-  it('默认跟随系统变化，离开登录页后不重置偏好', async () => {
+  it('默认跟随系统变化，切换主题时同步切换主视觉图且离开登录页后不重置偏好', async () => {
     const wrapper = shallowMount(Login)
     expect(document.documentElement.classList.contains('dark')).toBe(false)
+    expect(wrapper.find('.login-hero__visual img').attributes('src')).toBe(
+      '/images/login-batch-pipeline-light.png',
+    )
     setSystemDark(true)
     await nextTick()
     expect(document.documentElement.classList.contains('dark')).toBe(true)
+    expect(wrapper.find('.login-hero__visual img').attributes('src')).toBe(
+      '/images/login-batch-pipeline.png',
+    )
     wrapper.unmount()
     expect(useAppStore().themePreference).toBe('system')
     expect(document.documentElement.classList.contains('dark')).toBe(true)
   })
 
-  it('已手动选择浅色时，即使系统深色也保留浅色', () => {
+  it('已手动选择浅色时，即使系统深色也保留浅色与亮色主视觉图', () => {
     storage.set(STORAGE_KEYS.theme, 'light')
     isDark = true
     const wrapper = shallowMount(Login)
     expect(document.documentElement.classList.contains('dark')).toBe(false)
+    expect(wrapper.find('.login-hero__visual img').attributes('src')).toBe(
+      '/images/login-batch-pipeline-light.png',
+    )
     wrapper.unmount()
   })
 })

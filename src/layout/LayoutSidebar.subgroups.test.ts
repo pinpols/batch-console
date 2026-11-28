@@ -68,10 +68,10 @@ describe('LayoutSidebar 调度资源分组小标题', () => {
     state.visibleGroups = navigationGroups
   })
 
-  it('展开态在调度资源组内展示调度运行与资源规则两个小标题', () => {
+  it('在调度资源组内用细分隔线区分运行态与资源规则，不额外渲染文字小标题', () => {
     const wrapper = mountSidebar()
-    const subTitles = wrapper.findAll('.nav__subgroup-title').map((el) => el.text())
-    expect(subTitles).toEqual(['nav.subGroup.schedulingRuntime', 'nav.subGroup.schedulingRules'])
+    expect(wrapper.findAll('.nav__subgroup-title')).toHaveLength(0)
+    expect(wrapper.findAll('.nav__subgroup-divider')).toHaveLength(1)
   })
 
   it('租户管理员视图下不包含批次窗口、资源队列和租户配额', () => {
