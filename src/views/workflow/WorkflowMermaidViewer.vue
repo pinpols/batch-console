@@ -341,11 +341,17 @@
             @click="copyText"
             >{{ t('common.copy') }}</el-button
           >
-          <el-button text size="small" @click="showSource = !showSource">{{
-            showSource
-              ? t('workflowMermaidViewer.btnCollapse')
-              : t('workflowMermaidViewer.btnExpand')
-          }}</el-button>
+          <el-button
+            text
+            size="small"
+            :icon="showSource ? ChevronUp : ChevronDown"
+            @click="showSource = !showSource"
+            >{{
+              showSource
+                ? t('workflowMermaidViewer.btnCollapse')
+                : t('workflowMermaidViewer.btnExpand')
+            }}</el-button
+          >
         </div>
       </template>
       <pre v-if="showSource" class="workflow-mermaid-source">{{ mermaidText }}</pre>
@@ -363,6 +369,8 @@
   const { t } = useI18n({ useScope: 'global' })
   import {
     Crosshair as Aim,
+    ChevronDown,
+    ChevronUp,
     X as Close,
     Copy as DocumentCopy,
     Download,
